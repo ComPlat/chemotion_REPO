@@ -319,6 +319,7 @@ export default class Sample extends Element {
       molecular_mass: this.molecular_mass,
       sum_formula: this.sum_formula,
       segments: this.segments.map(s => s.serialize()),
+      is_repo_public: this.is_repo_public
     });
 
     return serialized;
@@ -375,7 +376,14 @@ export default class Sample extends Element {
         </span>
       : this.short_label
 
-    if(show_external_name) {
+    const { currentUser } = UserStore.getState();
+    let isRepoSecret = false;
+    if (this.is_repo_public) {
+      if (currentUser.is_reviewer || currentUser.id === this.created_by) isRepoSecret = false;
+      else isRepoSecret = true;
+    }
+
+    if(show_external_name && !isRepoSecret) {
       return (external_label ? <span className={extLabelClass}>{external_label}</span> : short_label);
     } else {
       return short_label;
@@ -410,6 +418,14 @@ export default class Sample extends Element {
 
   set name(name) {
     this._name = name;
+  }
+
+  get is_repo_public() {
+    return this._is_repo_public;
+  }
+
+  set is_repo_public(is_repo_public) {
+    this._is_repo_public = is_repo_public;
   }
 
   get short_label() {
@@ -916,6 +932,14 @@ export default class Sample extends Element {
     return this._equivalent;
   }
 
+  set scheme_yield(scheme_yield) {
+    this._scheme_yield = scheme_yield;
+  }
+
+  get scheme_yield() {
+    return this._scheme_yield;
+  }
+
   set conc(conc) {
     this._conc = conc;
   }
@@ -947,7 +971,7 @@ export default class Sample extends Element {
   }
 
   //Container & Analyses routines
-  addAnalysis(analysis){
+  addAnalysis(analysis) {
     this.container.children.filter(
       element => ~element.container_type.indexOf('analyses')
     )[0].children.push(analysis);
@@ -1063,6 +1087,11 @@ export default class Sample extends Element {
       tmpSolvents[filteredIndex] = solventToUpdate
     }
     this.solvent = tmpSolvents
+  }
+
+  analysisArray() {
+    const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
+    return analyses ? analyses.children : [];
   }
 }
 

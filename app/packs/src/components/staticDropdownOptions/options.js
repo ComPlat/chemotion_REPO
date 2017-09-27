@@ -428,11 +428,23 @@ export const kindOptions = [{
   label: "13C NMR",
   value: "13C NMR"
 },{
+  label: "15N NMR",
+  value: "15N NMR"
+},{
+  label: "NMR",
+  value: "NMR"
+},{
   label: "Mass",
   value: "Mass"
 },{
   label: "IR",
   value: "IR"
+},{
+  label: 'Raman',
+  value: 'Raman'
+},{
+  label: 'UV-VIS',
+  value: 'UV-VIS'
 },{
   label: "EA",
   value: "EA"
@@ -452,6 +464,77 @@ export const kindOptions = [{
   label: "Others",
   value: "Others"
 }];
+  // { label: 'no method', value: 'no_method'},
+  // { label: 'Others', value: 'others' },
+  //
+  // { label: '1H NMR CDCl3 250', value: 'NMR/1H/CDCl3/250'},
+  // { label: '1H NMR CDCl3 300', value: 'NMR/1H/CDCl3/300'},
+  // { label: '1H NMR CDCl3 400', value: 'NMR/1H/CDCl3/400'},
+  // { label: '1H NMR CDCl3 500', value: 'NMR/1H/CDCl3/500'},
+  //
+  //
+  // { label: '1H NMR C6D6 250', value:  'NMR/1H/C6D6/250'},
+  // { label: '1H NMR C6D6 300', value: 'NMR/1H/C6D6/300'},
+  // { label: '1H NMR C6D6 400', value: 'NMR/1H/C6D6/400'},
+  //
+  //
+  // { label: '1H NMR MeOD 250', value:  'NMR/1H/MeOD/250'},
+  // { label: '1H NMR MeOD 300', value: 'NMR/1H/MeOD/300'},
+  // { label: '1H NMR MeOD 400', value: 'NMR/1H/MeOD/400'},
+  //
+  //
+  // { label: '1H NMR DMSO 250', value:  'NMR/1H/DMSO/250'},
+  // { label: '1H NMR DMSO 300', value: 'NMR/1H/DMSO/300'},
+  // { label: '1H NMR DMSO 400', value: 'NMR/1H/DMSO/400'},
+  //
+  //
+  // { label: '13C NMR CDCl3 62.5', value: 'NMR/13C/CDCl3/62.5'},
+  // { label: '13C NMR CDCl3 75', value:  'NMR/13C/CDCl3/75'},
+  // { label: '13C NMR CDCl3 100', value: 'NMR/13C/CDCl3/100'},
+  // { label: '13C NMR CDCl3 125', value: 'NMR/13C/CDCl3/125'},
+  //
+  //
+  // { label: '13C NMR C6D6 62.5', value: 'NMR/13C/C6D6/62.5'},
+  // { label: '13C NMR C6D6 75', value:   'NMR/13C/C6D6/75'},
+  // { label: '13C NMR C6D6 100', value:  'NMR/13C/C6D6/100'},
+  //
+  // { label: '13C NMR MeOD 62.5', value: 'NMR/13C/MeOD/62.5'},
+  // { label: '13C NMR MeOD 75', value:   'NMR/13C/MeOD/75'},
+  // { label: '13C NMR MeOD 100', value:  'NMR/13C/MeOD/100'},
+  //
+  //
+  // { label: '13C NMR DMSO 62.5', value: 'NMR/13C/DMSO/62.5'},
+  // { label: '13C NMR DMSO 75', value: 'NMR/13C/DMSO/75'},
+  // { label: '13C NMR DMSO 100', value: 'NMR/13C/DMSO/100'},
+  //
+  //
+  // { label: '19F NMR acetone 400', value: 'NMR/19F/acetone/400'},
+  // { label: '19F NMR CDCl3 367', value: 'NMR/19F/CDCl3/367'},
+  // { label: '19F NMR MeOD 367', value: 'NMR/19F/MeOD/367'},
+  // { label: '19F NMR C6D6 367', value: 'NMR/19F/C6D6/367'},
+  //
+  //
+  // { label: 'H-H COSY NMR CDCl3', value: 'NMR/HHCOSY/CDCl3'},
+  // { label: 'H-H COSY NMR DMSO', value: 'NMR/HHCOSY/DMSO'},
+  // { label: 'H-H COSY NMR methanol', value: 'NMR/HHCOSY/methanol'},
+  //
+  // { label: 'H-C COSY NMR CDCl3', value: 'NMR/HCCOSY/CDCl3'},
+  // { label: 'H-C COSY NMR DMSO', value: 'NMR/HCCOSY/DMSO'},
+  // { label: 'H-C COSY NMR methanol', value: 'NMR/HCCOSY/methanol'},
+  //
+  // { label: 'DEPT 135', value: 'DEPT/135'},
+  // { label: 'DEPT 90', value: 'DEPT/90'},
+  // { label: 'DEPT 45', value: 'DEPT/45'},
+  //
+  // { label: 'IR', value: 'IR'},
+  // { label: 'Mass EI', value: 'Mass/EI'},
+  // { label: 'Mass GCMS', value: 'Mass/GCMS'},
+  // { label: 'Raman', value: 'Raman'},
+  // { label: 'UV-VIS', value: 'UV-VIS'},
+  // { label: 'TLC', value: 'TLC'},
+  // { label: 'Xray', value: 'Xray'},
+  // { label: 'Additional material', value: 'additional'},
+// ];
 
 export const rolesOptions = [{
   label: 'General Procedure',

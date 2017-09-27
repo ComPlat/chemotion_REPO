@@ -4,10 +4,20 @@ module Entities
     expose :container, using: Entities::ContainerEntity
     expose :tag
     expose :segments, using: Entities::SegmentEntity
+    expose :publication
+    expose :doi, using: Entities::DoiEntity
     expose :residues
     expose :elemental_compositions, using: Entities::ElementalCompositionEntity
 
     expose :code_log, using: Entities::CodeLogEntity
+    expose :is_repo_public
+
+    def is_repo_public
+      cols = object.tag&.taggable_data['collection_labels']&.select do |c|
+        c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
+      end
+      cols.length > 0
+    end
 
     class Level0 < SampleEntity
       include SamplePolicySerializable

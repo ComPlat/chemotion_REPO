@@ -63,6 +63,7 @@ class ReportStore {
     this.attThumbNails = [];
     this.fileName = '';
     this.templateOpts = [];
+    this.dois = [];
 
     this.bindListeners({
       handleUpdateSplSettings: ReportActions.updateSplSettings,
@@ -322,6 +323,9 @@ class ReportStore {
       case 'rxn_list_html':
         prefix = 'Reaction_List_';
         break;
+      case 'doi_list_xlsx':
+        prefix = 'DOI_List_';
+        break;
       default:
         prefix = '';
         break;
@@ -357,6 +361,7 @@ class ReportStore {
     let ext = 'docx';
     switch (template) {
       case 'rxn_list_xlsx':
+      case 'doi_list_xlsx':
         ext = 'xlsx';
         break;
       case 'rxn_list_csv':

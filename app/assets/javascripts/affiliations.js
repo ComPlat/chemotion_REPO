@@ -37,7 +37,6 @@ function attachAutoComplete(type, elementId) {
   attachAutoComplete("countries", "country-select")
   attachAutoComplete("organizations", "organization-select")
   attachAutoComplete("departments", "department-select")
-  attachAutoComplete("groups", "group-select")
 
   let userEmailInput = document.querySelector("input#user_email")
   if (userEmailInput) {

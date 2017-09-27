@@ -20,10 +20,36 @@ module Entities
     expose :account_active, documentation: { type: 'Boolean', desc: 'User Account Active or Inactive' }
     expose :matrix, documentation: { type: 'Integer', desc: "User's matrix" }
     expose :counters
+    expose :affiliations, :current_affiliations
+    expose :is_article_editor, :is_howto_editor, :is_reviewer
+    expose :orcid
+
+    def affiliations
+      a = {}
+      object.affiliations.select(
+        'id',
+        'affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country as aff'
+      ).reduce(a){|acc, affiliation| a[affiliation.id] = affiliation.aff}
+      a
+    end
+
+    def orcid
+      object.orcid
+    end
+
+    def current_affiliations
+      a = {}
+      object.current_affiliations.select(
+        'id',
+        'affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country as aff'
+      ).reduce(a){|acc, affiliation| a[affiliation.id] = affiliation.aff}
+      a
+    end
 
     def samples_count
       object.counters['samples'].to_i
     end
+
     def reactions_count
       object.counters['reactions'].to_i
     end

@@ -77,6 +77,13 @@ th.drag {
   max-height: 22px;
 }
 
+.orcid-logo {
+  height: 16px;
+  width: 16px;
+  margin-bottom: 2px;
+  margin-right: 1px;
+}
+
 .sample-list-from-date, .sample-list-to-date {
   float: right;
   margin-right: 2px;
@@ -122,6 +129,11 @@ th.drag {
   overflow-y: scroll;
 }
 
+// .list-guest-elements {
+//   @extend .list-elements;
+//   max-height: calc(100vh - 170px);
+// }
+
 .list-pagination {
   margin: 5px 0 0 0;
 }
@@ -160,10 +172,56 @@ th.drag {
   border-top: 0
 }
 
+.review-entries > tbody > tr > td {
+  border-top: 1
+}
+
+.public-element {
+  height: calc(100vh - 128px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.public-list {
+  height: calc(100vh - 220px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.public-list-adv {
+  height: calc(100vh - 300px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.review-element {
+  height: calc(100vh - 110px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.review-list {
+  height: calc(100vh - 214px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
 @media only screen and (max-width: 1500px) {
   .list-elements {
-    height: calc(100vh - 350px);
+    height: calc(100vh - 330px);
   }
+
+  .public-element {
+    height: calc(100vh - 204px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+  }
+  .public-list {
+      height: calc(100vh - 226px);
+      overflow-x: hidden;
+      overflow-y: scroll;
+  }
+
 }
 
 @-webkit-keyframes blink-1 {
@@ -236,4 +294,3 @@ th.drag {
   -moz-animation:    blink-3 4s infinite  ; /* Fx 5+ */
   animation:         blink-3 4s infinite  ; /* IE 10+, Fx 29+ */
 }
-

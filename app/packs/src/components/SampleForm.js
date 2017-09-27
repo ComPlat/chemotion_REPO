@@ -488,6 +488,36 @@ export default class SampleForm extends React.Component {
     const molarityBlocked = isDisabled ? true : this.state.molarityBlocked;
     const densityBlocked = isDisabled ? true : !molarityBlocked;
     const { enableSampleDecoupled } = this.props;
+    const isRepoSecretExternalLabel = this.props.parent.isRepoSecretExternalLabel();
+
+    const nameSection = isRepoSecretExternalLabel ?
+      (
+        <div className="name-form">
+          <div style={{ width: '50%' }}>
+            {this.textInput(sample, 'name', 'Name')}
+          </div>
+          <div style={{ width: '30%' }} hidden>
+            {this.textInput(sample, 'external_label', 'External label')}
+          </div>
+          <div style={{ width: '50%' }}>
+            <label htmlFor="solventInput">Solvent</label>
+            {this.sampleSolvent(sample)}
+          </div>
+        </div>
+      ) : (
+        <div className="name-form">
+          <div style={{ width: '30%' }}>
+            {this.textInput(sample, 'name', 'Name')}
+          </div>
+          <div style={{ width: '30%' }}>
+            {this.textInput(sample, 'external_label', 'External label')}
+          </div>
+          <div style={{ width: '40%' }}>
+            <label htmlFor="solventInput">Solvent</label>
+            {this.sampleSolvent(sample)}
+          </div>
+        </div>
+      );
 
     return (
       <Table responsive className="sample-form">

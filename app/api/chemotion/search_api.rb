@@ -230,6 +230,43 @@ module Chemotion
         reactions = elements.fetch(:reactions, [])
         wellplates = elements.fetch(:wellplates, [])
         screens = elements.fetch(:screens, [])
+
+        if params[:is_public]
+          xvial_count = <<~SQL
+            inner join (
+              select count(e.id) as xvial_count, m.id as molecule_id from molecules m
+              inner join samples s on s.molecule_id = m.id
+              inner join publications p on p.element_type='Sample' and p.element_id=s.id  and p.deleted_at isnull
+              left outer join element_tags e on e.taggable_id = s.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+              group by m.id
+            ) c on c.molecule_id = molecules.id
+          SQL
+          molecules = paginate(Molecule.joins(:samples).joins(xvial_count).where("samples.id in (?)", samples).includes(:tag)).select(
+            <<~SQL
+            molecules.*, max(samples.sample_svg_file) sample_svg_file, xvial_count
+            SQL
+          ).group('molecules.id, xvial_count').uniq
+          serialized_molecules = molecules.map { |m| MoleculeGuestListSerializer.new(m).serializable_hash }
+          filter_reactions = Reaction.where("id in (?)", reactions)
+          serialized_reactions = paginate(filter_reactions).map { |r| ReactionGuestListSerializer.new(r).serializable_hash }
+          return {
+            publicMolecules: {
+              molecules: serialized_molecules,
+              totalElements: molecules.size,
+              page: page,
+              perPage: page_size,
+              ids: molecules.pluck(:id)
+            },
+            publicReactions: {
+              reactions: serialized_reactions,
+              totalElements: reactions.size,
+              page: page,
+              perPage: page_size,
+              ids: filter_reactions.pluck(:id)
+            }
+          }
+        end
+
         samples_data = serialize_samples(samples, page, search_by_method, molecule_sort)
         serialized_samples = samples_data[:data]
         samples_size = samples_data[:size]
@@ -319,9 +356,12 @@ module Chemotion
       def search_elements(c_id = @c_id, dl = @dl)
         search_method = search_by_method
         molecule_sort = params[:molecule_sort]
-        arg = params[:selection][:name]
+        arg = params[:selection] && params[:selection][:name]
         return if !(search_method =~ /advanced|structure/) && !arg.presence
         dl_s = dl[:sample_detail_level] || 0
+
+        search_method = 'chemotion_id' if arg&.match(/(CRR|CRS|CRD)-\d+/)
+
         scope = case search_method
         when 'polymer_type'
           if dl_s > 0
@@ -366,6 +406,23 @@ module Chemotion
           advanced_search(c_id)
         when 'elements'
           elements_search(c_id)
+        when 'chemotion_id'
+          if arg.match(/(CRR|CRS|CRD)-\d+/) && arg.split('-').length == 2
+            case arg.split('-')[0]
+            when 'CRS'
+              Sample.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+            when 'CRR'
+              Reaction.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+            when 'CRD'
+              begin
+                parent_node = Publication.find(arg.split('-')[1])&.parent
+                parent_node && parent_node.element.class.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{parent_node.id}")
+              rescue => e
+                Sample.none
+              end
+            end
+          else
+          end
         end
 
         if search_method == 'advanced' && molecule_sort == false
@@ -395,51 +452,51 @@ module Chemotion
           .includes(molecule: :tag)
         user_reactions = Reaction.by_collection_id(collection_id).includes(
           :literatures, :tag,
-          reactions_starting_material_samples: :sample,
-          reactions_solvent_samples: :sample,
-          reactions_reactant_samples: :sample,
+          # reactions_starting_material_samples: :sample,
+          # reactions_solvent_samples: :sample,
+          # reactions_reactant_samples: :sample,
           reactions_product_samples: :sample,
         )
-        user_wellplates = Wellplate.by_collection_id(collection_id).includes(
-          wells: :sample
-        )
-        user_screens = Screen.by_collection_id(collection_id)
+        # user_wellplates = Wellplate.by_collection_id(collection_id).includes(
+        #   wells: :sample
+        # )
+        # user_screens = Screen.by_collection_id(collection_id)
 
-        user_elements = Element.by_collection_id(collection_id)
+        # user_elements = Element.by_collection_id(collection_id)
         case scope&.first
         when Sample
           elements[:samples] = scope&.pluck(:id)
           elements[:reactions] = (
             user_reactions.by_sample_ids(scope&.map(&:id)).pluck(:id)
           ).uniq
-          elements[:wellplates] = user_wellplates.by_sample_ids(scope&.map(&:id)).uniq.pluck(:id)
-          elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
-          elements[:elements] = (
-            user_elements.by_sample_ids(scope&.map(&:id)).pluck(:id)
-          ).uniq
+          # elements[:wellplates] = user_wellplates.by_sample_ids(scope&.map(&:id)).uniq.pluck(:id)
+          # elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
+          # elements[:elements] = (
+          #   user_elements.by_sample_ids(scope&.map(&:id)).pluck(:id)
+          # ).uniq
         when Reaction
           elements[:reactions] = scope&.pluck(:id)
           elements[:samples] = user_samples.by_reaction_ids(scope&.map(&:id)).pluck(:id).uniq
-          elements[:wellplates] = user_wellplates.by_sample_ids(elements[:samples]).uniq.pluck(:id)
-          elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
-        when Wellplate
-          elements[:wellplates] = scope&.pluck(:id)
-          elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
-          elements[:samples] = user_samples.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
-          elements[:reactions] = (
-            user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
-          ).uniq
-        when Screen
-          elements[:screens] = scope&.pluck(:id)
-          elements[:wellplates] = user_wellplates.by_screen_ids(scope).uniq.pluck(:id)
-          elements[:samples] = user_samples.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
-          elements[:reactions] = (
-            user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
-          ).uniq.pluck(:id)
-        when Element
-          elements[:elements] = scope&.pluck(:id)
-          sids = ElementsSample.where(element_id: elements[:elements]).pluck :sample_id
-          elements[:samples] = Sample.by_collection_id(collection_id).where(id: sids).uniq.pluck(:id)
+        #   elements[:wellplates] = user_wellplates.by_sample_ids(elements[:samples]).uniq.pluck(:id)
+        #   elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
+        # when Wellplate
+        #   elements[:wellplates] = scope&.pluck(:id)
+        #   elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
+        #   elements[:samples] = user_samples.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
+        #   elements[:reactions] = (
+        #     user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
+        #   ).uniq
+        # when Screen
+        #   elements[:screens] = scope&.pluck(:id)
+        #   elements[:wellplates] = user_wellplates.by_screen_ids(scope).uniq.pluck(:id)
+        #   elements[:samples] = user_samples.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
+        #   elements[:reactions] = (
+        #     user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
+        #   ).uniq.pluck(:id)
+        # when Element
+        #   elements[:elements] = scope&.pluck(:id)
+        #   sids = ElementsSample.where(element_id: elements[:elements]).pluck :sample_id
+        #   elements[:samples] = Sample.by_collection_id(collection_id).where(id: sids).uniq.pluck(:id)
         when AllElementSearch::Results
           # TODO check this samples_ids + molecules_ids ????
           elements[:samples] = (scope&.samples_ids + scope&.molecules_ids)
@@ -448,16 +505,16 @@ module Chemotion
             user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
           ).uniq
 
-          elements[:wellplates] = (
-            scope&.wellplates_ids +
-            user_wellplates.by_sample_ids(elements[:samples]).pluck(:id)
-          ).uniq
+          # elements[:wellplates] = (
+          #   scope&.wellplates_ids +
+          #   user_wellplates.by_sample_ids(elements[:samples]).pluck(:id)
+          # ).uniq
 
-          elements[:screens] = (
-            scope&.screens_ids +
-            user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
-          ).uniq
-          elements[:elements] = (scope&.element_ids).uniq
+          # elements[:screens] = (
+          #   scope&.screens_ids +
+          #   user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
+          # ).uniq
+          # elements[:elements] = (scope&.element_ids).uniq
         end
         elements
       end
@@ -485,6 +542,11 @@ module Chemotion
             params[:molecule_sort]
           )
         end
+      end
+
+      after_validation do
+        check_params_collection_id
+        set_var_for_unsigned_user unless current_user
       end
 
       namespace :all do

@@ -3,6 +3,28 @@
     Account &amp; Profile
   %br/
 
+  - flash.each do |key, value|
+    %div{class: "alert alert-#{key}"}= value
+
+  .panel.panel-default
+    .panel-heading
+      %h4.panel-title
+        ORCID
+    .panel-body
+      .form-horizontal
+        = form_for current_user.profile, url: pages_update_orcid_path do |f|
+          .form-group
+            = f.label 'my-orcid', 'My ORCID', class: 'control-label col-sm-2'
+            .col-sm-3
+              = text_field_tag :data_orcid,
+                                current_user.profile.data['ORCID'],
+                                maxlength: 19,
+                                class: 'form-control',
+                                id: 'txt-orcid',
+                                placeholder: 'e.g. 0000-0002-1234-5678'
+            .col-sm-1
+              = f.submit "Update ORCID", class: "btn btn-primary"
+
   .panel.panel-default
     .panel-heading
       %h3.panel-title
@@ -80,6 +102,8 @@
   #OmniauthCredential
 
   #UserCounter
+  %br/
+  %br/
 
   = link_to "Back", root_path
 

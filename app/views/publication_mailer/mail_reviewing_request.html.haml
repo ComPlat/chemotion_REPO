@@ -1,0 +1,4 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p #{@publication.element_type} ##{@publication.element_id} is pending for publication.
+%p Please help reviewing it at:
+%a{ href: "#{@proto + @host}/home/review/review_#{@publication.element_type.underscore}/#{@publication.element_id}"} #{@proto + @host}/home/review/review_#{@publication.element_type.underscore}/#{@publication.element_id}

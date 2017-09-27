@@ -11,6 +11,7 @@ import Sample from './models/Sample';
 import { observationPurification, solventsTL } from './utils/reactionPredefined';
 import { permitOn } from './common/uis';
 import PrivateNoteElement from './PrivateNoteElement';
+import HelpInfo from '../components/common/HelpInfo';
 
 function dummy() { return true; }
 
@@ -139,7 +140,7 @@ export default class ReactionDetailsPurification extends Component {
         <Row style={{ marginTop: '10px' }}>
           <Col md={12}>
             <FormGroup>
-              <div><b>Additional information for publication and purification details</b></div>
+              <div><b>Additional information for publication and purification details</b>&nbsp;<HelpInfo source={reaction.is_published ? 'x' : 'additionalInformation'} place="right" /></div>
               <div className="quill-resize">
                 {
                   permitOn(reaction) ?

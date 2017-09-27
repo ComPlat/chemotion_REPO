@@ -1,21 +1,17 @@
 %script{:src => asset_path('affiliations.js')}
 .form-group.field
-  = f.label "Country"
+  = f.label "Country", class: "required"
   %br/
   = f.text_field :country, autofocus: true, class: 'form-control',
-      id: 'country-select'
+      id: 'country-select', required: true
 .form-group.field
   = f.label "Organization", class: "required"
   %br/
   = f.text_field :organization, autofocus: true, class: 'form-control',
-      id: 'organization-select', required: true, disabled: disabled
+      id: 'organization-select', required: true, readonly: disabled
 .form-group.field
   = f.label "Department"
   %br/
   = f.text_field :department, autofocus: true, class: 'form-control',
       id: 'department-select'
-.form-group.field
-  = f.label "Group"
   %br/
-  = f.text_field :group, autofocus: true, class: 'form-control',
-      id: 'group-select'

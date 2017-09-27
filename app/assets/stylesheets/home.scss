@@ -8,3 +8,26 @@
         height: 24px;
     }
 }
+.div-table {
+  display: table;
+  border-spacing: 10px;
+
+  .span-row {
+    display: table-row;
+
+    span {
+      display: table-cell;
+      vertical-align: middle;
+    }
+  }
+}
+.small-p  .ql-editor > p {
+  font-size: small;
+}
+
+iframe#home-tos {
+  width: 100%;
+  min-height: 80vh;
+  height: auto;
+  border: inherit;
+}

@@ -1,11 +1,19 @@
 import React, { Component, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AttachmentFetcher from '../fetchers/AttachmentFetcher';
 import { stopEvent } from '../utils/DomHelper';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+const defaultImageStyle = {
+  style: {
+    cursor: 'default'
+  }
+};
+import UserStore from '../stores/UserStore';
+
+const defaultImageStyle = { style: { cursor: 'default' } };
 
 export default class ImageModal extends Component {
   constructor(props) {
@@ -39,6 +47,42 @@ export default class ImageModal extends Component {
       (this.props.popObject.fetchId !== prevProps.popObject.fetchId)) {
       this.fetchImage();
     }
+  }
+
+  fetchImage() {
+    const { currentUser } = UserStore.getState();
+    if (!currentUser) {
+      const fileSrc = ['/images/publications', this.props.popObject.fetchId, this.props.popObject.fetchFilename].join('/');
+      this.setState({ fetchSrc: fileSrc });
+    } else {
+    AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
+      .then((result) => {
+        if (result.data != null) {
+          this.setState({ fetchSrc: result.data });
+          if (result.type === "application/pdf") {
+            this.setState({ isPdf: true });
+          }
+          else {
+            this.setState({ isPdf: false });
+          }
+        }
+      });
+
+    }
+  }
+
+  handleModalClose(e) {
+    stopEvent(e);
+    this.setState({ showModal: false });
+  }
+
+  handleModalShow(e) {
+    stopEvent(e);
+    this.setState({ showModal: true });
+  }
+
+  handleImageError() {
+    this.setState({ fetchSrc: this.props.preivewObject.src });
   }
 
   onDocumentLoadSuccess(numPages) {
@@ -100,9 +144,11 @@ export default class ImageModal extends Component {
 
     return (
       <div>
-        <div className="preview-table" onClick={this.handleModalShow}>
-          <img src={previewObject.src} alt="" style={{ cursor: 'pointer', ...imageStyle }} />
-        </div>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="id_enlarge_image">click to enlarge image</Tooltip>}>
+          <div className="preview-table" onClick={this.handleModalShow}>
+            <img src={preivewObject.src} alt="" style={{ cursor: 'pointer', ...imageStyle }} />
+          </div>
+        </OverlayTrigger>
         <Modal show={this.state.showModal} onHide={this.handleModalClose} dialogClassName="noticeModal">
           <Modal.Header closeButton>
             <Modal.Title>{popObject.title}</Modal.Title>
@@ -135,7 +181,17 @@ export default class ImageModal extends Component {
                 </div>
               </div>
               :
-              <img src={this.state.fetchSrc} style={{ display: 'block', maxHeight: '100%', maxWidth: '100%' }} alt="" onError={this.handleImageError} />}
+              <img
+                src={this.state.fetchSrc}
+                style={{
+                  display: 'block',
+                  maxHeight: '100%',
+                  maxWidth: '100%',
+                }}
+                alt=""
+                onError={this.handleImageError}
+              />}
+
           </Modal.Body>
           <Modal.Footer>
             <Button bsStyle="primary" onClick={this.handleModalClose} className="pull-left">Close</Button>
@@ -157,5 +213,6 @@ ImageModal.propTypes = {
     src: PropTypes.string,
     fetchNeeded: PropTypes.bool,
     fetchId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    fetchFilename: PropTypes.string,
   }).isRequired,
 };

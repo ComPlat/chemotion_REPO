@@ -61,12 +61,13 @@ module Taggable
     cols = []
     send(klass).each do |cc|
       next unless c = cc.collection
-      next if c.label == 'All' && c.is_locked
+      next if (c.label == 'All' && c.is_locked)
       cols.push({
         name: c.label, is_shared: c.is_shared, user_id: c.user_id,
         id: c.id, shared_by_id: c.shared_by_id,
         is_synchronized: false
       })
+      next if (c.id == Collection.public_collection_id) || (c.id == Collection.scheme_only_reactions_collection_id)
       if c.is_synchronized
         c.sync_collections_users&.each do |syn|
           cols.push({

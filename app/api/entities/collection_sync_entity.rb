@@ -45,6 +45,9 @@ module Entities
     expose :sharer do |obj|
         obj['temp_sharer']
     end
+    expose :is_public do |obj|
+      obj['shared_by'] && obj['shared_by']['initials'] == 'CI'
+    end
     expose :children, as: 'children', using: Entities::CollectionSyncEntity
 
     expose :is_sync_to_me do |obj|

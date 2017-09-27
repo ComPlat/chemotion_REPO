@@ -110,6 +110,7 @@ module ReactionHelpers
               container_info = attributes[:container]
               attributes.delete(:container)
               attributes.delete(:segments)
+              attributes.delete(:is_repo_public)
               new_sample = Sample.new(
                 attributes
               )
@@ -241,7 +242,7 @@ module Chemotion
         end
 
         post do
-          Import::FromChemScanner.from_list(
+          Import::FromChemscanner.from_list(
             params[:reactions],
             params[:molecules],
             current_user.id,
@@ -308,7 +309,7 @@ module Chemotion
 
         get do
           reaction = Reaction.find(params[:id])
-          { reaction: ElementPermissionProxy.new(current_user, reaction, user_ids, @element_policy).serialized, literatures: citation_for_elements(params[:id], 'Reaction') }
+          { reaction: ElementPermissionProxy.new(current_user, reaction, user_ids, @element_policy).serialized, literatures: citation_for_elements(params[:id], 'Reaction'), publication: Publication.find_by(element: reaction) || {} }
         end
       end
 

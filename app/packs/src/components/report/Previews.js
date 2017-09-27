@@ -6,6 +6,7 @@ import SectionSiSynthesis from './SectionSiSynthesis';
 import SectionSpectrum from './SectionSpectrum';
 import SectionReactionList from './SectionReactionList';
 import SectionSiSynthesisStdRxn from './SectionSiSynthesisStdRxn';
+import SectionDoiList from './SectionDoiList';
 
 const objToKeyValPairs = (obj = []) => (
   obj.reduce((ob, { text, checked }) => {
@@ -116,6 +117,13 @@ const rxlPreviews = ({ previewObjs, molSerials }) => (
   />
 );
 
+const doiPreviews = ({ selectedObjs, molSerials }) => (
+  <SectionDoiList
+    objs={selectedObjs}
+    molSerials={molSerials}
+  />
+);
+
 const previewsContent = (props) => {
   switch (props.template.value) {
     case 'standard':
@@ -130,6 +138,8 @@ const previewsContent = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlPreviews(props);
+    case 'doi_list_xlsx':
+    return doiPreviews(props);
     default:
       return stdPreviews(props);
   }

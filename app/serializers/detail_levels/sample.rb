@@ -1,7 +1,7 @@
 class DetailLevels::Sample
   def base_attributes
     [
-      :id, :type, :name, :short_label, :description, :created_at,
+      :id, :type, :name, :short_label, :description, :created_at, :created_by,
       :target_amount_value, :target_amount_unit, :real_amount_value, :location,
       :real_amount_unit, :molfile, :solvent, :molarity_value, :molarity_unit,
       :is_top_secret, :is_restricted, :external_label, :analyses, :purity,
@@ -10,7 +10,8 @@ class DetailLevels::Sample
       :reaction_description, :container, :pubchem_tag, :xref, :code_log, :metrics,
       :can_update, :can_copy, :can_publish, :molecule_name_hash, # :molecule_computed_props,
       :showed_name, :decoupled,
-      :molecular_mass, :sum_formula
+      :molecular_mass, :sum_formula,
+      :is_repo_public
     ]
   end
 

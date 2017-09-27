@@ -20,6 +20,10 @@
   overflow: auto;
 }
 
+.title-public {
+  background: Lavender;
+}
+
 .tree-view li {
   margin-left: -13px;
   list-style-type: none;

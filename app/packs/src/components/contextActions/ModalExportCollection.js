@@ -1,6 +1,5 @@
 import React from 'react';
 import {Button, ButtonToolbar} from 'react-bootstrap';
-import UIStore from './../stores/UIStore';
 import CollectionStore from './../stores/CollectionStore';
 
 export default class ModalExportCollection extends React.Component {
@@ -10,16 +9,17 @@ export default class ModalExportCollection extends React.Component {
     let collecState = CollectionStore.getState()
 
     let checkboxes = {}
-    this.gatherCheckboxes(collecState.unsharedRoots, checkboxes)
-    this.gatherCheckboxes(collecState.sharedRoots, checkboxes)
-    this.gatherCheckboxes(collecState.remoteRoots, checkboxes)
+    // this.gatherCheckboxes(collecState.unsharedRoots, checkboxes)
+    // this.gatherCheckboxes(collecState.sharedRoots, checkboxes)
+    // this.gatherCheckboxes(collecState.remoteRoots, checkboxes)
+    collecState.lockedRoots = collecState.lockedRoots.filter(c => c.label !== 'All');
     this.gatherCheckboxes(collecState.lockedRoots, checkboxes)
 
     this.state = {
       processing: false,
-      unsharedRoots: collecState.unsharedRoots,
-      sharedRoots: collecState.sharedRoots,
-      remoteRoots: collecState.remoteRoots,
+      // unsharedRoots: collecState.unsharedRoots,
+      // sharedRoots: collecState.sharedRoots,
+      // remoteRoots: collecState.remoteRoots,
       lockedRoots: collecState.lockedRoots,
       checkboxes: checkboxes
     }
@@ -224,9 +224,9 @@ export default class ModalExportCollection extends React.Component {
     return (
       <div className="export-collections-modal">
         {this.renderCollections('Global collections', 'lockedRoots')}
-        {this.renderCollections('My collections', 'unsharedRoots')}
-        {this.renderSharedCollections('My shared collections', 'sharedRoots')}
-        {this.renderSharedCollections('Shared with me', 'remoteRoots')}
+        {/* {this.renderCollections('My collections', 'unsharedRoots')} */}
+        {/* {this.renderSharedCollections('My shared collections', 'sharedRoots')} */}
+        {/* {this.renderSharedCollections('Shared with me', 'remoteRoots')} */}
         {this.renderCheckAll()}
         {this.renderButtonBar()}
       </div>

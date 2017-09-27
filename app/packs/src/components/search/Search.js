@@ -174,10 +174,10 @@ export default class Search extends React.Component {
 
   renderMenuItems() {
     const elements = [
-      'All',
-      'Samples', 'Reactions',
-      'Wellplates', 'Screens'
-    ];
+      "All",
+      "Samples", "Reactions",
+      // "Wellplates", "Screens"
+    ]
 
     const menu = elements.map(element => (
       <MenuItem key={element} onSelect={() => this.handleElementSelection(element.toLowerCase())}>
@@ -209,7 +209,8 @@ export default class Search extends React.Component {
 
   render() {
     const { profile } = UserStore.getState();
-    const { customClass } = (profile && profile.data) || {};
+    // const { customClass } = (profile && profile.data) || {};
+    const customClass = '.btn-unified'
 
     const buttonAfter = (
       <ButtonGroup>

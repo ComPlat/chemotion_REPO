@@ -192,6 +192,8 @@ const spcConfig = ({ template, fileName, fileDescription, options }) => {
 
 const rxlConfig = props => spcConfig(props);
 
+const doiConfig = props => spcConfig(props);
+
 const Config = (props) => {
   switch (props.template.value) {
     case 'standard':
@@ -206,6 +208,8 @@ const Config = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlConfig(props);
+    case 'doi_list_xlsx':
+      return doiConfig(props);
     default:
       return stdConfig(props);
   }

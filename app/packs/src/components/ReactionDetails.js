@@ -2,15 +2,18 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
   Col, Panel, ListGroupItem, ButtonToolbar, Button,
-  Tabs, Tab, OverlayTrigger, Tooltip
+  Tabs, Tab, OverlayTrigger, Tooltip,
+  Row, Alert, Label
 } from 'react-bootstrap';
 import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
-import { findIndex } from 'lodash';
+import { findIndex, cloneDeep } from 'lodash';
 import ElementCollectionLabels from './ElementCollectionLabels';
 import ElementAnalysesLabels from './ElementAnalysesLabels';
 import ElementActions from './actions/ElementActions';
 import DetailActions from './actions/DetailActions';
 import LoadingActions from './actions/LoadingActions';
+import RepositoryActions from './actions/RepositoryActions';
+
 import ReactionDetailsLiteratures from './DetailsTabLiteratures';
 import ReactionDetailsContainers from './ReactionDetailsContainers';
 import SampleDetailsContainers from './SampleDetailsContainers';
@@ -35,17 +38,34 @@ import Immutable from 'immutable';
 import ElementDetailSortTab from './ElementDetailSortTab';
 import ScifinderSearch from './scifinder/ScifinderSearch';
 
+import PublishReactionModal from './PublishReactionModal';
+import {
+  PublishedTag,
+  LabelPublication,
+  PublishBtnReaction,
+  ReviewPublishBtn,
+  validateMolecule,
+  validateYield
+} from './PublishCommon';
+import ReactionDetailsRepoComment from './ReactionDetailsRepoComment';
+import { contentToText } from './utils/quillFormat';
+import HelpInfo from './common/HelpInfo';
+
 export default class ReactionDetails extends Component {
   constructor(props) {
     super(props);
 
     const { reaction } = props;
+    const publication = reaction.tag && reaction.tag.taggable_data
+      && reaction.tag.taggable_data.publication
     this.state = {
-      reaction: reaction,
+      reaction,
       literatures: reaction.literatures,
       activeTab: UIStore.getState().reaction.activeTab,
       visible: Immutable.List(),
       sfn: UIStore.getState().hasSfn,
+      showPublishReactionModal: false,
+      commentScreen: false
     };
 
     // remarked because of #466 reaction load image issue (Paggy 12.07.2018)
@@ -58,8 +78,23 @@ export default class ReactionDetails extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.onTabPositionChanged = this.onTabPositionChanged.bind(this);
     this.handleSegmentsChange = this.handleSegmentsChange.bind(this);
+    this.handlePublishReactionModal = this.handlePublishReactionModal.bind(this);
+    this.forcePublishRefreshClose = this.forcePublishRefreshClose.bind(this);
+    this.handleCommentScreen = this.handleCommentScreen.bind(this);
+    this.handleFullScreen = this.handleFullScreen.bind(this);
+    this.handleValidation = this.handleValidation.bind(this);
+    this.handleResetValidation = this.handleResetValidation.bind(this);
+    this.handleModalAnalysesCheck = this.handleModalAnalysesCheck.bind(this);
     if(!reaction.reaction_svg_file) {
       this.updateReactionSvg();
+    }
+  }
+
+  onUIStoreChange(state) {
+    if (state.reaction.activeTab != this.state.activeTab){
+      this.setState({
+        activeTab: state.reaction.activeTab
+      })
     }
   }
 
@@ -74,6 +109,8 @@ export default class ReactionDetails extends Component {
     const nextReaction = nextProps.reaction;
 
     if (nextReaction.id !== reaction.id ||
+        nextReaction.can_publish !== reaction.can_publish ||
+        nextReaction.can_update !== reaction.can_update ||
         nextReaction.updated_at !== reaction.updated_at ||
         nextReaction.reaction_svg_file !== reaction.reaction_svg_file ||
         nextReaction.changed || nextReaction.editedSample) {
@@ -87,17 +124,127 @@ export default class ReactionDetails extends Component {
     const nextVisible = nextState.visible;
     const { reaction, activeTab, visible } = this.state;
     return (
+      nextReaction.can_publish !== reaction.can_publish ||
+      nextReaction.can_update !== reaction.can_update ||
       nextReaction.id !== reaction.id ||
       nextReaction.updated_at !== reaction.updated_at ||
       nextReaction.reaction_svg_file !== reaction.reaction_svg_file ||
       !!nextReaction.changed || !!nextReaction.editedSample ||
       nextActiveTab !== activeTab || nextVisible !== visible
+      nextState.commentScreen !== this.state.commentScreen ||
+      nextProps.fullScreen !== this.props.fullScreen ||
+      ((nextState.reaction.validates || false)) ||
+      nextState.showPublishReactionModal !== this.state.showPublishReactionModal
     );
   }
 
   componentWillUnmount() {
-    UIStore.unlisten(this.onUIStoreChange)
+    UIStore.unlisten(this.onUIStoreChange);
   }
+
+  forcePublishRefreshClose(reaction, show) {
+    this.setState({ reaction, showPublishReactionModal: show });
+    this.forceUpdate();
+  }
+
+  handleModalAnalysesCheck(reaction) {
+    this.setState({ reaction });
+  }
+
+  handleValidation(element) {
+    let validates = [];
+    const reaction = element;
+    const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
+    reaction.publication.taggable_data.scheme_only === true) || false;
+    if ((reaction.rxno || '') === '' && schemeOnly === false) {
+      validates.push({ name: 'reaction_type', value: false, message: 'Reaction Type is missing.' });
+    }
+    const duration = (reaction.duration || '').split(' ').shift();
+    if (duration === '' || (duration === reaction.duration)) {
+      validates.push({ name: 'duration', value: false, message: 'No duration' });
+    }
+    const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
+    if (!hasTemperature) {
+      validates.push({ name: 'temperature', value: false, message: 'Temperature is missing' });
+    }
+    const desc = contentToText(reaction.description).trim() || '';
+    if (desc === '' && schemeOnly === false) {
+      validates.push({ name: 'description', value: false, message: 'Description is missing' });
+    }
+
+    if (schemeOnly === false) {
+      let hasAnalyses = (reaction.container.children.filter(c => c.container_type === 'analyses')[0].children.length > 0);
+      const startingMaterisls = (reaction.starting_materials || []);
+      if (startingMaterisls.length < 1) {
+        validates.push({ name: 'start_material', value: false, message: 'Start material is missing' });
+      }
+      startingMaterisls.forEach((st) => {
+        if (!st.amount || !st.amount.value) {
+          validates.push({ name: 'starting_materials-amount', value: false, message: `${st.molecule_iupac_name}: amount is 0` });
+        }
+      });
+      const products = (reaction.products || []);
+      if (products.length < 1) {
+        validates.push({ name: 'product', value: false, message: 'Product is missing' });
+      }
+      products.forEach((pt) => {
+        if (!pt.amount || !pt.amount.value) {
+          validates.push({ name: 'product-amount', value: false, message: `${pt.molecule_iupac_name}: amount is 0` });
+        }
+        if (pt.analysisArray().length > 0) {
+          hasAnalyses = true;
+        }
+        const validatePt = validateMolecule(pt);
+        if (validatePt.length > 0) {
+          validates = validates.concat(validatePt);
+        }
+      });
+      if (!hasAnalyses) {
+        validates.push({ name: 'analyses', value: false, message: 'Analyses data is missing.' });
+      }
+    }
+    validates = validates.concat(validateYield(reaction));
+    if (validates.length > 0) {
+      reaction.validates = validates;
+      this.setState({ reaction });
+    } else {
+      LoadingActions.start();
+      RepositoryActions.reviewPublish(element);
+    }
+  }
+
+  handleResetValidation() {
+    const { reaction } = this.state;
+    reaction.validates = [];
+    this.setState({ reaction });
+  }
+
+  handleCommentScreen() {
+    this.setState({ commentScreen: true });
+    this.props.toggleCommentScreen(true);
+  }
+
+  handleFullScreen() {
+    this.setState({ commentScreen: false });
+    this.props.toggleFullScreen();
+  }
+
+  handlePublishReactionModal(show) {
+    this.setState({ showPublishReactionModal: show });
+  }
+
+  updateReactionSvg() {
+    const {reaction} = this.state;
+    const materialsSvgPaths = {
+      starting_materials: reaction.starting_materials.map(material => material.svgPath),
+      reactants: reaction.reactants.map(material => material.svgPath),
+      products: reaction.products.map(material => [material.svgPath, material.equivalent])
+    };
+
+    const solvents = reaction.solvents.map((s) => {
+      const name = s.preferred_label;
+      return name;
+    }).filter(s => s);
 
   onUIStoreChange(state) {
     if (state.reaction.activeTab != this.state.activeTab) {
@@ -191,7 +338,6 @@ export default class ReactionDetails extends Component {
       const title = this.productLink(product);
       const setState = () => this.handleProductChange(product);
       const handleSampleChanged = (_, cb) => this.handleProductChange(product, cb);
-
       return (
         <Tab
           key={product.id}
@@ -204,6 +350,7 @@ export default class ReactionDetails extends Component {
             handleSampleChanged={handleSampleChanged}
             handleSubmit={this.handleSubmit}
             style={{ marginTop: 10 }}
+            publish={reaction.is_published}
           />
         </Tab>
       );
@@ -277,6 +424,12 @@ export default class ReactionDetails extends Component {
     const colLabel = reaction.isNew ? null : (
       <ElementCollectionLabels element={reaction} key={reaction.id} placement="right" />
     );
+    if (reaction.is_published) {
+      hasChanged = 'none';
+    }
+
+    const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
+      reaction.publication.taggable_data.scheme_only === true) || false;
 
 
 
@@ -285,7 +438,7 @@ export default class ReactionDetails extends Component {
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
           <span><i className="icon-reaction"/>&nbsp;{reaction.title()}</span>
         </OverlayTrigger>
-        <ConfirmClose el={reaction} />
+        <ConfirmClose el={reaction} forceClose={reaction.is_published} />
         <OverlayTrigger placement="bottom"
             overlay={<Tooltip id="saveReaction">Save and Close Reaction</Tooltip>}>
           <Button
@@ -318,7 +471,7 @@ export default class ReactionDetails extends Component {
             bsStyle="info"
             bsSize="xsmall"
             className="button-right"
-            onClick={() => this.props.toggleFullScreen()}
+            onClick={this.handleFullScreen}
           >
             <i className="fa fa-expand" />
           </Button>
@@ -346,8 +499,17 @@ export default class ReactionDetails extends Component {
         <div style={{display: "inline-block", marginLeft: "10px"}}>
           {colLabel}
           <ElementAnalysesLabels element={reaction} key={reaction.id+"_analyses"}/>
+          { schemeOnly ? <span>&nbsp;<Label>scheme only</Label></span> : '' }
         </div>
-        <PrintCodeButton element={reaction}/>
+        <PublishBtnReaction
+          reaction={reaction}
+          showModal={this.handlePublishReactionModal}
+        />
+        <ReviewPublishBtn element={reaction} showComment={this.handleCommentScreen} validation={this.handleValidation} />
+        <div style={{ display: "inline-block", marginLeft: "10px" }}>
+          <PublishedTag element={reaction} />
+          <LabelPublication element={reaction} />
+        </div>
       </div>
     );
   }
@@ -434,6 +596,7 @@ export default class ReactionDetails extends Component {
           {this.productData(reaction)}
         </Tab>
       ),
+/*
       green_chemistry: (
         <Tab eventKey="green_chemistry" title="Green Chemistry" key={`green_chem_${reaction.id}`}>
           <GreenChemistry
@@ -442,6 +605,7 @@ export default class ReactionDetails extends Component {
           />
         </Tab>
       )
+*/
     };
 
     const tabTitlesMap = {
@@ -470,17 +634,47 @@ export default class ReactionDetails extends Component {
       if (tabContent) { tabContents.push(tabContent); }
     });
 
-    const submitLabel = (reaction && reaction.isNew) ? 'Create' : 'Save';
+    const { showPublishReactionModal } = this.state;
+    const submitLabel = (reaction && reaction.isNew) ? "Create" : "Save";
     const exportButton = (reaction && reaction.isNew) ? null : <ExportSamplesBtn type="reaction" id={reaction.id} />;
 
     const activeTab = (this.state.activeTab !== 0 && this.state.activeTab) || visible[0];
+    const panelStylePre = reaction.isPendingToSave ? 'info' : 'primary';
+    const publication = reaction.tag && reaction.tag.taggable_data &&
+      reaction.tag.taggable_data.publication
+    const panelStyle = publication ? 'success' : panelStylePre;
 
+    const validateObjs = reaction.validates && reaction.validates.filter(v => v.value === false);
+    const validationBlock = (validateObjs && validateObjs.length > 0) ? (
+      <Alert bsStyle="danger" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+        <strong>Submission Alert</strong>&nbsp;&nbsp;
+        <Button bsSize="xsmall" bsStyle="danger" onClick={() => this.handleResetValidation()}>Close Alert</Button>
+        <br />
+        {
+          validateObjs.map(m => (
+            <div key={uuid.v1()}>{m.message}</div>
+          ))
+        }
+      </Alert>
+    ) : null;
+    const schemeTitle = <span>Scheme&nbsp;<HelpInfo source={reaction.is_published ? 'x' : 'scheme'} place="right" /></span>;
     return (
-      <Panel className="eln-panel-detail"
-             bsStyle={reaction.isPendingToSave ? 'info' : 'primary'}>
-        <Panel.Heading>{this.reactionHeader(reaction)}</Panel.Heading>
+      <Panel
+        className="element-panel-detail"
+        bsStyle={panelStyle}
+      >
+        <Panel.Heading>{this.reactionHeader(reaction)}{validationBlock}</Panel.Heading>
         <Panel.Body>
+          <Row><Col md={this.props.fullScreen && this.state.commentScreen ? 6 : 12}>
+            <div className={this.props.fullScreen ? 'full' : 'base'}>
           {this.reactionSVG(reaction)}
+            <PublishReactionModal
+                show={showPublishReactionModal}
+                reaction={cloneDeep(reaction)}
+                onHide={this.handlePublishReactionModal}
+                onPublishRefreshClose={this.forcePublishRefreshClose}
+                onHandleAnalysesCheck={this.handleModalAnalysesCheck}
+            />
           <ElementDetailSortTab
             type="reaction"
             availableTabs={Object.keys(tabContentsMap)}
@@ -501,6 +695,19 @@ export default class ReactionDetails extends Component {
             </Button>
             {exportButton}
           </ButtonToolbar>
+            </div>
+          </Col>
+            {
+              this.props.fullScreen && this.state.commentScreen ?
+                <Col md={6}>
+                  <div className={this.props.fullScreen ? 'full' : 'base'}>
+                    <ReactionDetailsRepoComment reactionId={reaction.id} />
+                  </div>
+                </Col>
+                :
+                <div />
+            }
+          </Row>
         </Panel.Body>
       </Panel>
     );
@@ -510,4 +717,7 @@ export default class ReactionDetails extends Component {
 ReactionDetails.propTypes = {
   reaction: PropTypes.object,
   toggleFullScreen: PropTypes.func,
+  toggleCommentScreen: PropTypes.func.isRequired,
+  fullScreen: PropTypes.bool.isRequired,
+  validates: PropTypes.array
 }

@@ -18,6 +18,17 @@ import XTdCont from './extra/ElementsTableEntriesXTdCont';
 import { elementShowOrNew } from './routesUtils';
 import SvgWithPopover from './common/SvgWithPopover';
 import UserStore from './stores/UserStore';
+import { PublishedTag } from './PublishCommon';
+
+const reactionPublished = (element) => {
+  if (element.type === 'reaction') {
+    return (
+      <PublishedTag element={element} />
+    );
+  }
+  return (<span />);
+};
+
 
 export default class ElementsTableEntries extends Component {
   constructor(props) {
@@ -365,8 +376,9 @@ export default class ElementsTableEntries extends Component {
                   {this.reactionStatus(element)}
                   {' '}
                   {this.reactionRole(element)}
-                  <br/>
+                  <br />
                   {sampleMoleculeName}
+                  {reactionPublished(element)}
                   <ElementCollectionLabels element={element} key={element.id}/>
                   {this.sampleAnalysesLabels(element)}
                   {this.topSecretIcon(element)}

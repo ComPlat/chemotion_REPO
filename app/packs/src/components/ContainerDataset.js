@@ -11,6 +11,8 @@ import UserStore from './stores/UserStore';
 import GenericDS from './models/GenericDS';
 import GenericDSDetails from './generic/GenericDSDetails';
 import { absOlsTermId } from '../admin/generic/Utils';
+import Container from './models/Container';
+
 import InboxActions from './actions/InboxActions';
 import InstrumentsFetcher from './fetchers/InstrumentsFetcher';
 import ChildOverlay from './managing_actions/ChildOverlay';
@@ -99,7 +101,12 @@ export default class ContainerDataset extends Component {
   }
 
   handleAttachmentDownload(attachment) {
-    Utils.downloadFile({ contents: `/api/v1/attachments/${attachment.id}`, name: attachment.filename });
+    const {currentUser} = UserStore.getState()
+    if (!currentUser) {
+      Utils.downloadFile({ contents: `/api/v1/public/download/attachment?id=${attachment.id}` });
+    } else {
+      Utils.downloadFile({contents: `/api/v1/attachments/${attachment.id}`, name: attachment.filename});
+    }
   }
 
   handleAttachmentRemove(attachment) {

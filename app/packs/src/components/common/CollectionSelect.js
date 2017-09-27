@@ -7,7 +7,7 @@ export default class CollectionSelect extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      unsharedRoots: CollectionStore.getState().unsharedRoots || [],
+      unsharedRoots: CollectionStore.getState().lockedRoots || [],
       value: props.value,
       options: []
     };
@@ -51,6 +51,8 @@ export default class CollectionSelect extends React.Component {
 
   ColOptions() {
     const { unsharedRoots } = this.state;
+
+    console.log(unsharedRoots);
     const cAllTree = [];
     this.makeTree(cAllTree, unsharedRoots || [], 0);
 

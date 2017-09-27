@@ -97,6 +97,7 @@ export default class ElementDetails extends Component {
 
     this.handleResize = this.handleResize.bind(this);
     this.toggleFullScreen = this.toggleFullScreen.bind(this);
+    this.toggleCommentScreen = this.toggleCommentScreen.bind(this);
     this.onDetailChange = this.onDetailChange.bind(this);
     this.checkSpectraMessage = this.checkSpectraMessage.bind(this);
   }
@@ -130,6 +131,10 @@ export default class ElementDetails extends Component {
     const { selecteds, activeKey, deletingElement, spectraMsg } = state;
     this.setState(prevState => ({ ...prevState, selecteds, activeKey, deletingElement }));
     this.checkSpectraMessage(spectraMsg);
+  }
+
+  toggleCommentScreen(t) {
+    this.setState({ fullScreen: t });
   }
 
   toggleFullScreen() {
@@ -167,6 +172,8 @@ export default class ElementDetails extends Component {
           <SampleDetails
             sample={el}
             toggleFullScreen={this.toggleFullScreen}
+            toggleCommentScreen={this.toggleCommentScreen}
+            fullScreen={this.state.fullScreen}
           />
         );
       case 'reaction':
@@ -174,6 +181,8 @@ export default class ElementDetails extends Component {
           <ReactionDetails
             reaction={el}
             toggleFullScreen={this.toggleFullScreen}
+            toggleCommentScreen={this.toggleCommentScreen}
+            fullScreen={this.state.fullScreen}
           />
         );
       case 'wellplate':

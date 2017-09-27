@@ -405,7 +405,28 @@ module Reporter
           (@std_rxn ? [{"insert"=>"\n"}] : []) +
           product_analyses_delta +
           dangerous_delta +
+          doi_delta +
           bib_delta
+      end
+
+      def doi_delta
+        dd = []
+        rdoi = obj.dig(:tag, :taggable_data, :publication, :doi)
+        pdois = (obj.dig(:products) || []).map {|p| p.dig(:tag, :taggable_data, :publication, :doi)}.compact
+        if rdoi.present?
+          dd = [{
+           "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://doi.org/#{rdoi}\n"
+          }]
+        end
+        if pdois.present?
+          dd += [{
+           "insert" => "Additional information on the analysis of the target compound is available via Chemotion repository:  \n"
+          }]
+          pdois.each do |d|
+            dd += [{ "insert" => "https://doi.org/#{d}\n" }]
+          end
+        end
+        dd
       end
 
       def synthesis_name_delta

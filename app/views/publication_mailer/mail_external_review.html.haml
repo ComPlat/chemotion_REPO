@@ -1,0 +1,7 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p A temporary account for #{@embargo_collection} has been created!
+%p Account: #{@external_acct}
+%p Password: #{@external_pwd}
+%br
+%p You can use this account/password to access:
+%a{ href: "#{@proto + @host}/home/embargo"} #{@proto + @host}/home/embargo

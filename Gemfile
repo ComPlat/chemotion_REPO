@@ -23,6 +23,7 @@ gem 'countries'
 gem 'daemons'
 gem 'delayed_cron_job'
 gem 'delayed_job_active_record'
+gem 'activejob_dj_overrides'
 gem 'devise'
 gem 'dotenv-rails', require: 'dotenv/rails-now'
 
@@ -69,6 +70,9 @@ gem 'omniauth-orcid', git: 'https://github.com/datacite/omniauth-orcid'
 gem 'omniauth_openid_connect'
 gem 'omniauth-oauth2', '~> 1.7', '>= 1.7.2'
 
+gem 'chem_scanner', git: 'git@git.scc.kit.edu:ComPlat/chem_scanner.git'
+gem 'ffi-rzmq'
+
 gem 'pandoc-ruby'
 gem 'paranoia', '~> 2.0'
 gem 'pg', '~> 0.20.0'
@@ -110,6 +114,7 @@ gem 'webpacker', git: 'https://github.com/rails/webpacker', branch: 'master'
 gem 'whenever', require: false
 
 gem 'yaml_db'
+gem 'moneta'
 
 group :development do
   gem 'better_errors' # allows to debug exception on backend from browser
@@ -191,4 +196,3 @@ eln_plugin = File.join(File.dirname(__FILE__), "Gemfile.plugin")
 if File.exists?(eln_plugin)
   eval_gemfile eln_plugin
 end
-

@@ -7,6 +7,7 @@ import {
 import 'moment-precise-range-plugin';
 import Clipboard from 'clipboard';
 import { permitOn } from './common/uis';
+import HelpInfo from '../components/common/HelpInfo';
 
 export default class ReactionDetailsDuration extends Component {
   constructor(props) {
@@ -104,7 +105,7 @@ export default class ReactionDetailsDuration extends Component {
         </Col>
         <Col md={3} sm={6}>
           <FormGroup>
-            <ControlLabel>Duration</ControlLabel>
+            {reaction.is_published ? <ControlLabel>Duration</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Duration</ControlLabel>} source="requiredField" />}
             <InputGroup>
               <FormControl type="text" value={durationCalc || ''} disabled placeholder="Duration" />
               <InputGroup.Button>

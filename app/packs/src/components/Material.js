@@ -627,6 +627,7 @@ class Material extends Component {
         active
         style={style}
         onClick={() => this.toggleTarget(isTarget)}
+        disabled={this.props.reaction.is_published == true}
         bsStyle={isTarget ? 'success' : 'primary'}
         bsSize="small"
       >{isTarget ? 't' : 'r'}</Button>

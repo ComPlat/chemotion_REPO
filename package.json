@@ -32,6 +32,7 @@
     "deep-equal": "1.0.1",
     "es6-promise-debounce": "^1.0.1",
     "html2pdf.js": "^0.9.3",
+    "html-to-react": "1.4.1",
     "humps": "^2.0.1",
     "immutability-helper": "^2.8.1",
     "immutable": "^4.0.0-rc.12",
@@ -46,6 +47,7 @@
     "numeral": "^1.5.3",
     "process": "^0.11.10",
     "prop-types": "15.6.2",
+    "puppeteer": "^2.1.1",
     "qrcode.react": "^0.6.1",
     "quagga": "^0.11.5",
     "querystring-es3": "^0.2.1",
@@ -99,7 +101,8 @@
     "uuid": "^3.3.2",
     "whatwg-fetch": "2.0.3",
     "xlsx": "^0.17.0",
-    "yarn": "^1.22.10"
+    "yarn": "^1.22.10",
+    "zeromq": "^v6.0.0-beta.6"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.15.0",

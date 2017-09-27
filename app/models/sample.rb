@@ -53,6 +53,11 @@
 #
 
 class Sample < ApplicationRecord
+
+  require 'net/ftp'
+  require 'erb'
+  require 'ostruct'
+
   acts_as_paranoid
   include ElementUIStateScopes
   include PgSearch
@@ -62,6 +67,7 @@ class Sample < ApplicationRecord
   include UnitConvertable
   include Taggable
   include Segmentable
+  include Publishing
 
   STEREO_ABS = ['any', 'rac', 'meso', 'delta', 'lambda', '(S)', '(R)', '(Sp)', '(Rp)', '(Sa)', '(Ra)'].freeze
   STEREO_REL = ['any', 'syn', 'anti', 'p-geminal', 'p-ortho', 'p-meta', 'p-para', 'cis', 'trans', 'fac', 'mer'].freeze
@@ -160,6 +166,7 @@ class Sample < ApplicationRecord
   before_save :attach_svg, :init_elemental_compositions,
               :set_loading_from_ea
   before_save :auto_set_short_label
+  before_save :check_doi
   before_create :check_molecule_name
   before_create :set_boiling_melting_points
   after_save :update_counter
@@ -181,7 +188,7 @@ class Sample < ApplicationRecord
   has_many :reactions_as_reactant, through: :reactions_reactant_samples, source: :reaction
   has_many :reactions_as_solvent, through: :reactions_solvent_samples, source: :reaction
   has_many :reactions_as_product, through: :reactions_product_samples, source: :reaction
-  
+
   has_many :literals, as: :element, dependent: :destroy
   has_many :literatures, through: :literals
 
@@ -208,6 +215,8 @@ class Sample < ApplicationRecord
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   belongs_to :molecule, optional: true
 
+  has_one :doi, as: :doiable
+
   accepts_nested_attributes_for :molecule_name
   accepts_nested_attributes_for :collections_samples
   accepts_nested_attributes_for :molecule, update_only: true
@@ -220,6 +229,14 @@ class Sample < ApplicationRecord
 
   delegate :computed_props, to: :molecule, prefix: true
   delegate :inchikey, to: :molecule, prefix: true, allow_nil: true
+
+  def molfile_pubchem
+    version = Chemotion::OpenBabelService.molfile_version(self.molfile)
+    mf = Chemotion::OpenBabelService.mofile_clear_coord_bonds(self.molfile, version)
+    mf = molfile unless mf
+    mf&.split(/^\$\$\$\$/).first
+  end
+
 
   def molecule_sum_formular
     (decoupled? ? sum_formula : molecule&.sum_formular) || ''
@@ -243,6 +260,18 @@ class Sample < ApplicationRecord
 
   def analyses
     self.container ? self.container.analyses : Container.none
+  end
+
+  #TODO move to molecule (chemotion_ELN)
+  def pubchem_cid
+    mol = self.molecule
+    cid = mol.tag && mol.tag.taggable_data && mol.tag.taggable_data['pubchem_cid']
+    if cid
+      cid
+    else
+      mol.update_tag!(pubchem_tag: true)
+      mol.tag.taggable_data['pubchem_cid']
+    end
   end
 
   def self.associated_by_user_id_and_reaction_ids(user_id, reaction_ids)

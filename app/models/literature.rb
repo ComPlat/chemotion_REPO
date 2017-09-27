@@ -34,7 +34,7 @@ class Literature < ApplicationRecord
 
   scope :add_user_info, -> {
     joins("inner join users on users.id = literals.user_id")
-    .select("literatures.*, literals.id as literal_id, literals.user_id, literals.litype, (users.first_name || chr(32) || users.last_name) as user_name")
+    .select("literatures.*, literals.id as literal_id, literals.element_type, literals.user_id, literals.litype, (users.first_name || chr(32) || users.last_name) as user_name")
   }
 
   scope :add_element_and_user_info, -> {

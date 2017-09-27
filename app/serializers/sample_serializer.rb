@@ -9,6 +9,13 @@ class SampleSerializer < ActiveModel::Serializer
   has_many :elemental_compositions, serializer: ElementalCompositionSerializer
   has_many :segments
 
+  def is_repo_public
+    cols = object.tag&.taggable_data['collection_labels']&.select do |c|
+      c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
+    end
+    cols.present? && cols.length.positive?
+  end
+
   def code_log
     CodeLogSerializer.new(object.code_log).serializable_hash
   end

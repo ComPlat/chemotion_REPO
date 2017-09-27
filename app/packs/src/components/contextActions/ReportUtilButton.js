@@ -27,7 +27,7 @@ const showComputedPropsTasks = () => {
   ElementActions.showComputedPropsTasks();
 };
 
-const ReportUtilButton = ({ customClass }) => {
+const ReportUtilButton = ({ customClass, isDisabled=false  }) => {
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
   const enableComputedProps = MatrixCheck(currentUser.matrix, 'computedProp');
   const enableReactionPredict = MatrixCheck(currentUser.matrix, 'reactionPrediction');
@@ -70,7 +70,7 @@ const ReportUtilButton = ({ customClass }) => {
           Report
         </MenuItem>
         <MenuItem divider />
-        <MenuItem onSelect={showFormatContainer} title="Analyses Formatting">
+        <MenuItem onSelect={showFormatContainer} disabled={isDisabled} title="Analyses Formatting">
           Format Analyses
         </MenuItem>
         <MenuItem onSelect={ElementActions.showLiteratureDetail} title="Reference Manager">
@@ -87,10 +87,12 @@ const ReportUtilButton = ({ customClass }) => {
 
 ReportUtilButton.propTypes = {
   customClass: PropTypes.string,
+  isDisabled: PropTypes.bool,
 };
 
 ReportUtilButton.defaultProps = {
   customClass: null,
+  isDisabled: false,
 };
 
 export default ReportUtilButton;

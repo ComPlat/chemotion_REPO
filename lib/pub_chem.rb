@@ -5,6 +5,8 @@ module PubChem
 
   #debug_output $stderr
   PUBCHEM_HOST = 'pubchem.ncbi.nlm.nih.gov'
+  DEPOSITOR_NAME = 'Chemotion'
+
 
   def self.http_s
     Rails.env.test? && "http://" || "https://"
@@ -100,6 +102,22 @@ module PubChem
   rescue StandardError => e
     Rails.logger.error "[PubChemError] of [get_molfiles_by_inchikeys] with inchikey [#{inchikeys}], exception [#{e.backtrace}]"
     return nil
+  end
+
+  def self.get_sid_from_doi(doi)
+    options = {
+      :timeout => 10,
+      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
+      :body => { 'sourceid' => doi }
+    }
+    begin
+      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
+      return nil unless resp.success?
+      resp.body.presence&.strip
+    rescue => e
+      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
+      return nil
+    end
   end
 
   def self.get_molfile_by_smiles(smiles)

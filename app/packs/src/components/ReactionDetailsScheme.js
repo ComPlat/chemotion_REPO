@@ -21,6 +21,7 @@ import { rolesOptions, conditionsOptions } from './staticDropdownOptions/options
 import OlsTreeSelect from './OlsComponent';
 import ReactionDetailsDuration from './ReactionDetailsDuration';
 import { permitOn } from './common/uis';
+import HelpInfo from '../components/common/HelpInfo';
 
 import NotificationActions from './actions/NotificationActions';
 import TextTemplateActions from './actions/TextTemplateActions';
@@ -848,7 +849,7 @@ export default class ReactionDetailsScheme extends Component {
             <Row>
               <Col md={6}>
                 <FormGroup>
-                  <ControlLabel>Type (Name Reaction Ontology)</ControlLabel>
+                  {reaction.is_published ? <ControlLabel>Type (Name Reaction Ontology)</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Type (Name Reaction Ontology)</ControlLabel>} source="requiredField" />}
                   <OlsTreeSelect
                     selectName="rxno"
                     selectedValue={(reaction.rxno && reaction.rxno.trim()) || ''}
@@ -862,7 +863,7 @@ export default class ReactionDetailsScheme extends Component {
             <Row>
               <Col md={12}>
                 <FormGroup>
-                  <ControlLabel>Description</ControlLabel>
+                  {reaction.is_published ? <ControlLabel>Description</ControlLabel> : <span><HelpInfo optionalElement={<ControlLabel className="field_required">Description</ControlLabel>} source="requiredField" />&nbsp;<HelpInfo source="description" place="right" /></span>}
                   <div className="quill-resize">
                     {
                       permitOn(reaction) ?

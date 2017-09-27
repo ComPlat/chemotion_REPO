@@ -28,7 +28,7 @@ const RndNoAnalyses = ({ addButton }) => (
 const RndOrder = ({
   sample, mode, readOnly, isDisabled, handleRemove, handleSubmit,
   handleMove, handleUndo, handleAccordionOpen, toggleAddToReport, toggleMode,
-  orderContainers, addButton,
+  orderContainers, addButton, publish
 }) => {
   return (
     <div>
@@ -51,6 +51,7 @@ const RndOrder = ({
               handleAccordionOpen={handleAccordionOpen}
               handleUndo={handleUndo}
               toggleAddToReport={toggleAddToReport}
+              publish={publish}
             />
           );
         })
@@ -66,8 +67,8 @@ const RndEdit = ({
   sample, mode, handleRemove, handleSubmit, handleAccordionOpen,
   toggleAddToReport, toggleMode, activeAnalysis, orderContainers, readOnly,
   isDisabled, addButton, handleChange, handleUndo,
+  publish,
 }) => {
-
   const headerDeletedFunc = container => (
     <HeaderDeleted
       container={container}
@@ -89,12 +90,15 @@ const RndEdit = ({
       handleSubmit={handleSubmit}
       handleAccordionOpen={handleAccordionOpen}
       toggleAddToReport={toggleAddToReport}
+      publish={publish}
     />
   );
 
   return (
     <div>
+      { publish ? null :
       <p>{AnalysisModeBtn(mode, toggleMode, isDisabled)}{addButton()}</p>
+      }
       <PanelGroup
         id="editable-analysis-list"
         defaultActiveKey={0}

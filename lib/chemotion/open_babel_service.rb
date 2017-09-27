@@ -137,6 +137,22 @@ M  END
     inchi_info[:inchikey]
   end
 
+  def self.inchi_info_from_molfile(molfile)
+    c = OpenBabel::OBConversion.new
+    c.set_in_format 'mol'
+
+    m = OpenBabel::OBMol.new
+    c.read_string m, molfile
+
+    c.set_out_format 'inchi'
+    inchi = c.write_string(m, false).to_s.gsub(/\n/, '').strip
+
+    c.set_out_format 'inchikey'
+    inchikey = c.write_string(m, false).to_s.gsub(/\n/, '').strip
+
+    [inchi, inchikey]
+  end
+
   def self.molfile_from_cano_smiles(cano_smiles)
     c = OpenBabel::OBConversion.new
     c.set_in_format 'can'
@@ -472,6 +488,19 @@ M  END
     # partial_smi = c.write_string(f, true)
 
     return smi
+  end
+
+  def self.get_ob_molfile_from_molfile molfile
+    c = OpenBabel::OBConversion.new
+    m = OpenBabel::OBMol.new
+    f = OpenBabel::OBMol.new
+
+    c.set_in_format('mol')
+    c.read_string(m, molfile)
+
+    c.set_out_format 'mol'
+    mf = c.write_string(m, false)
+    mf
   end
 
   def self.substructure_match query, molfile_target

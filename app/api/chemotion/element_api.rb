@@ -76,7 +76,17 @@ module Chemotion
         deleted = { 'sample' => [] }
         %w[sample reaction wellplate screen research_plan].each do |element|
           next unless params[element][:checkedAll] || params[element][:checkedIds].present?
-          deleted[element] = @collection.send(element + 's').by_ui_state(params[element]).destroy_all.map(&:id)
+          elements = @collection.send(element + 's').by_ui_state(params[element])
+
+          elements.each do |el|
+            pub = el.publication
+
+            next if pub.nil?
+            pub.update_state(Publication::STATE_DECLINED)
+            pub.process_element(Publication::STATE_DECLINED)
+            pub.inform_users(Publication::STATE_DECLINED, current_user.id)
+          end
+          deleted[element] = elements.destroy_all.map(&:id)
         end
 
         # explicit inner join on reactions_samples to get soft deleted reactions_samples entries
@@ -95,13 +105,20 @@ module Chemotion
 
       desc "return selected elements from the list. (only samples an reactions)"
       post do
+
         selected = { 'samples' => [], 'reactions' => [] }
-        %w[sample reaction].each do |element|
-          next unless params[element][:checkedAll] || params[element][:checkedIds].present?
-          selected[element + 's'] = @collection.send(element + 's').by_ui_state(params[element]).map do |e|
-            ElementPermissionProxy.new(current_user, e, user_ids).serialized
-          end
+
+        @collection_ids = [@collection.id] + Collection.joins(:sync_collections_users)
+        .where('sync_collections_users.collection_id = collections.id and sync_collections_users.user_id = ?', current_user).references(:collections)&.pluck(:id)
+
+        selected['samples'] = Sample.joins(:collections_samples).where('collections_samples.collection_id in (?)',@collection_ids).by_ui_state(params['sample']).distinct.map do |e|
+          ElementPermissionProxy.new(current_user, e, user_ids).serialized
         end
+
+        selected['reactions'] = Reaction.joins(:collections_reactions).where('collections_reactions.collection_id in (?)',@collection_ids).by_ui_state(params['reaction']).distinct.map do |e|
+          ElementPermissionProxy.new(current_user, e, user_ids).serialized
+        end
+
         # TODO: fallback if sample are not in owned collection and currentCollection is missing
         # (case when cloning report)
         selected

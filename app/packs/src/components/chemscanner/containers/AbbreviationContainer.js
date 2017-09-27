@@ -1,11 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-// import { connect } from 'react-redux';
 import { Button } from 'react-bootstrap';
 import 'whatwg-fetch';
 
-// import * as types from '../actions/ActionTypes';
-// import { CALL_API } from '../middleware/api';
 import AbbreviationManagement from '../components/AbbreviationManagement';
 
 function RemoveRowBtn({ onClick, node }) {
@@ -26,7 +23,8 @@ function RemoveRowBtn({ onClick, node }) {
 
 RemoveRowBtn.propTypes = {
   onClick: PropTypes.func.isRequired,
-  node: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
+  // eslint-disable-next-line react/forbid-prop-types
+  node: PropTypes.object.isRequired,
 };
 
 export default class AbbreviationManagementContainer extends React.Component {
@@ -46,7 +44,7 @@ export default class AbbreviationManagementContainer extends React.Component {
   }
 
   componentDidMount() {
-    fetch('/api/v1/chemscanner/abbreviations/all', {
+    fetch('/api/v1/public_chemscanner/abbreviations/all', {
       credentials: 'same-origin',
       headers: {
         Accept: 'application/json',
@@ -158,8 +156,7 @@ export default class AbbreviationManagementContainer extends React.Component {
     const deleteCol = {
       headerName: '',
       field: 'type',
-      editable: false,
-      suppressFilter: true,
+      filter: false,
       cellRendererFramework: RemoveRowBtn,
       cellRendererParams: {
         onClick: this.removeRow
@@ -174,12 +171,13 @@ export default class AbbreviationManagementContainer extends React.Component {
     ];
 
     const superatomColumnDefs = [
-      { ...deleteCol, width: 40 },
+      { ...deleteCol, width: 40, filter: false },
       { headerName: 'Superatom', field: 'abb', width: 120 },
       { headerName: 'SMILES', field: 'smi' },
     ];
     const defaultColDef = {
-      enableValue: true
+      filter: true,
+      resizable: true,
     };
 
     return (

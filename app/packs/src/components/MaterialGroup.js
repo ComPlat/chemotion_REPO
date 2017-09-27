@@ -12,6 +12,7 @@ import { defaultMultiSolventsSmilesOptions } from './staticDropdownOptions/optio
 import { ionic_liquids } from './staticDropdownOptions/ionic_liquids';
 import { reagents_kombi } from './staticDropdownOptions/reagents_kombi';
 import { permitOn } from './common/uis';
+import HelpInfo from '../components/common/HelpInfo';
 
 const MaterialGroup = ({
   materials, materialGroup, deleteMaterial, onChange,
@@ -194,7 +195,7 @@ const GeneralMaterialGroup = ({
             { !isReactants && <th>{refTHead}</th> }
             <th>{headers.show_label}</th>
             { !isReactants && <th>{headers.tr}</th> }
-            { !isReactants && <th>{headers.amount}</th> }
+            {!isReactants && <th>{reaction.is_published ? <span>{headers.amount}</span> : <HelpInfo optionalElement={<span className="field_required">{headers.amount}</span>} source="requiredField" />}</th>}
             { !isReactants && <th /> }
             { !isReactants && <th /> }
             { showLoadingColumn && !isReactants && <th>{headers.loading}</th> }

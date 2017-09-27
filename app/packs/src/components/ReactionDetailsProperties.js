@@ -13,6 +13,7 @@ import StringTag from './StringTag';
 import { solventsTL } from './utils/reactionPredefined';
 import OlsTreeSelect from './OlsComponent';
 import { permitOn } from './common/uis';
+import HelpInfo from '../components/common/HelpInfo';
 
 export default class ReactionDetailsProperties extends Component {
   constructor(props) {
@@ -87,7 +88,7 @@ export default class ReactionDetailsProperties extends Component {
               />
             </div>
             <FormGroup>
-              <ControlLabel>Type (Name Reaction Ontology)</ControlLabel>
+              {reaction.is_published ? <ControlLabel>Type (Name Reaction Ontology)</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Type (Name Reaction Ontology)</ControlLabel>} source="requiredField" />}
               <OlsTreeSelect
                 selectName="rxno"
                 selectedValue={(reaction.rxno && reaction.rxno.trim()) || ''}

@@ -19,6 +19,7 @@ import { statusOptions } from './staticDropdownOptions/options';
 import LineChartContainer from './lineChart/LineChartContainer';
 import EditableTable from './lineChart/EditableTable';
 import { permitOn } from './common/uis';
+import HelpInfo from '../components/common/HelpInfo';
 
 export default class ReactionDetailsMainProperties extends Component {
   constructor(props) {
@@ -130,7 +131,7 @@ export default class ReactionDetailsMainProperties extends Component {
           </Col>
           <Col md={3}>
             <FormGroup>
-              <ControlLabel>Temperature</ControlLabel>
+              {reaction.is_published ? <ControlLabel>Temperature</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Temperature</ControlLabel>} source="requiredField" />}
               <InputGroup>
                 <InputGroup.Button>
                   <OverlayTrigger placement="bottom" overlay={temperatureTooltip}>

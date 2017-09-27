@@ -1,0 +1,4 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p #{@publication.element_type} ##{@publication.element_id} has been accepted.
+%br
+%p Once the embargo is released, this publication will be published.

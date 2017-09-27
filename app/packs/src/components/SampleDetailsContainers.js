@@ -162,7 +162,17 @@ export default class SampleDetailsContainers extends Component {
   }
 
   toggleAddToReport(container) {
-    container.extended_metadata.report = !container.extended_metadata.report;
+    if (this.props.publish) {
+      // TODO: use null and true because the Boolean value is coerced into string: check why
+      // container.extended_metadata.publish = container.extended_metadata.publish ? null : true;
+      if (container.extended_metadata.publish && (container.extended_metadata.publish === true || container.extended_metadata.publish === 'true')) {
+        container.extended_metadata.publish = false;
+      } else {
+        container.extended_metadata.publish = true;
+      }
+    } else {
+      container.extended_metadata.report = !container.extended_metadata.report;
+    }
     this.handleChange(container);
   }
 
@@ -206,6 +216,7 @@ export default class SampleDetailsContainers extends Component {
             handleUndo={this.handleUndo}
             toggleAddToReport={this.toggleAddToReport}
             toggleMode={this.toggleMode}
+            publish={this.props.publish}
           />
         );
       } else {
@@ -225,6 +236,7 @@ export default class SampleDetailsContainers extends Component {
             isDisabled={isDisabled}
             addButton={this.addButton}
             toggleMode={this.toggleMode}
+            publish={this.props.publish}
           />
         );
       }

@@ -15,6 +15,7 @@ import NotificationActions from '../components/actions/NotificationActions';
 import { UserLabelModal } from '../components/UserLabels';
 import MatrixCheck from '../components/common/MatrixCheck';
 import GroupElement from './GroupElement';
+import AuthorModal from './users/AuthorModal';
 
 export default class UserAuth extends Component {
   constructor(props) {
@@ -23,6 +24,7 @@ export default class UserAuth extends Component {
       currentUser: props.currentUser || { name: 'unknown' },
       showModal: false,
       showLabelModal: false,
+      showAuthorsModal: false,
       currentGroups: [],
       currentDevices: [],
       selectedUsers: null,
@@ -40,6 +42,8 @@ export default class UserAuth extends Component {
     this.handleClose = this.handleClose.bind(this);
     this.handleLabelShow = this.handleLabelShow.bind(this);
     this.handleLabelClose = this.handleLabelClose.bind(this);
+    this.handleAuthorsShow = this.handleAuthorsShow.bind(this);
+    this.handleAuthorsClose = this.handleAuthorsClose.bind(this);
     this.handleSubscriptionShow = this.handleSubscriptionShow.bind(this);
     this.handleSubscriptionClose = this.handleSubscriptionClose.bind(this);
     this.handleDeviceMetadataModalShow = this.handleDeviceMetadataModalShow.bind(this);
@@ -135,6 +139,15 @@ export default class UserAuth extends Component {
     this.setState({ showLabelModal: false });
   }
 
+  handleAuthorsShow() {
+    this.setState({
+      showAuthorsModal: true,
+    });
+  }
+
+  handleAuthorsClose() {
+    this.setState({ showAuthorsModal: false });
+  }
   // show modal Subscription
   handleSubscriptionShow() {
     MessagesFetcher.fetchChannelWithUser()
@@ -573,18 +586,31 @@ export default class UserAuth extends Component {
             {this.state.currentUser.is_templates_moderator ? templatesLink : null}
             <MenuItem eventKey="3" href="/users/edit" >Change Password</MenuItem>
             <MenuItem eventKey="5" href="/pages/affiliations" >My Affiliations</MenuItem>
-            <MenuItem onClick={this.handleShow}>My Groups & Devices</MenuItem>
             {userLabel}
+            {
+              this.state.currentUser ?
+                <MenuItem eventKey="10" onClick={this.handleAuthorsShow}>My Collaboration</MenuItem> : null
+            }
+            {/* <MenuItem onClick={this.handleShow}>My Groups</MenuItem> */}
             {/* <MenuItem onClick={this.handleSubscriptionShow}>My Subscriptions</MenuItem>
                 Disable for now as there is no subsciption channel yet (Paggy) */}
             <MenuItem eventKey="7" href="/command_n_control" >My Devices</MenuItem>
             {this.state.currentUser.molecule_editor ? moderatorLink : null}
+            {
+              this.state.currentUser && this.state.currentUser.is_article_editor ?
+                <MenuItem eventKey="8" href="/home/newseditor/new">News Editor</MenuItem> : null
+            }
+            {
+              this.state.currentUser && this.state.currentUser.is_howto_editor ?
+                <MenuItem eventKey="9" href="/home/howtoeditor/ein">How-To Editor</MenuItem> : null
+            }
           </NavDropdown>
           <NavItem onClick={() => this.logout()} style={{ marginRight: '5px' }} className="" title="Log out">
             <Glyphicon glyph="log-out" />
           </NavItem>
         </Nav>
-        {this.renderModal()}
+        <AuthorModal show={this.state.showAuthorsModal} currentUser={this.state.currentUser} onHide={this.handleAuthorsClose} />
+        { this.renderModal() }
         <UserLabelModal showLabelModal={this.state.showLabelModal} onHide={() => this.handleLabelClose()} />
         {this.renderSubscribeModal()}
         {this.renderDeviceMetadataModal()}

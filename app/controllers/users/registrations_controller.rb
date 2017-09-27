@@ -9,7 +9,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def new
     build_resource({})
-
     @affiliation = resource.affiliations.build
 
     # try to get the data from the oauth provider from the session

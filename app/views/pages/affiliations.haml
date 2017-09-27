@@ -25,7 +25,6 @@
             %th.col-xs-1 Country
             %th.col-xs-3 Organization
             %th.col-xs-2 Department
-            %th.col-xs-2 Group
             %th.col-xs-1 from
             %th.col-xs-1 to
             %th.col-xs-1
@@ -35,7 +34,6 @@
               %td= aff.affiliation.country
               %td= aff.affiliation.organization
               %td= aff.affiliation.department
-              %td= aff.affiliation.group
               %td{id: "aff_#{aff.id}_from", class: 'affiliation_from'}= aff.from.strftime("%b-%Y") if aff.from
               %td{id: "aff_#{aff.id}_to",   class: 'affiliation_to'  }= aff.to.strftime("%b-%Y") if aff.to
               %td
