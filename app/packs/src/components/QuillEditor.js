@@ -50,7 +50,7 @@ export default class QuillEditor extends React.Component {
     }));
 
     this.editor = false;
-    this.id = _.uniqueId('quill-editor-');
+    this.id = uniqueId('quill-editor-');
 
     this.getContents = this.getContents.bind(this);
     this.updateEditorValue = this.updateEditorValue.bind(this);
@@ -71,7 +71,7 @@ export default class QuillEditor extends React.Component {
     const oldContents = this.editor ? this.getContents() : null;
 
     if (oldContents && nextVal &&
-      !_.isEqual(nextVal.ops, oldContents.ops)) {
+      !isEqual(nextVal.ops, oldContents.ops)) {
       this.setState({ value: nextVal });
       const sel = this.editor.getSelection();
       this.editor.setContents(nextVal);

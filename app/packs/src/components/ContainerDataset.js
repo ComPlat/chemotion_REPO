@@ -12,6 +12,7 @@ import GenericDS from './models/GenericDS';
 import GenericDSDetails from './generic/GenericDSDetails';
 import { absOlsTermId } from '../admin/generic/Utils';
 import Container from './models/Container';
+import UserStore from '../components/stores/UserStore'
 
 import InboxActions from './actions/InboxActions';
 import InstrumentsFetcher from './fetchers/InstrumentsFetcher';

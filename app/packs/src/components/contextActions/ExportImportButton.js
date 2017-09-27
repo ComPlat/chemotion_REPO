@@ -36,10 +36,10 @@ const ExportImportButton = ({ isDisabled, updateModalProps, customClass }) => (
         title='Export as ZIP archive'>
         Export collections
       </MenuItem>
-      <MenuItem onSelect={() => importCollectionFunction(updateModalProps)}
+      {/* <MenuItem onSelect={() => importCollectionFunction(updateModalProps)}
         title='Import collections from ZIP archive'>
         Import collections
-      </MenuItem>
+      </MenuItem> */}
       {/* <MenuItem onSelect={() => importChemScannerFunction(updateModalProps)} disabled={isDisabled} */}
       {/*   title='Import from Docs'> */}
       {/*   Import elements from Docs */}

@@ -542,7 +542,6 @@ module Chemotion
         #   wells: :sample
         # )
         # user_screens = Screen.by_collection_id(collection_id)
-
         case scope&.first
         when Sample
           elements[:samples] = scope&.pluck(:id)

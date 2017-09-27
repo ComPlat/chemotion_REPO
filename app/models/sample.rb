@@ -216,6 +216,8 @@ class Sample < ApplicationRecord
 
   has_one :doi, as: :doiable
 
+  has_one :doi, as: :doiable
+
   accepts_nested_attributes_for :molecule_name
   accepts_nested_attributes_for :collections_samples
   accepts_nested_attributes_for :molecule, update_only: true

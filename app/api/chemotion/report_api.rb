@@ -236,6 +236,7 @@ module Chemotion
       optional :fileDescription
     end
     post :reports, each_serializer: ReportSerializer do
+# byebug
       spl_settings = hashize(params[:splSettings])
       rxn_settings = hashize(params[:rxnSettings])
       si_rxn_settings = hashize(params[:siRxnSettings])
