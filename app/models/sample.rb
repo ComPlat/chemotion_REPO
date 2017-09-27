@@ -227,6 +227,8 @@ class Sample < ApplicationRecord
 
   has_one :doi, as: :doiable
 
+  has_one :doi, as: :doiable
+
   accepts_nested_attributes_for :molecule_name
   accepts_nested_attributes_for :collections_samples
   accepts_nested_attributes_for :molecule, update_only: true
@@ -254,7 +256,6 @@ class Sample < ApplicationRecord
     version = Chemotion::OpenBabelService.molfile_version(self.molfile)
     mf = Chemotion::OpenBabelService.mofile_clear_coord_bonds(self.molfile, version)
     mf = molfile unless mf
-
     mf&.split(/^\$\$\$\$/).first
   end
 
