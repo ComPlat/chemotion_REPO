@@ -486,7 +486,7 @@ class ViewSpectra extends React.Component {
     peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity,
     layout, curveSt,
   }) {
-    const { handleSubmit } = this.props;
+    const { handleSubmit, sample } = this.props;
     const si = this.getSpcInfo();
     if (!si) return;
     const fPeaks = FN.rmRef(peaks, shift);

@@ -1,0 +1,7 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p #{simple_format(@mail_base)}
+%br
+%p #{simple_format(@mail_content)}
+%br
+%p See it at:
+%a{ href: "#{@protocol + @host}/inchikey/#{@suffix}"} #{@protocol + @host}/inchikey/#{@suffix}

@@ -2,7 +2,8 @@ import alt from 'src/stores/alt/alt';
 import UsersFetcher from 'src/fetchers/UsersFetcher';
 import GenericSgsFetcher from 'src/fetchers/GenericSgsFetcher';
 import GenericDSsFetcher from 'src/fetchers/GenericDSsFetcher';
-
+import Aviator from 'aviator';
+import SegmentsFetcher from '../fetchers/SegmentsFetcher';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 
 class UserActions {
@@ -57,11 +58,11 @@ class UserActions {
       credentials: 'same-origin',
       data: { authenticity_token: DocumentHelper.getMetaContent("csrf-token") }
     })
-      .then(response => {
-        if (response.status == 204) {
-          location = '/home';
-        }
-      });
+    .then(response => {
+      Aviator.navigate('/', { silent: true });
+      location.href = '/';
+      location.reload();
+    });
   }
 
   fetchProfile() {

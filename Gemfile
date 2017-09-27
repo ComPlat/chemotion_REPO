@@ -25,6 +25,7 @@ gem 'countries'
 
 gem 'delayed_cron_job'
 gem 'delayed_job_active_record'
+gem 'activejob_dj_overrides'
 gem 'devise'
 gem 'dotenv-rails', require: 'dotenv/rails-now'
 
@@ -120,6 +121,7 @@ gem 'webpacker', git: 'https://github.com/rails/webpacker', branch: 'master'
 gem 'whenever', require: false
 
 gem 'yaml_db'
+gem 'moneta'
 
 gem 'icalendar'
 

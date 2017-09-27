@@ -30,6 +30,9 @@ import HyperLinksSection from 'src/components/common/HyperLinksSection';
 import ImageAnnotationEditButton from 'src/apps/mydb/elements/details/researchPlans/ImageAnnotationEditButton';
 import ImageAnnotationModalSVG from 'src/apps/mydb/elements/details/researchPlans/ImageAnnotationModalSVG';
 
+import { absOlsTermId } from '../admin/generic/Utils';
+import Container from './models/Container';
+
 export default class ContainerDataset extends Component {
   constructor(props) {
     super();
@@ -122,10 +125,12 @@ export default class ContainerDataset extends Component {
   }
 
   handleAttachmentDownload(attachment) {
-    Utils.downloadFile({
-      contents: `/api/v1/attachments/${attachment.id}`,
-      name: attachment.filename,
-    });
+    const {currentUser} = UserStore.getState()
+    if (!currentUser) {
+      Utils.downloadFile({ contents: `/api/v1/public/download/attachment?id=${attachment.id}` });
+    } else {
+      Utils.downloadFile({contents: `/api/v1/attachments/${attachment.id}`, name: attachment.filename});
+    }
   }
 
   handleAttachmentRemove(attachment) {

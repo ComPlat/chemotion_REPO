@@ -16,18 +16,29 @@ module Entities
     expose :code_log, using: 'Entities::CodeLogEntity'
     expose :children, using: 'Entities::ContainerEntity'
     expose :dataset, using: 'Labimotion::DatasetEntity'
+    expose :dataset_doi
+
+    def dataset_doi
+      object.full_doi
+    end
+
+    def pub_id
+      object.publication&.id
+    end
 
     def extended_metadata
       return unless object.extended_metadata
 
       report = (object.extended_metadata['report'] == 'true' || object.extended_metadata == 'true')
-
       {}.tap do |metadata|
         metadata[:report] = report
         metadata[:status] = object.extended_metadata['status']
         metadata[:kind] = object.extended_metadata['kind']
         metadata[:index] = object.extended_metadata['index']
         metadata[:instrument] = object.extended_metadata['instrument']
+        metadata[:dataset_doi] = object.full_doi  if object.respond_to? :full_doi
+        metadata[:pub_id] = object.publication&.id  if object.respond_to? :publication
+
         if object.extended_metadata['content'].present?
           metadata[:content] =
             JSON.parse(object.extended_metadata['content'])

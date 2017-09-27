@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
+  # before_action :store_user_location!, if: :storable_location?
   before_action :authenticate_user!
   protect_from_forgery with: :null_session, if: Proc.new { |c| c.request.format == 'application/json' }
 
@@ -15,9 +16,8 @@ class ApplicationController < ActionController::Base
       affiliations_attributes: [
         :country,
         :organization,
-        :department,
-        :group
-      ],
+        :department
+      ]
     ])
     devise_parameter_sanitizer.permit(:sign_in) do |u|
       u.permit(:login, :password, :remember_me)
@@ -27,4 +27,12 @@ class ApplicationController < ActionController::Base
       :email
     ])
   end
+
+  # def storable_location?
+    # request.get? && is_navigational_format? && !devise_controller? && !request.xhr?
+  # end
+
+  # def store_user_location!
+    # store_location_for(:user, )
+  # end
 end

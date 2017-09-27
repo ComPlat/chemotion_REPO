@@ -76,6 +76,18 @@ import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
+import RepositoryActions from './actions/RepositoryActions';
+import PublishSampleModal from './PublishSampleModal';
+import RepoXvialButton from './common/RepoXvialButton';
+import {
+  PublishedTag,
+  LabelPublication,
+  PublishBtn,
+  ReviewPublishBtn,
+  validateMolecule,
+} from './PublishCommon';
+import SampleDetailsRepoComment from './SampleDetailsRepoComment';
+
 const MWPrecision = 6;
 
 const decoupleCheck = (sample) => {
@@ -133,6 +145,10 @@ export default class SampleDetails extends React.Component {
       startExport: false,
       sfn: UIStore.getState().hasSfn,
       saveInventoryAction: false,
+      showPublishSampleModal: false,
+      commentScreen: false,
+      xvial: (props.sample && props.sample.tag && props.sample.tag.taggable_data && props.sample.tag.taggable_data.xvial && props.sample.tag.taggable_data.xvial.num) || '',
+      currentUser: UserStore.getState().currentUser || {}
     };
 
     const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -159,6 +175,14 @@ export default class SampleDetails extends React.Component {
 
     this.handleStructureEditorSave = this.handleStructureEditorSave.bind(this);
     this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
+    this.showPublishSampleModal = this.showPublishSampleModal.bind(this);
+    this.forcePublishRefreshClose = this.forcePublishRefreshClose.bind(this);
+    this.handleCommentScreen = this.handleCommentScreen.bind(this);
+    this.handleFullScreen = this.handleFullScreen.bind(this);
+    this.handleValidation = this.handleValidation.bind(this);
+    this.handleResetValidation = this.handleResetValidation.bind(this);
+    this.handleAssociateClick = this.handleAssociateClick.bind(this);
+    this.handleRepoXvial = this.handleRepoXvial.bind(this);
   }
 
   componentDidMount() {
@@ -199,6 +223,67 @@ export default class SampleDetails extends React.Component {
     UIStore.unlisten(this.onUIStoreChange);
   }
 
+  onUIStoreChange(state) {
+    if (state.sample.activeTab !== this.state.activeTab) {
+      this.setState(previousState => ({
+        ...previousState, activeTab: state.sample.activeTab
+      }));
+    }
+  }
+
+  forcePublishRefreshClose(sample, show) {
+    this.setState({ sample, showPublishSampleModal: show });
+    this.forceUpdate();
+  }
+
+  handleAssociateClick() {
+    const { sample } = this.state;
+    ElementActions.tryFetchReactionById(sample.tag.taggable_data.reaction_id);
+    sample.validates = [];
+    this.setState({ sample });
+  }
+
+  handleValidation(element) {
+    let validates = [];
+    const sample = element;
+    if (sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.reaction_id) {
+      validates.push({ name: `sample [${sample.name}]`, value: false, message: `${sample.name} is associated with a Reaction.` });
+    } else {
+      const analyses = sample.analysisArray();
+      if (analyses.length < 1) {
+        validates.push({ name: `sample [${sample.name}]`, value: false, message: 'Analyses data is missing.' });
+      } else {
+        const validatePt = validateMolecule(sample);
+        if (validatePt.length > 0) {
+          validates = validates.concat(validatePt);
+        }
+      }
+    }
+    if (validates.length > 0) {
+      sample.validates = validates;
+      this.setState({ sample });
+    } else {
+      LoadingActions.start();
+      RepositoryActions.reviewPublish(element);
+    }
+  }
+
+  handleResetValidation() {
+    const { sample } = this.state;
+    sample.validates = [];
+    this.setState({ sample });
+  }
+
+  handleCommentScreen() {
+    this.setState({ commentScreen: true });
+    this.props.toggleCommentScreen(true);
+  }
+
+  handleFullScreen() {
+    this.setState({ commentScreen: false });
+    this.props.toggleFullScreen();
+  }
+
   handleMolfileShow() {
     this.setState({
       showMolfileModal: true
@@ -236,6 +321,29 @@ export default class SampleDetails extends React.Component {
       this.smilesInput.value = smi;
       this.handleMoleculeBySmile(cas);
     });
+  }
+
+  handleRepoXvial(elementId, xvial) {
+    this.setState({ xvial });
+    ElementActions.refreshElements('sample');
+  }
+
+
+  showStructureEditor() {
+    this.setState({
+      showStructureEditor: true
+    });
+  }
+
+  hideStructureEditor() {
+    this.setState({
+      showStructureEditor: false
+    });
+  }
+
+  toggleInchi() {
+    const { showInchikey } = this.state;
+    this.setState({ showInchikey: !showInchikey });
   }
 
   handleMoleculeBySmile(cas) {
@@ -382,6 +490,32 @@ export default class SampleDetails extends React.Component {
     this.setState({
       showElementalComposition: !this.state.showElementalComposition
     });
+  }
+
+  showPublishSampleModal(show) {
+    this.setState({showPublishSampleModal: show});
+    this.forceUpdate();
+  }
+
+  svgOrLoading(sample) {
+    let svgPath = '';
+    if (this.state.loadingMolecule) {
+      svgPath = '/images/wild_card/loading-bubbles.svg';
+    } else {
+      svgPath = sample.svgPath;
+    }
+    let className = svgPath ? 'svg-container' : 'svg-container-empty'
+    return (
+      sample.can_update
+        ? <div className={className}
+               onClick={this.showStructureEditor.bind(this)}>
+            <Glyphicon className="pull-right" glyph='pencil'/>
+            <SVG key={svgPath} src={svgPath} className="molecule-mid"/>
+          </div>
+        : <div className={className}>
+            <SVG key={svgPath} src={svgPath} className="molecule-mid"/>
+          </div>
+    );
   }
 
   handleChemIdentSectionToggle() {
@@ -1135,6 +1269,24 @@ export default class SampleDetails extends React.Component {
   clipboardTooltip() {
     return (
       <Tooltip id="assign_button">copy to clipboard</Tooltip>
+    )
+  }
+  sampleContainerTab(ind) {
+    const { sample } = this.state;
+    const isPub = !!(sample.publication && sample.publication.published_at);
+    return (
+      <Tab eventKey={ind} title="Analyses" key={'Container' + sample.id.toString()}>
+        <ListGroupItem style={{ paddingBottom: 20 }}>
+          <SampleDetailsContainers
+            sample={sample}
+            setState={(sample) => {this.setState(sample)}}
+            handleSampleChanged={this.handleSampleChanged}
+            handleSubmit={this.handleSubmit}
+            fromSample
+            publish={isPub}
+          />
+        </ListGroupItem>
+      </Tab>
     );
   }
 
@@ -1476,6 +1628,20 @@ export default class SampleDetails extends React.Component {
     return (<div />);
   }
 
+  onTabPositionChanged(visible) {
+    this.setState({ visible });
+  }
+
+  isRepoSecretExternalLabel() {
+    const sample = this.state.sample || {};
+    const currentUser = this.state.currentUser || {};
+    if (sample.is_repo_public) {
+      if (currentUser.is_reviewer || currentUser.id === sample.created_by) return false;
+      return true;
+    }
+    return false;
+  }
+
   render() {
     const sample = this.state.sample || {};
     const { visible } = this.state;
@@ -1509,6 +1675,22 @@ export default class SampleDetails extends React.Component {
       inventory: 'Inventory'
     };
 
+    let { showPublishSampleModal } = this.state
+
+    for (let j = 0; j < XTabs.count; j += 1) {
+      if (XTabs[`on${j}`](sample)) {
+        const NoName = XTabs[`content${j}`];
+        tabContentsMap[`xtab_${j}`] = (
+          <Tab eventKey={`xtab_${j}`} key={`xtab_${j}`} title={XTabs[`title${j}`]} >
+            <ListGroupItem style={{ paddingBottom: 20 }} >
+              <NoName sample={sample} />
+            </ListGroupItem>
+          </Tab>
+        );
+        tabTitlesMap[`xtab_${j}`] = XTabs[`title${j}`];
+      }
+    }
+
     addSegmentTabs(sample, this.handleSegmentsChange, tabContentsMap);
     const stb = [];
     const tabContents = [];
@@ -1529,6 +1711,38 @@ export default class SampleDetails extends React.Component {
         stb.push(klass.label);
       }
     });
+
+    const validateObjs = sample.validates && sample.validates.filter(v => v.value === false);
+    let validationBlock = null;
+    if (validateObjs && validateObjs.length > 0) {
+      const validateAssociate = sample.validates && sample.validates.filter(v => v.value === false && v.message.includes('associated'));
+      if (validateAssociate && validateAssociate.length > 0) {
+        validationBlock = (
+          <Alert bsStyle="danger" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+            <strong>Submission Alert</strong>
+            <p>
+              This sample is associated with a Reaction and can not be published alone.
+            </p>
+            <Button bsSize="xsmall" onClick={() => this.handleAssociateClick()}>Go to Reaction&nbsp;<i className="icon-reaction" /></Button>
+            <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => this.handleResetValidation()}>Close Alert</Button>
+          </Alert>
+        );
+      } else {
+        validationBlock = (
+          <Alert bsStyle="danger" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+            <strong>Submission Alert</strong>&nbsp;&nbsp;
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => this.handleResetValidation()}>Close Alert</Button>
+            <br />
+            {
+              validateObjs.map(m => (
+                <div key={uuid.v1()}>{m.message}</div>
+              ))
+            }
+          </Alert>
+        );
+      }
+    }
 
     const { pageMessage } = this.state;
     const messageBlock = (pageMessage
@@ -1560,34 +1774,59 @@ export default class SampleDetails extends React.Component {
     const activeTab = (this.state.activeTab !== 0 && stb.indexOf(this.state.activeTab) > -1
       && this.state.activeTab) || visible.get(0);
 
+    const publication = sample.tag && sample.tag.taggable_data &&
+      sample.tag.taggable_data.publication;
+
     return (
       <Panel
-        className="eln-panel-detail"
-        bsStyle={sample.isPendingToSave ? 'info' : 'primary'}
+        className="element-panel-detail"
+        bsStyle={publication ? 'success' : (sample.isPendingToSave ? 'info' : 'primary')}
       >
         <Panel.Heading>
           {this.sampleHeader(sample)}
           {messageBlock}
+          {validationBlock}
         </Panel.Heading>
         <Panel.Body>
-          {this.sampleInfo(sample)}
-          <ListGroup>
-            <ElementDetailSortTab
-              type="sample"
-              availableTabs={Object.keys(tabContentsMap)}
-              tabTitles={tabTitlesMap}
-              onTabPositionChanged={this.onTabPositionChanged}
-              addInventoryTab={sample.inventory_sample}
-            />
-            {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
-            <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
-              {tabContents}
-            </Tabs>
-          </ListGroup>
-          {this.sampleFooter()}
-          {this.structureEditorModal(sample)}
-          {this.renderMolfileModal()}
-          <CommentModal element={sample} />
+          <Row><Col md={this.props.fullScreen && this.state.commentScreen ? 6 : 12}>
+            <div className={this.props.fullScreen ? 'full' : 'base'}>
+              {this.sampleInfo(sample)}
+              <ListGroup>
+                <ElementDetailSortTab
+                  type="sample"
+                  availableTabs={Object.keys(tabContentsMap)}
+                  tabTitles={tabTitlesMap}
+                  onTabPositionChanged={this.onTabPositionChanged}
+                  addInventoryTab={sample.inventory_sample}
+                />
+                {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
+                <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
+                  {tabContents}
+                </Tabs>
+              <PublishSampleModal
+                show={showPublishSampleModal}
+                sample={sample}
+                onHide={() => this.showPublishSampleModal(false)}
+                onPublishRefreshClose={this.forcePublishRefreshClose}
+              />
+              </ListGroup>
+              {this.sampleFooter()}
+              {this.structureEditorModal(sample)}
+              {this.renderMolfileModal()}
+              <CommentModal element={sample} />
+            </div>
+          </Col>
+            {
+              this.props.fullScreen && this.state.commentScreen ?
+                <Col md={6}>
+                  <div className={this.props.fullScreen ? 'full' : 'base'}>
+                    <SampleDetailsRepoComment sampleId={sample.id} />
+                  </div>
+                </Col>
+                :
+                <div />
+            }
+          </Row>
         </Panel.Body>
       </Panel>
     );
@@ -1597,4 +1836,6 @@ export default class SampleDetails extends React.Component {
 SampleDetails.propTypes = {
   sample: PropTypes.object,
   toggleFullScreen: PropTypes.func,
-};
+  toggleCommentScreen: PropTypes.func.isRequired,
+  fullScreen: PropTypes.bool.isRequired
+}

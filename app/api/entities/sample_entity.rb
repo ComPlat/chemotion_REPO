@@ -22,6 +22,7 @@ module Entities
       expose :comments,                                     using: 'Entities::CommentEntity'
       expose :comment_count
       expose :dry_solvent
+      expose! :created_by
     end
 
     # Level 1 attributes
@@ -71,10 +72,26 @@ module Entities
       expose! :target_amount_value,     unless: :displayed_in_list
       expose! :user_labels
       expose! :xref
+
+      ## Repo
+      expose! :doi,                     unless: :displayed_in_list, anonymize_with: nil, using: Entities::DoiEntity
+      expose! :publication,             unless: :displayed_in_list
     end
     # rubocop:enable Layout/LineLength, Layout/ExtraSpacing, Metrics/BlockLength
 
     expose_timestamps
+
+    expose :is_repo_public
+
+    # expose :molecule, using: Entities::MoleculeEntity
+    # expose :container, using: Entities::ContainerEntity
+
+    def is_repo_public
+      cols = object.tag&.taggable_data['collection_labels']&.select do |c|
+        c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
+      end
+      cols.length > 0
+    end
 
     private
 

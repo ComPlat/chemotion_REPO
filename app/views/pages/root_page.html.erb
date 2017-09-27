@@ -1,0 +1,184 @@
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Chemotion</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="/welcome">Home <span class="sr-only">(current)</span></a></li>
+        <li><a href="/home/about">About</a></li>
+        <li><a href="/home/newsroom">Newsroom</a></li>
+        <li style="display: none" ><a href="/howto">How-To&nbsp;<span class="label" style="background-color: #2495cf">trial</span></a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+          <a href="http://www.dfg.de/" class="dfg_logo">
+            Projects funded by
+            <%= image_tag "dfg_logo.png" %>
+          </a>
+        </li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+
+<div class="main-image">
+   <p>
+     <%= image_tag "logo.png", id: 'logo-image' %> CHEMOTION
+  </p>
+  <p>
+     Electronic Laboratory Notebook & <br />
+     Repository for Research Data
+   </p>
+   <%= image_tag "molecule.png", id: 'molecule-image' %>
+</div>
+
+<br/>
+<br/>
+<br/>
+
+<div align="center" class="cards_flex">
+  <section class="cards_ary">
+    <article class="card_u card--1">
+      <div class="card__info-hover">
+        <div class="card__desc">
+          <p>View, edit, and export spectra<br/>from jcamp files</p>
+        </div>
+        <div class="card__try">
+          <a role="button" class="btn btn-primary" style="flex-grow: 3; font-size: 0.8vw;" href="http://eln.chemotion.net/chemspectra-editor">Try ChemSpectra</a>
+        </div>
+      </div>
+      <div class="card__img"></div>
+      <div class="card__img--hover"></div>
+      <div class="card__info">
+        <h4 class="card__title"><img src="../images/repo/logo.png" width="26" />&nbsp;ChemSpectra</h4>
+      </div>
+    </article>
+
+    <article class="card_u card--2">
+      <div class="card__info-hover">
+        <div class="card__desc">
+          <ul>
+            <li>Save your reactions and samples</li>
+            <li>Make calculations</li>
+            <li>Generate reports</li>
+            <li>Import your data with ChemScanner</li>
+          </ul>
+        </div>
+        <div class="card__try">
+          <a role="button" class="btn btn-primary" style="flex-grow: 3; font-size: 0.8vw;" href="http://eln.chemotion.net">Try our Electronic Lab Notebook</a>
+        </div>
+      </div>
+      <div class="card__img"></div>
+      <div class="card__img--hover"></div>
+      <div class="card__info">
+        <h4 class="card__title"><img src="../images/repo/logo.png" width="26" />&nbsp;Electronic Lab Notebook</h4>
+      </div>
+    </article>
+
+    <article class="card_u card--3">
+      <div class="card__info-hover">
+        <div class="card__desc">
+          <p>Repository for molecules, reactions and research data</p>
+          <ul>
+            <li>Publish your structures, attach your characterization data, and make them citable via DOI</li>
+            <li>Automated registration at various scientific data providers</li>
+            <li>Long-term archival - from scientists for scientists</li>
+          </ul>
+        </div>
+        <div class="card__try">
+          <a role="button" class="btn btn-primary" style="flex-grow: 3; font-size: 0.8vw;" href=<%=Rails.env.development? ? "http://localhost:3000/welcome" : "https://www.chemotion-repository.net/welcome" %>>Enter the Chemotion Repository</a>
+        </div>
+      </div>
+      <div class="card__img"></div>
+      <div class="card__img--hover"></div>
+      <div class="card__info">
+        <h4 class="card__title"><img src="../images/repo/logo.png" width="26" />&nbsp;Chemotion Repository</h4>
+      </div>
+    </article>
+
+    <article class="card_u card--4">
+      <div class="card__info-hover">
+        <div class="card__desc">
+          <p>Extract chemical information from cdx, cdxml, or cdx(ml) containing doc and docx files</p>
+        </div>
+        <div class="card__try">
+          <a role="button" class="btn btn-primary" style="flex-grow: 3; font-size: 0.8vw;" href="http://eln.chemotion.net/chemscanner">Try our ChemScanner</a>
+        </div>
+      </div>
+      <div class="card__img"></div>
+      <div class="card__img--hover"></div>
+      <div class="card__info">
+        <h4 class="card__title"><img src="../images/repo/logo.png" width="26" />&nbsp;ChemScanner</h4>
+      </div>
+    </article>
+
+  </section>
+</div>
+
+<br/>
+<br/>
+
+<div align="center" class="col text-center">
+  <div>
+    <div class="row">
+      <div class="col info-panel">
+        <div class="jumbotron">
+          <h3>Electronic Lab Notebook: Introduction Videos</h3>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/q1HrnRFA0aU" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/Kk2YUajYRDE" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/LFLmeoD20O8" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/bBhnUDH1Ziw" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/-Tvzy9u-Ke4" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/vou76lO3oiQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-center">
+    <hr />
+  <div class="row">
+    <div class="col-lg-16">
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="/home/about">About</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="https://github.com/ComPlat/chemotion_ELN">ELN source code</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="http://www.ioc.kit.edu/braese/">Institute web page</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <ul class="nav nav-pills nav-stacked">
+          <li><a href="/home/contact">Contact Us</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <hr>
+    <div class="row">
+        <div class="col-lg-12">
+            <ul class="nav nav-pills nav-justified">
+                <li><a href="http://www.kit.edu">© 2019 Karlsruhe Institute of Technology.</a></li>
+            </ul>
+        </div>
+    </div>
+</div>

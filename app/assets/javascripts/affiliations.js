@@ -33,10 +33,9 @@ function attachAutoComplete(type, elementId) {
     }
   });
 
-  attachAutoComplete('countries', 'country-select');
-  attachAutoComplete('organizations', 'organization-select');
-  attachAutoComplete('departments', 'department-select');
-  attachAutoComplete('groups', 'group-select');
+  attachAutoComplete("countries", "country-select")
+  attachAutoComplete("organizations", "organization-select")
+  attachAutoComplete("departments", "department-select")
 
 //  const userEmailInput = document.querySelector('input#user_email');
 //  if (userEmailInput) {

@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css?family=EB+Garamond:400,700,700i,800,800i');
+@import url('https://fonts.googleapis.com/css?family=Spectral:400,700,700i');
+
+$timelinecolor: #5A5A5A; // #337ab7; // #0079bf;
+$boxbackgroundcolor: rgba(62,62,62, 0.1);
+
+.newseditor_review {
+  border: none;
+  font-family: 'Spectral', serif;
+  & .panel-heading {
+    background-color: white !important;
+    border: none;
+    font-weight: bolder;
+    & > span {
+      font-size: 2em;
+      font-weight: bolder;
+    }
+  }
+  & .panel-body {
+    background-color: white !important;
+    border: none;
+    max-height: 50vh;
+    overflow-Y: auto;
+    border-radius: 6px;
+    & > span {
+      font-size: 1.6em;
+      font-family: 'Spectral', serif;
+    }
+    & .ql-container .ql-editor > p > img {
+      max-width: 30vw;
+    }
+  }
+}
+
+.news_time_box {
+  margin:0 0 0 10%;
+  // height: 630px;
+  // overflow: hidden;
+  padding: 0px 0px 40px 120px;
+  & > ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    transition: all 0.5s linear;
+    top: unset;
+    &:last-of-type{
+      // top:80px
+      &:before {
+        top: unset;
+      }
+    }
+    &:before {
+      content: "";
+      display: block;
+      width: 0;
+      // height: 100%;
+      height: 80%;
+      border:1px dashed $timelinecolor;
+      position: absolute;
+      // top:0;
+      top: 100px;
+      left:30px
+    }
+    & > li {
+      margin: 20px 60px 60px;
+      position: relative;
+      padding: 10px 20px;
+      background-color: $boxbackgroundcolor;
+      // background:rgba(255, 255, 255, 0.3);
+      // color:#fff;
+      border-radius: 10px;
+      box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.5);
+      line-height: 20px;
+      // width: 35%;
+      & > span {
+        content: "";
+        display: block;
+        width: 0;
+        height: 100%;
+        border: 1px solid $timelinecolor;
+        position: absolute;
+        top :0;
+        left: -30px;
+        &:before, &:after {
+          content: "";
+          display: block;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: $timelinecolor;
+          border:2px solid #fff;
+          position: absolute;
+          left: -15px
+        }
+        &:before {
+          top: -10px;
+        }
+        &:after {
+          top: 95%;
+          background-color: #eee; // aliceblue;
+          border: 2px solid $timelinecolor;
+        }
+      }
+      & .title {
+        font-weight: bolder;
+        font-size: 2rem;
+        background-color: unset;
+        line-height: 1.6;
+      }
+      & .readedit {
+        font-weight: normal;
+        float: right;
+      }
+    }
+  }
+  & .content {
+    font-weight: normal;
+  }
+  & .author {
+    margin-top: 10px;
+    text-transform: capitalize;
+    font-style: italic;
+    // text-align: right;
+    margin-right: 20px
+  }
+  & .created_at span{
+    position: absolute;
+    left: -100px;
+    color: $timelinecolor; // #5A5A5A;
+    font-size:80%;
+    font-weight: bold;
+  }
+  & .created_at span:first-child{
+    top:-6px;
+    left: -220px;
+    font-size: large;
+    font-weight: normal;
+  }
+  & .created_at span:last-child{top:94%}
+
+}
+
+// @import 'https://fonts.googleapis.com/css?family=Open+Sans:300,400';
+.news-preview-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 45% !important;
+  width: 60vw !important;
+}
+
+%reset { margin: 0; padding: 0; }
+%flex { display: flex; justify-content: center;	align-items: center; }
+
+@mixin animated($timein: null, $delay: null) {
+ transition: all $timein ease-in-out;
+  transition-delay: $delay;
+}
+
+@mixin dimensions($width: null, $height: null) { width: $width; min-height: $height; }
+
+// $maincolor: #009688;
+$maincolor: #337ab7;
+//     html{height: 100%;}
+//     body{
+
+//       @extend %flex;
+//        font-family: 'Open Sans', sans-serif;
+//       width: 100%;
+//       min-height: 100%;
+//       background: #009688;
+//       font-size: 16px;
+//       overflow: hidden;
+//     }
+
+
+//     *, *:before, *:after {
+//       box-sizing: border-box;
+//     }
+.news-content{
+  position: relative;
+  // animation: animatop 0.9s  cubic-bezier(0.425, 1.140, 0.470, 1.125) forwards ;
+}
+
+.news-card{
+ @include dimensions( 580px,  100px);
+  padding: 20px;
+  border-radius: 3px;
+  background-color: white;
+  box-shadow: 0px 10px 20px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+  &:after {
+    content: '';
+    display: block;
+    width: 190px;
+    height: 300px;
+    // background: cadetblue;
+    background: #337ab7;
+    position: absolute;
+    animation: rotatemagic 0.75s cubic-bezier(0.425, 1.040, 0.470, 1.105) 1s both;
+  }
+}
+
+.badgescard{
+  padding: 10px 20px;
+  border-radius: 3px;
+  background-color: #ECECEC;
+  width: 560px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: -1;
+  left: 10px;
+  bottom: 10px;
+  margin-bottom: 50px;
+  justify-content: flex-end;
+  @extend %flex;
+  animation: animainfos 0.5s cubic-bezier(0.425, 1.040, 0.470, 1.105) 0.75s forwards;
+  span {
+  font-size: 1em;
+  margin: 0px 2px;
+  opacity: 0.6;
+  }
+}
+
+.firstinfo{
+  @extend %flex;
+  flex-direction: row;
+  z-index:2;
+  position: relative;
+  img{
+    // border-radius: 50%;
+    width: 120px;
+    height: 120px;
+  }
+  .profileinfo{
+    padding: 0px 20px;
+    width: 100vw;
+    // h1{ font-size: 1.8em;}
+    h1{ font-size: 1.6em; font-weight: bolder; }
+    h3{ font-size: 1.2em;
+        color: $maincolor;
+        font-style: italic;
+    }
+    p.bio{
+      padding: 10px 0px;
+      color: #5A5A5A;
+      line-height: 1.2;
+      font-style: initial;
+    }
+  }
+}
+
+@keyframes animatop{
+  0%{
+    opacity: 0;
+    bottom: -500px;}
+  100%{
+   opacity: 1;
+  bottom: 0px;}
+}
+
+@keyframes animainfos{
+  0%{
+    bottom:  30px;}
+  100%{
+  bottom: 0px;}
+}
+
+@keyframes rotatemagic{
+  0%{
+    opacity: 0;
+    transform: rotate(-0deg);
+    top: -24px;
+    left: -253px;
+  }
+  100%{
+    transform: rotate(-30deg);
+    top: -24px;
+    left: -78px;
+  }
+}

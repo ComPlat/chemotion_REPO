@@ -19,6 +19,10 @@
     position: relative;
     z-index: 2;
   }
+
+  .button-caret {
+    border-radius: unset;
+  }
 }
 
 .list-group-item-wrap {

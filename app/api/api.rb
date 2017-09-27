@@ -61,11 +61,13 @@ class API < Grape::API
     def is_public_request?
       request.path.start_with?(
         '/api/v1/public/',
-        '/api/v1/chemscanner/',
+        '/api/v1/public_chemscanner/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
         '/api/v1/gate/ping',
+        '/api/v1/search/',
+        '/api/v1/suggestion'
       )
     end
 
@@ -157,7 +159,8 @@ class API < Grape::API
   mount Chemotion::DevicesAnalysisAPI
   mount Chemotion::GateAPI
   mount Chemotion::ElementAPI
-  mount Chemotion::ChemScannerAPI
+  mount Chemotion::PublicChemscannerAPI
+  mount Chemotion::ChemscannerAPI
   mount Chemotion::ChemSpectraAPI
   mount Chemotion::InstrumentAPI
   mount Chemotion::MessageAPI
@@ -183,12 +186,12 @@ class API < Grape::API
   mount Labimotion::GenericDatasetAPI
   mount Labimotion::SegmentAPI
   mount Labimotion::LabimotionHubAPI
+  mount Chemotion::RepositoryAPI
+  mount Chemotion::ArticleAPI
 
-  if Rails.env.development?
-    add_swagger_documentation(info: {
-                                title: 'Chemotion ELN',
-                                version: '1.0',
-                              })
-  end
+  add_swagger_documentation(info: {
+    "title": "Chemotion Repository",
+    "version": "1.0"
+  }) if Rails.env.development?
 end
 # rubocop: enable Metrics/BlockLength

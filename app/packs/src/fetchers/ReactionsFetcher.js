@@ -6,6 +6,8 @@ import Reaction from 'src/models/Reaction';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import Literature from 'src/models/Literature';
 import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
+import UIStore from '../stores/UIStore';
+import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
 
 // TODO: Extract common base functionality into BaseFetcher
 export default class ReactionsFetcher {
@@ -22,13 +24,15 @@ export default class ReactionsFetcher {
             reaction.literatures = lits;
           }
           reaction.updateMaxAmountOfProducts();
+          reaction.publication = json.publication || {};
           return reaction;
         }
         const rReaction = new Reaction(json.reaction);
+        rReaction.publication = json.publication || {};
         if (json.error) {
           rReaction.id = `${id}:error:Reaction ${id} is not accessible!`;
         }
-        return rReaction;
+        return new Reaction(defaultAnalysisPublish(rReaction));
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
@@ -49,25 +53,26 @@ export default class ReactionsFetcher {
   }
 
   static create(reaction, method = 'post') {
-    const reactionFiles = AttachmentFetcher.getFileListfrom(reaction.container);
+    const newReaction = defaultAnalysisPublish(reaction);
+    const reactionFiles = AttachmentFetcher.getFileListfrom(newReaction.container);
     let productsFiles = [];
-    reaction.products.forEach((prod) => {
+    newReaction.products.forEach((prod) => {
       const files = AttachmentFetcher.getFileListfrom(prod.container);
       productsFiles = [...productsFiles, ...files];
     });
     const allFiles = reactionFiles.concat(productsFiles);
 
-    const promise = () => fetch(`/api/v1/reactions/${method === 'post' ? '' : reaction.id}`, {
+    const promise = () => fetch(`/api/v1/reactions/${method === 'post' ? '' : newReaction.id}`, {
       credentials: 'same-origin',
       method,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(reaction.serialize())
+      body: JSON.stringify(newReaction.serialize())
     }).then(response => response.json())
-      .then(json => GenericElsFetcher.uploadGenericFiles(reaction, json.reaction.id, 'Reaction')
-      .then(()=> ReactionsFetcher.updateAnnotationsInReaction(reaction))
+      .then(json => GenericElsFetcher.uploadGenericFiles(newReaction, json.reaction.id, 'Reaction')
+      .then(()=> ReactionsFetcher.updateAnnotationsInReaction(newReaction))
         .then(() => this.fetchById(json.reaction.id))).catch((errorMessage) => {
           console.log(errorMessage);
         });
@@ -78,10 +83,10 @@ export default class ReactionsFetcher {
       return Promise.all(tasks).then(() => {
         return promise();
       });
-    }    
-   
+    }
+
     return promise();
-  } 
+  }
 
   static updateAnnotationsInReaction(reaction){
      const tasks=[];
@@ -89,7 +94,7 @@ export default class ReactionsFetcher {
      return Promise.all(tasks);
   }
 
-  static update(reaction) {    
+  static update(reaction) {
     return ReactionsFetcher.create(reaction, 'put');
   }
 }

@@ -50,6 +50,7 @@ class Reaction < ApplicationRecord
   include Taggable
   include ReactionRinchi
   include Labimotion::Segmentable
+  include Publishing
 
   serialize :description, Hash
   serialize :observation, Hash
@@ -138,6 +139,7 @@ class Reaction < ApplicationRecord
 
   has_many :private_notes, as: :noteable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
+  has_one :doi, as: :doiable
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   validates :creator, presence: true
@@ -146,7 +148,9 @@ class Reaction < ApplicationRecord
   before_save :cleanup_array_fields
   before_save :scrub
   before_save :auto_format_temperature!
+  before_save :check_doi
   before_create :auto_set_short_label
+
 
   after_create :update_counter
 
@@ -249,7 +253,8 @@ class Reaction < ApplicationRecord
   end
 
   def yield_amount(sample_id)
-    ReactionsProductSample.find_by(reaction_id: id, sample_id: sample_id).try(:equivalent)
+    rps = ReactionsProductSample.find_by(reaction_id: id, sample_id: sample_id)
+    rps.scheme_yield || rps.equivalent
   end
 
   def solvents_in_svg

@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {FormGroup,InputGroup,FormControl, Overlay, ListGroup, ListGroupItem}
+import { FormGroup, InputGroup, FormControl, Overlay, ListGroup, ListGroupItem, OverlayTrigger, Tooltip }
   from 'react-bootstrap';
 import debounce from 'es6-promise-debounce';
 import { isString } from 'lodash';
@@ -38,6 +38,10 @@ export default class AutoCompleteInput extends React.Component {
   componentDidMount() {
     UIStore.listen(this.onUIChange)
     this.initInputWidth()
+  }
+
+  componentWillUnmount() {
+    UIStore.unlisten(this.onUIChange);
   }
 
   onUIChange(state) {
@@ -274,6 +278,7 @@ export default class AutoCompleteInput extends React.Component {
   renderSuggestions() {
     let {suggestions, error} = this.state
     let types = {
+      chemotion_id: {icon: 'icon-sample', label: 'Chemotion Id'},
       sample_name : {icon: 'icon-sample', label: 'Sample Name'},
       sample_short_label : {icon: 'icon-sample', label: 'Sample Short Label'},
       sample_external_label : {icon: 'icon-sample', label: 'Sample External Label'},
@@ -299,7 +304,10 @@ export default class AutoCompleteInput extends React.Component {
         <div>
           { suggestions.map((suggestion, index) => {
             let suggestionType = types[suggestion.search_by_method]
-            let icon = suggestionType ? suggestionType.icon : ""
+            let icon = suggestionType ? suggestionType.icon : "";
+            if (suggestion.search_by_method == 'chemotion_id' && suggestion.name.startsWith('CRR-')) {
+              icon = 'icon-reaction';
+            }
             let typeLabel = suggestionType ? suggestionType.label : ""
             let name = '';
 
@@ -361,6 +369,8 @@ export default class AutoCompleteInput extends React.Component {
       zIndex: 2
     };
 
+    const searchTooltip = <Tooltip id="search_tooltip">Search by IUPAC name, InChi, Smiles...</Tooltip>;
+
     return (
       <div style={{ position: 'relative' }} >
         <FormGroup ref={this.overlayTarget}
@@ -369,18 +379,20 @@ export default class AutoCompleteInput extends React.Component {
             <InputGroup.Button >
               {this.props.buttonBefore}
             </InputGroup.Button>
-            <FormControl
-              {...this.props.inputAttributes}
-              disabled={this.state.inputDisabled || this.props.inputDisabled}
-              type="text"
-              value={this.props.defaultSearchValue || value || ''}
-              autoComplete="off"
-              ref="input"
-              onFocus={() => this.handleFocus()}
-              onBlur={() => this.handleBlur()}
-              onChange={event => this.handleValueChange(event, this.doneTyping)}
-              onKeyDown={event => this.handleKeyDown(event)}
-            />
+              <OverlayTrigger placement="bottom" delayShow={1000} overlay={searchTooltip}>
+                <FormControl
+                  {...this.props.inputAttributes}
+                  disabled={this.state.inputDisabled || this.props.inputDisabled}
+                  type="text"
+                  value={this.props.defaultSearchValue || value || ''}
+                  autoComplete="off"
+                  ref="input"
+                  onFocus={() => this.handleFocus()}
+                  onBlur={() => this.handleBlur()}
+                  onChange={event => this.handleValueChange(event, this.doneTyping)}
+                  onKeyDown={event => this.handleKeyDown(event)}
+                />
+              </OverlayTrigger>
             <InputGroup.Button>
               {this.props.buttonAfter}
             </InputGroup.Button>

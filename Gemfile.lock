@@ -164,6 +164,9 @@ GEM
     activejob-status (0.2.2)
       activejob (>= 4.2)
       activesupport (>= 4.2)
+    activejob_dj_overrides (0.2.0)
+      delayed_job
+      rails (>= 4.2)
     activemodel (6.1.7.3)
       activesupport (= 6.1.7.3)
     activerecord (6.1.7.3)
@@ -490,6 +493,7 @@ GEM
     mini_mime (1.1.2)
     mini_portile2 (2.8.4)
     minitest (5.20.0)
+    moneta (1.4.2)
     msgpack (1.6.0)
     multi_json (1.15.0)
     multi_xml (0.6.0)
@@ -855,6 +859,7 @@ PLATFORMS
 DEPENDENCIES
   aasm
   activejob-status
+  activejob_dj_overrides
   activerecord-nulldb-adapter
   ancestry
   annotate
@@ -927,6 +932,7 @@ DEPENDENCIES
   memory_profiler
   meta_request
   mimemagic (= 0.3.10)
+  moneta
   net-scp (= 3.0.0)
   net-sftp
   net-ssh

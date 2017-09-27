@@ -41,6 +41,22 @@ module Chemotion
         docx
       end
 
+      desc "get DOI list"
+      params do
+        requires :elements
+      end
+      post :dois do
+        elements = params[:elements]
+        pub_list = []
+        elements.each do |element|
+          publication = Publication.find_by(element_id: element[:id], element_type: element[:type].capitalize)
+          pub_list.push(publication) unless publication.nil?
+          # publications = [publication] + publication.descendants
+        end
+        entities = Entities::PublicationEntity.represent(pub_list, serializable: true)
+        {dois: entities || []}
+      end
+
       params do
         use :export_params
       end

@@ -18,6 +18,7 @@ module Entities
       expose! :starting_materials,                                                      using: 'Entities::ReactionMaterialEntity'
       expose! :type
       expose :comment_count
+
     end
 
     with_options(anonymize_below: 10) do
@@ -46,6 +47,8 @@ module Entities
       expose! :tlc_description,                             unless: :displayed_in_list
       expose! :tlc_solvents,                                unless: :displayed_in_list
       expose! :variations,            anonymize_with: [],                               using: 'Entities::ReactionVariationEntity'
+      ## For repo
+      expose! :doi,                                         unless: :displayed_in_list, using: Entities::DoiEntity
     end
 
     expose_timestamps
@@ -109,4 +112,3 @@ module Entities
     end
   end
 end
-# rubocop:enable Layout/ExtraSpacing, Layout/LineLength

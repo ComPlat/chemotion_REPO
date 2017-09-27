@@ -31,6 +31,9 @@ import MatrixCheck from 'src/components/common/MatrixCheck';
 import GroupElement from 'src/components/navigation/GroupElement';
 import { formatDate } from 'src/utilities/timezoneHelper';
 
+import Functions from './utils/Functions';
+import AuthorModal from './users/AuthorModal';
+
 export default class UserAuth extends Component {
   constructor(props) {
     super(props);
@@ -38,6 +41,7 @@ export default class UserAuth extends Component {
       currentUser: props.currentUser || { name: 'unknown' },
       showModal: false,
       showLabelModal: false,
+      showAuthorsModal: false,
       currentGroups: [],
       currentDevices: [],
       selectedUsers: null,
@@ -55,6 +59,8 @@ export default class UserAuth extends Component {
     this.handleClose = this.handleClose.bind(this);
     this.handleLabelShow = this.handleLabelShow.bind(this);
     this.handleLabelClose = this.handleLabelClose.bind(this);
+    this.handleAuthorsShow = this.handleAuthorsShow.bind(this);
+    this.handleAuthorsClose = this.handleAuthorsClose.bind(this);
     this.handleSubscriptionShow = this.handleSubscriptionShow.bind(this);
     this.handleSubscriptionClose = this.handleSubscriptionClose.bind(this);
     this.handleDeviceMetadataModalShow = this.handleDeviceMetadataModalShow.bind(this);
@@ -147,6 +153,15 @@ export default class UserAuth extends Component {
     this.setState({ showLabelModal: false });
   }
 
+  handleAuthorsShow() {
+    this.setState({
+      showAuthorsModal: true,
+    });
+  }
+
+  handleAuthorsClose() {
+    this.setState({ showAuthorsModal: false });
+  }
   // show modal Subscription
   handleSubscriptionShow() {
     MessagesFetcher.fetchChannelWithUser().then((result) => {
@@ -685,6 +700,11 @@ export default class UserAuth extends Component {
             </MenuItem>
             <MenuItem onClick={this.handleShow}>My Groups & Devices</MenuItem>
             {userLabel}
+            {
+              this.state.currentUser ?
+                <MenuItem eventKey="10" onClick={this.handleAuthorsShow}>My Collaboration</MenuItem> : null
+            }
+            {/* <MenuItem onClick={this.handleShow}>My Groups</MenuItem> */}
             {/* <MenuItem onClick={this.handleSubscriptionShow}>My Subscriptions</MenuItem>
                 Disable for now as there is no subsciption channel yet (Paggy) */}
             {converterBtn}
@@ -693,6 +713,14 @@ export default class UserAuth extends Component {
             </MenuItem>
             {this.state.currentUser.molecule_editor ? moderatorLink : null}
             <MenuItem eventKey="8" href="/generic_elements_admin">Generic Designer</MenuItem>
+            {
+              this.state.currentUser && this.state.currentUser.is_article_editor ?
+                <MenuItem eventKey="8" href="/home/newseditor/new">News Editor</MenuItem> : null
+            }
+            {
+              this.state.currentUser && this.state.currentUser.is_howto_editor ?
+                <MenuItem eventKey="9" href="/home/howtoeditor/ein">How-To Editor</MenuItem> : null
+            }
           </NavDropdown>
           <NavItem
             onClick={() => this.logout()}
@@ -703,11 +731,9 @@ export default class UserAuth extends Component {
             <Glyphicon glyph="log-out" />
           </NavItem>
         </Nav>
-        {this.renderModal()}
-        <UserLabelModal
-          showLabelModal={this.state.showLabelModal}
-          onHide={() => this.handleLabelClose()}
-        />
+        <AuthorModal show={this.state.showAuthorsModal} currentUser={this.state.currentUser} onHide={this.handleAuthorsClose} />
+        { this.renderModal() }
+        <UserLabelModal showLabelModal={this.state.showLabelModal} onHide={() => this.handleLabelClose()} />
         {this.renderSubscribeModal()}
         {this.renderDeviceMetadataModal()}
       </div>

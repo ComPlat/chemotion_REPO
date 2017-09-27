@@ -23,6 +23,9 @@
 .coveralls.yml
 
 .env
+.env.development
+.env.test
+.env.production
 
 /config/matrices.json
 /config/klasses.json
@@ -39,6 +42,7 @@
 !/config/data_collector_keys/.keep
 
 /config/database.yml
+/config/repository_database.yml
 /config/storage.yml
 /config/shrine.yml
 /config/spectra.yml
@@ -52,6 +56,12 @@
 
 /node_modules
 
+/public/newsroom/*
+!/public/newsroom/.keep
+/public/howto/*
+!/public/howto/.keep
+
+!/public/images/molecules/.keep
 /public/images/molecules/*
 !/public/images/molecules/.keep
 
@@ -82,6 +92,7 @@
 /public/images/*
 !/public/images/wild_card/
 !/public/images/ghs/
+!/public/images/creative_common/
 
 /public/editors/*
 !/public/editors/.keep
@@ -94,6 +105,10 @@
 !/public/ontologies/chmo.default.profile.json
 !/public/ontologies/rxno.default.json
 !/public/ontologies/rxno.default.edited.json
+
+/public/directives/*
+!/public/images/directives/.keep
+!/public/images/directives/directives.html
 
 /uploads/*
 !/public/attachments/.keep

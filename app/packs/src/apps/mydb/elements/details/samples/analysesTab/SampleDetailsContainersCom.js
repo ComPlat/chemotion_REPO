@@ -40,6 +40,7 @@ function RndOrder({
   toggleMode,
   orderContainers,
   addButton,
+  publish,
 }) {
   return (
     <div>
@@ -77,6 +78,7 @@ function RndOrder({
               handleAccordionOpen={handleAccordionOpen}
               handleUndo={handleUndo}
               toggleAddToReport={toggleAddToReport}
+              publish={publish}
             />
           );
         })}
@@ -102,6 +104,7 @@ function RndEdit({
   addButton,
   handleChange,
   handleUndo,
+  publish,
 }) {
   const headerDeletedFunc = (container) => (
     <HeaderDeleted container={container} handleUndo={handleUndo} mode={mode} />
@@ -120,22 +123,25 @@ function RndEdit({
       handleSubmit={handleSubmit}
       handleAccordionOpen={handleAccordionOpen}
       toggleAddToReport={toggleAddToReport}
+      publish={publish}
     />
   );
 
   return (
     <div>
-      <p style={{
-        position: 'sticky',
-        top: '0px',
-        zIndex: 1000,
-        backgroundColor: 'white',
+      { publish ? null :
+        <p style={{
+          position: 'sticky',
+          top: '0px',
+          zIndex: 1000,
+          backgroundColor: 'white',
 
-      }}
-      >
-        {AnalysisModeBtn(mode, toggleMode, isDisabled)}
-        {addButton()}
-      </p>
+        }}
+        >
+          {AnalysisModeBtn(mode, toggleMode, isDisabled)}
+          {addButton()}
+        </p>
+      }
       <PanelGroup
         id="editable-analysis-list"
         defaultActiveKey={0}

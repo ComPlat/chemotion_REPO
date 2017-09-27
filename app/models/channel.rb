@@ -27,6 +27,7 @@ class Channel < ApplicationRecord
   SEND_IMPORT_NOTIFICATION = 'Import Notification'
   COMPUTED_PROPS_NOTIFICATION = 'Computed Prop Notification'
   GATE_TRANSFER_NOTIFICATION = 'Gate Transfer Completed'
+  CHEMSCANNER_NOTIFICATION = 'ChemScanner Notification'
   COLLECTION_TAKE_OWNERSHIP = 'Collection Take Ownership'
   EDITOR_CALLBACK = 'EditorCallback'
   COLLECTION_ZIP = 'Collection Import and Export'
@@ -39,6 +40,9 @@ class Channel < ApplicationRecord
   IMPORT_SAMPLES_NOTIFICATION = 'Import Samples Completed'
   COMMENT_ON_MY_COLLECTION = 'New comment on synchronized collection'
   COMMENT_RESOLVED = 'Comment resolved in synchronized collection'
+  # REPOSITORY ONLY
+  PUBLICATION_REVIEW = 'Publication Review'
+  PUBLICATION_PUBLISHED = 'Publication Published'
 
   class << self
     def build_message(**args)

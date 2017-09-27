@@ -5,7 +5,8 @@ import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import BaseFetcher from 'src/fetchers/BaseFetcher';
 import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
-
+import Container from '../models/Container';
+import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
 
 export default class SamplesFetcher {
   static fetchSamplesByUIStateAndLimit(params) {
@@ -47,7 +48,7 @@ export default class SamplesFetcher {
         if (json.error) {
           rSample.id = `${id}:error:Sample ${id} is not accessible!`;
         }
-        return rSample;
+        return new Sample(defaultAnalysisPublish(rSample));
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
@@ -70,6 +71,7 @@ export default class SamplesFetcher {
   }
 
   static update(sample) {
+    const sample = defaultAnalysisPublish(s);
     const files = AttachmentFetcher.getFileListfrom(sample.container);
     const promise = () => fetch(`/api/v1/samples/${sample.id}`, {
       credentials: 'same-origin',
@@ -80,7 +82,7 @@ export default class SamplesFetcher {
       },
       body: JSON.stringify(sample.serialize())
     }).then(response => response.json())
-      .then(json => GenericElsFetcher.uploadGenericFiles(sample, json.sample.id, 'Sample')   
+      .then(json => GenericElsFetcher.uploadGenericFiles(sample, json.sample.id, 'Sample')
       .then(() => BaseFetcher.updateAnnotationsInContainer(sample))
       .then(() => this.fetchById(json.sample.id))).catch((errorMessage) => {
           console.log(errorMessage);
@@ -97,9 +99,10 @@ export default class SamplesFetcher {
     return promise();
   }
 
-  static create(sample) {
-    const files = AttachmentFetcher.getFileListfrom(sample.container);
-    const promise = () => fetch('/api/v1/samples', {
+  static create(s) {
+    const sample = defaultAnalysisPublish(s);
+    let files = AttachmentFetcher.getFileListfrom(sample.container)
+    let promise = ()=> fetch('/api/v1/samples', {
       credentials: 'same-origin',
       method: 'post',
       headers: {
@@ -206,5 +209,20 @@ export default class SamplesFetcher {
     });
 
     return promise;
+  }
+
+  static updateXvial(id, type, data) {
+    return fetch('/api/v1/samples/xvial/update', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id, type, data })
+    }).then(response => response.json())
+      .catch((errorMessage) => {
+        console.log(errorMessage);
+      });
   }
 }

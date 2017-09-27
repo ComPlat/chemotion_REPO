@@ -10,8 +10,9 @@ export default class Literature extends Element {
       litype: 'citedOwn',
       type: 'literature',
       is_new: false,
-      refs: {}
-    });
+      refs: {},
+      element_type: ''
+    })
   }
 
   serialize() {
@@ -24,7 +25,8 @@ export default class Literature extends Element {
       litype: this.litype,
       type: this.type,
       is_new: this.isNew || false,
-      refs: this.refs || {}
+      refs: this.refs || {},
+      element_type: this.element_type
     });
   }
 }

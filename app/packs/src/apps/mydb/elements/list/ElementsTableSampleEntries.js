@@ -26,6 +26,8 @@ import SvgWithPopover from 'src/components/common/SvgWithPopover';
 import { ShowUserLabels } from 'src/components/UserLabels';
 import CommentIcon from 'src/components/comments/CommentIcon';
 
+import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
+
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
   const flattenSamplesId = [];
@@ -92,7 +94,7 @@ TopSecretIcon.propTypes = {
 };
 
 const XvialIcon = ({ label }) => {
-  return (label || '').match(/^X\d+.*/) ? (
+  return (label !== '') ? (
     <i
       className="icon-xvial"
       style={{ marginRight: '5px', fontSize: '20px' }}
@@ -168,6 +170,7 @@ const MoleculeHeader = ({ sample, show, showDragColumn, onClick, targetType }) =
             <div style={{ position: 'absolute', top: '10px', right: '25px', float: 'right' }} >
               <ChemrepoLabels chemrepoId={sample.molecule.chem_repo && sample.molecule.chem_repo.id} />
               <PubchemLabels element={sample} />
+              <ChemotionTag tagData={sample.pubchem_tag} />
             </div>
             <div style={{ position: 'absolute', bottom: '10px', right: '25px', float: 'right' }} >
               <ComputedPropLabel cprops={sample.molecule_computed_props} />
@@ -359,7 +362,9 @@ export default class ElementsTableSampleEntries extends Component {
               <CommentIcon commentCount={sample.comment_count} />
               {showDecoupledIcon(sample)}
               <ShowUserLabels element={sample} />
-              <XvialIcon label={sample.external_label} />
+              <XvialIcon label={(sample.tag.taggable_data.xvial && sample.tag.taggable_data.xvial.num) || ''} />
+              <LabelPublication element={sample} key={sample.id + "_publication"} />
+              <PublishedTag element={sample} />
               <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
               <ElementWellplateLabels element={sample} key={`${sample.id}_wellplate`} />
               <GenericElementLabels element={sample} key={`${sample.id}_element`} />

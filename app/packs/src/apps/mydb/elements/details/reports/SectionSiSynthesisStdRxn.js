@@ -304,13 +304,30 @@ const synNameContent = (el) => {
   return [{ insert: `${title}: ` }];
 };
 
+const doiContent = (el) => {
+  let block = [];
+  const rdoi = el && el.tag && el.tag.taggable_data && el.tag.taggable_data.publication
+   && el.tag.taggable_data.publication.doi;
+   // prs = el.products || [];
+   // const pdois = prs.map {
+   //
+   // }
+  if (rdoi) {
+    block = [{
+      insert: `\n Additional information on the chemical synthesis is available via Chemotion repository: \n https://doi.org/${rdoi}\n`
+    }];
+  }
+  return block;
+};
+
 const ContentBlock = ({ el, molSerials }) => {
   const synName = synNameContent(el);
   const desc = descContent(el);
   // const materials = materailsContent(el, molSerials);
   const obsvTlc = obsvTlcContent(el);
   const analyses = analysesContent(el.products);
-  const block = [...synName, ...desc, ...obsvTlc, ...analyses];
+  const dois = doiContent(el);
+  const block = [...synName, ...desc, ...obsvTlc, ...analyses, ...dois];
   return <QuillViewer value={{ ops: block }} />;
 };
 

@@ -191,6 +191,41 @@ export default class ElementsList extends React.Component {
     this.onChange(ElementStore.getState());
   }
 
+  getSortedHash(inputHash) {
+    var resultHash = {};
+
+    var keys = Object.keys(inputHash);
+    keys.sort(function (a, b) {
+      return inputHash[a] - inputHash[b]
+    }).forEach(function (k) {
+      resultHash[k] = inputHash[k];
+    });
+    return resultHash;
+  }
+
+  getArrayFromLayout(layout, isVisible) {
+    let array = Immutable.List();
+
+    if (isVisible == true) {
+      layout = this.getSortedHash(layout);
+    }
+
+    Object.keys(layout).forEach(function (key, idx) {
+      const order = layout[key]
+      if (isVisible && order < 0) { return; }
+      if (!isVisible && order > 0) { return; }
+
+      if (isVisible == true) {
+        array = array.set(idx+1, key)
+      } else {
+        array = array.set(Math.abs(order), key)
+      }
+    })
+
+    array = array.filter( n => ["sample", "reaction"].includes(n));
+    return array;
+  }
+
   render() {
     const {
       visible, hidden, currentTab, totalCheckedElements

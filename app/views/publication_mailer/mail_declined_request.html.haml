@@ -1,0 +1,8 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p Dear #{@creator&.name},
+%br
+%p #{@publication.element_type} #{@publication.element_id} has been #{@action_title}.
+%br
+%p Please review the document and check the comments at:
+%a{ href: "#{@proto + @host}/mydb/collection/all/#{@publication.element_type.underscore}/#{@publication.element_id}"} #{@proto + @host}/mydb/collection/all/#{@publication.element_type.underscore}/#{@publication.element_id}
+%br

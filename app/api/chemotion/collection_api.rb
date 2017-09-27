@@ -13,6 +13,20 @@ module Chemotion
         end
       end
 
+      namespace :all_as_tree do
+        desc "Return the 'All' collection of the current user"
+        get do
+          current_user.collections.arrange_serializable do |parent, children|
+            {
+              title: parent.label,
+              value: parent.id,
+              key: parent.id,
+              children: children
+            }
+          end
+        end
+      end
+
       desc "Return collection by id"
       params do
         requires :id, type: Integer, desc: "Collection id"
@@ -77,8 +91,7 @@ module Chemotion
 
       desc "Return all locked and unshared serialized collection roots of current user"
       get :locked do
-        roots = current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
-
+        roots = current_user.type == 'Anonymous' ? [] : current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
         present roots, with: Entities::CollectionEntity, root: :collections
       end
 

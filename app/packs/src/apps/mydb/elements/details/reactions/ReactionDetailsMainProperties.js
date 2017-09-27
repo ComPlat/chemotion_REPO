@@ -20,6 +20,9 @@ import LineChartContainer from 'src/components/lineChart/LineChartContainer';
 import EditableTable from 'src/components/lineChart/EditableTable';
 import { permitOn } from 'src/components/common/uis';
 
+// For REPO
+import HelpInfo from '../components/common/HelpInfo';
+
 export default class ReactionDetailsMainProperties extends Component {
   constructor(props) {
     super(props);
@@ -130,7 +133,7 @@ export default class ReactionDetailsMainProperties extends Component {
           </Col>
           <Col md={3}>
             <FormGroup>
-              <ControlLabel>Temperature</ControlLabel>
+              {reaction.is_published ? <ControlLabel>Temperature</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Temperature</ControlLabel>} source="requiredField" />}
               <InputGroup>
                 <InputGroup.Button>
                   <OverlayTrigger placement="bottom" overlay={temperatureTooltip}>

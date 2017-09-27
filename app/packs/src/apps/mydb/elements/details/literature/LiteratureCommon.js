@@ -26,6 +26,7 @@ const RefByUserInfo = ({ info, litype }) => {
   );
 };
 
+
 const Cite = require('citation-js');
 
 const LiteralType = ({ val, handleInputChange, disabled = false }) => (
@@ -136,7 +137,7 @@ const Citation = ({ literature }) => {
   );
 };
 Citation.propTypes = {
-  literature: PropTypes.instanceOf(Literature).isRequired
+  literature: PropTypes.any.isRequired,
 };
 
 const CitationUserRow = ({ literature, userId }) => (

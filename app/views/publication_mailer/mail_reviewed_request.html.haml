@@ -1,0 +1,12 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p Dear #{@creator&.name},
+%br
+%p #{@publication.element_type} ##{@publication.element_id} has been reviewed.
+%br
+%p Please check the reviewer's comments and request for modification at:
+%a{ href: "#{@proto + @host}/home/review/review_#{@publication.element_type.underscore}/#{@publication.element_id}"} #{@proto + @host}/home/review/review_#{@publication.element_type.underscore}/#{@publication.element_id}
+%br
+%p You can also see the comments and edit your publication directly from your [Reviewing] collection at:
+%a{ href: "#{@proto + @host}/mydb/scollection/#{@creator_reviewing_scol_id}/#{@publication.element_type.underscore}/#{@publication.element_id}"} #{@proto + @host}/mydb/scollection/#{@creator_reviewing_scol_id}/#{@publication.element_type.underscore}/#{@publication.element_id}
+%br
+%p Once done with the revision, you can then resubmit your publication.

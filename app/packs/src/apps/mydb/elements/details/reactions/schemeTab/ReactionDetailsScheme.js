@@ -27,6 +27,8 @@ import TextTemplateActions from 'src/stores/alt/actions/TextTemplateActions';
 import TextTemplateStore from 'src/stores/alt/stores/TextTemplateStore';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 
+import HelpInfo from '../components/common/HelpInfo';
+
 export default class ReactionDetailsScheme extends Component {
   constructor(props) {
     super(props);
@@ -951,7 +953,7 @@ export default class ReactionDetailsScheme extends Component {
             <Row>
               <Col md={6}>
                 <FormGroup>
-                  <ControlLabel>Type (Name Reaction Ontology)</ControlLabel>
+                  {reaction.is_published ? <ControlLabel>Type (Name Reaction Ontology)</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Type (Name Reaction Ontology)</ControlLabel>} source="requiredField" />}
                   <OlsTreeSelect
                     selectName="rxno"
                     selectedValue={(reaction.rxno && reaction.rxno.trim()) || ''}
@@ -965,7 +967,7 @@ export default class ReactionDetailsScheme extends Component {
             <Row>
               <Col md={12}>
                 <FormGroup>
-                  <ControlLabel>Description</ControlLabel>
+                  {reaction.is_published ? <ControlLabel>Description</ControlLabel> : <span><HelpInfo optionalElement={<ControlLabel className="field_required">Description</ControlLabel>} source="requiredField" />&nbsp;<HelpInfo source="description" place="right" /></span>}
                   <div className="quill-resize">
                     {
                       permitOn(reaction) ?

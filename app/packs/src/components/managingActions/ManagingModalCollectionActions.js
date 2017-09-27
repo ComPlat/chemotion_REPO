@@ -127,7 +127,7 @@ export default class ManagingModalCollectionActions extends React.Component {
             className="select-assign-collection"
           />
         </FormGroup>
-        <FormGroup>
+        <FormGroup style={{ display: 'none'}} >
           <ControlLabel>or Create a new Collection</ControlLabel>
           <FormControl
             type="text"

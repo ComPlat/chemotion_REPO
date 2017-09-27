@@ -76,7 +76,17 @@ module Chemotion
         deleted = { 'sample' => [] }
         %w[sample reaction wellplate screen research_plan].each do |element|
           next unless params[element][:checkedAll] || params[element][:checkedIds].present?
-          deleted[element] = @collection.send(element + 's').by_ui_state(params[element]).destroy_all.map(&:id)
+          elements = @collection.send(element + 's').by_ui_state(params[element])
+
+          elements.each do |el|
+            pub = el.publication
+
+            next if pub.nil?
+            pub.update_state(Publication::STATE_DECLINED)
+            pub.process_element(Publication::STATE_DECLINED)
+            pub.inform_users(Publication::STATE_DECLINED, current_user.id)
+          end
+          deleted[element] = elements.destroy_all.map(&:id)
         end
 
         # explicit inner join on reactions_samples to get soft deleted reactions_samples entries

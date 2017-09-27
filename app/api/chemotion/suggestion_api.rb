@@ -125,6 +125,24 @@ module Chemotion
             requirements: requirements
           }
         else
+          if qry =~ /\ACR(R|S|D)-(\d+)\Z/
+            typ = Regexp.last_match(1)
+            pid = Regexp.last_match(2)
+            element_type = case typ
+                           when 'R'
+                             'Reaction'
+                           when 'S'
+                             'Sample'
+                           when 'D'
+                             'Container'
+                           end
+            pids = Publication.where(
+              "state LIKE 'completed%' and element_type = ? and id = ?", element_type, pid
+            ).map do |pub|
+              "CR#{typ}-#{pub.id}"
+            end
+          end
+          chemotion_id = pids || []
           element_short_label = dl_e.positive? && search_by_element_short_label.call(Labimotion::Element, qry) || []
           sample_name = dl_s.positive? && search_by_field.call(Sample, :name, qry) || []
           sample_short_label = dl_s.positive? && search_by_field.call(Sample, :short_label, qry) || []
@@ -150,6 +168,7 @@ module Chemotion
 
           {
             element_short_label: element_short_label,
+            chemotion_id: chemotion_id,
             sample_name: sample_name,
             sample_short_label: sample_short_label,
             sample_external_label: sample_external_label,
@@ -175,6 +194,8 @@ module Chemotion
 
     resource :suggestions do
       after_validation do
+        check_params_collection_id
+        set_var_for_unsigned_user unless current_user
         set_var
       end
 

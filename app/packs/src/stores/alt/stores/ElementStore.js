@@ -40,6 +40,9 @@ import GenericEl from 'src/models/GenericEl';
 
 import MessagesFetcher from 'src/fetchers/MessagesFetcher';
 
+import RepositoryActions from '../actions/RepositoryActions';
+
+
 const fetchOls = (elementType) => {
   switch (elementType) {
     case 'reaction':
@@ -240,6 +243,16 @@ class ElementStore {
       handleUpdateLinkedElement: [
         ElementActions.updateReaction,
         ElementActions.updateSample,
+        RepositoryActions.publishSample,
+        RepositoryActions.publishReaction,
+        RepositoryActions.publishSampleReserveDois,
+        RepositoryActions.publishReactionReserveDois,
+        RepositoryActions.reviewPublish,
+      ],
+      handleRefreshSyncCollections: [
+        RepositoryActions.reviewPublish,
+        RepositoryActions.publishSample,
+        RepositoryActions.publishReaction,
       ],
       handleUpdateElement: [
         // ElementActions.updateReaction,
@@ -680,6 +693,10 @@ class ElementStore {
       this.changeCurrentElement(element);
     }
     this.handleUpdateElement(element);
+  }
+
+  handleRefreshSyncCollections() {
+    CollectionActions.fetchSyncInCollectionRoots();
   }
 
   handleUpdateSampleForWellplate(wellplate) {
@@ -1278,6 +1295,14 @@ class ElementStore {
               openedReaction.updateMaterial(previous, element);
             }
           });
+
+          // For REPO
+          const freeze = (openedReaction && openedReaction.publication && openedReaction.publication.taggable_data &&
+            openedReaction.publication.taggable_data.scheme_only === true && (openedReaction.publication.state !== 'declined' || openedReaction.publication.state !== 'withdrawn')) || false;
+          if (freeze === false) {
+            openedReaction.updateMaterial(previous);
+          }
+
         } else {
           openedReaction.updateMaterial(previous);
         }

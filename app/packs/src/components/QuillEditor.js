@@ -189,8 +189,12 @@ export default class QuillEditor extends React.Component {
 
   renderQuillToolbarGroup() {
     if (this.theme !== 'snow') return (<span />);
+    let fToolbarOptions = _.uniq(toolbarOptions);
+    if (this.props.extraToolbarOptions) {
+      fToolbarOptions = _.union(fToolbarOptions, this.props.extraToolbarOptions);
+    }
 
-    const quillToolbar = toolbarOptions.map((formatGroup, index) => {
+    const quillToolbar = fToolbarOptions.map((formatGroup, index) => {
       const groupElement = formatGroup.map((element) => {
         if (typeof element === 'string') {
           return (
@@ -360,6 +364,7 @@ QuillEditor.propTypes = {
   height: PropTypes.string,
   disabled: PropTypes.bool,
   onChange: PropTypes.func,
+  extraToolbarOptions: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.object, PropTypes.string]))),
 };
 
 QuillEditor.defaultProps = {
@@ -371,4 +376,5 @@ QuillEditor.defaultProps = {
   height: '230px',
   disabled: false,
   onChange: null,
+  extraToolbarOptions: null,
 };

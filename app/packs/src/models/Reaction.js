@@ -117,6 +117,7 @@ export default class Reaction extends Element {
       name: '',
       observation: Reaction.quillDefault(),
       products: [],
+      publication: {},
       purification: '',
       purification_solvents: [],
       reactants: [],
@@ -151,6 +152,10 @@ export default class Reaction extends Element {
     return `${currentUser.initials}-${prefix}${number}`;
   }
 
+  get is_published() {
+    return this.publication && this.publication.state === 'completed';
+  }
+
   static get temperature_unit() {
     return TemperatureUnit;
   }
@@ -174,6 +179,7 @@ export default class Reaction extends Element {
       durationDisplay: this.durationDisplay,
       durationCalc: this.durationCalc(),
       id: this.id,
+      is_published: this.is_published,
       literatures: this.literatures,
       materials: {
         starting_materials: this.starting_materials.map(s => s.serializeMaterial()),
@@ -185,6 +191,7 @@ export default class Reaction extends Element {
       name: this.name,
       observation: this.observation,
       origin: this.origin,
+      publication: this.publication,
       purification: this.purification,
       tlc_solvents: this.tlc_solvents,
       tlc_description: this.tlc_description,
@@ -463,6 +470,13 @@ export default class Reaction extends Element {
     this._products = this._coerceToSamples(samples);
   }
 
+  get publication() {
+    return this._publication
+  }
+
+  set publication(publication) {
+    this._publication = publication
+  }
   get samples() {
     return [
       ...this.starting_materials || [],
@@ -505,6 +519,7 @@ export default class Reaction extends Element {
       segments: target,
       timestamp_start: '',
       timestamp_stop: '',
+      publication: {},
       rf_value: 0.00,
       status: '',
     }
@@ -934,5 +949,17 @@ export default class Reaction extends Element {
 
     this.products.forEach(product => product.calculateMaxAmount(referenceSample));
 
+  }
+
+  get notPublishable() {
+    // NB: in reaction samples, can_publish is only serialized for products
+    // const unpublishableSamples = this.samples.filter(s => !s.can_publish);
+    const unpublishableSamples = this.products.filter(s => !s.can_publish);
+    return unpublishableSamples.length > 0 && unpublishableSamples;
+  }
+
+  analysisArray() {
+    const analyses = this.container && this.container.children.find(c => (c && c.container_type === 'analyses'));
+    return analyses ? analyses.children : [];
   }
 }

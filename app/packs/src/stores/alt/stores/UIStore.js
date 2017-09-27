@@ -6,6 +6,7 @@ import ElementActions from 'src/stores/alt/actions/ElementActions';
 import ElementStore from 'src/stores/alt/stores/ElementStore';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import ArrayUtils from 'src/utilities/ArrayUtils';
+import PublicActions from '../actions/PublicActions';
 
 class UIStore {
   constructor() {
@@ -106,6 +107,7 @@ class UIStore {
       handleSetProductOnly: UIActions.setProductOnly,
       handleRerenderGenericWorkflow: UIActions.rerenderGenericWorkflow,
       handleShowGenericWorkflowModal: UIActions.showGenericWorkflowModal,
+      handleSelectPublicCollection: PublicActions.selectPublicCollection,
     });
   }
 
@@ -413,6 +415,11 @@ class UIStore {
   handleSetProductOnly(productOnly) {
     this.state.productOnly = productOnly;
     this.handleSelectCollection(this.state.currentCollection, true);
+  }
+
+  handleSelectPublicCollection(result) {
+    this.state.currentCollection = result;
+    this.state.isSync = result.is_sync;
   }
 }
 

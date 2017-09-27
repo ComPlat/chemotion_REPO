@@ -182,11 +182,50 @@ module Chemotion
 
       def serialization_by_elements_and_page(elements, page = 1, molecule_sort = false)
         element_ids = elements.fetch(:element_ids, [])
-        reaction_ids = elements.fetch(:reaction_ids, [])
+        reaction_ids = elements.fetch(:reactions, [])
         sample_ids = elements.fetch(:sample_ids, [])
         samples_data = serialize_samples(sample_ids, page, search_by_method, molecule_sort)
+        wellplates = elements.fetch(:wellplates, [])
         screen_ids = elements.fetch(:screen_ids, [])
         wellplate_ids = elements.fetch(:wellplate_ids, [])
+
+        if params[:is_public]
+          xvial_count = <<~SQL
+            inner join (
+              select count(e.id) as xvial_count, m.id as molecule_id from molecules m
+              inner join samples s on s.molecule_id = m.id
+              inner join publications p on p.element_type='Sample' and p.element_id=s.id  and p.deleted_at isnull
+              left outer join element_tags e on e.taggable_id = s.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+              group by m.id
+            ) c on c.molecule_id = molecules.id
+          SQL
+          molecules = paginate(Molecule.joins(:samples).joins(xvial_count).where("samples.id in (?)", samples).includes(:tag)).select(
+            <<~SQL
+            molecules.*, max(samples.sample_svg_file) sample_svg_file, xvial_count
+            SQL
+          ).group('molecules.id, xvial_count').uniq
+          serialized_molecules = molecules.map { |m| MoleculeGuestListSerializer.new(m).serializable_hash }
+          paginated_reaction_ids = Kaminari.paginate_array(reaction_ids).page(page).per(page_size)
+          serialized_reactions = Reaction.find(paginated_reaction_ids).map do |reaction|
+            Entities::ReactionEntity.represent(reaction, displayed_in_list: true).serializable_hash
+          end
+          return {
+            publicMolecules: {
+              molecules: serialized_molecules,
+              totalElements: molecules.size,
+              page: page,
+              perPage: page_size,
+              ids: molecules.pluck(:id)
+            },
+            publicReactions: {
+              reactions: serialized_reactions,
+              totalElements: reactions.size,
+              page: page,
+              perPage: page_size,
+              ids: filter_reactions.pluck(:id)
+            }
+          }
+        end
 
         paginated_reaction_ids = Kaminari.paginate_array(reaction_ids).page(page).per(page_size)
         serialized_reactions = Reaction.find(paginated_reaction_ids).map do |reaction|
@@ -262,9 +301,12 @@ module Chemotion
       def search_elements(c_id = @c_id, dl = @dl)
         search_method = search_by_method
         molecule_sort = params[:molecule_sort]
-        arg = params[:selection][:name]
+        arg = params[:selection] && params[:selection][:name]
         return if !(search_method =~ /advanced|structure/) && !arg.presence
         dl_s = dl[:sample_detail_level] || 0
+
+        search_method = 'chemotion_id' if arg&.match(/(CRR|CRS|CRD)-\d+/)
+
         scope = case search_method
                 when 'polymer_type'
                   if dl_s > 0
@@ -316,6 +358,23 @@ module Chemotion
                   advanced_search(c_id)
                 when 'elements'
                   elements_search(c_id)
+                when 'chemotion_id'
+                  if arg.match(/(CRR|CRS|CRD)-\d+/) && arg.split('-').length == 2
+                    case arg.split('-')[0]
+                    when 'CRS'
+                      Sample.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+                    when 'CRR'
+                      Reaction.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+                    when 'CRD'
+                      begin
+                        parent_node = Publication.find(arg.split('-')[1])&.parent
+                        parent_node && parent_node.element.class.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{parent_node.id}")
+                      rescue => e
+                        Sample.none
+                      end
+                    end
+                  else
+                  end
                 end
 
         if search_method == 'advanced' && molecule_sort == false
@@ -417,6 +476,11 @@ module Chemotion
             params[:molecule_sort]
           )
         end
+      end
+
+      after_validation do
+        check_params_collection_id
+        set_var_for_unsigned_user unless current_user
       end
 
       namespace :all do

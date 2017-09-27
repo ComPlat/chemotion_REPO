@@ -99,6 +99,7 @@ module Chemotion
               detail_levels: ElementDetailLevelCalculator.new(user: current_user, element: reaction).detail_levels,
             ),
             literatures: Entities::LiteratureEntity.represent(citation_for_elements(params[:id], 'Reaction')),
+            publication: Publication.find_by(element: reaction) || {},
           }
         end
       end

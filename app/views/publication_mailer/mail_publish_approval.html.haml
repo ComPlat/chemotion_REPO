@@ -1,0 +1,5 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p Congratulations!
+%p Your #{@publication.element_type} ##{@publication.element_id} has been published.
+%p See it at:
+%a{ href: "#{@proto + @host}/inchikey/#{@doi.suffix}"} #{@proto + @host}/inchikey/#{@doi.suffix}
