@@ -253,7 +253,6 @@ class Sample < ApplicationRecord
     version = Chemotion::OpenBabelService.molfile_version(self.molfile)
     mf = Chemotion::OpenBabelService.mofile_clear_coord_bonds(self.molfile, version)
     mf = molfile unless mf
-
     mf&.split(/^\$\$\$\$/).first
   end
 

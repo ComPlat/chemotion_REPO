@@ -28,6 +28,8 @@ import CommentIcon from 'src/components/comments/CommentIcon';
 
 import { LabelPublication, PublishedTag, ChemotionTag } from 'src/components/chemrepo/PublishCommon';
 
+import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
+
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
   const flattenSamplesId = [];

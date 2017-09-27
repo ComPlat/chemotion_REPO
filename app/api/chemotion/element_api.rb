@@ -108,6 +108,13 @@ module Chemotion
           deleted[klass.name] = @collection.send('elements').by_ui_state(params[klass.name]).destroy_all.map(&:id)
         end
 
+        sql_pub = "(element_id in (?) and element_type = 'Sample') or (element_id in (?) and element_type = 'Reaction')"
+        Publication.where(sql_pub, deleted['sample'], deleted['reaction'])
+                   .map(&:root).uniq.each do |e|
+          e.update_state(Publication::STATE_DECLINED)
+          e.proces_element(Publication::STATE_DECLINED)
+          e.inform_users(Publication::STATE_DECLINED, current_user.id)
+        end
         { selecteds: params[:selecteds].select { |sel| !deleted.fetch(sel['type'], []).include?(sel['id']) } }
       end
 

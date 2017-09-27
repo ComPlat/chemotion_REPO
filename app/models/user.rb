@@ -467,6 +467,68 @@ class User < ApplicationRecord
     find_by(email: ENV['SYS_EMAIL'])
   end
 
+  def self.is_public
+    self.find_by(email: ENV['SYS_EMAIL'])
+  end
+
+  # TODO: mv to initializers
+  def self.reviewer_ids
+    (ENV['REVIEWERS'] || '').split(',').map(&:to_i)
+  end
+
+  def is_article_editor
+    (ENV['NEWSROOM_EDITOR'] || "").split(",").include?(self.id.to_s)
+  end
+
+  def is_howto_editor
+    (ENV['HOWTO_EDITOR'] || "").split(",").include?(self.id.to_s)
+  end
+
+  def pending_collection
+    su_id = User.chemotion_user.id
+    Collection.joins(
+      "INNER JOIN sync_collections_users ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Pending Publications'").first
+  end
+
+  def reviewing_collection
+    su_id = User.chemotion_user.id
+    Collection.joins(
+      "INNER JOIN sync_collections_users ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Reviewing'").first
+  end
+
+  def published_collection
+    su_id = User.chemotion_user.id
+    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
+              .where("sync_collections_users.shared_by_id = #{su_id}")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.label = 'Published Elements'").first
+  end
+
+  def publication_embargo_collection
+    su_id = User.chemotion_user.id
+    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
+              .where("sync_collections_users.shared_by_id = #{su_id}")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.label = 'Embargoed Publications'").first
+  end
+
+  def all_collection
+    Collection.where(user: self, label: 'All', is_locked: true, position: 0)&.first
+
+  end
+
+  def self.chemotion_user
+    find_by(email: ENV['SYS_EMAIL'])
+  end
+
   def current_affiliations
     Affiliation.joins(
       'INNER JOIN user_affiliations ua ON ua.affiliation_id = affiliations.id',

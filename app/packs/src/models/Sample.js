@@ -1069,6 +1069,11 @@ export default class Sample extends Element {
     const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
     return analyses ? analyses.children : [];
   }
+
+  analysisArray() {
+    const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
+    return analyses ? analyses.children : [];
+  }
 }
 
 Sample.counter = 0;
