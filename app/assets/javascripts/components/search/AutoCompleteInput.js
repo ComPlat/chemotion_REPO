@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {FormGroup,InputGroup,FormControl, Overlay, ListGroup, ListGroupItem}
+import { FormGroup, InputGroup, FormControl, Overlay, ListGroup, ListGroupItem, OverlayTrigger, Tooltip }
   from 'react-bootstrap';
 import debounce from 'es6-promise-debounce';
 
@@ -37,6 +37,10 @@ export default class AutoCompleteInput extends React.Component {
   componentDidMount() {
     UIStore.listen(this.onUIChange)
     this.initInputWidth()
+  }
+
+  componentWillUnmount() {
+    UIStore.unlisten(this.onUIChange);
   }
 
   onUIChange(state) {
@@ -327,6 +331,8 @@ export default class AutoCompleteInput extends React.Component {
       zIndex: 2
     };
 
+    const searchTooltip = <Tooltip id="search_tooltip">Search by IUPAC name, InChi, Smiles...</Tooltip>;
+
     return (
       <div style={{ position: 'relative' }} >
         <FormGroup ref={this.overlayTarget}
@@ -335,18 +341,20 @@ export default class AutoCompleteInput extends React.Component {
             <InputGroup.Button >
               {this.props.buttonBefore}
             </InputGroup.Button>
-            <FormControl
-              {...this.props.inputAttributes}
-              disabled={this.state.inputDisabled || this.props.inputDisabled}
-              type="text"
-              value={this.props.defaultSearchValue || value || ''}
-              autoComplete="off"
-              ref="input"
-              onFocus={() => this.handleFocus()}
-              onBlur={() => this.handleBlur()}
-              onChange={event => this.handleValueChange(event, this.doneTyping)}
-              onKeyDown={event => this.handleKeyDown(event)}
-            />
+              <OverlayTrigger placement="bottom" delayShow={1000} overlay={searchTooltip}>
+                <FormControl
+                  {...this.props.inputAttributes}
+                  disabled={this.state.inputDisabled || this.props.inputDisabled}
+                  type="text"
+                  value={this.props.defaultSearchValue || value || ''}
+                  autoComplete="off"
+                  ref="input"
+                  onFocus={() => this.handleFocus()}
+                  onBlur={() => this.handleBlur()}
+                  onChange={event => this.handleValueChange(event, this.doneTyping)}
+                  onKeyDown={event => this.handleKeyDown(event)}
+                />
+              </OverlayTrigger>
             <InputGroup.Button>
               {this.props.buttonAfter}
             </InputGroup.Button>

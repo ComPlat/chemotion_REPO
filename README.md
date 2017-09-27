@@ -1,6 +1,6 @@
-# Chemotion Electronic Lab Notebook
+# Chemotion REPOSITORY
 
-An ELN for chemists!
+A repository for chemists based on chemotion ELN !
 
 ## Funding
 
@@ -9,7 +9,7 @@ This project has been funded by the  ![DFG](http://www.dfg.de/includes/images/df
 
 ## License
 
-Chemotion_ELN: an Electronic Lab Notebook for Chemists.
+Chemotion_REPOSITORY for Chemists.
 
 Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruhe Institute of Technology.
 
@@ -31,17 +31,6 @@ Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruh
 ## Install
 
 see [INSTALL.md][INSTALL]
-
-
-## Code Status
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1054134.svg)](https://doi.org/10.5281/zenodo.1054134)
-
-[![Build Status](https://travis-ci.org/ComPlat/chemotion_ELN.svg?branch=master)](https://travis-ci.org/ComPlat/chemotion_ELN)
-
-[![Coverage Status](https://coveralls.io/repos/github/ComPlat/chemotion_ELN/badge.svg)](https://coveralls.io/github/ComPlat/chemotion_ELN)
-
-
 
 
 [INSTALL]: INSTALL.md

@@ -45,11 +45,33 @@ module ReactionRinchi
 
   def no_structure
     <<~MOLFILE
-    
+
       ACCLDraw04191619342D
-    
+
       0  0  0  0  0  0  0  0  0  0999 V2000
     M  END
     MOLFILE
   end
+
+  def products_rinchis
+    mols_rcts, mols_prds, mols_agts = self.retrieve_molfiles
+    rcts = Rinchi::MolVect.new
+    # mols_rcts.each do |rct| rcts.push(rct) end
+    [].each do |rct| rcts.push(rct) end
+    prds = Rinchi::MolVect.new
+    mols_prds.each do |prd| prds.push(prd) end
+    agts = Rinchi::MolVect.new
+    # mols_agts.each do |agt| agts.push(agt) end
+    [].each do |agt| agts.push(agt) end
+    Rinchi.convert(rcts, prds, agts)
+  end
+
+   def products_short_rinchikey
+     _, _, result, _ = products_rinchis
+     result
+   end
+
+   def products_short_rinchikey_trimmed
+     products_short_rinchikey.sub(/Short-RInChIKey=/, '')
+   end
 end

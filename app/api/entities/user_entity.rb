@@ -17,6 +17,17 @@ module Entities
     expose :is_templates_moderator, documentation: { type: "Boolean", desc: "ketcherails template administrator" }
     expose :molecule_editor, documentation: { type: 'Boolean', desc: 'molecule administrator' }
     expose :account_active, documentation: { type: 'Boolean', desc: 'User Account Active or Inactive' }
+    expose :affiliations
+    expose :is_article_editor, :is_howto_editor
+
+    def affiliations
+      a = {}
+      object.affiliations.select(
+        'id',
+        'affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country as aff'
+      ).reduce(a){|acc, affiliation| a[affiliation.id] = affiliation.aff}
+      a
+    end
 
     def samples_count
       object.counters['samples'].to_i

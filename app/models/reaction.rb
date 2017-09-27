@@ -50,6 +50,7 @@ class Reaction < ActiveRecord::Base
   include ElementCodes
   include Taggable
   include ReactionRinchi
+  include Publishing
 
   serialize :description, Hash
   serialize :observation, Hash
@@ -133,13 +134,17 @@ class Reaction < ActiveRecord::Base
 
   has_many :sync_collections_users, through: :collections
 
+  has_one :doi, as: :doiable
+
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   validates :creator, presence: true
 
   before_save :update_svg_file!
   before_save :cleanup_array_fields
   before_save :auto_format_temperature!
+  before_save :check_doi
   before_create :auto_set_short_label
+
 
   after_create :update_counter
 
@@ -202,7 +207,6 @@ class Reaction < ActiveRecord::Base
         svg_file.close
 
         self.reaction_svg_file = svg_file_name
-      # end
     else
       paths = {}
       %i(starting_materials reactants products).each do |prop|
@@ -230,7 +234,8 @@ class Reaction < ActiveRecord::Base
   end
 
   def yield_amount(sample_id)
-    ReactionsProductSample.find_by(reaction_id: self.id, sample_id: sample_id).try(:equivalent)
+    rps = ReactionsProductSample.find_by(reaction_id: self.id, sample_id: sample_id)
+    rps.scheme_yield || rps.equivalent
   end
 
   def solvents_in_svg

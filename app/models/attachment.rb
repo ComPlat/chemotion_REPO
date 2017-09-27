@@ -208,6 +208,12 @@ class Attachment < ActiveRecord::Base
     else
       self.thumb_data = store.read_thumb
     end
+    #TODO check for path collision:
+    # depending on storage, key needs to be changed
+    if self.storage == 'tmp'
+      self.key = nil
+      generate_key
+    end
     stored = store.store_file
     self.thumb = store.store_thumb if stored
     self.save if stored

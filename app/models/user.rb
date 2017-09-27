@@ -86,7 +86,7 @@ class User < ActiveRecord::Base
     message: "can be alphanumeric, middle '_' and '-' are allowed,"+
     " but leading digit, or trailing '-' and '_' are not."}
   validate :name_abbreviation_length
-# validate :academic_email
+  # validate :academic_email
   validate :mail_checker
 
   # NB: only Persons and Admins can get a confirmation email and confirm their email.
@@ -117,6 +117,12 @@ class User < ActiveRecord::Base
     elsif type == 'Device'
         na.blank? || !na.length.between?(2, 6)  && errors.add(:name_abbreviation,
         "has to be 2 to 6 characters long")
+    elsif type == 'Anonymous'
+        na.blank? || !na.length.between?(2, 5)  && errors.add(:name_abbreviation,
+        "has to be 2 to 5 characters long")
+      elsif type == 'Collaborator'
+        na.blank? || !na.length.between?(2, 5)  && errors.add(:name_abbreviation,
+        "has to be 2 to 5 characters long")
     else
       na.blank? || !na.length.between?(2, 3)  && errors.add(:name_abbreviation,
         "has to be 2 to 3 characters long")
@@ -133,6 +139,10 @@ class User < ActiveRecord::Base
     MailChecker.valid?(email) || errors.add(
       :email, 'from throwable email providers not accepted'
     )
+  end
+
+  def orcid
+    profile.data&.fetch('ORCID', nil)
   end
 
   def owns_collections?(collections)
@@ -211,6 +221,68 @@ class User < ActiveRecord::Base
     SyncCollectionsUser.where("user_id IN (?) ", [self.id]+self.groups.pluck(:id))
   end
 
+  def self.is_public
+    self.find_by(email: ENV['SYS_EMAIL'])
+  end
+
+  # TODO: mv to initializers
+  def self.reviewer_ids
+    (ENV['REVIEWERS'] || '').split(',').map(&:to_i)
+  end
+
+  def is_article_editor
+    (ENV['NEWSROOM_EDITOR'] || "").split(",").include?(self.id.to_s)
+  end
+
+  def is_howto_editor
+    (ENV['HOWTO_EDITOR'] || "").split(",").include?(self.id.to_s)
+  end
+
+  def pending_collection
+    su_id = User.chemotion_user.id
+    Collection.joins(
+      "INNER JOIN sync_collections_users ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Pending Publications'").first
+  end
+
+  def reviewing_collection
+    su_id = User.chemotion_user.id
+    Collection.joins(
+      "INNER JOIN sync_collections_users ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Reviewing'").first
+  end
+
+  def published_collection
+    su_id = User.chemotion_user.id
+    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
+              .where("sync_collections_users.shared_by_id = #{su_id}")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.label = 'Published Elements'").first
+  end
+
+  def publication_embargo_collection
+    su_id = User.chemotion_user.id
+    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
+              .where("sync_collections_users.shared_by_id = #{su_id}")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.label = 'Embargoed Publications'").first
+  end
+
+  def all_collection
+    Collection.where(user: self, label: 'All', is_locked: true, position: 0)&.first
+
+  end
+
+  def self.chemotion_user
+    find_by(email: ENV['SYS_EMAIL'])
+  end
+
   def current_affiliations
     Affiliation.joins(
      "INNER JOIN user_affiliations ua ON ua.affiliation_id = affiliations.id"
@@ -236,12 +308,43 @@ class User < ActiveRecord::Base
   # - add subcollections
   # - delete it
   def create_all_collection
+    return if self.type == 'Anonymous'
     Collection.create(user: self, label: 'All', is_locked: true, position: 0)
   end
 
   def create_chemotion_public_collection
     return unless self.type == 'Person'
-    Collection.create(user: self, label: 'chemotion.net', is_locked: true, position: 1)
+    chemotion_user = User.chemotion_user
+    # Collection.create(user: self, label: 'chemotion.net', is_locked: true, position: 1)
+    Collection.find_or_create_by(user: self, label: 'ELN Gate', is_locked: true, position: 1)
+    Collection.find_or_create_by(user: self, label: 'My Data', is_locked: true, position: 2)
+
+    sys_published_by = Collection.find_or_create_by(user_id: chemotion_user, label: 'Published by')
+    sys_pending_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Pending Publication from')
+    sys_reviewing_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Reviewing Publication from')
+    sys_ready_publish_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Embargoed Publications from')
+
+    sys_reviewing_collection = self.reviewing_collection || Collection.create(user: chemotion_user, label: 'Reviewing', ancestry: "#{sys_reviewing_from.id}")
+    sys_pending_collection = self.pending_collection || Collection.create(user: chemotion_user, label: 'Pending Publications', ancestry: "#{sys_pending_from.id}")
+    sys_published_collection = self.published_collection || Collection.create(user: chemotion_user, label: 'Published Elements', ancestry: "#{sys_published_by.id}")
+    sys_publication_embargo_collection = self.publication_embargo_collection || Collection.create(user: chemotion_user, label: 'Embargoed Publications', ancestry: "#{sys_ready_publish_from.id}")
+
+    root_label = "with %s" %chemotion_user.name_abbreviation
+    root_collection_attributes = {
+      label: root_label,
+      user: self,
+      shared_by_id: chemotion_user.id,
+      is_locked: true,
+      is_shared: true
+    }
+    rc = Collection.find_or_create_by(root_collection_attributes)
+
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: Collection.public_collection_id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: Collection.scheme_only_reactions_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_published_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_pending_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_reviewing_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_publication_embargo_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
   end
 
   def set_account_active

@@ -44,6 +44,8 @@ const handleNotification = (nots, act, needCallback = true) => {
           CollectionActions.fetchRemoteCollectionRoots();
           break;
         case 'CollectionActions.fetchSyncInCollectionRoots':
+        case 'Repository_ReviewRequest':
+        case 'Repository_Published':
           CollectionActions.fetchSyncInCollectionRoots();
           break;
         case 'InboxActions.fetchInbox':

@@ -47,6 +47,7 @@ set :linked_dirs, fetch(:linked_dirs, []).push(
   'node_modules',
   'log',
   'public/images', 'public/docx', 'public/simulations',
+  'public/xlsx',
   'tmp/pids', 'tmp/cache', 'tmp/sockets', 'tmp/uploads',
   'uploads'
 )

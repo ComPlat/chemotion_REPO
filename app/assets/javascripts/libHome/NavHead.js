@@ -1,24 +1,29 @@
 import React from 'react'
-import {NavDropdown, Navbar, MenuItem} from 'react-bootstrap';
+import { NavDropdown, Navbar, MenuItem } from 'react-bootstrap';
+import PublicActions from '../components/actions/PublicActions'
+
+const Title = <span><img alt="chemotion-" src="/images/repo/logo.png" style={{ width: '20%' }} /> Repository</span>
 
 const NavHead = () => {
-  let isHome = window.location.href.match(/\/home/)
+  const isHome = window.location.href.match(/\/home/)
   return(
     <Navbar.Brand>
-      <NavDropdown title='Chemotion' className="navig-brand" id="bg-nested-dropdown-brand">
-        <MenuItem eventKey="11" href="http://www.chemotion.net" target="_blank">Chemotion repository</MenuItem>
-        <MenuItem eventKey="13" href="http://www.complat.kit.edu/" target="_blank">Complat</MenuItem>
-        <MenuItem eventKey="14" href="https://github.com/ComPlat" target="_blank">Complat on Github</MenuItem>
-        <MenuItem divider />
-        <MenuItem eventKey='15' href={isHome ? '/' : '/home'} target="_self">{isHome ? 'ELN' : 'Home'}</MenuItem>
-        <MenuItem divider />
-        <MenuItem eventKey='15' href="/about" target="_self">About</MenuItem>
+      <NavDropdown title={Title} className="navig-brand navig-smaller-font" id="bg-nested-dropdown-brand">
+        <MenuItem eventKey="21" href="/home/welcome/">
+          Home
+        </MenuItem>
+        <MenuItem eventKey="22" href="/home/publications">
+          Publications
+        </MenuItem>
+        <MenuItem eventKey="23" href="/home/about">
+          About
+        </MenuItem>
+        <MenuItem eventKey="24" href="/home/directive">
+          Terms of service
+        </MenuItem>
       </NavDropdown>
     </Navbar.Brand>
   )
-}
-
-NavHead.propTypes = {
 }
 
 export default NavHead;

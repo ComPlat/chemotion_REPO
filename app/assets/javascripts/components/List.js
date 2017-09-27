@@ -164,9 +164,8 @@ export default class List extends React.Component {
       array = array.set(Math.abs(order), key)
     })
 
-    array = array.filter(function(n) { return n != undefined })
-
-    return array
+    array = array.filter( n => ["sample", "reaction"].includes(n));
+    return array;
   }
 
   render() {

@@ -1,0 +1,156 @@
+.cards_flex {
+  display: flex;
+  display: -webkit-flex;
+  -webkit-justify-content: center;
+  -webkit-align-items: center;
+  justify-content: center;
+  align-items: center;
+}
+
+.cards_ary {
+    width: 100%;
+    display: flex;
+    display: -webkit-flex;
+    justify-content: center;
+    -webkit-justify-content: center;
+    max-width: calc(95vw);
+}
+
+.card--1 .card__img, .card--1 .card__img--hover {
+    background-image: url('../images/spectraviewer.png');
+    object-fit: cover;
+}
+
+.card--2 .card__img, .card--2 .card__img--hover {
+    background-image: url('../images/chemeln.jpg');
+    object-fit: cover;
+}
+
+.card--3 .card__img, .card--3 .card__img--hover {
+    background-image: url('../images/chemrepo.png');
+    object-fit: cover;
+}
+
+.card--4 .card__img, .card--4 .card__img--hover {
+    background-image: url('../images/chemscanner.png');
+    object-fit: cover;
+}
+
+.card__like {
+    width: 40px;
+    float: right;
+}
+
+.card__clock {
+    width: 15px;
+    vertical-align: middle;
+    fill: #337ab7;
+}
+.card__time {
+    font-size: 18px;
+    font-weight: bold;
+    color: #337ab7;
+    vertical-align: middle;
+    margin-left: 5px;
+
+}
+
+.card__clock-info {
+    float: right;
+}
+
+.card__img {
+    visibility: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 350px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    object-fit: cover;
+}
+
+.card__info-hover {
+    position: absolute;
+    padding: 16px;
+    width: 100%;
+    opacity: 0;
+    top: 0;
+    text-align: start;
+}
+
+.card__img--hover {
+    transition: 0.2s all ease-out;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    position: absolute;
+    height: 350px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    top: 0;
+    object-fit: cover;
+}
+.card_u {
+    margin-right: 50px;
+    transition: all .2s cubic-bezier(0.175, 0.885, 0, 1);
+    background-color: #fff;
+    width: 25%;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 20px 20px 10px -8px rgba(0, 0, 0,0.1)
+}
+.card_u:hover {
+    box-shadow: 0px 30px 18px -8px rgba(0, 0, 0,0.1);
+    transform: scale(1.10, 1.10);
+}
+
+.card__info {
+    z-index: 2;
+    background-color: #fff;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px 24px 24px 24px;
+}
+
+.card__title {
+    margin-top: 25px;
+    margin-bottom: 5px;
+}
+
+.card__desc {
+    margin-top: 10px;
+    font-weight: bolder !important;
+    color: #337ab7;
+    position: relative;
+    opacity: 1 !important;
+    height: 300px;
+    width: 100%;
+    font-size: 0.8vw;
+    vertical-align: middle;
+    display: table-cell;
+}
+
+.card__try {
+    position: relative;
+    z-index: 6;
+    display: flex;
+    display: -webkit-flex;
+}
+
+.card_u:hover .card__img--hover {
+    height: 100%;
+    opacity: 0.1;
+}
+
+.card_u:hover .card__info {
+    background-color: transparent;
+    position: relative;
+}
+
+.card_u:hover .card__info-hover {
+    opacity: 1;
+}

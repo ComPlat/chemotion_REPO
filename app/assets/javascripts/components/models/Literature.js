@@ -8,7 +8,8 @@ export default class Literature extends Element {
       doi: '',
       type: 'literature',
       is_new: false,
-      refs: {}
+      refs: {},
+      element_type: ''
     })
   }
 
@@ -20,7 +21,8 @@ export default class Literature extends Element {
       doi: this.doi,
       type: this.type,
       is_new: this.isNew || false,
-      refs: this.refs || {}
+      refs: this.refs || {},
+      element_type: this.element_type
     });
   }
 }

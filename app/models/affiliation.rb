@@ -28,12 +28,17 @@ class Affiliation < ActiveRecord::Base
   has_many :users, through: :user_affiliations
 
   def output_array_full
-    [group, department, organization, country]
+    [department, organization, country]
   end
 
   def output_full
     output_array_full.map{|e| !e.blank? && e || nil}.compact.join(', ')
   end
+
+  # def output_dep_org_country
+  #   output_array_full[1..-1].map{|e| !e.blank? && e || nil}.compact.join(', ')
+  # end
+
 
   private
 

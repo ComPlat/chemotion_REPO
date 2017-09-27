@@ -5,6 +5,7 @@ module Chemotion
       def self.parse(value)
         URI.parse value
       end
+
       def self.parsed?(value)
         value.is_a? URI::HTTP
       end
@@ -252,6 +253,41 @@ module Chemotion
           { jwt: token }
         end
       end
+
+      namespace :register_eln do
+        params do
+          requires :origin, type: UriHTTPType, desc: 'remote eln adress'
+        end
+
+        after_validation do
+          error!('401 Unauthorized - no ELN Gate collection', 401) unless (@collec = Collection.find_by(
+            user_id: current_user.id, is_locked: true, label: 'ELN Gate'
+          ))
+        end
+
+        post do
+          origin = URI.join(params[:origin], '/').to_s
+          payload = {
+            collection: @collec.id,
+            # label: @collec.label[0..20],
+            iss: current_user.email,
+            exp: (Time.now + 28.days).to_i,
+            origin: origin
+          }
+          secret = Rails.application.secrets.secret_key_base
+          token = JWT.encode payload, secret
+          AuthenticationKey.create!(
+            user_id: current_user.id,
+            fqdn: origin,
+            role: 'gate in',
+            token: token
+          )
+          # TODO: add a boolean on collection to allow AuthenticationKey
+          # or use sync_collections_users ??
+          redirect(URI.join(origin, "/api/v1/gate/register_repo?token=#{token}").to_s)
+        end
+      end
+
     end
   end
 end

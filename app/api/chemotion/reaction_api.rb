@@ -282,7 +282,7 @@ module Chemotion
 
         get do
           reaction = Reaction.find(params[:id])
-          { reaction: ElementPermissionProxy.new(current_user, reaction, user_ids).serialized, literatures: citation_for_elements(params[:id], 'Reaction') }
+          { reaction: ElementPermissionProxy.new(current_user, reaction, user_ids).serialized, literatures: citation_for_elements(params[:id], 'Reaction'), publication: Publication.find_by(element: reaction) || {} }
         end
       end
 

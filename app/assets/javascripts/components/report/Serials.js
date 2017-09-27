@@ -52,6 +52,8 @@ const spcSerials = props => suiSerials(props);
 
 const rxlSerials = props => suiSerials(props);
 
+const doiSerials = props => suiSerials(props);
+
 const Serials = (props) => {
   switch (props.template) {
     case 'standard':
@@ -64,6 +66,8 @@ const Serials = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlSerials(props);
+    case 'doi_list_xlsx':
+      return doiSerials(props);
     default:
       return null;
   }

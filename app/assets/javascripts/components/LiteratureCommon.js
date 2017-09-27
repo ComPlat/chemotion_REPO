@@ -1,10 +1,28 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, FormControl } from 'react-bootstrap';
-import Immutable from 'immutable';
+import { Button, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import uuid from 'uuid';
 import Cite from 'citation-js';
 import Literature from './models/Literature';
-import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
+
+
+const RefByUserInfo = ({ info }) => {
+  if (typeof (info) === 'undefined' || !info || info.length === 0) {
+    return (<div />);
+  }
+  return (
+    <OverlayTrigger
+      placement="bottom"
+      overlay={
+        <Tooltip id={`ref_by_user_${uuid.v4()}`}>
+          Reference added by {Object.keys(info).map(k => info[k]).join(', ')}
+        </Tooltip>
+      }
+    >
+      <i className="fa fa-book" />
+    </OverlayTrigger>
+  );
+};
 
 const TitleInput = ({ literature, handleInputChange }) => (
   <FormControl
@@ -81,7 +99,6 @@ const doiValid = (doi) => {
 
 const literatureContent = (literature, onlyText) => {
   let content;
-
   if (literature.refs && literature.refs.citation) {
     content = (
       <div>
@@ -123,11 +140,10 @@ const literatureContent = (literature, onlyText) => {
 }
 
 const Citation = ({ literature }) => {
-  const { title, year, doi, url, refs } = literature;
+  const { doi, url } = literature;
   const formatedDoi = doi ? `https://dx.doi.org/${sanitizeDoi(doi)}` : null;
   const link = formatedDoi || url;
   const content = literatureContent(literature);
-
   return (
     <a
       href={link}
@@ -139,7 +155,7 @@ const Citation = ({ literature }) => {
   );
 };
 Citation.propTypes = {
-  literature: PropTypes.instanceOf(Literature).isRequired
+  literature: PropTypes.any.isRequired,
 };
 
 const CitationUserRow = ({ literature, userId }) => (
@@ -230,5 +246,6 @@ export {
   groupByCitation,
   sortByElement,
   sortByReference,
-  literatureContent
+  literatureContent,
+  RefByUserInfo
 };

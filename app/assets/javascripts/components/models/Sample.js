@@ -808,6 +808,14 @@ export default class Sample extends Element {
     return this._equivalent;
   }
 
+  set scheme_yield(scheme_yield) {
+    this._scheme_yield = scheme_yield;
+  }
+
+  get scheme_yield() {
+    return this._scheme_yield;
+  }
+
   set conc(conc) {
     this._conc = conc;
   }
@@ -838,7 +846,7 @@ export default class Sample extends Element {
   }
 
   //Container & Analyses routines
-  addAnalysis(analysis){
+  addAnalysis(analysis) {
     this.container.children.filter(
       element => ~element.container_type.indexOf('analyses')
     )[0].children.push(analysis);
@@ -883,6 +891,11 @@ export default class Sample extends Element {
       target = [...target, ...atts];
     });
     return target;
+  }
+
+  analysisArray() {
+    const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
+    return analyses ? analyses.children : [];
   }
 }
 

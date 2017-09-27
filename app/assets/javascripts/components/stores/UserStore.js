@@ -37,7 +37,7 @@ class UserStore {
 
   handleFetchCurrentUser(result) {
     this.state.currentUser = result
-  }
+ }
 
   handleFetchProfile(result) {
     this.state.profile = result;

@@ -21,6 +21,7 @@ import { statusOptions } from './staticDropdownOptions/options'
 import LineChartContainer from './lineChart/LineChartContainer'
 import EditableTable from './lineChart/EditableTable'
 import OlsTreeSelect from './OlsComponent';
+import { RequiredLabel } from '../libHome/RepoCommon';
 
 export default class ReactionDetailsMainProperties extends Component {
   constructor(props) {
@@ -107,7 +108,7 @@ export default class ReactionDetailsMainProperties extends Component {
                 type="text"
                 value={reaction.name || ''}
                 placeholder="Name..."
-                disabled={reaction.isMethodDisabled('name')}
+                disabled={reaction.isMethodDisabled('name') || reaction.is_published}
                 onChange={event => onInputChange('name', event)}
               />
             </FormGroup>
@@ -122,7 +123,7 @@ export default class ReactionDetailsMainProperties extends Component {
                 multi={false}
                 options={statusOptions}
                 value={reaction.status}
-                disabled={reaction.isMethodDisabled('status')}
+                disabled={reaction.isMethodDisabled('status') || reaction.is_published}
                 onChange={(event) => {
                   const wrappedEvent = {
                     target: { value: event && event.value },
@@ -134,7 +135,7 @@ export default class ReactionDetailsMainProperties extends Component {
           </Col>
           <Col md={3}>
             <FormGroup>
-              <ControlLabel>Temperature</ControlLabel>
+              <ControlLabel>Temperature&nbsp;<RequiredLabel placement="top" /></ControlLabel>
               <InputGroup>
                 <InputGroup.Button>
                   <OverlayTrigger placement="bottom" overlay={temperatureTooltip}>
@@ -150,7 +151,7 @@ export default class ReactionDetailsMainProperties extends Component {
                 <FormControl
                   type="text"
                   value={temperatureDisplay || ''}
-                  disabled={reaction.isMethodDisabled('temperature')}
+                  disabled={reaction.isMethodDisabled('temperature') || reaction.is_published}
                   placeholder="Temperature..."
                   onChange={event => onInputChange('temperature', event)}
                 />
@@ -172,7 +173,7 @@ export default class ReactionDetailsMainProperties extends Component {
         <Row>
           <Col md={12}>
             <FormGroup>
-              <ControlLabel>Type (Name Reaction Ontology)</ControlLabel>
+              <ControlLabel>Type (Name Reaction Ontology)&nbsp;<RequiredLabel placement="top" /></ControlLabel>
               <OlsTreeSelect
                 selectName="rxno"
                 selectedValue={(reaction.rxno && reaction.rxno.trim()) || ''}

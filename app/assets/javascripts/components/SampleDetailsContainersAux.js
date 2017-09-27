@@ -17,6 +17,9 @@ import { contentToText } from './utils/quillFormat';
 import UIStore from './stores/UIStore';
 import { chmoConversions } from './OlsComponent';
 
+import { PublishedTag } from './PublishCommon';
+import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
+
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
     &nbsp;
@@ -32,6 +35,7 @@ const qCheckFail = (msg, kind, atomNum = '') => (
 );
 
 const qCheckMsg = (sample, container) => {
+  if (sample.can_publish === false && sample.can_update === false) { return ''; }
   if (sample.molecule && container.extended_metadata &&
     ((typeof container.extended_metadata.kind === 'undefined' || container.extended_metadata.kind == null ||
       container.extended_metadata.kind.split('|').length < 2) ||
@@ -212,6 +216,7 @@ const previewImage = (container) => {
 const headerBtnGroup = (
   container, sample, mode, handleRemove, handleSubmit,
   toggleAddToReport, isDisabled, readOnly,
+  publish,
 ) => {
   if (mode !== 'edit') {
     return null;
@@ -231,6 +236,60 @@ const headerBtnGroup = (
 
   // spcInfos = [ { value, label, title, idSp, idAe, idx, ... }, ...]
   const spcInfos = BuildSpcInfos(sample, container);
+
+  const xm = container && container.extended_metadata;
+  const typeMissing = !xm.kind || ((xm.kind || '').split('|').length < 2);
+  const statusMissing = (xm.status || '') !== 'Confirmed';
+  const nmrMissing = !isNmrPass(container, sample);
+  const datasetMissing = !isDatasetPass(container);
+  const btnTip = () => {
+    const tip = [];
+    if (typeMissing || statusMissing || nmrMissing || datasetMissing) {
+      if (typeMissing) tip.push('Type is invalid.');
+      if (statusMissing) tip.push('Status must be Confirmed.');
+      if (nmrMissing) tip.push('Content is invalid, NMR Check fails.');
+      if (datasetMissing) {
+        tip.push('Dataset is incomplete. Please check that: ');
+        tip.push('1. for NMR, Mass, or IR analyses, at least one dataset has been attached with an image and a jcamp files.');
+        tip.push('2. the instrument field is not empty.');
+      }
+      return tip.join('\r\n');
+    }
+    return 'publish this analysis';
+  };
+
+  const addToLabelBtn = publish ? (
+   (xm.public_analysis ? null :
+     <OverlayTrigger
+       placement="left"
+       overlay={<Tooltip id="checkAnalysis" className="publish_tooltip">{btnTip()}</Tooltip>}
+     >
+       <div>
+      <Checkbox
+        onClick={onToggleAddToReport}
+        // TODO: use null and true because the Boolean value is coerced into string: check why
+            defaultChecked={(xm && (xm.publish && (xm.publish === true || xm.publish === 'true')) && !xm.public_analysis && xm.kind && !statusMissing && !nmrMissing && !datasetMissing) ? true : false}
+        disabled={!!xm.public_analysis || typeMissing || statusMissing || nmrMissing || datasetMissing}
+      >
+        {
+              (!!xm.public_analysis || typeMissing || statusMissing || nmrMissing || datasetMissing) ?
+                <span style={{ color: 'red' }}>Add to publication</span>
+                :
+                <span>Add to publication</span>
+        }
+      </Checkbox>
+      </div>
+    </OverlayTrigger>
+  )) : (
+    <Checkbox
+      onClick={onToggleAddToReport}
+      defaultChecked={inReport}
+      disabled={!sample.can_update}
+    >
+      <span>Add to Report</span>
+    </Checkbox>
+  );
+
   const toggleSpectraModal = (e) => {
     e.stopPropagation();
     SpectraActions.ToggleModal();
@@ -276,12 +335,7 @@ const headerBtnGroup = (
         className="button-right add-to-report"
         onClick={stopBubble}
       >
-        <Checkbox
-          onClick={onToggleAddToReport}
-          defaultChecked={inReport}
-        >
-          <span>Add to Report</span>
-        </Checkbox>
+        {addToLabelBtn}
       </span>
     </div>
   );
@@ -290,6 +344,7 @@ const headerBtnGroup = (
 const HeaderNormal = ({
   sample, container, mode, readOnly, isDisabled, serial,
   handleRemove, handleSubmit, handleAccordionOpen, toggleAddToReport,
+  publish,
 }) => {
   const clickToOpen = () => handleAccordionOpen(serial);
 
@@ -319,6 +374,13 @@ const HeaderNormal = ({
   } else {
     hasPop = false;
   }
+  const nmrMissing = !isNmrPass(container, sample);
+
+  let statusChk = (status !== 'Confirmed' || nmrMissing);
+  if (sample.can_publish === false && sample.can_update === false) {
+    statusChk = false;
+  }
+
   return (
     <div
       className={`analysis-header ${mode === 'edit' ? '' : 'order'}`}
@@ -343,13 +405,18 @@ const HeaderNormal = ({
           headerBtnGroup(
             container, sample, mode, handleRemove, handleSubmit,
             toggleAddToReport, isDisabled, readOnly,
+            publish,
           )
         }
         <div className="lower-text">
-          <div className="main-title">{container.name}</div>
-          <div className="sub-title">Type: {kind}</div>
+          <div className="main-title">
+            {container.name}
+          </div>
+          <div className="sub-title" style={kind === '' ? { color: 'red' } : null}>
+            Type: {kind}
+          </div>
           <div className="sub-title">
-            Status: {status} {qCheckMsg(sample, container)}
+            <span style={statusChk ? { color: 'red' } : null}>Status:</span> {status} {qCheckMsg(sample, container)}
           </div>
           <div className="desc sub-title">
             <span style={{ float: 'left', marginRight: '5px' }}>

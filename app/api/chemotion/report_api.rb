@@ -19,6 +19,22 @@ module Chemotion
     end
 
     resource :reports do
+      desc "get DOI list"
+      params do
+        requires :elements
+      end
+      post :dois do
+        elements = params[:elements]
+        pub_list = []
+        elements.each do |element|
+          publication = Publication.find_by(element_id: element[:id], element_type: element[:type].capitalize)
+          pub_list.push(publication) unless publication.nil?
+          # publications = [publication] + publication.descendants
+        end
+        entities = Entities::PublicationEntity.represent(pub_list, serializable: true)
+        {dois: entities || []}
+      end
+
       desc "Build a reaction report using the contents of a JSON file"
       params do
         requires :id
@@ -203,6 +219,7 @@ module Chemotion
       optional :fileDescription
     end
     post :reports, each_serializer: ReportSerializer do
+# byebug      
       spl_settings = hashize(params[:splSettings])
       rxn_settings = hashize(params[:rxnSettings])
       si_rxn_settings = hashize(params[:siRxnSettings])

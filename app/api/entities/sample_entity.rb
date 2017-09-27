@@ -3,6 +3,8 @@ module Entities
     expose :molecule
     expose :container, using: Entities::ContainerEntity
     expose :tag
+    expose :publication
+    expose :doi, using: Entities::DoiEntity
     expose :residues
     expose :elemental_compositions, using: Entities::ElementalCompositionEntity
 

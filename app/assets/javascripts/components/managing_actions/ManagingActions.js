@@ -201,11 +201,13 @@ export default class ManagingActions extends React.Component {
             onClick={this.handleButtonClick}
             customClass={this.props.customClass}
           />
+          {/*
           <ShareButton
             isDisabled={shareDisabled}
             onClick={this.handleButtonClick}
             customClass={this.props.customClass}
           />
+          */}
         </ButtonGroup>
       </div>
     );

@@ -152,6 +152,7 @@ module SVG
 
     def compose_reaction_svg_and_save(options = {})
       prefix = options[:temp] ? 'temp-' : ''
+      prefix += "#{options[:prefix]}"
       svg = compose_reaction_svg
       file_name = prefix + generate_filename
       File.open(file_path + '/' + file_name, 'w') { |file| file.write(svg) }

@@ -13,9 +13,9 @@
       # archive.add File.readlink("#{Rails.root}/public/images/samples")
       # archive.add File.readlink("#{Rails.root}/public/images/sprites")
       # archive.add File.readlink("#{Rails.root}/public/images/templates")
-      archive.add File.readlink("#{Rails.root}/public/docx")
+      # archive.add File.readlink("#{Rails.root}/public/docx")
       archive.add File.readlink("#{Rails.root}/tmp/uploads")
-      archive.add File.readlink("#{Rails.root}/uploads")
+      # archive.add File.readlink("#{Rails.root}/uploads")     
       # archive.add File.readlink("#{Rails.root}/uploadNew")
     end
 

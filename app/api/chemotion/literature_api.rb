@@ -13,6 +13,8 @@ module Chemotion
     resource :literatures do
 
       after_validation do
+        @is_owned = nil
+        @is_public = nil
         unless request.url =~ /doi\/metadata|ui_state|collection/
           @element_klass = params[:element_type].classify
           @element = @element_klass.constantize.find_by(id: params[:element_id])
@@ -22,18 +24,40 @@ module Chemotion
                     else
                       @element_policy.update?
                     end
-          error!('401 Unauthorized', 401) unless allowed
+
+          @is_public = "Collections#{params[:element_type].classify}".constantize.where(
+            "#{params[:element_type]}_id = ? and collection_id in (?)",
+            params[:element_id],
+            [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id]
+          ).presence
+          error!('401 Unauthorized', 401) unless allowed || @is_public
+          @cat = @is_public ? 'public' : 'detail'
         end
       end
+
+
+
 
       desc "Return the literature list for the given element"
       params do
         requires :element_id, type: Integer
         requires :element_type, type: String, values: %w[sample reaction research_plan]
+        optional :is_all, type: Boolean, default: false
       end
 
       get do
-        { literatures: citation_for_elements }
+        if (params[:is_all] && params[:is_all] == true && params[:element_type] == 'reaction')
+          literatures = citation_for_elements(params[:element_id], @element_klass, @cat) || []
+          reaction = Reaction.find(params[:element_id])
+          reaction.products.each do |p|
+            literatures = literatures + citation_for_elements(p.id, 'Sample', @cat)
+          end
+          { literatures: literatures }
+        else
+          { literatures: citation_for_elements(params[:element_id], @element_klass, @cat) }
+        end
+      #  literatures = Literature.by_element_attributes_and_cat(params[:element_id], @element_klass, %w[detail public])
+      #  { literatures: literatures }
       end
 
       desc 'create a literature entry'
@@ -70,14 +94,14 @@ module Chemotion
           user_id: current_user.id,
           element_type: @element_klass,
           element_id: params[:element_id],
-          category: 'detail'
+          category: @cat
         }
         unless Literal.find_by(attributes)
           Literal.create(attributes)
           @element.touch
         end
 
-        { literatures: citation_for_elements }
+        { literatures: citation_for_elements(params[:element_id], @element_klass, @cat) }
       end
 
       params do
@@ -92,7 +116,7 @@ module Chemotion
           # user_id: current_user.id,
           element_type: @element_klass,
           element_id: params[:element_id],
-          category: 'detail'
+          category: @cat
         )&.destroy!
       end
 
@@ -105,9 +129,21 @@ module Chemotion
         after_validation do
           set_var(params[:id], params[:is_sync_to_me])
           error!(404) unless @c
+          if !@is_owned
+            obj = fetch_collection_w_current_user(params[:id], params[:is_sync_to_me])
+            @is_public = obj['shared_by'] && obj['shared_by']['initials'] == 'CI'
+          end
         end
 
         get do
+          if @is_public
+            return {
+              collectionRefs: Literature.none,
+              sampleRefs: Literature.by_element_attributes_and_cat(sample_ids, 'Sample', 'public').group('literatures.id'),
+              reactionRefs: Literature.by_element_attributes_and_cat(reaction_ids, 'Reaction', 'public').group('literatures.id'),
+              researchPlanRefs: Literature.none,
+            }
+          end
           sample_ids = @dl_s > 1 ? @c.sample_ids : []
           reaction_ids = @dl_r > 1 ? @c.reaction_ids : []
           research_plan_ids = @dl_rp > 1 ? @c.research_plan_ids : []
@@ -148,10 +184,15 @@ module Chemotion
           @sids = @dl_s > 1 ? @c.samples.by_ui_state(declared(params)[:sample]).pluck(:id) : []
           @rids = @dl_r > 1 ? @c.reactions.by_ui_state(declared(params)[:reaction]).pluck(:id) : []
           @cat = "detail"
+          if !@is_owned
+            obj = fetch_collection_w_current_user(params[:id], params[:is_sync_to_me])
+            @is_public = obj['shared_by_id'] && obj['shared_by_id'] == User.chemotion_user.id
+          end
         end
 
         post do
-          if params[:ref] && @pl >= 1
+          @cat = @is_public ? 'public' : 'detail'
+          if params[:ref] && (@pl >= 1 || @is_public)
             lit = if params[:ref][:is_new]
                   Literature.find_or_create_by(
                     doi: params[:ref][:doi],
@@ -171,7 +212,7 @@ module Chemotion
                     user_id: current_user.id,
                     element_type: type,
                     element_id: id,
-                    category: 'detail'
+                    category: @cat
                   )
                 end
               end

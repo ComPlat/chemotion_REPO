@@ -127,7 +127,7 @@ export default class Search extends React.Component {
     const elements = [
       "All",
       "Samples", "Reactions",
-      "Wellplates", "Screens"
+      // "Wellplates", "Screens"
     ]
 
     const menu = elements.map(element => (
@@ -148,7 +148,8 @@ export default class Search extends React.Component {
 
   render() {
     const { profile } = UserStore.getState();
-    const { customClass } = (profile && profile.data) || {};
+    // const { customClass } = (profile && profile.data) || {};
+    const customClass = '.btn-unified'
 
     const buttonAfter = (
       <ButtonGroup>

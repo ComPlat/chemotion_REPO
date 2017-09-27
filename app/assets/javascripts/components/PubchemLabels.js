@@ -8,9 +8,9 @@ const PubchemLabels = ({element}) =>{
     marginLeft: "5px",
     marginRight: "5px"
   };
-  if (!cid) {labelStyle.WebkitFilter = "grayscale(100%)"}
+  if (!cid || isNaN(cid)) {labelStyle.WebkitFilter = "grayscale(100%)"}
   const handleOnClick = (e) => {
-    if (!!cid){
+    if (cid && !isNaN(cid)){
       window.open("https://pubchem.ncbi.nlm.nih.gov/compound/" + cid, '_blank')
     }
     e.stopPropagation()

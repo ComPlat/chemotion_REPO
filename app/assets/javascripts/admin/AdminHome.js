@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Grid, Row, Col, Nav, NavItem } from 'react-bootstrap';
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 import AdminNavigation from './AdminNavigation';
 import Notifications from '../components/Notifications';
 import AdminDashboard from './AdminDashboard';
@@ -170,7 +172,8 @@ class AdminHome extends React.Component {
     );
   }
 }
+const AdminHomeWithDnD = DragDropContext(HTML5Backend)(AdminHome);
 document.addEventListener('DOMContentLoaded', () => {
   const domElement = document.getElementById('AdminHome');
-  if (domElement) { ReactDOM.render(<AdminHome />, domElement); }
+  if (domElement) { ReactDOM.render(<AdminHomeWithDnD />, domElement); }
 });

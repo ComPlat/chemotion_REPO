@@ -16,7 +16,7 @@ import UserInfos from './UserInfos';
 import DeviceBox from './inbox/DeviceBox';
 import UnsortedBox from './inbox/UnsortedBox';
 
-const colVisibleTooltip = <Tooltip id="col_visible_tooltip">Toggle own collections</Tooltip>;
+const colVisibleTooltip = <Tooltip id="col_visible_tooltip">Toggle My Collections</Tooltip>;
 
 export default class CollectionTree extends React.Component {
   constructor(props) {
@@ -37,8 +37,9 @@ export default class CollectionTree extends React.Component {
       syncCollectionVisible: false,
       inbox: inboxState.inbox,
       numberOfAttachments: inboxState.numberOfAttachments,
-      inboxVisible: false
-    };
+      inboxVisible: false,
+      syncChemotionVisible: true,
+    }
 
     this.onChange = this.onChange.bind(this);
     this.onClickInbox = this.onClickInbox.bind(this);
@@ -48,7 +49,7 @@ export default class CollectionTree extends React.Component {
     CollectionStore.listen(this.onChange);
     InboxStore.listen(this.onChange);
     CollectionActions.fetchLockedCollectionRoots();
-    CollectionActions.fetchUnsharedCollectionRoots();
+    // CollectionActions.fetchUnsharedCollectionRoots();
     CollectionActions.fetchSharedCollectionRoots();
     CollectionActions.fetchRemoteCollectionRoots();
     CollectionActions.fetchSyncInCollectionRoots();
@@ -93,11 +94,25 @@ export default class CollectionTree extends React.Component {
     return newRoots;
   }
 
+  publicRoots(roots, preservePublic) {
+    let newRoots =[]
+    roots.forEach((root) => {
+      if(preservePublic) {
+        if (root.is_public) newRoots.push(root)
+      } else {
+        if (!root.is_public) newRoots.push(root)
+      }
+    })
+
+    return newRoots
+  }
+
   unsharedSubtrees() {
     let roots = this.state.unsharedRoots;
-    roots = roots.filter(function(item) { return !item.isNew})
+    // roots = roots.filter(function(item) { return !item.isNew})
 
-    return this.subtrees(roots, null, false);
+    // return this.subtrees(roots, null, false);
+    return null
   }
 
   sharedSubtrees() {
@@ -182,6 +197,7 @@ export default class CollectionTree extends React.Component {
   remoteSyncInSubtrees() {
     let {syncInRoots, syncCollectionVisible} = this.state
     syncInRoots = this.removeOrphanRoots(syncInRoots)
+    syncInRoots = this.publicRoots(syncInRoots, false)
 
     let labelledRoots = syncInRoots.map(e => {
       return update(e, {label: {$set:
@@ -207,6 +223,43 @@ export default class CollectionTree extends React.Component {
                          false, syncCollectionVisible)
   }
 
+  publicSubtrees() {
+    let {syncInRoots, syncChemotionVisible} = this.state
+    syncInRoots = this.removeOrphanRoots(syncInRoots)
+    syncInRoots = this.publicRoots(syncInRoots, true)
+
+    let orderedRoots = []
+    if (syncInRoots && syncInRoots[0] && syncInRoots[0].children) {
+      syncInRoots[0].children.map((e,idx) => {
+        if (e.label.match(/hemotion/) ) {
+          orderedRoots[0] = e;
+          orderedRoots[0].label = 'Chemotion';
+        } else if (typeof e.label === 'string' && e.label === 'Scheme-only reactions') {
+          orderedRoots[1] = e;
+        } else if (e.label.match(/Published Elements/)) {
+          orderedRoots[2] = e
+          orderedRoots[2].label = 'My Published Elements'
+        } else if (e.label === 'Pending Publications') {orderedRoots[3] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Reviewing')) {orderedRoots[4] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Element To Review')) {orderedRoots[5] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Reviewed')) { orderedRoots[6] = e }
+        else if (e.label === 'Embargoed Publications') {orderedRoots[7] = e  }
+        else {orderedRoots[idx+10] = e  }
+      })
+    }
+
+    let subTreeLabels = (
+      <div className="tree-view">
+        <div className={"title title-public " } style={{backgroundColor:'white'}}
+              // onClick={() => this.setState({syncChemotionVisible: !syncChemotionVisible})}
+        >
+        </div>
+      </div>
+    )
+
+    return this.subtrees(orderedRoots, subTreeLabels,
+                         true, syncChemotionVisible)
+  }
 
   labelRoot(sharedToOrBy, rootCollection) {
     let shared = rootCollection[sharedToOrBy]
@@ -228,7 +281,12 @@ export default class CollectionTree extends React.Component {
 
   subtrees(roots, label, isRemote, visible = true) {
     let subtrees = roots.map((root, index) => {
-      return <CollectionSubtree root={root} key={index} isRemote={isRemote}/>
+      return  <CollectionSubtree
+                root={root}
+                key={index}
+                isRemote={isRemote}
+              //  deSelectPublic={this.deSelectPublic}
+              />
     })
 
     let subtreesVisible = visible ? "" : "none"
@@ -244,7 +302,7 @@ export default class CollectionTree extends React.Component {
 
   collectionManagementButton() {
     return (
-      <div className="take-ownership-btn">
+      <div className="take-ownership-btn" style={{ display: 'none' }} >
         <Button bsSize="xsmall" bsStyle="danger"
                 onClick={() => this.handleCollectionManagementToggle()}>
           <i className="fa fa-cog"></i>
@@ -295,32 +353,46 @@ export default class CollectionTree extends React.Component {
     const ownCollectionDisplay = ownCollectionVisible ? '' : 'none';
     const inboxDisplay = inboxVisible ? '' : 'none';
 
-    return (
-      <div>
+    const myCollections = this.state.lockedRoots && this.state.lockedRoots.length > 0 ? (
         <div className="tree-view">
           {this.collectionManagementButton()}
-          <OverlayTrigger placement="top" delayShow={1000} overlay={colVisibleTooltip}>
-            <div className="title" style={{backgroundColor:'white'}}
-                 onClick={() => this.setState({ownCollectionVisible: !ownCollectionVisible})}>
-              <i className="fa fa-list" /> &nbsp;&nbsp; Collections
+          <OverlayTrigger
+            placement="top"
+            delayShow={1000}
+            overlay={colVisibleTooltip}
+          >
+            <div
+              className="title"
+              style={{ backgroundColor: 'white' }}
+              onClick={() => this.setState({ownCollectionVisible: !ownCollectionVisible})}
+            >
+              <i className="fa fa-list" /> &nbsp;&nbsp; My Collections
             </div>
           </OverlayTrigger>
         </div>
-        <div className="tree-wrapper" style={{ display: ownCollectionDisplay }}>
+    ) : <div />
+
+    return (
+      <div>
+        <div className="tree-wrapper">
+          {this.publicSubtrees()}
+        </div>
+        {myCollections}
+        <div className="tree-wrapper" style={{display: ownCollectionDisplay}}>
           {this.lockedSubtrees()}
           {this.unsharedSubtrees()}
         </div>
-        <div className="tree-wrapper">
+        <div className="tree-wrapper" style={{ display: 'none' }} >
           {this.sharedSubtrees()}
         </div>
-        <div className="tree-wrapper">
+        <div className="tree-wrapper" style={{ display: 'none' }} >
           {this.remoteSubtrees()}
         </div>
-        <div className="tree-wrapper">
+        <div className="tree-wrapper" style={{ display: 'none' }} >
           {this.remoteSyncInSubtrees()}
         </div>
         {extraDiv.map((e)=>{return e})}
-        <div className="tree-view">
+        <div className="tree-view" style={{ display: 'none' }} >
           <div className="title" style={{ backgroundColor: 'white' }}>
             <i className="fa fa-inbox" onClick={() => this.onClickInbox()}> &nbsp; Inbox &nbsp;</i>
             {

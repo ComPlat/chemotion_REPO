@@ -23,6 +23,63 @@
  <%Bundler.load.current_dependencies.select{|dep| dep.groups.include?(:plugins)}.map(&:name).each do |plugin|%>
  @import "<%=plugin%>";
  <%end%>
+//////////////////////////
+ .main-image {
+  width: 100%;
+  margin-top: -10px;
+  position: relative;
+  display: inline-block;
+  background-color: #337ab7;
+}
+
+.main-image p {
+  margin-top: 10px;
+  font-size: 40px;
+  color: white;
+  text-align: center;
+  font-weight: 600;
+}
+
+.main-image img {
+  position: absolute;
+  overflow: visible;
+}
+
+.main-image img#book-image {
+  margin-top: -100px;
+  width: 300px;
+  opacity: 0%;
+}
+
+.main-image img#logo-image {
+  position: relative;
+}
+
+.main-image img#molecule-image {
+  right: 10px;
+  margin-top: -184px;
+}
+.main-image::before {
+  content: "";
+  top: 0;
+  left: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.dfg_logo img{
+  height: 25px;
+}
+.info-panel p {
+  margin: auto;
+}
+
+.info-panel ul {
+  padding-left: 40%;
+  text-align: left;
+}
+//////////////////////////
 
 label.required:after {
   content: " *";
@@ -30,12 +87,36 @@ label.required:after {
 
 .navbar-custom {
   border-radius: 0;
+  padding: 0px;
   background-color: #EFEFEF;
+  // : none;
+  // background-image: -webkit-linear-gradient(left, #EFEFEF 0%, #0d47a1 100%);
+  // background-image: linear-gradient(to left, #EFEFEF 0%, #0d47a1 100%);
+
+  // background-repeat: repeat-x;
+
 
   a.dropdown-toggle:hover {
     color: black;
   }
 }
+
+// .white-nav-item {
+//
+//   a {
+//     color: white !important;
+//
+//     &:hover {
+//       color: grey !important;
+//       text-decoration: none;
+//     }
+//
+//     &:focus {
+//       color: black !important;
+//       text-decoration: none;
+//     }
+//   }
+// }
 .custom-modal {
   width: 100%;
 }

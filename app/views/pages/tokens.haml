@@ -1,0 +1,33 @@
+.container
+  %h2
+    Chemotion Repository Token Registration
+
+
+  %br/
+  %br/
+  .jumbotron
+    %h2
+      ELN Gate Token
+    %br/
+
+    %h4 Register a Token to Send data from your chemotion ELN.
+    %br/
+    .form-horizontal
+      = form_tag '/api/v1/gate/register_eln' do
+        .form-group
+          = label_tag 'origin', 'url of your chemotion ELN', class: 'control-label col-sm-3'
+          .col-sm-4
+            = text_field_tag :origin,
+                             @origin,
+                             class: 'form-control',
+                             id: 'origin'
+
+        %h4
+        %br/
+        .actions
+          = submit_tag "Register token", class: "btn btn-primary"
+
+
+  = link_to "Back to the Repository", "/pages"
+  %br/
+  = link_to "Back to the ELN", @origin

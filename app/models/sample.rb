@@ -37,7 +37,6 @@
 #  molecule_name_id    :integer
 #  molfile_version     :string(20)
 #  stereo              :jsonb
-#  mol_rdkit           :string
 #  metrics             :string           default("mmm")
 #
 # Indexes
@@ -50,6 +49,12 @@
 #
 
 class Sample < ActiveRecord::Base
+
+
+  require 'net/ftp'
+  require 'erb'
+  require 'ostruct'
+
   acts_as_paranoid
   include ElementUIStateScopes
   include PgSearch
@@ -58,6 +63,7 @@ class Sample < ActiveRecord::Base
   include AnalysisCodes
   include UnitConvertable
   include Taggable
+  include Publishing
 
   STEREO_ABS = ['any', 'rac', 'meso', '(S)', '(R)', '(Sp)', '(Rp)', '(Sa)'].freeze
   STEREO_REL = ['any', 'syn', 'anti', 'p-geminal', 'p-ortho', 'p-meta', 'p-para', 'cis', 'trans', 'fac', 'mer'].freeze
@@ -150,6 +156,7 @@ class Sample < ActiveRecord::Base
   before_save :attach_svg, :init_elemental_compositions,
               :set_loading_from_ea
   before_save :auto_set_short_label
+  before_save :check_doi
   before_create :check_molecule_name
   after_save :update_counter
   after_create :create_root_container
@@ -192,6 +199,8 @@ class Sample < ActiveRecord::Base
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   belongs_to :molecule
 
+  has_one :doi, as: :doiable
+
   accepts_nested_attributes_for :molecule_name
   accepts_nested_attributes_for :collections_samples
   accepts_nested_attributes_for :molecule, update_only: true
@@ -204,6 +213,14 @@ class Sample < ActiveRecord::Base
 
   delegate :computed_props, to: :molecule, prefix: true
   delegate :inchikey, to: :molecule, prefix: true, allow_nil: true
+
+  def molfile_pubchem
+    version = Chemotion::OpenBabelService.molfile_version(self.molfile)
+    mf = Chemotion::OpenBabelService.mofile_clear_coord_bonds(self.molfile, version)
+    mf = molfile unless mf
+    mf&.split(/^\$\$\$\$/).first
+  end
+
 
   def molecule_sum_formular
     self.molecule ? self.molecule.sum_formular : ''
@@ -227,6 +244,18 @@ class Sample < ActiveRecord::Base
 
   def analyses
     self.container ? self.container.analyses : Container.none
+  end
+
+  #TODO move to molecule (chemotion_ELN)
+  def pubchem_cid
+    mol = self.molecule
+    cid = mol.tag && mol.tag.taggable_data && mol.tag.taggable_data['pubchem_cid']
+    if cid
+      cid
+    else
+      mol.update_tag!(pubchem_tag: true)
+      mol.tag.taggable_data['pubchem_cid']
+    end
   end
 
   def self.associated_by_user_id_and_reaction_ids(user_id, reaction_ids)

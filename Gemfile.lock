@@ -148,7 +148,7 @@ GEM
     api-pagination (4.8.2)
     arel (6.0.4)
     ast (2.4.0)
-    autoprefixer-rails (9.6.4)
+    autoprefixer-rails (9.7.6)
       execjs
     awesome_print (1.8.0)
     axiom-types (0.1.1)
@@ -164,10 +164,12 @@ GEM
       coderay (>= 1.0.0)
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
-    bibtex-ruby (5.1.2)
+    bibtex-ruby (5.1.3)
       latex-decode (~> 0.0)
     binding_of_caller (0.8.0)
       debug_inspector (>= 0.0.1)
+    bootsnap (1.3.2)
+      msgpack (~> 1.0)
     bootstrap-kaminari-views (0.0.5)
       kaminari (>= 0.13)
       rails (>= 3.1)
@@ -239,7 +241,7 @@ GEM
     css_parser (1.7.0)
       addressable
     daemons (1.3.1)
-    database_cleaner (1.7.0)
+    database_cleaner (1.8.4)
     debug_inspector (0.0.3)
     delayed_cron_job (0.7.2)
       delayed_job (>= 4.1)
@@ -369,23 +371,14 @@ GEM
     latex-decode (0.3.1)
     launchy (2.4.3)
       addressable (~> 2.3)
-    listen (3.1.5)
-      rb-fsevent (~> 0.9, >= 0.9.4)
-      rb-inotify (~> 0.9, >= 0.9.7)
-      ruby_dep (~> 1.2)
-    loofah (2.4.0)
+    listen (3.2.1)
+      rb-fsevent (~> 0.10, >= 0.10.3)
+      rb-inotify (~> 0.9, >= 0.9.10)
+    loofah (2.5.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
       mini_mime (>= 0.1.1)
-    mailcatcher (0.7.1)
-      eventmachine (= 1.0.9.1)
-      mail (~> 2.3)
-      rack (~> 1.5)
-      sinatra (~> 1.2)
-      skinny (~> 0.2.3)
-      sqlite3 (~> 1.3)
-      thin (~> 1.5.0)
     memoist (0.16.0)
     memory_profiler (0.9.13)
     meta_request (0.7.0)
@@ -399,6 +392,8 @@ GEM
     mini_mime (1.0.2)
     mini_portile2 (2.4.0)
     minitest (5.12.2)
+    moneta (1.0.0)
+    msgpack (1.2.6)
     multi_json (1.13.1)
     multi_xml (0.6.0)
     multipart-post (2.1.0)
@@ -427,7 +422,7 @@ GEM
     parallel (1.17.0)
     paranoia (2.4.2)
       activerecord (>= 4.0, < 6.1)
-    parser (2.6.4.1)
+    parser (2.7.1.0)
       ast (~> 2.4.0)
     pdf-core (0.7.0)
     pg (0.20.0)
@@ -448,8 +443,7 @@ GEM
       rack (>= 0.4)
     rack-contrib (1.8.0)
       rack (~> 1.4)
-    rack-protection (1.5.5)
-      rack
+    rack-cors (1.0.2)
     rack-test (0.6.3)
       rack (>= 1.0)
     rails (4.2.11.1)
@@ -546,7 +540,7 @@ GEM
     safe_yaml (1.0.5)
     sassc (2.2.1)
       ffi (~> 1.9)
-    sassc-rails (2.1.1)
+    sassc-rails (2.1.2)
       railties (>= 4.0.0)
       sassc (>= 2.0)
       sprockets (> 3.0)
@@ -568,14 +562,7 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.2)
-    sinatra (1.4.8)
-      rack (~> 1.5)
-      rack-protection (~> 1.4)
-      tilt (>= 1.3, < 3)
     sixarm_ruby_unaccent (1.2.0)
-    skinny (0.2.4)
-      eventmachine (~> 1.0.0)
-      thin (>= 1.5, < 1.7)
     slackistrano (3.8.4)
       capistrano (>= 3.8.1)
     spring (2.0.2)
@@ -588,7 +575,6 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
-    sqlite3 (1.4.1)
     sshkit (1.18.2)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
@@ -610,7 +596,7 @@ GEM
       parallel (~> 1.0)
       railties (>= 4)
       sprockets (~> 3.0)
-    tzinfo (1.2.5)
+    tzinfo (1.2.7)
       thread_safe (~> 0.1)
     uglifier (4.1.20)
       execjs (>= 0.3.0, < 3)
@@ -663,6 +649,7 @@ DEPENDENCIES
   better_errors
   bibtex-ruby
   binding_of_caller
+  bootsnap
   bootstrap-sass (~> 3.4.1)
   browserify-rails (~> 4.2.0)
   bullet
@@ -710,9 +697,9 @@ DEPENDENCIES
   kaminari-grape
   ketcherails (~> 0.1.6)!
   launchy (~> 2.4.3)
-  mailcatcher (= 0.7.1)
   memory_profiler
   meta_request
+  moneta
   net-sftp
   net-ssh
   nokogiri
@@ -724,6 +711,7 @@ DEPENDENCIES
   prawn
   prawn-svg
   pundit
+  rack-cors
   rack-mini-profiler!
   rails (= 4.2.11.1)
   rdkit_chem!

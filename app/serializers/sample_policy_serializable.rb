@@ -6,6 +6,7 @@ module SamplePolicySerializable
 
     def initialize(element, options={})
       original_initialize(element)
+      @element = element
       @policy = options.class == Hash && options[:policy]
     end
 
@@ -14,7 +15,13 @@ module SamplePolicySerializable
     end
 
     def can_publish
-      @policy && @policy.try(:destroy?)
+      cp = @policy && @policy.try(:destroy?)
+      # return false if !%w[Sample Reaction].include?(@element.class.name)      ####
+      # || (@element.class.name == 'Sample' && @element.reactions&.length > 0)  ####
+
+      pub = Publication.find_by(element: @element)
+      return cp if pub.nil? || pub&.state == 'reviewed'
+      false
     end
   end
 end

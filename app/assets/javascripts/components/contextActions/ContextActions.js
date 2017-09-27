@@ -61,7 +61,7 @@ export default class ContextActions extends React.Component {
             updateModalProps={updateModalProps}
             customClass={customClass}
           />
-          <ReportUtilButton customClass={customClass} />
+          <ReportUtilButton isDisabled={this.isDisabled()} customClass={customClass} />
         </ButtonGroup>
         <ButtonGroup style={{ marginLeft: '10px' }}>
           <CreateButton isDisabled={this.isCreateDisabled()} customClass={customClass} />

@@ -15,21 +15,27 @@ export default class Switch extends React.Component {
     const {
       checked,
       checkedChildren,
+      classSize,
       unCheckedChildren,
       ...restProps
     } = this.props
 
-    let className = "switch "
-    className += checked ? "switch-checked" : ""
+    let className = "switch ";
+    className += checked ? "switch-checked" : "";
+    let innerClass = "switch-inner";
+    if (typeof (classSize) !== 'undefined' && classSize==='switchb') {
+      className = "switchb ";
+      className += checked ? "switchb-checked" : "";
+      innerClass = "switchb-inner";
+    }
 
     return (
       <span tabIndex="0" onClick={() => this.toggle(checked)}
         className={className} {...restProps}>
-        <span className="switch-inner">
+        <span className={innerClass}>
           {checked ? checkedChildren : unCheckedChildren}
         </span>
       </span>
     )
   }
 }
-

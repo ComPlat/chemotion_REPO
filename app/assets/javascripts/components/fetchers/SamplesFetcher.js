@@ -8,6 +8,7 @@ import BaseFetcher from './BaseFetcher';
 
 
 import Container from '../models/Container';
+import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
 
 export default class SamplesFetcher {
   static fetchSamplesByUIStateAndLimit(params) {
@@ -49,7 +50,7 @@ export default class SamplesFetcher {
         if (json.error) {
           rSample.id = `${id}:error:Sample ${id} is not accessible!`;
         }
-        return rSample;
+        return new Sample(defaultAnalysisPublish(rSample));
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
@@ -61,7 +62,8 @@ export default class SamplesFetcher {
     return BaseFetcher.fetchByCollectionId(id, queryParams, isSync, 'samples', Sample);
   }
 
-  static update(sample) {
+  static update(s) {
+    const sample = defaultAnalysisPublish(s);
     let files = AttachmentFetcher.getFileListfrom(sample.container)
     let promise = ()=> fetch('/api/v1/samples/' + sample.id, {
       credentials: 'same-origin',
@@ -87,7 +89,8 @@ export default class SamplesFetcher {
 
   }
 
-  static create(sample) {
+  static create(s) {
+    const sample = defaultAnalysisPublish(s);
     let files = AttachmentFetcher.getFileListfrom(sample.container)
     let promise = ()=> fetch('/api/v1/samples', {
       credentials: 'same-origin',

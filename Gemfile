@@ -35,6 +35,8 @@ gem 'bibtex-ruby'
 # state machine
 gem 'aasm'
 
+gem 'bootsnap', require: false
+
 group :development do
   gem 'sdoc', '~> 0.4.0', group: :doc
 
@@ -91,6 +93,7 @@ gem 'kaminari-grape'
 gem "rdkit_chem", git: "https://github.com/CamAnNguyen/rdkit_chem"
 
 gem 'api-pagination'
+gem 'rack-cors'
 
 gem 'pundit'
 
@@ -150,7 +153,9 @@ gem 'coveralls', require: false
 # to compile from github/openbabel/openbabel master
 # gem 'openbabel', '2.4.1.2', git: 'https://github.com/ComPlat/openbabel-gem'
 # to compile from github/openbabel/openbabel branch openbabel-2-4-x
+# gem 'openbabel', '2.4.90.1', git: 'https://github.com/ComPlat/openbabel-gem'
 gem 'openbabel', '2.4.90.3', git: 'https://github.com/ComPlat/openbabel-gem.git', branch: 'hot-fix-svg'
+
 
 gem 'barby'
 gem 'prawn'
@@ -163,13 +168,14 @@ gem 'swot', git: 'https://github.com/leereilly/swot.git', branch: 'master',
             ref: 'bfe392b4cd52f62fbc1d83156020275719783dd1'
 # gem 'gman', '~> 7.0.3'
 gem 'activejob-status'
+gem 'moneta'
 
 group :development, :test do
   gem 'binding_of_caller'
 
   gem 'annotate'
 
-  gem 'mailcatcher', '0.7.1'
+  # gem 'mailcatcher', '0.7.1'
 
   # Call 'byebug' anywhere in the code to stop execution
   # and get a debugger console
@@ -229,5 +235,7 @@ eln_plugin = File.join(File.dirname(__FILE__), "Gemfile.plugin")
 if File.exists?(eln_plugin)
   eval_gemfile eln_plugin
 end
+
+#gem 'reposit', git: 'git@git.scc.kit.edu:complat/reposit.git'
 
 ####

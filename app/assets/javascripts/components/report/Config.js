@@ -21,6 +21,7 @@ const templateOpts = () => (
     { label: 'Supporting Information - Reaction List (.xlsx)', value: 'rxn_list_xlsx' },
     { label: 'Supporting Information - Reaction List (.csv)', value: 'rxn_list_csv' },
     { label: 'Supporting Information - Reaction List (.html)', value: 'rxn_list_html' },
+    { label: 'Supporting Information - DOI List (.xlsx)', value: 'doi_list_xlsx' },
   ]
 );
 
@@ -171,6 +172,8 @@ const spcConfig = ({ template, fileName, fileDescription }) => {
 
 const rxlConfig = props => spcConfig(props);
 
+const doiConfig = props => spcConfig(props);
+
 const Config = (props) => {
   switch (props.template) {
     case 'standard':
@@ -183,6 +186,8 @@ const Config = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlConfig(props);
+    case 'doi_list_xlsx':
+      return doiConfig(props);
     default:
       return null;
   }

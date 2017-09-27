@@ -85,18 +85,32 @@ module Chemotion
           .where(collections: { id: @collection.id }, reactions_samples: { reaction_id: deleted['reaction'] })
           .destroy_all.map(&:id)
 
+        sql_pub = "(element_id in (?) and element_type = 'Sample') or (element_id in (?) and element_type = 'Reaction')"
+        Publication.where(sql_pub, deleted['sample'], deleted['reaction'])
+                   .map(&:root).uniq.each do |e|
+          e.update_state(Publication::STATE_DECLINED)
+          e.proces_element(Publication::STATE_DECLINED)
+          e.inform_users(Publication::STATE_DECLINED, current_user.id)
+        end
         { selecteds: params[:selecteds].select { |sel| !deleted.fetch(sel['type'], []).include?(sel['id']) } }
       end
 
       desc "return selected elements from the list. (only samples an reactions)"
       post do
+
         selected = { 'samples' => [], 'reactions' => [] }
-        %w[sample reaction].each do |element|
-          next unless params[element][:checkedAll] || params[element][:checkedIds].present?
-          selected[element + 's'] = @collection.send(element + 's').by_ui_state(params[element]).map do |e|
-            ElementPermissionProxy.new(current_user, e, user_ids).serialized
-          end
+
+        @collection_ids = [@collection.id] + Collection.joins(:sync_collections_users)
+        .where('sync_collections_users.collection_id = collections.id and sync_collections_users.user_id = ?', current_user).references(:collections)&.pluck(:id)
+
+        selected['samples'] = Sample.joins(:collections_samples).where('collections_samples.collection_id in (?)',@collection_ids).by_ui_state(params['sample']).distinct.map do |e|
+          ElementPermissionProxy.new(current_user, e, user_ids).serialized
         end
+
+        selected['reactions'] = Reaction.joins(:collections_reactions).where('collections_reactions.collection_id in (?)',@collection_ids).by_ui_state(params['reaction']).distinct.map do |e|
+          ElementPermissionProxy.new(current_user, e, user_ids).serialized
+        end
+
         # TODO: fallback if sample are not in owned collection and currentCollection is missing
         # (case when cloning report)
         selected

@@ -20,7 +20,7 @@ const showComputedPropsGraph = () => {
   ElementActions.showComputedPropsGraph();
 };
 
-const ReportUtilButton = ({ customClass  }) => {
+const ReportUtilButton = ({ customClass, isDisabled=false  }) => {
   const userState = UserStore.getState();
   const profileData = _.get(userState, 'profile.data', {});
   const enableComputedProps = _.get(profileData, 'computed_props.enable', false);
@@ -45,7 +45,7 @@ const ReportUtilButton = ({ customClass  }) => {
           Report
         </MenuItem>
         <MenuItem divider />
-        <MenuItem onSelect={showFormatContainer} title="Analyses Formatting">
+        <MenuItem onSelect={showFormatContainer} disabled={isDisabled} title="Analyses Formatting">
           Format Analyses
         </MenuItem>
         <MenuItem onSelect={ElementActions.showLiteratureDetail} title="Reference Manager">
@@ -59,10 +59,12 @@ const ReportUtilButton = ({ customClass  }) => {
 
 ReportUtilButton.propTypes = {
   customClass: PropTypes.string,
+  isDisabled: PropTypes.bool,
 };
 
 ReportUtilButton.defaultProps = {
   customClass: null,
+  isDisabled: false,
 };
 
 export default ReportUtilButton;

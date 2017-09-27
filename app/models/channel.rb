@@ -31,6 +31,9 @@ class Channel < ActiveRecord::Base
   EDITOR_CALLBACK = 'EditorCallback'
   COLLECTION_ZIP = 'Collection Import and Export'
   COLLECTION_ZIP_FAIL = 'Collection Import and Export Failure'
+  # REPOSITORY ONLY
+  PUBLICATION_REVIEW = 'Publication Review'
+  PUBLICATION_PUBLISHED = 'Publication Published'
 
   class << self
     def build_message(**args)

@@ -32,7 +32,6 @@ $(function() {
   attachAutoComplete("countries", "country-select")
   attachAutoComplete("organizations", "organization-select")
   attachAutoComplete("departments", "department-select")
-  attachAutoComplete("groups", "group-select")
 
 });
 $("input#user_email").focusout(

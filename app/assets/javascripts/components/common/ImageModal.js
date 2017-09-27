@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Modal, Button } from 'react-bootstrap';
 import AttachmentFetcher from '../fetchers/AttachmentFetcher';
 import { stopEvent } from '../utils/DomHelper';
+import UserStore from '../stores/UserStore';
 
 const defaultImageStyle = {
   style: {
@@ -20,6 +21,7 @@ export default class ImageModal extends Component {
     this.fetchImage = this.fetchImage.bind(this);
     this.handleModalClose = this.handleModalClose.bind(this);
     this.handleModalShow = this.handleModalShow.bind(this);
+    this.handleImageError = this.handleImageError.bind(this);
   }
 
   componentDidMount() {
@@ -37,12 +39,18 @@ export default class ImageModal extends Component {
   }
 
   fetchImage() {
-    AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
-      .then((result) => {
-        if (result != null) {
-          this.setState({ fetchSrc: result });
-        }
-      });
+    const { currentUser } = UserStore.getState();
+    if (!currentUser) {
+      const fileSrc = ['/images/publications', this.props.popObject.fetchId, this.props.popObject.fetchFilename].join('/');
+      this.setState({ fetchSrc: fileSrc });
+    } else {
+      AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
+        .then((result) => {
+          if (result != null) {
+            this.setState({ fetchSrc: result });
+          }
+        });
+    }
   }
 
   handleModalClose(e) {
@@ -53,6 +61,10 @@ export default class ImageModal extends Component {
   handleModalShow(e) {
     stopEvent(e);
     this.setState({ showModal: true });
+  }
+
+  handleImageError() {
+    this.setState({ fetchSrc: this.props.preivewObject.src });
   }
 
   render() {
@@ -81,6 +93,7 @@ export default class ImageModal extends Component {
                 maxWidth: '100%',
               }}
               alt=""
+              onError={this.handleImageError}
             />
           </Modal.Body>
           <Modal.Footer>
@@ -103,5 +116,6 @@ ImageModal.propTypes = {
     src: PropTypes.string,
     fetchNeeded: PropTypes.bool,
     fetchId: PropTypes.number,
+    fetchFilename: PropTypes.string,
   }).isRequired,
 };

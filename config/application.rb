@@ -131,6 +131,18 @@ module Chemotion
     # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
     # config.i18n.default_locale = :de
 
+#    config.middleware.insert_before 0, "Rack::Cors", :debug => true, :logger => (-> { Rails.logger }) do
+#      allow do
+#        origins '*' #'testchemotion.net'
+#        resource(
+#          '/api/v1/public/register_token/access_token',
+#          headers: :any,
+#          methods: [:get],
+#          # credentials: true
+#        )
+#      end
+#    end
+
     private
 
 

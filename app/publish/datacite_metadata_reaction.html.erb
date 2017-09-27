@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
+  <identifier identifierType="DOI"><%= "#{dois[:reaction][:DOI]}" %></identifier>
+  <creators>
+    <% pub_tag['creators'].each do |creator| %>
+    <creator>
+      <creatorName nameType="Personal"><%= creator['familyName'] %>, <%= creator['givenName'] %></creatorName>
+      <givenName><%= creator['givenName'] %></givenName>
+      <familyName><%= creator['familyName'] %></familyName>
+      <% if creator['ORCID'].present? %>
+      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
+      <% end %>
+      <% if (aff_ids = creator['affiliationIds']).present? then aff_ids.each do |aff_id| %>
+      <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+      <% end %>
+      <% end %>
+    </creator>
+    <% end %>
+  </creators>
+  <titles>
+    <title xml:lang="en-US"><%= element.products_short_rinchikey %></title>
+    <title titleType="AlternativeTitle"><%= element.rinchi_short_key %></title>
+  </titles>
+  <publisher>chemotion.net</publisher>
+  <publicationYear><%= element.created_at.strftime("%Y") %></publicationYear>
+  <% if pub_tag['contributors'].present? %>
+  <contributors>
+    <contributor contributorType="Researcher">
+      <contributorName><%= pub_tag['contributors']['familyName'] %>, <%= pub_tag['contributors']['givenName'] %></contributorName>
+      <givenName><%= pub_tag['contributors']['givenName'] %></givenName>
+      <familyName><%= pub_tag['contributors']['familyName'] %></familyName>
+      <% if pub_tag['contributors']['ORCID'].present? %>
+      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=pub_tag['contributors']['ORCID']%></nameIdentifier>
+      <% end %>
+      <% if pub_tag['contributors'] && pub_tag['contributors']['affiliations'].present? then pub_tag['contributors']['affiliations'].each do |aff| %>
+      <affiliation><%= aff %></affiliation>
+      <% end %>
+      <% end %>
+    </contributor>
+  </contributors>
+  <% end %>
+  <dates>
+  <date dateType="Created"><%= element.created_at %></date>
+  </dates>
+
+  <subjects>
+    <subject>chemical reaction: structures conditions</subject>
+  </subjects>
+  <language>en</language>
+
+  <resourceType resourceTypeGeneral="Workflow">reaction conditions</resourceType>
+  <version>1</version>
+  <rightsList>
+    <rights xml:lang="en-US" schemeURI="<%= rights[:schemeURI] %>" rightsIdentifierScheme="<%= rights[:rightsIdentifierScheme] %>" rightsIdentifier="<%= rights[:rightsIdentifier] %>" rightsURI="<%= rights[:rightsURI] %>"><%= rights[:rightsName] %></rights>
+  </rightsList>
+  <descriptions>
+    <description xml:lang="en-US" descriptionType="Abstract">
+      <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.description.to_json)).text, false, nil, false).to_s %>
+    </description>
+  </descriptions>
+
+  <relatedIdentifiers>
+    <% dois[:analyses_dois].each do |_, ds| %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart"><%= "#{ds[:DOI]}" %></relatedIdentifier>
+    <% end %>
+    <% dois['samples'].each do |sid, doi| %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart"><%= "#{doi[:sample][:DOI]}" %></relatedIdentifier>
+    <% end %>
+  </relatedIdentifiers>
+</resource>

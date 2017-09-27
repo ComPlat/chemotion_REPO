@@ -25,6 +25,8 @@ import Sample from './models/Sample';
 import { sampleShowOrNew } from './routesUtils';
 import SvgWithPopover from './common/SvgWithPopover';
 
+import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
+
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
   const flattenSamplesId = [];
@@ -162,6 +164,7 @@ const MoleculeHeader = ({ sample, show, showDragColumn, onClick, targetType }) =
           <ChemrepoLabels chemrepoId={sample.molecule.chem_repo && sample.molecule.chem_repo.id} />
           {tdExtraContents.map(e => e)}
           <PubchemLabels element={sample} />
+          <ChemotionTag tagData={sample.pubchem_tag} />
         </div>
         <div style={{ position: 'absolute', bottom: '10px', right: '25px', float: 'right' }} >
           <ComputedPropLabel cprops={sample.molecule_computed_props} />
@@ -343,6 +346,8 @@ export default class ElementsTableSampleEntries extends Component {
             {sample.title(selected)}
             <div style={{ float: 'right', display: 'flex', alignItems: 'center' }}>
               <XvialIcon label={sample.external_label} />
+              <LabelPublication element={sample} key={sample.id + "_publication"} />
+              <PublishedTag element={sample} />
               <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
               <ElementCollectionLabels element={sample} key={`${sample.id}`} />
               <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />

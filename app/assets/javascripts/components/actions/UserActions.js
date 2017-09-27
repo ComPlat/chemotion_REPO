@@ -1,3 +1,4 @@
+import Aviator from 'aviator';
 import alt from '../alt';
 import UsersFetcher from '../fetchers/UsersFetcher';
 import cookie from 'react-cookie'
@@ -44,9 +45,9 @@ class UserActions {
       data: {authenticity_token: DocumentHelper.getMetaContent("csrf-token")}
     })
     .then(response => {
-      if (response.status == 204) {
-        location.reload();
-      }
+      Aviator.navigate('/', { silent: true });
+      location.href = '/';
+      location.reload();
     });
   }
 

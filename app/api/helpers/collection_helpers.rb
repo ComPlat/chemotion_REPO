@@ -102,12 +102,17 @@ module CollectionHelpers
   end
 
   def set_var(c_id = params[:collection_id], is_sync = params[:is_sync])
+    public_col = !is_sync && [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(params[:collection_id])
+    if public_col
+      @c_id = params[:collection_id] if public_col
+    else
     @c_id = fetch_collection_id_w_current_user(c_id, is_sync)
+    end
     @c = Collection.find_by(id: @c_id)
     cu_id = current_user&.id
     @is_owned = cu_id && ((@c.user_id == cu_id && !@c.is_shared) || @c.shared_by_id == cu_id)
 
-    @dl = {
+    @dl ||= {
       permission_level: 10,
       sample_detail_level: 10,
       reaction_detail_level: 10,
@@ -116,12 +121,35 @@ module CollectionHelpers
       researchplan_detail_level: 10,
     }
 
-    @dl = detail_level_for_collection(c_id, is_sync) unless @is_owned
+    @dl = detail_level_for_collection(c_id, is_sync) unless @is_owned || [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(@c_id)
     @pl = @dl[:permission_level]
     @dl_s = @dl[:sample_detail_level]
     @dl_r = @dl[:reaction_detail_level]
     @dl_wp = @dl[:wellplate_detail_level]
     @dl_sc = @dl[:screen_detail_level]
     @dl_rp = @dl[:researchplan_detail_level]
+  end
+
+  def check_params_collection_id
+    params[:collection_id] = case params[:collection_id]
+                             when 'public'
+                               Collection.public_collection_id
+                             when 'schemeOnly'
+                               Collection.scheme_only_reactions_collection_id
+                             else
+                               params[:collection_id]
+                             end
+  end
+
+  def set_var_for_unsigned_user
+    params[:is_sync] = false
+    @dl = {
+      permission_level: 0,
+      sample_detail_level: 10,
+      reaction_detail_level: 10,
+      wellplate_detail_level: 0,
+      screen_detail_level: 0,
+      researchplan_detail_level: 0
+    }
   end
 end

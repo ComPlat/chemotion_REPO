@@ -105,7 +105,7 @@ module Reporter
     def prism(objs)
       cont_objs, proc_objs = [], []
       objs.each do |obj|
-        next if obj[:type] == "sample"
+        next if obj[:type] == "sample" && @report.template != 'doi_list_xlsx'
         is_general_procedure(obj) ? proc_objs.push(obj) : cont_objs.push(obj)
       end
       return cont_objs, proc_objs

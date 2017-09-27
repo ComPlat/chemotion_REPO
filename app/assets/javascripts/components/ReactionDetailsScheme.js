@@ -17,6 +17,7 @@ import NotificationActions from './actions/NotificationActions';
 import { reactionToolbarSymbol } from './utils/quillToolbarSymbol';
 import GeneralProcedureDnd from './GeneralProcedureDnD';
 import { rolesOptions, conditionsOptions } from './staticDropdownOptions/options';
+import { RequiredLabel } from '../libHome/RepoCommon';
 
 export default class ReactionDetailsScheme extends Component {
   constructor(props) {
@@ -775,12 +776,13 @@ if ((typeof (lockEquivColumn) !== 'undefined' && !lockEquivColumn) || !reaction.
             <Row>
               <Col md={12}>
                 <FormGroup>
-                  <ControlLabel>Description</ControlLabel>
+                  <ControlLabel>Description&nbsp;<RequiredLabel placement="top" /></ControlLabel>
                   <QuillEditor
                     ref={this.quillref}
                     value={reaction.description}
                     onChange={event => this.props.onInputChange('description', event)}
                     toolbarSymbol={reactionToolbarSymbol}
+                    disabled={reaction.is_published || false}
                   />
                 </FormGroup>
               </Col>

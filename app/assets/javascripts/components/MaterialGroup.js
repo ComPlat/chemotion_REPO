@@ -11,6 +11,7 @@ import Reaction from './models/Reaction';
 import { defaultMultiSolventsSmilesOptions } from './staticDropdownOptions/options';
 import { ionic_liquids } from './staticDropdownOptions/ionic_liquids';
 import { reagents_kombi } from './staticDropdownOptions/reagents_kombi';
+import { RequiredLabel } from '../libHome/RepoCommon';
 
 const MaterialGroup = ({
   materials, materialGroup, deleteMaterial, onChange,
@@ -189,7 +190,7 @@ const GeneralMaterialGroup = ({
             { isReactants && <th colSpan={showLoadingColumn ? 9 : 8}>{reagentDd}</th> }
             { !isReactants && <th>{refTHead}</th> }
             { !isReactants && <th>{headers.tr}</th> }
-            { !isReactants && <th>{headers.amount}</th> }
+            {!isReactants && <th>{headers.amount}&nbsp;<RequiredLabel placement="top" /></th> }
             { !isReactants && <th /> }
             { !isReactants && <th /> }
             { showLoadingColumn && !isReactants && <th>{headers.loading}</th> }

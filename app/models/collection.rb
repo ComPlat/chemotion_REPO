@@ -69,6 +69,47 @@ class Collection < ActiveRecord::Base
 
   default_scope { ordered }
 
+  def self.public_collection_id
+    ENV['PUBLIC_COLL_ID']&.to_i
+  end
+
+  def self.public_collection
+    find_by(id: ENV['PUBLIC_COLL_ID']) || find_by(
+      user_id: User.chemotion_user.id,
+      label: ENV['PUBLIC_COLL']
+    )
+  end
+
+  def self.scheme_only_reactions_collection
+    find_by(id: ENV['SCHEME_ONLY_REACTIONS_COLL_ID']) || find_by(
+      user_id: User.chemotion_user.id,
+      label: ENV['SCHEME_ONLY_REACTIONS_COLL']
+    ) || find_by(
+      user_id: User.chemotion_user.id,
+      label: 'Scheme-only reactions'
+    )
+  end
+
+  def self.scheme_only_reactions_collection_id
+    ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
+  end
+
+  def self.element_to_review_collection
+    where(
+      user_id: User.chemotion_user.id,
+      label: 'Element To Review',
+      is_synchronized: true
+    )
+  end
+
+  def self.reviewed_collection
+    where(
+      user_id: User.chemotion_user.id,
+      label: 'Reviewed',
+      is_synchronized: true
+    )
+  end
+
   def self.get_all_collection_for_user(user_id)
     find_by(user_id: user_id, label: 'All', is_locked: true)
   end

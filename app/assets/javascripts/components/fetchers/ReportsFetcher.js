@@ -4,6 +4,25 @@ import Sample from '../models/Sample';
 import Reaction from '../models/Reaction';
 
 export default class ReportsFetcher {
+  static getDois(elements) {
+    let promise = fetch('/api/v1/reports/dois/', {
+        credentials: 'same-origin',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ elements }),
+      })
+      .then((response) => {
+        return response.json()
+      }).then((json) => {
+        return json;
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+      return promise;
+  }
   static fetchArchives() {
     let promise = fetch('/api/v1/archives/all', {
         credentials: 'same-origin'

@@ -1,0 +1,7 @@
+.panel.panel-primary
+  .panel-heading
+    %fieldset
+      %input{ type:"checkbox", required: true}
+      %label I have read and I accept the directive to use the service
+  .panel-body{style: 'height: 300px; overflow-y: scroll; '}
+    = render file: "#{Rails.public_path}/directives/directives.html", layout: false

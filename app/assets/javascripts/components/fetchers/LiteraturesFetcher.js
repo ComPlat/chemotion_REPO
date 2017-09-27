@@ -3,17 +3,17 @@ import Immutable from 'immutable';
 import Literature from '../models/Literature';
 
 export default class LiteraturesFetcher {
-  static fetchElementReferences(element) {
+  static fetchElementReferences(element, is_all = false) {
     if (!element || element.isNew) {
       return Promise.resolve(Immutable.List())
     }
     const { type, id } = element;
-    return fetch(`/api/v1/literatures?element_type=${type}&element_id=${id}`, {
+    return fetch(`/api/v1/literatures?element_type=${type}&element_id=${id}&is_all=${is_all}`, {
       credentials: 'same-origin'
     }).then(response => response.json())
       .then(json => json.literatures)
-      .then(literatures => literatures.map(literature => new Literature(literature)))
       .then(lits => lits.reduce((acc, l) => acc.set(l.literal_id, l), new Immutable.Map()))
+      .then(literatures => literatures.map(literature => new Literature(literature)))
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 

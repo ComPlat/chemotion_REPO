@@ -40,7 +40,6 @@ export default class QuillViewer extends React.Component {
   }
 
   render() {
-    this.theme = 'bubble';
     this.readOnly = true;
 
     return (

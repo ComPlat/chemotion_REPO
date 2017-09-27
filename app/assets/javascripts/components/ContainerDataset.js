@@ -8,6 +8,7 @@ import Attachment from './models/Attachment';
 import SamplesFetcher from './fetchers/SamplesFetcher';
 import AttachmentFetcher from './fetchers/AttachmentFetcher';
 import Container from './models/Container';
+import UserStore from '../components/stores/UserStore'
 
 import InboxActions from './actions/InboxActions';
 import InstrumentsFetcher from './fetchers/InstrumentsFetcher';
@@ -92,7 +93,11 @@ export default class ContainerDataset extends Component {
   }
 
   handleAttachmentDownload(attachment) {
-      Utils.downloadFile({contents: `/api/v1/attachments/${attachment.id}`, name: attachment.filename});
+    const {currentUser} = UserStore.getState()
+      if (!currentUser){
+        return( alert('Please, sign in' ))
+      }
+    Utils.downloadFile({contents: `/api/v1/attachments/${attachment.id}`, name: attachment.filename});
   }
 
   handleAttachmentRemove(attachment) {

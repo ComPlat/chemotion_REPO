@@ -1,3 +1,10 @@
 .quill-viewer .ql-tooltip {
   height: 0px;
 }
+
+.ql-disabled {
+  .ql-hidden {
+    display: none;
+  }
+}
+

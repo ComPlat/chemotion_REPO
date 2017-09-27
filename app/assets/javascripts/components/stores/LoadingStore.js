@@ -3,6 +3,8 @@ import LoadingActions from '../actions/LoadingActions';
 import ReportActions from '../actions/ReportActions';
 import ElementActions from '../actions/ElementActions';
 import InboxActions from '../actions/InboxActions';
+import RepositoryActions from '../actions/RepositoryActions';
+import PublicActions from '../actions/PublicActions';
 
 class LoadingStore {
   constructor() {
@@ -26,6 +28,9 @@ class LoadingStore {
           ElementActions.createResearchPlan,
           ElementActions.updateResearchPlan,
           InboxActions.fetchInbox,
+          RepositoryActions.reviewPublish,
+          PublicActions.updateComment,
+          PublicActions.reviewPublish,
         ],
     });
   }

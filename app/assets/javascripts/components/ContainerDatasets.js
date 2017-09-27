@@ -113,7 +113,7 @@ export default class ContainerDatasets extends Component {
 
   render() {
     const {container, modal} = this.state;
-    const {disabled} = this.props;
+    const {readOnly, disabled} = this.props;
 
     if(container.children.length > 0) {
       return (
@@ -135,9 +135,11 @@ export default class ContainerDatasets extends Component {
                 )
               })}
               <ListGroupItem key="attachmentdropzone" disabled>
-              <AttachmentDropzone
-                handleAddWithAttachments={(attachments) => this.handleAddWithAttachments(attachments)}
-                />
+              {!readOnly && !disabled
+                ? <AttachmentDropzone
+                  handleAddWithAttachments={(attachments) => this.handleAddWithAttachments(attachments)}
+                  />
+                : null}
               </ListGroupItem>
             </ListGroup>
             {this.addButton()}

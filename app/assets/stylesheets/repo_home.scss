@@ -1,0 +1,231 @@
+.repo-home {
+   display: block;
+   max-width: 1200px;
+   margin: auto;
+  // height: calc(100vh - 80px);
+  // overflow-y: scroll;
+}
+
+.card-well {
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+   height: 50vh;//auto; //calc(80vh - 190px);
+  // overflow-x: auto;
+  padding: 20px;
+
+}
+
+.card-well-competition {
+  @extend .card-well;
+  padding: 30px 15px;
+
+  .carl-spt{
+    background-color: white;
+  }
+
+  .carl-spt-item {
+    height: 360px;
+    text-align: center;
+  }
+
+  .carl-spt-item .caption {
+    left: 15%;
+    right: 15%;
+    padding-top: 0px;
+    bottom: 0px;
+  }
+
+  .carl-spt-item-s {
+    height: 220px;
+    text-align: center;
+  }
+
+  .carl-spt-item-s .caption {
+    left: 15%;
+    right: 15%;
+    padding-bottom: 0px;
+    bottom: 0px;
+  }
+
+  img {
+    width: 100%;
+  }
+
+  p {
+    bottom: -45px;
+    color: black;
+    position: relative;
+    text-align: justify;
+    text-shadow: none;
+  }
+
+  .carousel-control.left, .carousel-control.right {
+    background-image: none !important;
+  }
+
+  .italic-desc {
+    font-size: 1.4rem;
+    font-style: italic;
+  }
+}
+
+.thumbnail-spt img {
+  width: 25%;
+}
+
+.icon-chemotion {
+  margin: 30px;
+  width: 90%;
+}
+
+.repository-for {
+  margin: 30px;
+  line-height: 45px;
+}
+
+.visibility-impact {
+  left: 30px;
+  width: 300px !important;
+}
+
+.chem-finder {
+  left: 10%;
+  top: 10px;
+
+  img {
+    width: 90%;
+  }
+}
+
+.bot-navbar {
+  right: 0px;
+  left: 0px;
+  bottom: 0px;
+  z-index: 1030;
+  background-color: #efefef;
+}
+
+.card-partners {
+  background-color: #f5f5f5;
+  // height: calc(50vh - 134px);
+  .partner-heading {
+    background-color: #f5f5f5;
+    // border: 1px solid #e3e3e3;
+     border-radius: 6px;
+    // height: 80px;
+    margin: 20px 5px 0;
+    padding: 5px;
+    text-align: center;
+  }
+
+  .partner-row {
+    display: flex;
+    justify-content: center;
+     overflow-x: auto;
+    padding-top: 30px;
+  }
+
+  .partners-info {
+    height: 250px;
+    // height: auto;
+    // width: 250px;
+    position: relative;
+    display: table-cell;
+    // display: inline-flex;
+    margin: 5px;
+    border: 0px;
+    background-color: #f5f5f5;
+
+    img {
+      display: block;
+      margin: auto;
+      max-height: 90%;
+      max-width: 90%;
+      opacity: 1.0;
+      z-index: 1;
+      // position: absolute;
+      // top: 0%;
+    }
+
+    &:hover img {
+      opacity: 0.2;
+    }
+
+    &:hover {
+      border:2px solid #ddd;
+    }
+
+    &:hover .info {
+      opacity: 1.0;
+    }
+
+    .info {
+      top: 0%;
+      left: 0%;
+      opacity: 0.0;
+      position: absolute;
+      padding: 5px;
+      margin: 5px;
+      text-align: justify;
+    }
+  }
+}
+
+
+.repo-about {
+  display: block;
+  // height: calc(100vh - 80px);
+  // overflow-y: scroll;
+}
+
+.card-icons {
+  div {
+    height: 100px;
+    position:relative;
+  }
+
+  img {
+    max-height: 100%;
+    max-width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+  }
+}
+
+.card-well-about {
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+  //overflow: auto;
+  padding: 30px;
+  text-align: center;
+  // height: 80vh;
+}
+
+.panel-analyses-public {
+  margin: 2px !important;
+}
+
+.carl-sample svg {
+  max-width: 100%;
+  max-height: 500px;
+  height: 300px;
+  width: 100%;
+}
+
+.reaction-scheme-word {
+  font-size: smaller;
+  color: #337ab7;
+}
+
+.move-embargo-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 45% !important;
+  width: 40vw !important;
+}

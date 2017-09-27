@@ -12,6 +12,7 @@ import ElementActions from '../actions/ElementActions';
 import CollectionActions from '../actions/CollectionActions';
 import UIActions from '../actions/UIActions';
 import UserActions from '../actions/UserActions';
+import RepositoryActions from '../actions/RepositoryActions';
 import UIStore from './UIStore';
 import ClipboardStore from './ClipboardStore';
 import Sample from '../models/Sample';
@@ -226,13 +227,23 @@ class ElementStore {
       handleUpdateLinkedElement: [
         ElementActions.updateReaction,
         ElementActions.updateSample,
+        RepositoryActions.publishSample,
+        RepositoryActions.publishReaction,
+        RepositoryActions.publishSampleReserveDois,
+        RepositoryActions.publishReactionReserveDois,
+        RepositoryActions.reviewPublish,
+      ],
+      handleRefreshSyncCollections: [
+        RepositoryActions.reviewPublish,
+        RepositoryActions.publishSample,
+        RepositoryActions.publishReaction,
       ],
       handleUpdateElement: [
         // ElementActions.updateReaction,
         // ElementActions.updateSample,
         ElementActions.updateWellplate,
         ElementActions.updateScreen,
-        ElementActions.updateResearchPlan
+        ElementActions.updateResearchPlan,
       ],
       handleRefreshComputedProp: ElementActions.refreshComputedProp,
     })
@@ -615,6 +626,10 @@ class ElementStore {
       this.changeCurrentElement(element);
     }
     this.handleUpdateElement(element);
+  }
+
+  handleRefreshSyncCollections() {
+    CollectionActions.fetchSyncInCollectionRoots();
   }
 
   handleUpdateSampleForWellplate(wellplate) {
@@ -1072,7 +1087,11 @@ class ElementStore {
         && previous.tag.taggable_data.reaction_id;
       const openedReaction = selecteds.find(el => SameEleTypId(el, { type: 'reaction', id: rId }));
       if (openedReaction) {
-        openedReaction.updateMaterial(previous);
+        const freeze = (openedReaction && openedReaction.publication && openedReaction.publication.taggable_data &&
+          openedReaction.publication.taggable_data.scheme_only === true && (openedReaction.publication.state !== 'declined' || openedReaction.publication.state !== 'withdrawn')) || false;
+        if (freeze === false) {
+          openedReaction.updateMaterial(previous);
+        }
         if (previous.isPendingToSave) {
           openedReaction.changed = previous.isPendingToSave;
         }

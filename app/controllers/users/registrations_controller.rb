@@ -9,7 +9,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def new
     build_resource({})
-
     @affiliation = resource.affiliations.build
 
     set_minimum_password_length

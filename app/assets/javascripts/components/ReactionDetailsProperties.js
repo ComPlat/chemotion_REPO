@@ -21,6 +21,7 @@ import QuillEditor from './QuillEditor';
 import Sample from './models/Sample';
 import StringTag from './StringTag';
 import { observationPurification, solventsTL } from './utils/reactionPredefined';
+import { RequiredLabel } from '../libHome/RepoCommon';
 
 function dummy() { return true; }
 
@@ -203,7 +204,7 @@ export default class ReactionDetailsProperties extends Component {
                     <FormControl
                       type="text"
                       value={reaction.timestamp_start || ''}
-                      disabled={reaction.isMethodDisabled('timestamp_start')}
+                      disabled={reaction.isMethodDisabled('timestamp_start') || reaction.is_published}
                       placeholder="DD/MM/YYYY hh:mm:ss"
                       onChange={event => this.props.onInputChange('timestampStart', event)}
                     />
@@ -226,7 +227,7 @@ export default class ReactionDetailsProperties extends Component {
                     <FormControl
                       type="text"
                       value={reaction.timestamp_stop || ''}
-                      disabled={reaction.isMethodDisabled('timestamp_stop')}
+                      disabled={reaction.isMethodDisabled('timestamp_stop') || reaction.is_published}
                       placeholder="DD/MM/YYYY hh:mm:ss"
                       onChange={event => this.props.onInputChange('timestampStop', event)}
                     />
@@ -244,7 +245,7 @@ export default class ReactionDetailsProperties extends Component {
               </Col>
               <Col md={3}>
                 <FormGroup>
-                  <ControlLabel>Duration</ControlLabel>
+                  <ControlLabel>Duration&nbsp;<RequiredLabel placement="top" /></ControlLabel>
                   <InputGroup>
                     <FormControl
                       type="text"
@@ -289,6 +290,7 @@ export default class ReactionDetailsProperties extends Component {
                       type="text"
                       value={reaction.durationDisplay.dispValue || ''}
                       inputRef={this.refDuration}
+                      disabled={reaction.is_published}
                       placeholder="Input Duration..."
                       onChange={event => this.handleDurationChange(event)}
                     />
@@ -318,7 +320,7 @@ export default class ReactionDetailsProperties extends Component {
                   <QuillEditor
                     value={reaction.observation}
                     height="95px"
-                    disabled={reaction.isMethodDisabled('observation')}
+                    disabled={reaction.isMethodDisabled('observation') || reaction.is_published}
                     onChange={event => this.props.onInputChange('observation', event)}
                   />
                 </FormGroup>
@@ -330,7 +332,7 @@ export default class ReactionDetailsProperties extends Component {
                 <Select
                   name="purification"
                   multi
-                  disabled={reaction.isMethodDisabled('purification')}
+                  disabled={reaction.isMethodDisabled('purification') || reaction.is_published}
                   options={purificationOptions}
                   onChange={this.handlePurificationChange}
                   value={reaction.purification}
@@ -343,7 +345,7 @@ export default class ReactionDetailsProperties extends Component {
                   multi
                   options={dangerousProductsOptions}
                   value={reaction.dangerous_products}
-                  disabled={reaction.isMethodDisabled('dangerous_products')}
+                  disabled={reaction.isMethodDisabled('dangerous_products') || reaction.is_published}
                   onChange={selectedOptions => this.handleMultiselectChange(
                     'dangerousProducts', selectedOptions)}
                 />
@@ -386,7 +388,7 @@ export default class ReactionDetailsProperties extends Component {
                         style={{ zIndex: 0 }}
                         type="text"
                         value={reaction.tlc_solvents || ''}
-                        disabled={reaction.isMethodDisabled('tlc_solvents')}
+                        disabled={reaction.isMethodDisabled('tlc_solvents') || reaction.is_published}
                         placeholder="Solvents as parts..."
                         onChange={event => this.props.onInputChange('tlc_solvents', event)}
                       />
@@ -400,7 +402,7 @@ export default class ReactionDetailsProperties extends Component {
                   <FormControl
                     type="text"
                     value={reaction.rf_value || ''}
-                    disabled={reaction.isMethodDisabled('rf_value')}
+                    disabled={reaction.isMethodDisabled('rf_value') || reaction.is_published}
                     placeholder="Rf-Value..."
                     onChange={event => this.props.onInputChange('rfValue', event)}/>
                 </FormGroup>
@@ -413,7 +415,7 @@ export default class ReactionDetailsProperties extends Component {
                   <FormControl
                     componentClass="textarea"
                     value={reaction.tlc_description || ''}
-                    disabled={reaction.isMethodDisabled('tlc_description')}
+                    disabled={reaction.isMethodDisabled('tlc_description') || reaction.is_published}
                     placeholder="TLC-Description..."
                     onChange={event => this.props.onInputChange('tlcDescription', event)}/>
                 </FormGroup>

@@ -209,6 +209,7 @@ module ReportHelpers
       , res.residue_type, s.molfile_version
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
       , #{columns}
+      , ets.taggable_data#>>'{publication,doi}' as "doi"
       from (
         select
           s.id as s_id
@@ -231,6 +232,7 @@ module ReportHelpers
       left join molecules m on s.molecule_id = m.id
       left join molecule_names mn on s.molecule_name_id = mn.id
       left join residues res on res.sample_id = s.id
+      left join element_tags ets on ets.taggable_type = 'Sample' and ets.taggable_id = s.id
       order by #{order};
     SQL
   end
@@ -263,6 +265,7 @@ module ReportHelpers
         , anac.extended_metadata->'content' as "content"
         , anac.extended_metadata->'status' as "status"
         , clg.id as uuid
+        , ets.taggable_data#>>'{publication,analysis_doi}' as "doi"
         , (select array_to_json(array_agg(row_to_json(dataset)))
           from (
           select  datc."name" as "dataset name"
@@ -284,6 +287,7 @@ module ReportHelpers
         inner join container_hierarchies ch on cont.id = ch.ancestor_id and ch.generations = 2
         inner join containers anac on anac.id = ch.descendant_id
         left join code_logs clg on clg."source" = 'container' and clg.source_id = anac.id
+        left join element_tags ets on ets.taggable_type = 'Container' and ets.taggable_id = anac.id
         where cont.containable_type = '#{cont_type}' and cont.containable_id = #{t}.id
         ) analysis
       ) as analyses

@@ -3,6 +3,7 @@ import alt from '../alt';
 
 import UIActions from '../actions/UIActions';
 import ElementActions from '../actions/ElementActions';
+import PublicActions from '../actions/PublicActions';
 import ElementStore from './ElementStore';
 import UserStore from './UserStore';
 import ArrayUtils from '../utils/ArrayUtils';
@@ -103,6 +104,7 @@ class UIStore {
       handleSetFromDate: UIActions.setFromDate,
       handleSetToDate: UIActions.setToDate,
       handleSetProductOnly: UIActions.setProductOnly,
+      handleSelectPublicCollection: PublicActions.selectPublicCollection,
     });
   }
 
@@ -375,6 +377,11 @@ class UIStore {
   handleSetProductOnly(productOnly) {
     this.state.productOnly = productOnly;
     this.handleSelectCollection(this.state.currentCollection, true);
+  }
+
+  handleSelectPublicCollection(result) {
+    this.state.currentCollection = result;
+    this.state.isSync = result.is_sync;
   }
 }
 

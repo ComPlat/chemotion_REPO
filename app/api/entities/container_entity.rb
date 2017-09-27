@@ -1,6 +1,16 @@
 module Entities
   class ContainerEntity < Grape::Entity
     expose :big_tree, merge: true
+    expose :dataset_doi
+  #  expose :doi, if: -> (obj, opts) { obj.respond_to? :doi}
+
+    def dataset_doi
+      object.full_doi
+    end
+
+    def pub_id
+      object.publication&.id
+    end
 
     def big_tree(container = object)
       dataset_ids = {}
@@ -10,11 +20,15 @@ module Entities
         ## mapping analysis element
         as['children'] = c2s.map do |c2, c3s|
           a = c2.attributes.slice('id', 'container_type', 'name', 'description')
+          a['dataset_doi'] = c2.full_doi  if c2.respond_to? :full_doi
+          a['pub_id'] = c2.publication&.id  if c2.respond_to? :publication
           a['extended_metadata'] = get_extended_metadata(c2)
           dids = []
           ## mapping datasets
           a['children'] = c3s.map do |c3, _|
             ds = c3.attributes.slice('id', 'container_type', 'name', 'description')
+            ds['dataset_doi'] = c3.full_doi  if c3.respond_to? :full_doi
+            ds['pub_id'] = c3.publication&.id  if c3.respond_to? :publication
             dids << ds['id']
             ds['extended_metadata'] = get_extended_metadata(c3)
             ds
@@ -30,6 +44,8 @@ module Entities
       code_logs = CodeLog.where(source_id: dataset_ids.keys, source: 'container').to_a
 
       bt.dig('children', 0, 'children')&.each do |analysis|
+        analysis['dataset_doi'] = analysis.full_doi if analysis.respond_to? :full_doi
+        analysis['pub_id'] = analysis.publication&.id if analysis.respond_to? :publication
         analysis['preview_img'] = preview_img(dataset_ids[analysis['id']], attachments)
         analysis['code_log'] = code_logs.find { |cl| cl.source_id == analysis['id'] }.attributes
         analysis['children'].each do |dataset|

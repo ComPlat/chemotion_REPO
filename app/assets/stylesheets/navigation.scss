@@ -16,6 +16,13 @@
   }
 }
 
+.navig-smaller-font {
+  a.dropdown-toggle {
+     font-size: 70%;
+  }
+}
+
+
 @media only screen and (min-width: 1366px) and (min-height: 500px) {
   .card-navigation {
     /* position: fixed;
@@ -77,4 +84,8 @@
   .separator {
     border-top: 1px solid #ccc;
   }
+}
+
+.navbar-guest {
+  display: inline;
 }

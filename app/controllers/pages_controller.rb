@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   skip_before_action :authenticate_user!, only: [
-    :home, :about, :chemscanner, :chemspectra, :chemspectra_editor
+    :home, :about, :directive, :root_page
   ]
   before_action :fetch_affiliations, only: [:affiliations, :update_affiliations]
   before_action :build_affiliation, only: [:affiliations, :update_affiliations]
@@ -11,9 +11,23 @@ class PagesController < ApplicationController
 
   def docx; end
 
-  def welcome; end
+  def mydb; end
 
   def editor; end
+
+  def root_page
+    render layout: 'root_layout'
+  end
+
+  def directive; end
+
+  def settings; end
+
+  def tokens
+    @origin = params[:origin]
+    aks = AuthenticationKey.where(user_id: current_user, role: "gate in")
+    @fqdns = aks.pluck :fqdn
+  end
 
   def update_user
     @user = current_user
@@ -21,7 +35,7 @@ class PagesController < ApplicationController
     @user.reaction_name_prefix = params[:reaction_name_prefix]
     if @user.save
       flash['success'] = 'User settings is successfully saved!'
-      redirect_to root_path
+      redirect_to main_app.root_url
     else
       flash.now['danger'] = 'Not saved! Please check input fields.'
       render 'user'
@@ -98,13 +112,13 @@ class PagesController < ApplicationController
   def affiliation_params
     params.require(:affiliation).permit(
       :id, :_destroy,
-      :country, :organization, :department, :group,
+      :country, :organization, :department,
       :from, :to, :from_month, :to_month
     )
   end
 
   def sliced_affiliation_params
-     affiliation_params.slice(:country, :organization, :department, :group)
+     affiliation_params.slice(:country, :organization, :department)
   end
 
   def affiliations_params
@@ -112,7 +126,7 @@ class PagesController < ApplicationController
       :utf8, :_method, :authenticity_token, :commit,
       affiliations: [
         :id, :_destroy,
-        # :country, :organization, :department, :group,
+        # :country, :organization, :department,
         :from, :to, :from_month, :to_month
       ]
     )

@@ -27,7 +27,9 @@ class API < Grape::API
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
-        '/api/v1/gate/ping'
+        '/api/v1/gate/ping',
+        '/api/v1/search/',
+        '/api/v1/suggestion'
       )
     end
 
@@ -125,4 +127,6 @@ class API < Grape::API
   mount Chemotion::EditorAPI
   mount Chemotion::UiAPI
   mount Chemotion::OlsTermsAPI
+  mount Chemotion::RepositoryAPI
+  mount Chemotion::ArticleAPI
 end

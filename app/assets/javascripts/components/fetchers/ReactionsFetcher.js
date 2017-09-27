@@ -5,9 +5,9 @@ import Immutable from 'immutable';
 import BaseFetcher from './BaseFetcher';
 import Reaction from '../models/Reaction';
 import UIStore from '../stores/UIStore';
-import NotificationActions from '../actions/NotificationActions';
 import AttachmentFetcher from './AttachmentFetcher';
 import Literature from '../models/Literature';
+import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
 
 // TODO: Extract common base functionality into BaseFetcher
 export default class ReactionsFetcher {
@@ -23,13 +23,15 @@ export default class ReactionsFetcher {
             const lits = tliteratures.reduce((acc, l) => acc.set(l.literal_id, l), new Immutable.Map());
             reaction.literatures = lits;
           }
-          return reaction;
+          reaction.publication = json.publication || {};
+          return new Reaction(defaultAnalysisPublish(reaction));
         }
         const rReaction = new Reaction(json.reaction);
+        rReaction.publication = json.publication || {};
         if (json.error) {
           rReaction.id = `${id}:error:Reaction ${id} is not accessible!`;
         }
-        return rReaction;
+        return new Reaction(defaultAnalysisPublish(rReaction));
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
@@ -39,7 +41,8 @@ export default class ReactionsFetcher {
     return BaseFetcher.fetchByCollectionId(id, queryParams, isSync, 'reactions', Reaction);
   }
 
-  static create(reaction, method = 'post') {
+  static create(r, method = 'post') {
+    const reaction = defaultAnalysisPublish(r);
     const reactionFiles = AttachmentFetcher.getFileListfrom(reaction.container);
     let productsFiles = [];
     reaction.products.forEach((prod) => {

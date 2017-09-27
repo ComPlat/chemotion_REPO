@@ -32,6 +32,8 @@ const spcContent = props => suiContent(props);
 
 const rxlContent = props => suiContent(props);
 
+const doiContent = props => suiContent(props);
+
 const ordersContent = (props) => {
   switch (props.template) {
     case 'standard':
@@ -44,6 +46,8 @@ const ordersContent = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlContent(props);
+    case 'doi_list_xlsx':
+      return doiContent(props);
     default:
       return null;
   }

@@ -142,7 +142,7 @@ class Material extends Component {
               metricPrefix={metric}
               metricPrefixes={metricPrefixes}
               precision={3}
-              disabled={(this.props.materialGroup !== 'products') && !material.reference && this.props.lockEquivColumn}
+              disabled={((this.props.materialGroup !== 'products') && !material.reference && this.props.lockEquivColumn) || this.props.reaction.is_published}
               onChange={this.handleAmountUnitChange}
               onMetricsChange={this.handleMetricsChange}
               bsStyle={material.amount_unit === 'l' ? 'success' : 'default'}
@@ -171,7 +171,7 @@ class Material extends Component {
           metricPrefixes={['n']}
           bsStyle={material.error_loading ? 'error' : 'success'}
           precision={3}
-          disabled={this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn)}
+          disabled={this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn) || this.props.reaction.is_published}
           onChange={loading => this.handleLoadingChange(loading)}
         />
       </td>
@@ -229,7 +229,7 @@ class Material extends Component {
       <NumeralInputWithUnitsCompo
         precision={4}
         value={material.equivalent}
-        disabled={(((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn}
+        disabled={(((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn || this.props.reaction.is_published}
         onChange={e => this.handleEquivalentChange(e)}
       />
     );
@@ -445,7 +445,7 @@ class Material extends Component {
                 metricPrefix={metric}
                 metricPrefixes={metricPrefixes}
                 precision={4}
-                disabled={this.props.materialGroup !== 'products' && !material.reference && this.props.lockEquivColumn}
+                disabled={(this.props.materialGroup !== 'products' && !material.reference && this.props.lockEquivColumn) || this.props.reaction.is_published}
                 onChange={this.handleAmountUnitChange}
                 onMetricsChange={this.handleMetricsChange}
                 bsStyle={material.error_mass ? 'error' : massBsStyle}
@@ -464,7 +464,7 @@ class Material extends Component {
             metricPrefix={metricMol}
             metricPrefixes={metricPrefixesMol}
             precision={4}
-            disabled={this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn)}
+            disabled={this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn) || this.props.reaction.is_published}
             onChange={this.handleAmountUnitChange}
             onMetricsChange={this.handleMetricsChange}
             bsStyle={material.amount_unit === 'mol' ? 'success' : 'default'}
@@ -494,6 +494,7 @@ class Material extends Component {
           <Button
             bsStyle="danger"
             bsSize="small"
+            disabled={this.props.reaction.is_published == true}
             onClick={() => deleteMaterial(material)}
           >
             <i className="fa fa-trash-o" />
@@ -551,6 +552,7 @@ class Material extends Component {
               <OverlayTrigger placement="bottom" overlay={refreshSvgTooltip}>
                 <Button
                   active
+                  disabled={this.props.reaction.is_published == true}
                   onClick={e => this.handleExternalLabelCompleted(e)}
                   bsSize="small"
                 ><i className="fa fa-refresh" /></Button>
@@ -575,6 +577,7 @@ class Material extends Component {
           <Button
             bsStyle="danger"
             bsSize="small"
+            disabled={this.props.reaction.is_published == true}
             onClick={() => deleteMaterial(material)}
           ><i className="fa fa-trash-o" /></Button>
         </td>
@@ -588,6 +591,7 @@ class Material extends Component {
         active
         style={style}
         onClick={() => this.toggleTarget(isTarget)}
+        disabled={this.props.reaction.is_published == true}
         bsStyle={isTarget ? 'success' : 'primary'}
         bsSize="small"
       >{isTarget ? 't' : 'r'}</Button>

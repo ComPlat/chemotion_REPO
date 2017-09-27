@@ -49,9 +49,7 @@ export default class ContainerComponent extends Component {
         isChanged = true;
         break;
       case 'kind': {
-        let kind = (ev || '');
-        kind = `${kind.split('|')[0].trim()} | ${(kind.split('|')[1] || '').trim()}`;
-        container.extended_metadata.kind = kind;
+        container.extended_metadata.kind = (ev || '').trim();
         isChanged = true;
         break;
       }

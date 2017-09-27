@@ -154,6 +154,8 @@ module Chemotion
 
     resource :suggestions do
       after_validation do
+        check_params_collection_id
+        set_var_for_unsigned_user unless current_user
         set_var
       end
 

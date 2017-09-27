@@ -1,0 +1,17 @@
+<%= sample.molfile_pubchem %>
+> <Unique_ID>
+<%= sample.molecule.inchikey %>
+
+> <PUBCHEM_SUBSTANCE_SYNONYM>
+doi:<%= sample.full_doi %>
+
+> <PUBCHEM_EXT_DATASOURCE_URL>
+http://www.chemotion.net
+
+> <PUBCHEM_EXT_SUBSTANCE_URL>
+https://dx.doi.org/<%= sample.full_doi %>
+
+> <PUBCHEM_EXT_DATASOURCE_REGID>
+<%= sample.full_doi %>
+
+$$$$

@@ -474,6 +474,19 @@ M  END
     return smi
   end
 
+  def self.get_ob_molfile_from_molfile molfile
+    c = OpenBabel::OBConversion.new
+    m = OpenBabel::OBMol.new
+    f = OpenBabel::OBMol.new
+
+    c.set_in_format('mol')
+    c.read_string(m, molfile)
+
+    c.set_out_format 'mol'
+    mf = c.write_string(m, false)
+    mf
+  end
+
   def self.substructure_match query, molfile_target
     c = OpenBabel::OBConversion.new
     m = OpenBabel::OBMol.new

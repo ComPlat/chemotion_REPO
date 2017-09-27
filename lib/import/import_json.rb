@@ -242,7 +242,7 @@ class Import::ImportJson
   end
 
   def create_datasets(datasets, analysis)
-    datasets.each do |a|
+    datasets&.each do |a|
       # next unless (remote_id = a['analysis_id'])
       # next unless (analysis_id = @log['analyses'][remote_id])
       # new_a = Container.find_by(id: analysis_id).children.create(

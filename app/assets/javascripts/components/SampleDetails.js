@@ -17,6 +17,7 @@ import ElementActions from './actions/ElementActions';
 import ElementStore from './stores/ElementStore';
 import DetailActions from './actions/DetailActions';
 import LoadingActions from './actions/LoadingActions';
+import RepositoryActions from './actions/RepositoryActions';
 
 import UIStore from './stores/UIStore';
 import UserStore from './stores/UserStore';
@@ -34,6 +35,7 @@ import XLabels from './extra/SampleDetailsXLabels';
 import XTabs from './extra/SampleDetailsXTabs';
 
 import StructureEditorModal from './structure_editor/StructureEditorModal';
+import PublishSampleModal from './PublishSampleModal';
 
 import Sample from './models/Sample';
 import Container from './models/Container'
@@ -53,6 +55,14 @@ import PubchemLcss from './PubchemLcss';
 import QcMain from './qc/QcMain';
 import { chmoConversions } from './OlsComponent';
 import ConfirmClose from './common/ConfirmClose';
+import {
+  PublishedTag,
+  LabelPublication,
+  PublishBtn,
+  ReviewPublishBtn,
+  validateMolecule,
+} from './PublishCommon';
+import SampleDetailsRepoComment from './SampleDetailsRepoComment';
 
 const MWPrecision = 6;
 
@@ -73,12 +83,13 @@ export default class SampleDetails extends React.Component {
       smileReadonly: !props.sample.isNew,
       quickCreator: false,
       showInchikey: false,
-      pageMessage: null
+      pageMessage: null,
+      showPublishSampleModal: false,
+      commentScreen: false
     };
 
-    const data = UserStore.getState().profile.data || {};
+    const data = (UserStore.getState().profile || {}).data || {};
     this.enableComputedProps = _.get(data, 'computed_props.enable', false);
-
     this.onUIStoreChange = this.onUIStoreChange.bind(this);
     this.clipboard = new Clipboard('.clipboardBtn');
     this.addManualCas = this.addManualCas.bind(this);
@@ -89,6 +100,13 @@ export default class SampleDetails extends React.Component {
     this.handleSelect = this.handleSelect.bind(this);
     this.toggleInchi = this.toggleInchi.bind(this);
     this.fetchQcWhenNeeded = this.fetchQcWhenNeeded.bind(this);
+    this.showPublishSampleModal = this.showPublishSampleModal.bind(this);
+    this.forcePublishRefreshClose = this.forcePublishRefreshClose.bind(this);
+    this.handleCommentScreen = this.handleCommentScreen.bind(this);
+    this.handleFullScreen = this.handleFullScreen.bind(this);
+    this.handleValidation = this.handleValidation.bind(this);
+    this.handleResetValidation = this.handleResetValidation.bind(this);
+    this.handleAssociateClick = this.handleAssociateClick.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -125,6 +143,59 @@ export default class SampleDetails extends React.Component {
         ...previousState, activeTab: state.sample.activeTab
       }})
     }
+  }
+
+  forcePublishRefreshClose(sample, show) {
+    this.setState({ sample, showPublishSampleModal: show });
+    this.forceUpdate();
+  }
+
+  handleAssociateClick() {
+    const { sample } = this.state;
+    ElementActions.tryFetchReactionById(sample.tag.taggable_data.reaction_id);
+    sample.validates = [];
+    this.setState({ sample });
+  }
+
+  handleValidation(element) {
+    let validates = [];
+    const sample = element;
+    if (sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.reaction_id) {
+      validates.push({ name: `sample [${sample.name}]`, value: false, message: `${sample.name} is associated with a Reaction.` });
+    } else {
+      const analyses = sample.analysisArray();
+      if (analyses.length < 1) {
+        validates.push({ name: `sample [${sample.name}]`, value: false, message: 'Analyses data is missing.' });
+      } else {
+        const validatePt = validateMolecule(sample);
+        if (validatePt.length > 0) {
+          validates = validates.concat(validatePt);
+        }
+      }
+    }
+    if (validates.length > 0) {
+      sample.validates = validates;
+      this.setState({ sample });
+    } else {
+      LoadingActions.start();
+      RepositoryActions.reviewPublish(element);
+    }
+  }
+
+  handleResetValidation() {
+    const { sample } = this.state;
+    sample.validates = [];
+    this.setState({ sample });
+  }
+
+  handleCommentScreen() {
+    this.setState({ commentScreen: true });
+    this.props.toggleCommentScreen(true);
+  }
+
+  handleFullScreen() {
+    this.setState({ commentScreen: false });
+    this.props.toggleFullScreen();
   }
 
   handleMolfileShow() {
@@ -274,12 +345,9 @@ export default class SampleDetails extends React.Component {
     sample.updateChecksum();
   }
 
-  structureEditorButton(isDisabled) {
-    return (
-      <Button onClick={this.showStructureEditor.bind(this)} disabled={isDisabled}>
-        <Glyphicon glyph='pencil'/>
-      </Button>
-    )
+  showPublishSampleModal(show) {
+    this.setState({showPublishSampleModal: show});
+    this.forceUpdate();
   }
 
   svgOrLoading(sample) {
@@ -375,7 +443,7 @@ export default class SampleDetails extends React.Component {
   sampleHeader(sample) {
     let saveBtnDisplay = sample.isEdited ? '' : 'none'
     const titleTooltip = `Created at: ${sample.created_at} \n Updated at: ${sample.updated_at}`;
-
+    
     return (
       <div>
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
@@ -404,16 +472,20 @@ export default class SampleDetails extends React.Component {
         <OverlayTrigger placement="bottom"
             overlay={<Tooltip id="fullSample">FullScreen</Tooltip>}>
           <Button bsStyle="info" bsSize="xsmall" className="button-right"
-            onClick={() => this.props.toggleFullScreen()}>
+            onClick={this.handleFullScreen}>
             <i className="fa fa-expand"></i>
           </Button>
         </OverlayTrigger>
-        <PrintCodeButton element={sample}/>
+
+        <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+        <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
         <div style={{display: "inline-block", marginLeft: "10px"}}>
           <ElementReactionLabels element={sample} key={sample.id + "_reactions"}/>
           <ElementCollectionLabels element={sample} key={sample.id} placement="right"/>
           <ElementAnalysesLabels element={sample} key={sample.id+"_analyses"}/>
           <PubchemLabels element={sample} />
+          <PublishedTag element={sample} />
+          <LabelPublication element={sample} />
           {this.extraLabels().map((Lab,i)=><Lab key={i} element={sample}/>)}
         </div>
 
@@ -974,6 +1046,7 @@ export default class SampleDetails extends React.Component {
 
   render() {
     const sample = this.state.sample || {};
+    let {showPublishSampleModal} = this.state
     const tabContents = [
       i => this.samplePropertiesTab(i),
       i => this.sampleContainerTab(i),
@@ -996,6 +1069,38 @@ export default class SampleDetails extends React.Component {
         )));
       }
     }
+    const validateObjs = sample.validates && sample.validates.filter(v => v.value === false);
+    let validationBlock = null;
+    if (validateObjs && validateObjs.length > 0) {
+      const validateAssociate = sample.validates && sample.validates.filter(v => v.value === false && v.message.includes('associated'));
+      if (validateAssociate && validateAssociate.length > 0) {
+        validationBlock = (
+          <Alert bsStyle="danger" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+            <strong>Submission Alert</strong>
+            <p>
+              This sample is associated with a Reaction and can not be published alone.
+            </p>
+            <Button bsSize="xsmall" onClick={() => this.handleAssociateClick()}>Go to Reaction&nbsp;<i className="icon-reaction" /></Button>
+            <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => this.handleResetValidation()}>Close Alert</Button>
+          </Alert>
+        );
+      } else {
+        validationBlock = (
+          <Alert bsStyle="danger" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+            <strong>Submission Alert</strong>&nbsp;&nbsp;
+            <Button bsSize="xsmall" bsStyle="danger" onClick={() => this.handleResetValidation()}>Close Alert</Button>
+            <br />
+            {
+              validateObjs.map(m => (
+                <div key={uuid.v1()}>{m.message}</div>
+              ))
+            }
+          </Alert>
+        );
+      }
+    }
+
     const { pageMessage } = this.state;
     const messageBlock = (pageMessage && (pageMessage.error.length > 0 || pageMessage.warning.length > 0)) ? (
       <Alert bsStyle="warning" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
@@ -1015,22 +1120,46 @@ export default class SampleDetails extends React.Component {
       </Alert>
     ) : null;
 
+    const publication = sample.tag && sample.tag.taggable_data &&
+      sample.tag.taggable_data.publication;
+
     return (
       <Panel
-        className="eln-panel-detail"
-        bsStyle={sample.isPendingToSave ? 'info' : 'primary'}
+        className="element-panel-detail"
+        bsStyle={publication ? 'success' : (sample.isPendingToSave ? 'info' : 'primary')}
       >
-        <Panel.Heading>{this.sampleHeader(sample)}{messageBlock}</Panel.Heading>
+        <Panel.Heading>{this.sampleHeader(sample)}{messageBlock}{validationBlock}</Panel.Heading>
         <Panel.Body>
+          <Row><Col md={this.props.fullScreen && this.state.commentScreen ? 6 : 12}>
+            <div className={this.props.fullScreen ? 'full' : 'base'}>
           {this.sampleInfo(sample)}
           <ListGroup>
           <Tabs activeKey={this.state.activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
             {tabContents.map((e, i) => e(i))}
           </Tabs>
+          <PublishSampleModal
+            show={showPublishSampleModal}
+            sample={sample}
+            onHide={() => this.showPublishSampleModal(false)}
+            onPublishRefreshClose={this.forcePublishRefreshClose}
+          />
           </ListGroup>
           {this.sampleFooter()}
           {this.structureEditorModal(sample)}
           {this.renderMolfileModal()}
+            </div>
+          </Col>
+            {
+              this.props.fullScreen && this.state.commentScreen ?
+                <Col md={6}>
+                  <div className={this.props.fullScreen ? 'full' : 'base'}>
+                    <SampleDetailsRepoComment sampleId={sample.id} />
+                  </div>
+                </Col>
+                :
+                <div />
+            }
+          </Row>
         </Panel.Body>
       </Panel>
     )
@@ -1040,4 +1169,6 @@ export default class SampleDetails extends React.Component {
 SampleDetails.propTypes = {
   sample: PropTypes.object,
   toggleFullScreen: PropTypes.func,
+  toggleCommentScreen: PropTypes.func.isRequired,
+  fullScreen: PropTypes.bool.isRequired
 }

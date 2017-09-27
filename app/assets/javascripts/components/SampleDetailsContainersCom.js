@@ -61,8 +61,8 @@ const RndEdit = ({
   sample, mode, handleRemove, handleSubmit, handleAccordionOpen,
   toggleAddToReport, toggleMode, activeAnalysis, orderContainers, readOnly,
   isDisabled, addButton, handleChange, handleUndo,
+  publish,
 }) => {
-
   const headerDeletedFunc = container => (
     <HeaderDeleted
       container={container}
@@ -84,12 +84,15 @@ const RndEdit = ({
       handleSubmit={handleSubmit}
       handleAccordionOpen={handleAccordionOpen}
       toggleAddToReport={toggleAddToReport}
+      publish={publish}
     />
   );
 
   return (
     <div>
+      { publish ? null :
       <p>{AnalysisModeBtn(mode, toggleMode, isDisabled)}{addButton()}</p>
+      }
       <PanelGroup id="editable-analysis-list" defaultActiveKey={0} activeKey={activeAnalysis} accordion>
         {orderContainers.map((container, i) => {
           const id = container.id || `fake_${i}`;

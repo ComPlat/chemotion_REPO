@@ -226,12 +226,12 @@ export default class CreateButton extends React.Component {
 
           <MenuItem onSelect={() => this.createElementOfType('sample')}>Create Sample</MenuItem>
           <MenuItem onSelect={() => this.createElementOfType('reaction')}>Create Reaction</MenuItem>
-          <MenuItem onSelect={() => this.createElementOfType('wellplate')}>Create Wellplate</MenuItem>
+          {/* <MenuItem onSelect={() => this.createElementOfType('wellplate')}>Create Wellplate</MenuItem>
           <MenuItem onSelect={() => this.createElementOfType('screen')}>Create Screen</MenuItem>
           <MenuItem onSelect={() => this.createElementOfType('research_plan')}>Create Research Plan</MenuItem>
           <MenuItem divider />
           <MenuItem onSelect={() => this.createWellplateFromSamples()}>Create Wellplate from Samples</MenuItem>
-          <MenuItem onSelect={() => this.createScreenFromWellplates()}>Create Screen from Wellplates</MenuItem>
+          <MenuItem onSelect={() => this.createScreenFromWellplates()}>Create Screen from Wellplates</MenuItem> */}
           <MenuItem divider />
           <MenuItem onSelect={() => this.copySample()} disabled={this.isCopySampleDisabled()}>Copy Sample</MenuItem>
           <MenuItem onSelect={() => this.copyReaction()} disabled={this.isCopyReactionDisabled()}>Copy Reaction</MenuItem>

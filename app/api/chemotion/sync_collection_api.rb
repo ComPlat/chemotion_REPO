@@ -38,8 +38,27 @@ module Chemotion
       get_child = proc do |children, collections|
         children.each do |obj|
           child = collections.select { |dt| dt['ancestry'] == obj['id'].to_s }
+          get_child.call(child, collections) if child.count.positive?
           obj[:children] = child if child.count.positive?
         end
+      end
+
+      handle_review = proc do |collections|
+        cols = []
+        collections.each do |col|
+          unless col['label'] == 'Reviewing' || col['label'] == 'Pending Publications' || col['label'] == 'Element To Review' || col['label'] == 'Reviewed'
+            cols.push(col)
+            next
+          end
+          oc = SyncCollectionsUser.find(col['id'])&.collection
+          sc = (oc&.samples&.joins(:publication)&.where('publications.ancestry is null') || []).length
+          rc = (oc&.reactions&.joins(:publication)&.where('publications.ancestry is null') || []).length
+          next if (sc + rc).zero?
+
+          col['label'] = col['label'] + ",S#{sc},R#{rc}" if col['label'] == 'Reviewing' || col['label'] == 'Element To Review' || col['label'] == 'Reviewed'
+          cols.push(col)
+        end
+        cols
       end
 
       desc 'Return all remote serialized collections'
@@ -57,6 +76,7 @@ module Chemotion
                                   SQL
                                 ).as_json
         root_ancestries = []
+        collections = handle_review.call(collections)
         collections.each do |obj|
           root_ancestries.push(obj['ancestry'])
         end

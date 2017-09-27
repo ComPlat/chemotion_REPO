@@ -107,6 +107,8 @@ const Setting = (props) => {
     case 'rxn_list_csv':
     case 'rxn_list_html':
       return rxlSetting(props);
+    case 'doi_list_xlsx':
+      return rxlSetting(props);
     default:
       return null;
   }

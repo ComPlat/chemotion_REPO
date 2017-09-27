@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
+  <identifier identifierType="DOI"><%= "#{dois[:sample][:DOI]}" %></identifier>
+  <creators>
+    <% pub_tag['creators'].each do |creator| %>
+    <creator>
+      <creatorName nameType="Personal"><%= creator['familyName'] %>, <%= creator['givenName'] %></creatorName>
+      <givenName><%= creator['givenName'] %></givenName>
+      <familyName><%= creator['familyName'] %></familyName>
+      <% if creator['ORCID'].present? %>
+      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
+      <% end %>
+      <% if (aff_ids = creator['affiliationIds']).present? then aff_ids.each do |aff_id| %>
+      <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+      <% end %>
+      <% end %>
+    </creator>
+    <% end %>
+  </creators>
+  <titles>
+    <title xml:lang="en-US"><%= element.molecule_name.name %></title>
+    <title titleType="AlternativeTitle"><%= element.molecule.inchistring %></title>
+  </titles>
+  <publisher>chemotion.net</publisher>
+  <publicationYear><%= element.created_at.strftime("%Y") %></publicationYear>
+  <% if pub_tag['contributors'].present? %>
+  <contributors>
+    <contributor contributorType="Researcher">
+      <contributorName><%= pub_tag['contributors']['familyName'] %>, <%= pub_tag['contributors']['givenName'] %></contributorName>
+      <givenName><%= pub_tag['contributors']['givenName'] %></givenName>
+      <familyName><%= pub_tag['contributors']['familyName'] %></familyName>
+      <% if pub_tag['contributors']['ORCID'].present? %>
+      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=pub_tag['contributors']['ORCID']%></nameIdentifier>
+      <% end %>
+      <% if pub_tag['contributors'] && pub_tag['contributors']['affiliations'].present? then pub_tag['contributors']['affiliations'].each do |aff| %>
+      <affiliation><%= aff %></affiliation>
+      <% end %>
+      <% end %>
+    </contributor>
+  </contributors>
+  <% end %>
+  <dates>
+  <date dateType="Created"><%= element.created_at %></date>
+  </dates>
+
+  <subjects>
+    <subject>Chemistry</subject>
+  </subjects>
+  <language>en</language>
+
+  <resourceType resourceTypeGeneral="Dataset">Molecule</resourceType>
+  <version>1</version>
+  <descriptions>
+    <description xml:lang="en-US" descriptionType="Abstract">
+      This dataset contains experimental data from a sample (<%= element.molecule.iupac_name.present? ? "#{element.molecule.iupac_name}, " : '' %><%= element.molecule.inchistring %>).<br />
+      The datasets from the following experiments are available:<br />
+      <% element.analyses.each do |analysis| %>
+      <%= (analysis.extended_metadata['kind'] || '').split('|').pop %><br />
+      <% end %>
+    </description>
+  </descriptions>
+
+  <relatedIdentifiers>
+    <% dois[:analyses_dois].each do |_, ds| %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart"><%= "#{ds[:DOI]}" %></relatedIdentifier>
+    <% end %>
+    <% if parent_element.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf"><%= "#{parent_element.full_doi}" %></relatedIdentifier>
+    <% end %>
+  </relatedIdentifiers>
+</resource>

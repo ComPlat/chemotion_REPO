@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import Quill from 'quill';
 import Delta from 'quill-delta';
 
-import _ from 'lodash';
+import { uniqueId, debounce, isEqual, uniq, union } from 'lodash';
 
 const toolbarOptions = [
   ['bold', 'italic', 'underline'],
@@ -48,11 +48,11 @@ export default class QuillEditor extends React.Component {
     });
 
     this.editor = false;
-    this.id = _.uniqueId('quill-editor-');
+    this.id = uniqueId('quill-editor-');
 
     this.getContents = this.getContents.bind(this);
     this.updateEditorValue = this.updateEditorValue.bind(this);
-    this.debouncedOnChange = _.debounce(this.props.onChange.bind(this), 300);
+    this.debouncedOnChange = debounce(this.props.onChange.bind(this), 300);
     this.onChange = this.onChange.bind(this);
   }
 
@@ -68,7 +68,7 @@ export default class QuillEditor extends React.Component {
     const oldContents = this.editor ? this.getContents() : null;
 
     if (oldContents && nextVal &&
-      !_.isEqual(nextVal.ops, oldContents.ops)) {
+      !isEqual(nextVal.ops, oldContents.ops)) {
       this.setState({ value: nextVal });
       const sel = this.editor.getSelection();
       this.editor.setContents(nextVal);
@@ -173,8 +173,12 @@ export default class QuillEditor extends React.Component {
 
   renderQuillToolbarGroup() {
     if (this.theme !== 'snow') return (<span />);
+    let fToolbarOptions = uniq(toolbarOptions);
+    if (this.props.extraToolbarOptions) {
+      fToolbarOptions = union(fToolbarOptions, this.props.extraToolbarOptions);
+    }
 
-    const quillToolbar = toolbarOptions.map((formatGroup, index) => {
+    const quillToolbar = fToolbarOptions.map((formatGroup, index) => {
       const groupElement = formatGroup.map((element) => {
         if (typeof element === 'string') {
           return (
@@ -273,6 +277,7 @@ QuillEditor.propTypes = {
   height: PropTypes.string,
   disabled: PropTypes.bool,
   onChange: PropTypes.func,
+  extraToolbarOptions: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.object, PropTypes.string]))),
 };
 
 QuillEditor.defaultProps = {
@@ -283,4 +288,5 @@ QuillEditor.defaultProps = {
   height: '230px',
   disabled: false,
   onChange: null,
+  extraToolbarOptions: null,
 };

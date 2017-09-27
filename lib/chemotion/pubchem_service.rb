@@ -91,4 +91,8 @@ module Chemotion::PubchemService
   def self.xref_from_inchikey inchikey
     PubChem.get_xref_by_inchikey(inchikey)
   end
+
+  def self.sid_from_doi doi
+    record = PubChem.get_sid_from_doi(doi)
+  end
 end

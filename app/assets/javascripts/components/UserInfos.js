@@ -5,7 +5,11 @@ import UserInfoIcon from './UserInfoIcon';
 
 const UserInfos = ({users}) => {
   let tipUsers = users.map((user,ind)=>{
-    return <div key={ind}><UserInfoIcon type={user.type}/> {user.name}<br/></div>
+    if (typeof (user.user) !== 'undefined' && user.user) {
+      return <div key={ind}><UserInfoIcon type={user.user.type}/> {user.user.name}<br/></div>
+    } else {
+      return <div key={ind}><UserInfoIcon type={user.type}/> {user.name}<br/></div>
+    }
   })
   return(
     <Tooltip id="tooltip">

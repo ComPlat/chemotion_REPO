@@ -113,7 +113,8 @@ export default class Navigation extends React.Component {
   render() {
     const { modalProps, showAdvancedSearch } = this.state;
     const { profile } = UserStore.getState();
-    const { customClass } = (profile && profile.data) || {};
+    // const { customClass } = (profile && profile.data) || {};
+    const customClass = 'btn-unified'
 
     return (this.state.currentUser
       ? <Navbar fluid className='navbar-custom'>
@@ -132,7 +133,7 @@ export default class Navigation extends React.Component {
       : <Navbar fluid className='navbar-custom'>
           {this.navHeader()}
           <Nav navbar className='navbar-form'>
-            <Search noSubmit={true} />
+            <Search noSubmit={false} />
           </Nav>
           <NavNewSession authenticityToken={this.token()}/>
           <div style={{clear: "both"}} />

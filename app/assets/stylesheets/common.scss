@@ -1,3 +1,11 @@
+$color-chem-blue: #337ab7;
+$color-chem-logo-blue: #3a9fd3;
+$color-required: #d9534f;
+
+.field_required {
+  color: $color-required;
+}
+
 // --- color ---
 .c-text--grey {
   color: grey;
@@ -54,7 +62,6 @@
 .Select {
   line-height: 1;
 }
-
 
 .span-checkbox {
   -webkit-border-radius: 0;
@@ -201,6 +208,91 @@
       overflow-y: scroll;
       height: 85px;
     }
+  }  
+}
+
+.publish_tooltip {
+  .tooltip-inner {
+    text-align: left;
+    white-space: pre-wrap;
+  }
+}
+
+.review_element_label {
+  color: #333;
+  border-style: solid;
+  border-width: thin;
+  border-radius: 4px;
+  padding: 4px;
+
+  i {
+    font-size: 1.2em !important;
+  }
+}
+
+.list_focus_off {
+  cursor: pointer;
+  background-color: #F5F5F5;
+}
+.list_focus_on {
+  cursor: pointer;
+  background-color: #d4edda !important;
+}
+
+.feature {
+  display: flex;
+  .feature-block {
+    display: block;
+    position: relative;
+    padding: 16px 24px 32px 24px;
+    text-decoration: none;
+    z-index: 0;
+    overflow: hidden;
+    height: 100%;
+    &:before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      right: -16px;
+      background: unset;
+      height: 26px;
+      width: 100%;
+      transform: scale(1);
+      transform-origin: 50% 50%;
+      transition: transform 0.25s ease-out;
+      bottom: 50%;
+    }
+    &:hover:before {
+      transform: scale(8);
+      background: $color-chem-blue;
+    }
+    div {
+      padding: 8px;
+      display: inline-block;
+    }
+    h3 {
+      text-align: left;
+    }
+    i {
+      text-align: center;
+      display: inline-block;
+      color: $color-chem-blue;
+      position: relative;
+    }
+  }
+
+  .feature-block:hover {
+    p {
+      transition: all 0.3s ease-out;
+      color: #ffffff;
+    }
+    h3 {
+      transition: all 0.3s ease-out;
+      color: #ffffff;
+    }
+    i {
+      color: #ffffff;
+    }
   }
 }
 
@@ -209,4 +301,49 @@
   border-color: #bfbfbf;
   border-style: dashed;
   border-width: thin;
+}
+
+.home-title {
+  font-size: x-large;
+  font-weight: bolder;
+  text-align: center;
+  padding-top: 60px;
+  padding-bottom: 30px;
+  & > span {
+    position: relative;
+    padding: 0 5px;
+    &:before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 50%;
+      background-color: #777;
+      right: 100%;
+    }
+    &:after {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 50%;
+      background-color: #777;
+      left: 100%;
+    }
+  }
+}
+
+.display-false {
+  display: none !important;
+}
+
+.display-true {
+  .initial {
+    display: initial;
+  }
+  .inherit {
+    display: inherit;
+  }
 }

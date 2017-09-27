@@ -1,5 +1,5 @@
 class AllElementSearch
-  PG_ELEMENTS = %w[Sample Reaction Screen Wellplate]
+  PG_ELEMENTS = %w[Sample Reaction] # Screen Wellplate]
 
   def initialize(term)
     @term = term
@@ -26,20 +26,50 @@ class AllElementSearch
 
     def by_collection_id(id, current_user)
       types = if (prof = current_user&.profile&.data)
-                (prof.fetch('layout', {}).keys.map(&:capitalize)) & PG_ELEMENTS
+                (prof.fetch('layout', {'sample' => 1, 'reaction' => 2}).keys.map(&:capitalize)) & PG_ELEMENTS
               else
                 PG_ELEMENTS
               end
+      sample_filter =
+        # <<~SQL
+          " searchable_id in ( " \
+          " SELECT samples.id FROM samples " \
+          " INNER JOIN collections_samples cs on cs.collection_id = #{id} and cs.sample_id = samples.id and cs.deleted_at ISNULL " \
+          " EXCEPT " \
+          " SELECT samples.id FROM samples " \
+          " INNER JOIN reactions_samples rs on rs.sample_id = samples.id and rs.type not in ('ReactionsProductSample') " \
+          " WHERE rs.deleted_at ISNULL " \
+          " )"
+        # SQL
+      reaction_filter =
+        # <<~SQL
+          " searchable_id in ( " \
+          " SELECT reactions.id FROM reactions " \
+          " INNER JOIN collections_reactions cr on cr.collection_id = #{id} and cr.reaction_id = reactions.id and cr.deleted_at ISNULL " \
+          " INNER JOIN reactions_samples rs on rs.reaction_id = reactions.id and rs.type in ('ReactionsProductSample') and rs.deleted_at ISNULL " \
+          " )"
+        # SQL
       first_type = types.first
       query = "(searchable_type = '#{first_type}' AND searchable_id IN (" \
                 "SELECT #{first_type}_id FROM collections_#{first_type}s "\
                 "WHERE collection_id = #{id} AND deleted_at IS NULL))"
+
+      query = "(searchable_type = '#{first_type}' AND #{sample_filter} )" if (first_type === 'Sample')
+      query = "(searchable_type = '#{first_type}' AND #{reaction_filter} )" if (first_type === 'Reaction')
+
       if (types.count > 1)
         types[1..-1].each { |type|
-          query = query +
-                  " OR (searchable_type = '#{type}' AND searchable_id IN (" \
-                  "SELECT #{type}_id FROM collections_#{type}s "\
-                  "WHERE collection_id = #{id} AND deleted_at IS NULL))"
+          case type
+          when 'Sample'
+            query = query + " OR (searchable_type = '#{type}' AND #{sample_filter} )"
+          when 'Reaction'
+            query = query + " OR (searchable_type = '#{type}' AND #{reaction_filter} )"
+          else
+            query = query +
+                    " OR (searchable_type = '#{type}' AND searchable_id IN (" \
+                    "SELECT #{type}_id FROM collections_#{type}s "\
+                    "WHERE collection_id = #{id} AND deleted_at IS NULL))"
+          end
         }
       end
 

@@ -14,4 +14,5 @@ export default {
   DATASET: 'dataset',
   CONTAINER: 'container',
   GENERALPROCEDURE: 'generalProcedure',
+  HOWTO: 'howto'
 };
