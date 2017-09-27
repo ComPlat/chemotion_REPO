@@ -33,6 +33,28 @@ const labeling = (label) => {
   return label;
 }
 
+const labeling = (label) => {
+  if (typeof (label) === 'string' && (label.startsWith('Reviewing') || label.startsWith('Element To Review') || label.startsWith('Reviewed'))) {
+    const ls = label.split(',');
+    if (ls.length >= 3) {
+      const sicon = ls[1].substr(1) === '0' ? '' : <i className="icon-sample"> {ls[1].substr(1)} &nbsp; </i>;
+      const ricon = ls[2].substr(1) === '0' ? '' : <i className="icon-reaction"> {ls[2].substr(1)} &nbsp;  </i>;
+      return label.startsWith('Reviewing') ?
+        (
+          <div style={{ display: 'inline', color: 'red' }}>
+            {ls[0]} &nbsp; {sicon} {ricon}
+          </div>
+        ) :
+        (
+          <div style={{ display: 'inline' }}>
+            {ls[0]} &nbsp; {sicon} {ricon}
+          </div>
+        );
+    }
+  }
+  return label;
+}
+
 export default class CollectionSubtree extends React.Component {
   constructor(props) {
     super(props);

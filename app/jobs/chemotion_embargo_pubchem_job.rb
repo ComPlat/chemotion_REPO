@@ -83,7 +83,6 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
       PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
       raise e
     end
-
   end
 
   def remove_publish_pending
