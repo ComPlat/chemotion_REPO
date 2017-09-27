@@ -46,6 +46,12 @@ import {
   getReactionGroups
 } from '../reactionUtils';
 
+import {
+  getSchemeMolecules,
+  getReactionReagents,
+  getReactionGroups
+} from '../reactionUtils';
+
 const SUPPORTED_FILE_TYPES = ['cdx', 'cdxml', 'doc', 'docx', 'xml', 'zip'];
 
 const allReagents = Object.assign(

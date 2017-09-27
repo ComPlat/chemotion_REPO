@@ -545,10 +545,31 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
     t.index ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id"
   end
 
-  create_table "element_tags", id: :serial, force: :cascade do |t|
-    t.string "taggable_type"
-    t.integer "taggable_id"
-    t.jsonb "taggable_data"
+  add_index "element_klasses_revisions", ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id", using: :btree
+  create_table "dois", force: :cascade do |t|
+    t.integer  "molecule_id"
+    t.string   "inchikey"
+    t.integer  "molecule_count"
+    t.integer  "analysis_id"
+    t.string   "analysis_type"
+    t.integer  "analysis_count"
+    t.jsonb    "metadata",       default: {}
+    t.boolean  "minted",         default: false
+    t.datetime "minted_at"
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
+    t.integer  "doiable_id"
+    t.string   "doiable_type"
+    t.string   "suffix"
+  end
+
+  add_index "dois", ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true, using: :btree
+  add_index "dois", ["suffix"], name: "index_dois_on_suffix", unique: true, using: :btree
+
+  create_table "element_tags", force: :cascade do |t|
+    t.string   "taggable_type"
+    t.integer  "taggable_id"
+    t.jsonb    "taggable_data"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["taggable_id"], name: "index_element_tags_on_taggable_id"

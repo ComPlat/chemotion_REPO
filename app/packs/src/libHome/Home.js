@@ -6,6 +6,31 @@ import Aviator from 'aviator';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import WelcomeMessage from '../components/WelcomeMessage';
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
+
+import initPublicRoutes from './homeRoutes';
+
+import Navigation from './Navigation';
+import XHome from '../components/extra/HomeXHome';
+import Notifications from '../components/Notifications';
+import RepoEmbargo from './RepoEmbargo';
+import RepoHome from './RepoHome';
+import RepoPubl from './RepoPubl';
+import RepoReview from './RepoReview';
+import RepoAbout from './RepoAbout';
+import RepoContact from './RepoContact';
+import RepoDirective from './RepoDirective';
+import RepoNewsroom from './RepoNewsroom';
+import RepoNewsReader from './RepoNewsReader';
+import RepoNewsEditor from './RepoNewsEditor';
+import RepoHowTo from './RepoHowTo';
+import RepoHowToReader from './RepoHowToReader';
+import RepoHowToEditor from './RepoHowToEditor';
+
+import PublicStore from '../components/stores/PublicStore';
+import RepoElementDetails from './RepoElementDetails';
+import NavFooter from './NavFooter';
 
 import initPublicRoutes from './homeRoutes';
 

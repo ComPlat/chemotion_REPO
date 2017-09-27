@@ -96,6 +96,10 @@ class Report < ApplicationRecord
       Reporter::WorkerDoiList.new(
         report: self, ext: 'xlsx'
       ).process
+    when 'doi_list_xlsx'
+      Reporter::WorkerDoiList.new(
+        report: self, ext: 'xlsx'
+      ).process
     else
       Reporter::Worker.new(
         report: self, template_path: tpl_path,

@@ -975,4 +975,16 @@ export default class Reaction extends Element {
     const analyses = this.container && this.container.children.find(c => (c && c.container_type === 'analyses'));
     return analyses ? analyses.children : [];
   }
+
+  get notPublishable() {
+    // NB: in reaction samples, can_publish is only serialized for products
+    // const unpublishableSamples = this.samples.filter(s => !s.can_publish);
+    const unpublishableSamples = this.products.filter(s => !s.can_publish);
+    return unpublishableSamples.length > 0 && unpublishableSamples;
+  }
+
+  analysisArray() {
+    const analyses = this.container && this.container.children.find(c => (c && c.container_type === 'analyses'));
+    return analyses ? analyses.children : [];
+  }
 }

@@ -181,7 +181,6 @@ module Chemotion
           requires :aff_id, type: Integer
         end
         post do
-
           ua = UserAffiliation.find_by(user_id: params[:user_id], affiliation_id: params[:aff_id])
           ua.destroy!
 

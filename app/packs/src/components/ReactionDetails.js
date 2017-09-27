@@ -244,6 +244,101 @@ export default class ReactionDetails extends Component {
     }).filter(s => s);
   }
 
+  handleValidation(element) {
+    let validates = [];
+    const reaction = element;
+    const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
+    reaction.publication.taggable_data.scheme_only === true) || false;
+    if ((reaction.rxno || '') === '' && schemeOnly === false) {
+      validates.push({ name: 'reaction_type', value: false, message: 'Reaction Type is missing.' });
+    }
+    const duration = (reaction.duration || '').split(' ').shift();
+    if (duration === '' || (duration === reaction.duration)) {
+      validates.push({ name: 'duration', value: false, message: 'No duration' });
+    }
+    const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
+    if (!hasTemperature) {
+      validates.push({ name: 'temperature', value: false, message: 'Temperature is missing' });
+    }
+    const desc = contentToText(reaction.description).trim() || '';
+    if (desc === '' && schemeOnly === false) {
+      validates.push({ name: 'description', value: false, message: 'Description is missing' });
+    }
+
+    if (schemeOnly === false) {
+      let hasAnalyses = (reaction.container.children.filter(c => c.container_type === 'analyses')[0].children.length > 0);
+      const startingMaterisls = (reaction.starting_materials || []);
+      if (startingMaterisls.length < 1) {
+        validates.push({ name: 'start_material', value: false, message: 'Start material is missing' });
+      }
+      startingMaterisls.forEach((st) => {
+        if (!st.amount || !st.amount.value) {
+          validates.push({ name: 'starting_materials-amount', value: false, message: `${st.molecule_iupac_name}: amount is 0` });
+        }
+      });
+      const products = (reaction.products || []);
+      if (products.length < 1) {
+        validates.push({ name: 'product', value: false, message: 'Product is missing' });
+      }
+      products.forEach((pt) => {
+        if (!pt.amount || !pt.amount.value) {
+          validates.push({ name: 'product-amount', value: false, message: `${pt.molecule_iupac_name}: amount is 0` });
+        }
+        if (pt.analysisArray().length > 0) {
+          hasAnalyses = true;
+        }
+        const validatePt = validateMolecule(pt);
+        if (validatePt.length > 0) {
+          validates = validates.concat(validatePt);
+        }
+      });
+      if (!hasAnalyses) {
+        validates.push({ name: 'analyses', value: false, message: 'Analyses data is missing.' });
+      }
+    }
+    validates = validates.concat(validateYield(reaction));
+    if (validates.length > 0) {
+      reaction.validates = validates;
+      this.setState({ reaction });
+    } else {
+      LoadingActions.start();
+      RepositoryActions.reviewPublish(element);
+    }
+  }
+
+  handleResetValidation() {
+    const { reaction } = this.state;
+    reaction.validates = [];
+    this.setState({ reaction });
+  }
+
+  handleCommentScreen() {
+    this.setState({ commentScreen: true });
+    this.props.toggleCommentScreen(true);
+  }
+
+  handleFullScreen() {
+    this.setState({ commentScreen: false });
+    this.props.toggleFullScreen();
+  }
+
+  handlePublishReactionModal(show) {
+    this.setState({ showPublishReactionModal: show });
+  }
+
+  updateReactionSvg() {
+    const {reaction} = this.state;
+    const materialsSvgPaths = {
+      starting_materials: reaction.starting_materials.map(material => material.svgPath),
+      reactants: reaction.reactants.map(material => material.svgPath),
+      products: reaction.products.map(material => [material.svgPath, material.equivalent])
+    };
+
+    const solvents = reaction.solvents.map((s) => {
+      const name = s.preferred_label;
+      return name;
+    }).filter(s => s);
+
   onUIStoreChange(state) {
     if (state.reaction.activeTab != this.state.activeTab) {
       this.setState({
