@@ -224,8 +224,12 @@ export default class UsersFetcher {
     });
   }
 
-  static fetchMyCollaborations() {
-    return fetch('/api/v1/collaborators/list', {
+  static fetchMyCollaborations(params=null) {
+    let api = '/api/v1/collaborators/list';
+    if (params != null && typeof params.id !== 'undefined') {
+      api = `/api/v1/collaborators/list?id=${params.id}&type=${params.type}`;
+    }
+    return fetch(api, {
       credentials: 'same-origin'
     }).then(response => response.json())
       .then(json => json)
@@ -317,6 +321,21 @@ export default class UsersFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+
+  static loadOrcidByUserId(params) {
+    return fetch('/api/v1/collaborators/load_orcid', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
   static fetchUsersByNameFirst(name, first) {
     return fetch(`/api/v1/collaborators/user.json?name=${name}&first=${first}`, {
       credentials: 'same-origin'
@@ -341,5 +360,19 @@ export default class UsersFetcher {
       console.log(errorMessage);
     });
     return promise;
+  }
+
+  static findAndCreateAff(params = {}) {
+    return fetch('/api/v1/collaborators/find_add_aff', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 }

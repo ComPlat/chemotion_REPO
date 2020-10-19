@@ -343,7 +343,7 @@ module Chemotion
           has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.find(root_publication.published_by).publication_embargo_collection.id }
           has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first.label : ''
         end
-        
+
         def update_tag_doi(element)
           unless element.nil? || element&.doi.nil? || element&.tag.nil?
             mds = Datacite::Mds.new
@@ -978,6 +978,40 @@ module Chemotion
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
+        end
+      end
+
+      namespace :save_repo_authors do
+        desc "Save REPO authors"
+        params do
+          requires :elementId, type: Integer, desc: "Element Id"
+          requires :elementType, type: String, desc: "Element Type"
+          requires :taggData, type: Hash do
+            requires :creators, type: Array[Hash]
+            requires :affiliations, type: Hash
+            requires :contributors, type: Hash
+          end
+        end
+
+        post do
+          declared_params = declared(params, include_missing: false)
+
+          pub = Publication.find_by(element_id: declared_params[:elementId], element_type: declared_params[:elementType])
+          et = ElementTag.find_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
+          taggData = declared_params[:taggData] || {}
+
+          taggData["author_ids"] = taggData["creators"]&.map { |cr| cr["id"] }
+          taggData["affiliation_ids"] = taggData["creators"]&.map { |cr| cr["affiliationIds"] }.flatten.uniq
+          taggData["affiliations"] = taggData["affiliations"]&.select { |k, v| taggData["affiliation_ids"].include?(k.to_i)}
+
+          pub_taggable_data = pub.taggable_data
+          pub_taggable_data = pub_taggable_data.deep_merge(taggData || {} )
+          pub.update(taggable_data: pub_taggable_data)
+
+          et_taggable_data = et.taggable_data
+          pub_tag = et_taggable_data["publication"]
+          pub_tag = pub_tag.deep_merge(declared_params[:taggData] || {} )
+          et.update(taggable_data: et_taggable_data)
         end
       end
 

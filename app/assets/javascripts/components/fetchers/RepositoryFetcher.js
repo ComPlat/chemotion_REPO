@@ -121,8 +121,7 @@ export default class RepositoryFetcher {
           dismissible: 'button',
           autoDismiss: 6,
           position: 'tr',
-          uid: 'publish_sample_error'
-        };
+          uid: 'publish_sample_error'};
         NotificationActions.add(notification);
         return null;
       }
@@ -393,6 +392,36 @@ export default class RepositoryFetcher {
       .catch((errorMessage) => {
         console.log(errorMessage);
       });
+  }
+
+
+  static updateComment(id, type, comments) {
+    return fetch('/api/v1/repository/reviewing/comment', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id, type, comments })
+    }).then(response => response.json())
+      .catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+  
+  static saveRepoAuthors(params = {}) {
+    return fetch('/api/v1/repository/save_repo_authors', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 
   static zipPreviewMetadata(id, type) {

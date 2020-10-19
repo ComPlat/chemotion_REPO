@@ -7,11 +7,11 @@ module Orcid
   ORCID_API_VERSION = ENV['ORCID_API_VERSION'] || '3.0'
 
   def self.orcid_token
-    Rails.env.production? && ENV['ORCID_P_TOKEN'] || ENV['ORCID_S_TOKEN']
+    ENV['ORCID_P_TOKEN']
   end
 
   def self.orcid_host
-    Rails.env.production? && 'https://pub.orcid.org' || 'https://pub.sandbox.orcid.org'
+    'https://pub.orcid.org'
   end
 
   def self.record_seg(orcid, seg)
