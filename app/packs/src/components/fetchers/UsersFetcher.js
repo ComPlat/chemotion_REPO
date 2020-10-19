@@ -2,8 +2,12 @@ import 'whatwg-fetch';
 
 export default class CollaboratorFetcher {
 
-  static fetchMyCollaborations() {
-    return fetch('/api/v1/collaborators/list', {
+  static fetchMyCollaborations(params=null) {
+    let api = '/api/v1/collaborators/list';
+    if (params != null && typeof params.id !== 'undefined') {
+      api = `/api/v1/collaborators/list?id=${params.id}&type=${params.type}`;
+    }
+    return fetch(api, {
       credentials: 'same-origin'
     }).then(response => response.json())
       .then(json => json)

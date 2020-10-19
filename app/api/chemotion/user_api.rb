@@ -109,8 +109,17 @@ module Chemotion
     resource :collaborators do
       namespace :list do
         desc 'fetch collaborators of current user'
+        params do
+          optional :id, type: Integer
+          optional :type, type: String
+        end
         get do
-          ids = UsersCollaborator.where(user_id: current_user.id).pluck(:collaborator_id)
+          if params[:id].present?
+            pub = Publication.find_by(element_id: params[:id], element_type: params[:type])
+            ids = UsersCollaborator.where(user_id: pub.published_by).pluck(:collaborator_id)
+          else
+            ids = UsersCollaborator.where(user_id: current_user.id).pluck(:collaborator_id)
+          end
           data = User.where(id: ids)
           present data, with: Entities::CollaboratorEntity, root: 'authors'
         end
@@ -148,6 +157,7 @@ module Chemotion
           present user, with: Entities::CollaboratorEntity, root: 'user'
         end
       end
+
       namespace :add_aff do
         desc 'add user to my collabration'
         params do
@@ -164,6 +174,21 @@ module Chemotion
           present collaborator, with: Entities::CollaboratorEntity, root: 'user'
         end
       end
+
+      namespace :find_add_aff do
+        desc 'add user to my collabration'
+        params do
+          requires :department, type: String
+          requires :organization, type: String
+          requires :country, type: String
+        end
+        post do
+          aff = Affiliation.find_or_create_by(country: params[:country],
+            organization: params[:organization], department: params[:department])
+          {id: aff.id, aff_output: aff.output_full}
+        end
+      end
+
       namespace :delete do
         desc 'remove user from my collabration'
         params do
