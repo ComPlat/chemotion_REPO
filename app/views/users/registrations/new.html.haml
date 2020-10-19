@@ -51,6 +51,10 @@
       = render "devise/shared/affiliations", f: a, disabled: false
     = f.hidden_field :omniauth_provider, value: resource.omniauth_provider
     = f.hidden_field :omniauth_uid, value: resource.omniauth_uid
+    .form-group.field
+      = f.label "ORCID", 'ORCID'
+      %br/
+      = f.text_field :orcid, autofocus: true, class: 'form-control'
 
     = render 'devise/shared/pn_and_tos'
 

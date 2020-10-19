@@ -44,6 +44,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
       resource.password = Devise.friendly_token[0,20]
     end
 
+    resource.build_profile(data: { ORCID: sign_up_params['orcid'].strip }) if !resource.profile && sign_up_params['orcid']&.strip.present?
     resource_saved = resource.save
     yield resource if block_given?
     if resource_saved
