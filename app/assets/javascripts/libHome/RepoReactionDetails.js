@@ -440,6 +440,7 @@ export default class RepoReactionDetails extends Component {
     const idyLogin = typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview = typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
+
     return (
       <div style={{ border: 'none' }}>
         <div >
@@ -451,6 +452,8 @@ export default class RepoReactionDetails extends Component {
                   buttons={buttons}
                   buttonFunc={this.handleReviewBtn}
                   reviewLevel={reviewLevel}
+                  taggData={taggData}
+                  schemeOnly={schemeOnly}
                   currComment={(history && history.length > 0 && history.slice(-1).pop()) || {}}
                 /> : ''
             }

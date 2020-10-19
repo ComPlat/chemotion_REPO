@@ -152,6 +152,7 @@ export default class RepoSampleDetails extends Component {
                 reviewLevel={reviewLevel}
                 currComment={(history && history.slice(-1).pop()) || {}}
                 buttons={buttons}
+                taggData={tagData}
               /> : ''
           }
           {canClose ? <ClosePanel element={sample} /> : ''}
