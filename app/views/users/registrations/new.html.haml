@@ -41,6 +41,11 @@
       = render "devise/shared/affiliations", f: a, disabled: false
     = f.hidden_field :provider, value: resource.provider
     = f.hidden_field :uid, value: resource.uid
+    .form-group.field
+      = f.label "ORCID", 'ORCID'
+      %br/
+      = f.text_field :orcid, autofocus: true, class: 'form-control'
+
     = render 'devise/shared/pn_and_tos'
 
     .form-group.actions

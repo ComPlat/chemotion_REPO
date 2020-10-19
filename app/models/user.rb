@@ -108,6 +108,8 @@ class User < ApplicationRecord
   validate :name_abbreviation_reserved_list, on: :create
   validate :name_abbreviation_length, on: :create
   validate :name_abbreviation_format, on: :create
+  validate :orcid_checker, on: :create
+# validate :academic_email
   validate :mail_checker
 
   # NB: only Persons and Admins can get a confirmation email and confirm their email.
@@ -211,6 +213,25 @@ class User < ApplicationRecord
       errors.add(:name_abbreviation, "has to be #{min_val} to #{max_val} characters long")
   end
 
+  def orcid_checker
+    return if orcid.nil?
+
+    result = Chemotion::OrcidService.record_person(orcid)
+    oc_given_names = result&.person&.given_names
+    oc_family_name = result&.person&.family_name
+    if result.nil?
+      errors.add(:orcid, ' does not exist! Please check.')
+    elsif oc_given_names&.casecmp(first_name) != 0 || oc_family_name&.casecmp(last_name) != 0
+      errors.add(:orcid, " #{orcid} belongs to #{oc_given_names} #{oc_family_name} (first name: #{oc_given_names}, last_name: #{oc_family_name})! Please check.")
+    end
+  end
+
+  def academic_email
+    Swot::is_academic?(email) || errors.add(
+      :email, 'not from an academic organization'
+    )
+  end
+
   def mail_checker
     MailChecker.valid?(email) || errors.add(
       :email, 'from throwable email providers not accepted'
@@ -218,7 +239,7 @@ class User < ApplicationRecord
   end
 
   def orcid
-    profile.data&.fetch('ORCID', nil)
+    profile&.data&.fetch('ORCID', nil)
   end
 
   def owns_collections?(collections)
