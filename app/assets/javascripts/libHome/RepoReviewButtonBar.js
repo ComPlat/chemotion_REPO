@@ -7,6 +7,7 @@ import {
 } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import RepoMetadataModal from '../components/common/RepoMetadataModal';
+import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 
 const showButton = (btn, func, reviewLevel, pubState) => {
   let title = btn;
@@ -93,6 +94,7 @@ const RepoReviewButtonBar = props =>
         elementId={props.element.id}
         elementType={props.element.elementType.toLowerCase()}
       />
+      <RepoReviewAuthorsModal element={props.element} reviewLevel={props.reviewLevel} schemeOnly={props.schemeOnly} taggData={props.taggData} />
     </ButtonToolbar>
   );
 
@@ -104,7 +106,9 @@ RepoReviewButtonBar.propTypes = {
   buttons: PropTypes.arrayOf(PropTypes.string),
   buttonFunc: PropTypes.func,
   reviewLevel: PropTypes.number,
-  currComment: PropTypes.object
+  schemeOnly: PropTypes.bool,
+  currComment: PropTypes.object,
+  taggData: PropTypes.object
 };
 
 
@@ -112,7 +116,9 @@ RepoReviewButtonBar.defaultProps = {
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
   buttonFunc: () => { },
   reviewLevel: 0,
+  schemeOnly: false,
   currComment: {},
+  taggData: {}
 };
 
 export default RepoReviewButtonBar;
