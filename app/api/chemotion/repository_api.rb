@@ -516,9 +516,14 @@ module Chemotion
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
-          { reaction: entities, reviewLevel: repo_review_level(params[:id], 'Reaction'), pub_name: published_user&.name || '' }
+          {
+            reaction: entities,
+            isSubmitter: publication.published_by == current_user.id,
+            reviewLevel: repo_review_level(params[:id], 'Reaction'),
+            pub_name: published_user&.name || ''
+          }
         end
-      end
+    end
 
       resource :sample do
         helpers RepositoryHelpers
@@ -543,6 +548,7 @@ module Chemotion
             analyses: containers,
             doi: Entities::DoiEntity.represent(sample.doi, serializable: true),
             pub_name: published_user&.name,
+            isSubmitter: publication.published_by == current_user.id,
             reviewLevel: repo_review_level(params[:id], 'Sample')
           }
         end
@@ -982,10 +988,10 @@ module Chemotion
       end
 
       namespace :save_repo_authors do
-        desc "Save REPO authors"
+        desc 'Save REPO authors'
         params do
-          requires :elementId, type: Integer, desc: "Element Id"
-          requires :elementType, type: String, desc: "Element Type"
+          requires :elementId, type: Integer, desc: 'Element Id'
+          requires :elementType, type: String, desc: 'Element Type'
           requires :taggData, type: Hash do
             requires :creators, type: Array[Hash]
             requires :affiliations, type: Hash
@@ -998,19 +1004,19 @@ module Chemotion
 
           pub = Publication.find_by(element_id: declared_params[:elementId], element_type: declared_params[:elementType])
           et = ElementTag.find_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
-          taggData = declared_params[:taggData] || {}
+          tagg_data = declared_params[:taggData] || {}
 
-          taggData["author_ids"] = taggData["creators"]&.map { |cr| cr["id"] }
-          taggData["affiliation_ids"] = taggData["creators"]&.map { |cr| cr["affiliationIds"] }.flatten.uniq
-          taggData["affiliations"] = taggData["affiliations"]&.select { |k, v| taggData["affiliation_ids"].include?(k.to_i)}
+          tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
+          tagg_data['affiliation_ids'] = tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq
+          tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].include?(k.to_i) }
 
           pub_taggable_data = pub.taggable_data
-          pub_taggable_data = pub_taggable_data.deep_merge(taggData || {} )
+          pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
           pub.update(taggable_data: pub_taggable_data)
 
           et_taggable_data = et.taggable_data
-          pub_tag = et_taggable_data["publication"]
-          pub_tag = pub_tag.deep_merge(declared_params[:taggData] || {} )
+          pub_tag = et_taggable_data['publication']
+          pub_tag.deep_merge(tagg_data || {})
           et.update(taggable_data: et_taggable_data)
         end
       end
@@ -1026,8 +1032,8 @@ module Chemotion
           optional :coauthors, type: Array[String], default: [], desc: 'Co-author (User)'
           optional :embargo, type: Integer, desc: 'Embargo collection'
           requires :license, type: String, desc: 'Creative Common License'
-          requires :addMe, type: Boolean, desc: "add me as author"
-          requires :schemeDesc, type: Boolean, desc: "publish scheme"
+          requires :addMe, type: Boolean, desc: 'add me as author'
+          requires :schemeDesc, type: Boolean, desc: 'publish scheme'
         end
 
         after_validation do

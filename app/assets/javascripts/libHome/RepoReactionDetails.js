@@ -387,6 +387,7 @@ export default class RepoReactionDetails extends Component {
       isPublished,
       canComment,
       reviewLevel,
+      isSubmitter,
       history,
       canClose,
     } = this.props;
@@ -452,6 +453,7 @@ export default class RepoReactionDetails extends Component {
                   buttons={buttons}
                   buttonFunc={this.handleReviewBtn}
                   reviewLevel={reviewLevel}
+                  isSubmitter={isSubmitter}
                   taggData={taggData}
                   schemeOnly={schemeOnly}
                   currComment={(history && history.length > 0 && history.slice(-1).pop()) || {}}
@@ -525,6 +527,7 @@ RepoReactionDetails.propTypes = {
   isPublished: PropTypes.bool,
   canComment: PropTypes.bool,
   reviewLevel: PropTypes.number,
+  isSubmitter: PropTypes.bool,
   history: PropTypes.array,
   canClose: PropTypes.bool,
   buttons: PropTypes.arrayOf(PropTypes.string),
@@ -533,6 +536,7 @@ RepoReactionDetails.propTypes = {
 RepoReactionDetails.defaultProps = {
   isPublished: false,
   canComment: false,
+  isSubmitter: false,
   reviewLevel: 0,
   history: [],
   canClose: true,
