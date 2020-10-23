@@ -9,7 +9,8 @@ export default class RepoReviewDetails extends Component {
     this.state = {
       element: props.element,
       history: [],
-      reviewLevel: 0
+      reviewLevel: 0,
+      isSubmitter: false
     };
 
     this.onStoreChange = this.onStoreChange.bind(this);
@@ -39,6 +40,7 @@ export default class RepoReviewDetails extends Component {
             reaction={currentElement.reaction}
             canComment
             reviewLevel={this.state.reviewLevel}
+            isSubmitter={this.state.isSubmitter}
             history={this.state.historyInfo ? this.state.historyInfo : []}
           />);
       case 'sample':
@@ -47,6 +49,7 @@ export default class RepoReviewDetails extends Component {
             element={currentElement}
             canComment
             reviewLevel={this.state.reviewLevel}
+            isSubmitter={this.state.isSubmitter}
             history={this.state.historyInfo ? this.state.historyInfo : []}
           />);
       default: return <span />;

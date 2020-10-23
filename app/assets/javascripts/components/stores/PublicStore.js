@@ -271,6 +271,7 @@ class PublicStore {
         currentElement: result.element,
         historyInfo: (publication && publication.review && publication.review.history) || [],
         reviewLevel: result.element.reviewLevel,
+        isSubmitter: (result.element && result.element.isSubmitter) || false
       });
       Aviator.navigate(`/review/review_reaction/${result.id}`, { silent: true });
     }
@@ -288,6 +289,7 @@ class PublicStore {
         queryId: result.id,
         currentElement: result.element,
         historyInfo: (publication && publication.review && publication.review.history) || [],
+        isSubmitter: (result.element && result.element.isSubmitter) || false,
         reviewLevel: result.element && result.element.reviewLevel,
       });
       Aviator.navigate(`/review/review_sample/${result.id}`, { silent: true });

@@ -108,17 +108,8 @@ module Chemotion
     resource :collaborators do
       namespace :list do
         desc 'fetch collaborators of current user'
-        params do
-          optional :id, type: Integer
-          optional :type, type: String
-        end
         get do
-          if params[:id].present?
-            pub = Publication.find_by(element_id: params[:id], element_type: params[:type])
-            ids = UsersCollaborator.where(user_id: pub.published_by).pluck(:collaborator_id)
-          else
-            ids = UsersCollaborator.where(user_id: current_user.id).pluck(:collaborator_id)
-          end
+          ids = UsersCollaborator.where(user_id: current_user.id).pluck(:collaborator_id)
           data = User.where(id: ids)
           present data, with: Entities::CollaboratorEntity, root: 'authors'
         end
@@ -167,8 +158,7 @@ module Chemotion
         end
         post do
           collaborator = User.find(params[:id])
-          aff = [Affiliation.find_or_create_by(country: params[:country],
-            organization: params[:organization], department: params[:department])]
+          aff = [Affiliation.find_or_create_by(country: params[:country], organization: params[:organization], department: params[:department])]
           collaborator.affiliations << aff unless aff.nil?
           present collaborator, with: Entities::CollaboratorEntity, root: 'user'
         end
@@ -182,9 +172,8 @@ module Chemotion
           requires :country, type: String
         end
         post do
-          aff = Affiliation.find_or_create_by(country: params[:country],
-            organization: params[:organization], department: params[:department])
-          {id: aff.id, aff_output: aff.output_full}
+          aff = Affiliation.find_or_create_by(country: params[:country], organization: params[:organization], department: params[:department])
+          { id: aff.id, aff_output: aff.output_full }
         end
       end
 
