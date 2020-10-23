@@ -597,7 +597,7 @@ module Chemotion
             review_info: review_info
           }
         end
-      end
+    end
 
       resource :sample do
         helpers RepositoryHelpers

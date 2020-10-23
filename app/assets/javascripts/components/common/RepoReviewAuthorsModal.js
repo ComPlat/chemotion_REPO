@@ -1,6 +1,6 @@
 import React from 'react';
-import PropTypes, { element } from 'prop-types';
-import { Modal, Button, ButtonToolbar, OverlayTrigger, Tooltip, Label, InputGroup, Checkbox, Table } from 'react-bootstrap';
+import PropTypes from 'prop-types';
+import { Modal, Button, ButtonToolbar, OverlayTrigger, Tooltip, InputGroup, Checkbox, Table } from 'react-bootstrap';
 import Select from 'react-select';
 import uuid from 'uuid';
 import { findIndex, filter, uniq, flattenDeep } from 'lodash';
@@ -101,7 +101,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      taggData: this.props.taggData || {},
+      taggData: null,
       modalShow: false,
       selectedAuthors: null,
       collaborations: [],
@@ -120,6 +120,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
     this.onSave = this.onSave.bind(this);
     this.loadOrcid = this.loadOrcid.bind(this);
     this.handleDeleteAuthor = this.handleDeleteAuthor.bind(this);
+    this.handleClose = this.handleClose.bind(this);
   }
 
   componentDidMount() {
@@ -141,17 +142,24 @@ export default class RepoReviewAuthorsModal extends React.Component {
     });
   }
 
+  componentWillUnmount() {
+    this.setState({
+      taggData: null
+    });
+  }
+
   onAddNewAuthor() {
-    const { selectedAuthors, collaborations, taggData } = this.state;
+    const { selectedAuthors, collaborations } = this.state;
+    const taggData = this.state.taggData || this.props.taggData;
     const { affiliations, creators, affiliation_ids, author_ids } = taggData;
 
     const coidx = findIndex(collaborations, o => o.id === selectedAuthors.value);
     const selCol = collaborations[coidx];
     const affIds = selCol.current_affiliations.map(ca => (ca.id));
 
-    selCol.current_affiliations.map(ca => {
+    selCol.current_affiliations.map((ca) => {
       affiliations[ca.id] = [ca.department, ca.organization, ca.country].join(', ');
-    })
+    });
 
     const newAuthor = {
       id: selCol.id,
@@ -164,18 +172,19 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     creators.push(newAuthor);
 
-    collaborations.splice(coidx, 1);
+    //collaborations.splice(coidx, 1);
 
     taggData.creators = creators;
     taggData.affiliation_ids = uniq(flattenDeep(affiliation_ids.concat(affIds)));
     author_ids.push(newAuthor.id);
     taggData.author_ids = author_ids;
     taggData.affiliations = affiliations;
-    this.setState({ taggData, selectedAuthors: null, collaborations });
+    this.setState({ taggData, selectedAuthors: null });
   }
 
   onAddAff(g) {
-    const { fields, taggData } = this.state;
+    const { fields } = this.state;
+    const taggData = this.state.taggData || this.props.taggData;
     const department = fields[`${g.id}@line_department`];
     const organization = fields[`${g.id}@line_organization`];
     const country = fields[`${g.id}@line_country`];
@@ -207,8 +216,8 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   onDeleteAff(g, aid) {
-    const { taggData } = this.state;
-    const { affiliations, affiliation_ids, creators, author_ids } = taggData;
+    const taggData = this.state.taggData || this.props.taggData;
+    const { creators } = taggData;
 
     const ax = findIndex(g.affiliationIds, o => o.id === aid);
     g.affiliationIds.splice(ax, 1);
@@ -220,6 +229,11 @@ export default class RepoReviewAuthorsModal extends React.Component {
   onSave() {
     const { taggData } = this.state;
     const { element } = this.props;
+
+    if (taggData == null) {
+      alert('no changes!');
+      return true;
+    }
 
     const { creators } = taggData;
     const authorCount = (creators || []).length;
@@ -240,15 +254,15 @@ export default class RepoReviewAuthorsModal extends React.Component {
             PublicActions.displayReviewSample(element.id);
           }
 
-          this.setState({ modalShow: false });
+          this.setState({ taggData: null, modalShow: false });
         }
       });
     return true;
   }
 
   loadOrcid() {
-    const { taggData } = this.state;
-    const { affiliations, creators, affiliation_ids, author_ids, contributors } = taggData;
+    const taggData = this.state.taggData || this.props.taggData;
+    const { creators, contributors, author_ids } = taggData;
     let ids = [];
     ids.push(contributors.id);
     ids = ids.concat(author_ids);
@@ -298,20 +312,16 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   loadCollaborations() {
-    const { element } = this.props;
-    const { taggData } = this.state;
-    const { creators, author_ids } = taggData;
-    UsersFetcher.fetchMyCollaborations({ id: element.id, type: element.elementType })
+    UsersFetcher.fetchMyCollaborations()
       .then((result) => {
-        const aCol = result.authors.filter(({ id }) => !(author_ids || []).includes(id));
         this.setState({
-          collaborations: aCol
+          collaborations: result.authors
         });
       });
   }
 
   handleDeleteAuthor(author) {
-    const { taggData } = this.state;
+    const taggData = this.state.taggData || this.props.taggData;
     const { creators, author_ids } = taggData;
     taggData.creators = filter(creators, o => o.id !== author.id);
     taggData.author_ids = filter(author_ids, o => o !== author.id);
@@ -321,32 +331,39 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   contributor() {
-    const { taggData } = this.props;
+    const taggData = this.state.taggData || this.props.taggData;
     const contributors = taggData.contributors || {};
 
     const orcid = contributors.ORCID == null ? '' : <OrcidIcon orcid={contributors.ORCID} />;
     const aff = contributors.affiliations && Object.keys(contributors.affiliations).map(k => (
-      <div>  -{contributors.affiliations[k]}</div>
+      <div key={uuid.v4()}>  -{contributors.affiliations[k]}</div>
     ));
-    return (<div><h5><b>Contributor:</b></h5>{orcid}{contributors.name} <br/> {aff} </div>)
+    return (<div><h5><b>Contributor:</b></h5>{orcid}{contributors.name} <br /> {aff} </div>);
 
-  };
+  }
+
+
+  handleClose() {
+    this.setState({ taggData: null, modalShow: false })
+  }
 
   selectUsers() {
     const { selectedAuthors, collaborations } = this.state;
-
-    const { taggData } = this.props;
+    const taggData = this.state.taggData || this.props.taggData;
     const creators = taggData.creators || [];
+    const author_ids = taggData.author_ids || [];
 
     const affiliations = taggData.affiliations || [];
     let defaultSelectedAuthors = [];
 
-    const options = collaborations.map(c => (
+    const filterCol = (collaborations || []).filter(({ id }) => !(author_ids || []).includes(id));
+
+    const options = filterCol.map(c => (
       { label: c.name, value: c.id }
     ));
 
     if (selectedAuthors == null) {
-      defaultSelectedAuthors = creators.map((au) => (
+      defaultSelectedAuthors = creators.map(au => (
         { label: au.name, value: au.id }
       ));
     } else {
@@ -358,9 +375,9 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
       const affIds = author.affiliationIds || [];
       const aff = affIds.map(id => (
-        <div>  -{affiliations[id]}</div>
+        <div key={uuid.v4()}>  -{affiliations[id]}</div>
       ));
-      return (<div>{orcid}{author.name}<br/>{aff}<br/></div>)
+      return (<div key={uuid.v4()}>{orcid}{author.name}<br />{aff}<br /></div>);
     });
 
     const authorCount = (creators || []).length;
@@ -388,22 +405,19 @@ export default class RepoReviewAuthorsModal extends React.Component {
             <Button bsStyle="success" onClick={() => this.onAddNewAuthor()}>
               <i className="fa fa-plus" />
               Add to Author List
-              </Button>
+            </Button>
           </InputGroup.Button>
-         </InputGroup>
-        <div>
-
-        </div>
+        </InputGroup>
       </div>
     );
   }
 
   render() {
     const { modalShow, countries, organizations, departments, fields } = this.state;
-    const { taggData } = this.state;
+    const taggData = this.state.taggData || this.props.taggData;
     const creators = taggData.creators || [];
 
-    if (this.props.reviewLevel != '2' || this.props.schemeOnly == true) {
+    if (this.props.isSubmitter != true || this.props.schemeOnly == true) {
       return '';
     }
 
@@ -445,7 +459,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
         </OverlayTrigger>
         <Modal
           show={modalShow}
-          onHide={() => this.setState({ modalShow: false })}
+          onHide={this.handleClose}
           dialogClassName="author-modal-dialog"
         >
           <Modal.Body style={{ overflow: 'auto' }}>
@@ -478,7 +492,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
             </div>
 
             <ButtonToolbar>
-              <Button bsStyle="warning" onClick={() => this.setState({ modalShow: false })}> Close</Button>
+              <Button bsStyle="warning" onClick={() => this.handleClose()}> Close</Button>
               <Button
                 bsStyle="info"
                 onClick={() => this.loadOrcid()}
@@ -502,7 +516,7 @@ RepoReviewAuthorsModal.propTypes = {
     id: PropTypes.number,
     elementType: PropTypes.string
   }).isRequired,
-  reviewLevel: PropTypes.number,
+  isSubmitter: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   taggData: PropTypes.object.isRequired,
 };
@@ -510,7 +524,7 @@ RepoReviewAuthorsModal.propTypes = {
 
 
 RepoReviewAuthorsModal.defaultProps = {
-  reviewLevel: 0,
+  isSubmitter: false,
   schemeOnly: false,
   taggData: {}
 };

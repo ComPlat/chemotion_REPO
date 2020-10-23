@@ -94,7 +94,7 @@ const RepoReviewButtonBar = props =>
         elementId={props.element.id}
         elementType={props.element.elementType.toLowerCase()}
       />
-      <RepoReviewAuthorsModal element={props.element} reviewLevel={props.reviewLevel} schemeOnly={props.schemeOnly} taggData={props.taggData} />
+      <RepoReviewAuthorsModal element={props.element} isSubmitter={props.isSubmitter} schemeOnly={props.schemeOnly} taggData={props.taggData} />
     </ButtonToolbar>
   );
 
@@ -106,6 +106,7 @@ RepoReviewButtonBar.propTypes = {
   buttons: PropTypes.arrayOf(PropTypes.string),
   buttonFunc: PropTypes.func,
   reviewLevel: PropTypes.number,
+  isSubmitter: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   currComment: PropTypes.object,
   taggData: PropTypes.object
@@ -116,6 +117,7 @@ RepoReviewButtonBar.defaultProps = {
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
   buttonFunc: () => { },
   reviewLevel: 0,
+  isSubmitter: false,
   schemeOnly: false,
   currComment: {},
   taggData: {}
