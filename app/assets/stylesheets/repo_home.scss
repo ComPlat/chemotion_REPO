@@ -608,7 +608,7 @@ $bs-successcolor: #5cb85c;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  animation: ring 2s linear 10 both;
+  animation: ring 2s linear 30 both;
 }
 
 @keyframes ring {

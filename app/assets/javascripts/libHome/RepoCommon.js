@@ -651,7 +651,7 @@ const SidToPubChem = ({ sid }) => {
 
 SidToPubChem.propTypes = {
   sid: PropTypes.string
-}
+};
 
 
 const OrcidIcon = ({ orcid }) => {
@@ -670,7 +670,11 @@ const OrcidIcon = ({ orcid }) => {
 };
 
 OrcidIcon.propTypes = {
-  orcid: PropTypes.string.isRequired
+  orcid: PropTypes.string
+};
+
+OrcidIcon.defaultProps = {
+  orcid: null
 };
 
 const ElementIcon = (elementType) => {
