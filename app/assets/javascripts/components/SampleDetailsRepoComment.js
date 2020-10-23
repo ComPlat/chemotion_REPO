@@ -11,7 +11,8 @@ export default class SampleDetailsRepoComment extends Component {
 
     this.state = {
       element: null,
-      reviewLevel: 0
+      reviewLevel: 0,
+      isSubmitter: false,
     };
     this.onStoreChange = this.onStoreChange.bind(this);
   }
@@ -30,7 +31,8 @@ export default class SampleDetailsRepoComment extends Component {
           this.setState({
             element: data,
             historyInfo: (publication.review && publication.review.history) || [],
-            reviewLevel: data.reviewLevel
+            reviewLevel: data.reviewLevel,
+            isSubmitter: data.isSubmitter || false
           });
         }
       }).catch((errorMessage) => {
@@ -55,6 +57,7 @@ export default class SampleDetailsRepoComment extends Component {
           element={element}
           canComment
           reviewLevel={this.state.reviewLevel}
+          isSubmitter={this.state.isSubmitter}
           history={this.state.historyInfo ? this.state.historyInfo : {}}
           canClose={false}
           buttons={['Comments']}

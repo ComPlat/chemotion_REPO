@@ -34,6 +34,7 @@ export default class ReactionDetailsRepoComment extends Component {
           this.setState({
             reaction: data.reaction,
             reviewLevel: data.reviewLevel,
+            isSubmitter: data.isSubmitter || false,
             historyInfo: history,
           });
         }
@@ -59,6 +60,7 @@ export default class ReactionDetailsRepoComment extends Component {
           reaction={reaction}
           canComment
           reviewLevel={this.state.reviewLevel}
+          isSubmitter={this.state.isSubmitter}
           history={this.state.historyInfo ? this.state.historyInfo : []}
           canClose={false}
           buttons={['Comments']}
