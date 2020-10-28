@@ -22,7 +22,7 @@
     <title titleType="AlternativeTitle"><%= element.rinchi_short_key %></title>
   </titles>
   <publisher>chemotion.net</publisher>
-  <publicationYear><%= element.created_at.strftime("%Y") %></publicationYear>
+  <publicationYear><%= Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
     <contributor contributorType="Researcher">
@@ -40,14 +40,13 @@
   </contributors>
   <% end %>
   <dates>
-  <date dateType="Created"><%= element.created_at %></date>
+    <date dateType="Submitted"><%= pub.created_at %></date>
+    <date dateType="Accepted"><%= pub.accepted_at %></date>
   </dates>
-
   <subjects>
     <subject>chemical reaction: structures conditions</subject>
   </subjects>
   <language>en</language>
-
   <resourceType resourceTypeGeneral="Workflow">reaction conditions</resourceType>
   <version>1</version>
   <% if rights[:rightsIdentifier].present? %>

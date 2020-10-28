@@ -39,6 +39,10 @@
     </contributor>
   </contributors>
   <% end %>
+  <dates>
+    <date dateType="Submitted"><%= pub.created_at %></date>
+    <date dateType="Accepted"><%= pub.accepted_at %></date>
+  </dates>
   <subjects>
     <subject>Chemistry</subject>
   </subjects>
@@ -54,7 +58,7 @@
     <description xml:lang="en-US" descriptionType="Abstract">
       dataset for <%= (element.extended_metadata['kind'] || '').split('|').pop %><br />
       <%= element.extended_metadata['description'] %>
-      <%= Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text %>
+      <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text, false, nil, false).to_s %>
     </description>
   </descriptions>
   <relatedIdentifiers>

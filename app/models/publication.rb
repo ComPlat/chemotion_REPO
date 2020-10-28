@@ -82,6 +82,9 @@ class Publication < ActiveRecord::Base
   def update_state(new_state)
     update_columns(state: new_state)
     descendants.each { |d| d.update_columns(state: new_state) }
+    update_columns(accepted_at: Time.now.utc) if new_state == Publication::STATE_ACCEPTED
+    descendants.each { |d| d.update_columns(accepted_at: Time.now.utc) } if new_state == Publication::STATE_ACCEPTED
+
     process_element(new_state)
   end
 
@@ -364,7 +367,7 @@ class Publication < ActiveRecord::Base
   def datacite_metadata_xml
     parent_element = parent&.element
 
-    metadata_obj = OpenStruct.new(element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data)
+    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -502,6 +505,7 @@ class Publication < ActiveRecord::Base
   def transition_from_completing_to_completed!
     return unless valid_transition(STATE_COMPLETED)
     pd = {}
+    time = DateTime.now
     if element_type != 'Container'
       creator_ids = taggable_data['author_ids']
       su_id = User.chemotion_user.id
@@ -519,20 +523,17 @@ class Publication < ActiveRecord::Base
        .where("collections.label = 'Published Elements'")
        .pluck(:id)
 
-
       if element_type == 'Reaction' && scheme_only
         published_collection_ids = my_published_collection_ids + [Collection.scheme_only_reactions_collection.id]
       else
         published_collection_ids = my_published_collection_ids + [Collection.public_collection_id]
       end
 
-
       collections_klass = "Collections#{element_type}".constantize
       collections_klass.remove_in_collection([element_id], pending_collection_ids)
       collections_klass.remove_in_collection([element_id], Collection.element_to_review_collection.pluck(:id))
       collections_klass.create_in_collection([element_id], published_collection_ids)
 
-      time = DateTime.now
       element.update_publication_tag(published_at: time)
       pd = taggable_data.merge(published_at: time)
       logger(['moved to collections'])
