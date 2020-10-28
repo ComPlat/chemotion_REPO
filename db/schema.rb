@@ -993,6 +993,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.integer  "published_by"
     t.datetime "published_at"
     t.jsonb    "review"
+    t.datetime "accepted_at"
   end
 
   add_index "publications", ["ancestry"], name: "index_publications_on_ancestry", using: :btree

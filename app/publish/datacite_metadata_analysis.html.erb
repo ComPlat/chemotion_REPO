@@ -39,11 +39,14 @@
     </contributor>
   </contributors>
   <% end %>
+  <dates>
+    <date dateType="Submitted"><%= pub.created_at %></date>
+    <date dateType="Accepted"><%= pub.accepted_at %></date>
+  </dates>
   <subjects>
     <subject>Chemistry</subject>
   </subjects>
   <language>en</language>
-
   <resourceType resourceTypeGeneral="Dataset">Dataset</resourceType>
   <version>1</version>
   <% if rights[:rightsIdentifier].present? %>
@@ -55,7 +58,7 @@
     <description xml:lang="en-US" descriptionType="Abstract">
       dataset for <%= (element.extended_metadata['kind'] || '').split('|').pop %><br />
       <%= element.extended_metadata['description'] %>
-      <%= Chemotion::QuillToHtml.new.convert(element.extended_metadata['content']) %>
+      <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text, false, nil, false).to_s %>
     </description>
   </descriptions>
 
@@ -64,6 +67,5 @@
     <%#   <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo"><%= c.doi %1></relatedIdentifier> %>
     <%# <% end %1> %>
     <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf"><%= "#{dois[:parent_element][:DOI]}" %></relatedIdentifier>
-
   </relatedIdentifiers>
 </resource>
