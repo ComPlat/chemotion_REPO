@@ -966,7 +966,7 @@ class RenderAnalysisHeader extends Component {
               <span className="repo-pub-sample-header">
                 <span className="repo-pub-title"><IconToMyDB isLogin={this.props.isLogin} id={this.props.element.id} type="sample" /></span>&nbsp;
                 <span className="repo-pub-title"><b>Product</b></span>&nbsp;
-                <RepoXvialButton isEditable={this.props.isReviewer} isLogin={this.props.isLogin} allowRequest elementId={this.props.element.id} data={xvial} saveCallback={this.props.updateRepoXvial} />
+                <RepoXvialButton isEditable={this.props.isReviewer} isLogin={this.props.isLogin} allowRequest elementId={this.props.element.id} data={xvial} saveCallback={this.props.updateRepoXvial} xvialCom={this.props.xvialCom} />
                 <RepoPublicComment isReviewer={this.props.isReviewer} id={this.props.element.id} type="Sample" title={`Product CRS-${crsId}, ${this.props.element.showed_name}`} userInfo={this.props.userInfo} pageType="reactions" pageId={this.props.reactionId} />&nbsp;
                 <RepoUserComment isLogin={this.props.isLogin} id={this.props.element.id} type="Sample" title={`Product CRS-${crsId}, ${this.props.element.showed_name}`} pageType="reactions" pageId={this.props.reactionId} />
                 <br /><br />

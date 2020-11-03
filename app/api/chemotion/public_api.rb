@@ -1763,9 +1763,27 @@ module Chemotion
               group by m.id
             ) c on c.molecule_id = molecules.id
           SQL
-          paginate(Molecule.joins(sample_join).joins(xvial_count).order("s.max_published_at desc").select(
+          com_config = Rails.configuration.compound_opendata
+          xvial_com = <<~SQL
+            inner join (select -1 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
+          SQL
+          if com_config.present?
+            xvial_com = if com_config.allowed_uids.include?(current_user&.id)
+                          <<~SQL
+                            inner join (
+                              select count(a.x_id) as xvial_com, m.id molcule_id from molecules m left outer join com_xvial(true) a on a.x_inchikey = m.inchikey
+                              group by m.id
+                            ) cod on cod.molcule_id = molecules.id
+                          SQL
+                        else
+                          <<~SQL
+                            inner join (select -2 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
+                          SQL
+                        end
+          end
+          paginate(Molecule.joins(sample_join).joins(xvial_count).joins(xvial_com).order("s.max_published_at desc").select(
             <<~SQL
-              molecules.*, sample_svg_file, xvial_count
+              molecules.*, sample_svg_file, xvial_count, xvial_com
             SQL
           ))
         end
@@ -1949,6 +1967,7 @@ module Chemotion
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:products].each do |p|
             pub_product = p
+            p[:xvialCom] = build_xvial_com(p[:molecule]['inchikey'], current_user&.id)
             pub_product_tag = pub_product[:tag]['taggable_data']
             next if pub_product_tag.nil?
 
@@ -1958,6 +1977,7 @@ module Chemotion
             unless current_user.present? && User.reviewer_ids.include?(current_user.id)
               pub_product_tag['xvial']['num'] = 'x'
             end
+            p[:xvialCom][:hasSample] = true
           end
           entities[:publication]['review']['history'] = []
           entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
@@ -1979,6 +1999,7 @@ module Chemotion
         end
         get do
           molecule = Molecule.find(params[:id])
+          xvial_com = build_xvial_com(molecule.inchikey, current_user&.id)
           pub_id = Collection.public_collection_id
           if params[:adv_flag].present? && params[:adv_flag] == true && params[:adv_type].present? && params[:adv_type] == 'Authors' && params[:adv_val].present?
             adv = <<~SQL
@@ -2044,12 +2065,15 @@ module Chemotion
               sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info)
 
           end
+          x = published_samples.select { |s| s[:xvial].present? }
+          xvial_com[:hasSample] = x.length.positive?
           published_samples = published_samples.flatten.compact
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
             published_samples: published_samples,
             isLogin: current_user.nil? ? false : true,
-            isReviewer: (current_user.present? && User.reviewer_ids.include?(current_user.id)) ? true : false
+            isReviewer: (current_user.present? && User.reviewer_ids.include?(current_user.id)) ? true : false,
+            xvialCom: xvial_com
           }
         end
       end
