@@ -19,6 +19,17 @@ import AutoCompleteInput from '../components/search/AutoCompleteInput';
 import StructureEditorModal from '../components/structure_editor/StructureEditorModal';
 import Formula from '../components/common/Formula';
 
+const xvialTag = (element, hasXvial = null) => {
+  const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
+  let hasXCom = hasX && (element.xvial_com && element.xvial_com !== 0);
+  if (element.xvial_com === -1 || element.xvial_com === -2) {
+    hasXCom = hasX;
+  } else {
+    hasXCom = (element.xvial_com > 0);
+  }
+  return (<span className={`xvial-span ${hasX ? 'xvial' : ''} ${hasXCom ? 'xvial-com' : ''}`}><i className="icon-xvial" /></span>);
+};
+
 const svgTag = (path, klassName, isPubElement) => {
   const popHover = (
     <Popover id="repo-pub-popover-svg" style={{ maxWidth: 'none', maxHeight: 'none' }}>
@@ -56,7 +67,7 @@ const renderReaction = (element, currentElement, isPubElement) => {
         </div>
       </td>
       <td>
-        {element.xvial_count && element.xvial_count > 0 ? <span className="xvial-span"><i className="icon-xvial" /></span> : null}
+        {xvialTag(element)}
       </td>
     </tr>
   );
@@ -306,7 +317,7 @@ export default class RepoPubl extends Component {
               {molecule.iupac_name}
               <span className="repo-pub-list-icons">
                 {pubchemInfo ? <PubchemLabels element={pubchemTag(molecule)} /> : null }
-                {molecule.xvial_count && molecule.xvial_count > 0 ? <span className="xvial-span"><i className="icon-xvial" /></span> : null }
+                {xvialTag(molecule)}
               </span>
             </h4>
           </div>
