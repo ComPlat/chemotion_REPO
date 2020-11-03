@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button, OverlayTrigger, Tooltip, FormControl } from 'react-bootstrap';
+import { Modal, Button, OverlayTrigger, Tooltip, FormControl, Table } from 'react-bootstrap';
+import uuid from 'uuid';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 import NotificationActions from '../actions/NotificationActions';
 
@@ -12,6 +13,40 @@ const registedCompoundTooltip = (
     <a rel="noopener noreferrer" target="_blank" href="https://www.chemotion-repository.net/home/howto/cf3ede44-b09a-400a-b0d4-b067735e4262"><img alt="chemotion_first" src="/favicon.ico" className="pubchem-logo" /></a>
   </div>
 );
+
+const listCom = (xvialCom) => {
+  if (!xvialCom.allowed) return <br />;
+  const listComData = xvialCom.hasData ? (
+    xvialCom.data.map(x => (
+      <tr key={uuid.v4()}>
+        <td>{x.x_data.xid}</td>
+        <td>{x.x_data.provided_by}</td>
+        <td>{x.x_created_at}</td>
+        <td>{x.x_short_label}</td>
+        <td>{x.x_data.origin_id}</td>
+      </tr>
+    ))
+  ) : (<tr><td colSpan="5">No Data found in Compound platform.</td></tr>);
+  return (
+    <div>
+      <h4><i>Reference (data from Compound platform)</i></h4>
+      <Table striped bordered condensed hover>
+        <thead>
+          <tr>
+            <th>X-Vial</th>
+            <th>Provided by</th>
+            <th>Created at</th>
+            <th>Short label of Sample</th>
+            <th>Name of origin Sample</th>
+          </tr>
+        </thead>
+        <tbody>
+          {listComData}
+        </tbody>
+      </Table>
+    </div>
+  );
+};
 
 export default class RepoXvialButton extends React.Component {
   constructor(props) {
@@ -69,7 +104,7 @@ export default class RepoXvialButton extends React.Component {
   render() {
     const { dataModalShow, requestModalShow } = this.state;
     const {
-      isEditable, isLogin, data, allowRequest
+      isEditable, isLogin, data, allowRequest, xvialCom
     } = this.props;
     const hasData = !!(data && data !== '');
     const compoundLink = hasData ? (
@@ -78,11 +113,11 @@ export default class RepoXvialButton extends React.Component {
       </OverlayTrigger>
     ) : null;
     const dataModal = (
-      <Modal show={dataModalShow} onHide={() => this.closeModal()} backdrop="static">
+      <Modal bsSize="large" show={dataModalShow} onHide={() => this.closeModal()} backdrop="static">
         <Modal.Header closeButton><Modal.Title>Compound X-vial number</Modal.Title></Modal.Header>
         <Modal.Body>
           <FormControl type="text" defaultValue={data} inputRef={(m) => { this.xInput = m; }} />
-          <br />
+          {listCom(xvialCom)}
           <Button bsStyle="warning" onClick={() => this.closeModal()}>Close</Button>&nbsp;
           <Button bsStyle="primary" onClick={() => this.save()}>Save</Button>
         </Modal.Body>

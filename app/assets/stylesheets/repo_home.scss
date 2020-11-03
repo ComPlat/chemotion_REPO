@@ -77,17 +77,31 @@ $bs-successcolor: #5cb85c;
   }
 }
 
-.xvial-span {
-  display: flex;
+@mixin xvial-span-base {
   justify-content: center;
   font-size: 80%;
   width: 22px;
   height: 22px;
-  color: $bs-primarycolor;
   padding: 2px;
-  border: 2px solid $bs-primarycolor;
   border-radius: 3px;
   background-color: white;
+  color: orange; // $bs-defaultcolor;
+  border: 2px solid orange; // $bs-defaultcolor;
+}
+
+.xvial-span {
+  @include xvial-span-base;
+  display: none;
+}
+
+.xvial {
+  display: flex;
+  color: $bs-primarycolor;
+}
+
+.xvial-com {
+  display: flex;
+  border: 2px solid $bs-primarycolor;
 }
 
 .repo-registed-compound-desc {

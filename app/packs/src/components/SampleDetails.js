@@ -646,7 +646,7 @@ export default class SampleDetails extends React.Component {
           {colLabel}
           <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
           <PubchemLabels element={sample} />
-          <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} />
+          <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} xvialCom={{ xvialCom: false }} />
           <PublishedTag element={sample} />
           <LabelPublication element={sample} />
           {this.extraLabels().map((Lab, i) => <Lab key={i} element={sample} />)}
