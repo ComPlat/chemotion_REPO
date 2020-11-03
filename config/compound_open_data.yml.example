@@ -1,0 +1,5 @@
+development:
+  :allowed_uids: [123,456]
+
+production:
+  :allowed_uids: [123,456]

@@ -314,7 +314,7 @@ export default class RepoReactionDetails extends Component {
       return <div />;
     }
     const pdInfos = (this.props.reaction.infos && this.props.reaction.infos.pd_infos && this.props.reaction.infos.pd_infos[product && product.id]) || '';
-    const productHeader = (typeof (product) !== 'undefined' && product) ? <RenderAnalysisHeader key={`reaction-product-header-${product.id}`} reactionId={this.props.reaction.id} element={product} isPublic={this.props.isPublished} isLogin={isLogin} isReviewer={isReviewer} userInfo={pdInfos} updateRepoXvial={() => this.updateRepoXvial()} /> : <span />;
+    const productHeader = (typeof (product) !== 'undefined' && product) ? <RenderAnalysisHeader key={`reaction-product-header-${product.id}`} reactionId={this.props.reaction.id} element={product} isPublic={this.props.isPublished} isLogin={isLogin} isReviewer={isReviewer} userInfo={pdInfos} updateRepoXvial={() => this.updateRepoXvial()} xvialCom={product.xvialCom} /> : <span />;
     const specSample = (type === 'Sample' && typeof (product) !== 'undefined' && product) ? new Sample(product) : null;
     const analysesView = analyses.map((analysis) => {
       const kind = analysis.extended_metadata && analysis.extended_metadata.kind && analysis.extended_metadata['kind'].split('|').pop().trim();

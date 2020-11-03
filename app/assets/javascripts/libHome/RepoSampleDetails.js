@@ -75,7 +75,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer
+      molecule, isLogin, isReviewer, xvialCom
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -158,7 +158,7 @@ export default class RepoSampleDetails extends Component {
               /> : ''
           }
           {canClose ? <ClosePanel element={sample} /> : ''}
-          <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} hasXvial={hasXvial} />
+          <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} hasXvial={hasXvial} xvialCom={xvialCom} />
           <div>
             {details}
           </div>
