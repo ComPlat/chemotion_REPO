@@ -51,6 +51,37 @@ import { previewContainerImage } from '../components/utils/imageHelper';
 import RepoXvialButton from '../components/common/RepoXvialButton';
 import RepoPreviewImage from '../components/common/RepoPreviewImage';
 
+const CollectionDesc = (props) => {
+  let { label } = props;
+  if (typeof label !== 'string') return null;
+  if (label.match(/Reviewing/)) {
+    label = 'Reviewing';
+  } else if (label.match(/Element To Review/)) {
+    label = 'Element To Review';
+  } else if (label.match(/Reviewed/)) {
+    label = 'Reviewed';
+  }
+  const descs = {
+    Chemotion: 'Collection of all the samples and reactions, with analytical datasets, published on the Chemotion-Repository.',
+    'Scheme-only reactions': 'Collections of published scheme-only reactions (no associated analytical data).',
+    'My Published Elements': 'Collection of the published samples and reactions you submitted. The samples/reactions that were embargoed are placed in sub-folders.',
+    'Pending Publications': 'Collection of the samples and reactions you have submitted and are currently being reviewed.',
+    Reviewing: 'Collection of the samples and reactions that have been reviewed by a reviewer and needs revision from your side.',
+    'Element To Review': 'Collection of the samples and reactions that currently have to be reviewed.',
+    Reviewed: 'Collection of the samples and reactions that were reviewed and sent back to the submitters for revision/corrections (Read-Only). Waiting for resubmission.',
+    'Embargoed Publications': 'Collection under an embargo: the collection can only be released and its elements made public after all its elements have been accepted by a reviewer.'
+  };
+  const desc = descs[label];
+  if (desc === undefined) return null;
+  return (
+    <div style={{ float: 'right' }}>
+      <OverlayTrigger placement="right" overlay={<Tooltip id={uuid.v4()}>{desc}</Tooltip>}>
+        <i className="fa fa-info-circle" />
+      </OverlayTrigger>
+    </div>
+  );
+};
+
 const resizableSvg = path => (
   <div className="preview-table" style={{ cursor: 'row-resize' }}><SvgFileZoomPan svgPath={path} duration={300} resize /></div>
 );
@@ -2312,4 +2343,5 @@ export {
   ShowIndicator,
   SvgPath,
   ToggleIndicator,
+  CollectionDesc
 };

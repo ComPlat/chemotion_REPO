@@ -9,6 +9,7 @@ import CollectionActions from './actions/CollectionActions';
 import UserInfos from './UserInfos';
 import GatePushBtn from './common/GatePushBtn';
 import { collectionShow, scollectionShow } from './routesUtils';
+import { CollectionDesc } from '../libHome/RepoCommon';
 
 const labeling = (label) => {
   if (typeof (label) === 'string' && (label.startsWith('Reviewing') || label.startsWith('Element To Review') || label.startsWith('Reviewed'))) {
@@ -257,6 +258,7 @@ export default class CollectionSubtree extends React.Component {
           {this.synchronizedIcon()}
           {gated}
           {label}
+          <CollectionDesc label={root.label} />
         </div>
         <ul style={style}>
           {this.subtrees()}
