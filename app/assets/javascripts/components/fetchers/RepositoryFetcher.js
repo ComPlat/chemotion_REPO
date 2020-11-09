@@ -63,6 +63,17 @@ export default class RepositoryFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+  static assignEmbargo(embargoVal, element) {
+    const api = '/api/v1/repository/assign_embargo';
+    return fetch(api, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_embargo: embargoVal, element })
+    }).then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
   static reviewPublish(element) {
     const { id, type } = element;
     return fetch('/api/v1/repository/reviewing/submit', {
@@ -409,7 +420,7 @@ export default class RepositoryFetcher {
         console.log(errorMessage);
       });
   }
-  
+
   static saveRepoAuthors(params = {}) {
     return fetch('/api/v1/repository/save_repo_authors', {
       credentials: 'same-origin',
