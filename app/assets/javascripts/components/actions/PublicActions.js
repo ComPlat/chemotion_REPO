@@ -361,6 +361,17 @@ class PublicActions {
     }
   }
 
+  assignEmbargo(newEmbargo, element) {
+    return (dispatch) => {
+      RepositoryFetcher.assignEmbargo(newEmbargo, element)
+        .then((result) => {
+          dispatch(result)
+        }).catch((errorMessage) => {
+          console.log(errorMessage)
+        })
+    }
+  }
+
   getEmbargoElements(id) {
     return (dispatch) => {
       RepositoryFetcher.fetchEmbargoElements(id)

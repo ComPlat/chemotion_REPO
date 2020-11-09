@@ -59,6 +59,7 @@ class PublicStore {
       handleDisplayEmbargoElement: PublicActions.displayReviewEmbargo,
       handleEmbargoRelease: [PublicActions.releaseEmbargo, PublicActions.deleteEmbargo],
       handleEmbargoMove: PublicActions.moveEmbargo,
+      handleEmbargoAssign: PublicActions.assignEmbargo,
       handleRefreshPubElements: PublicActions.refreshPubElements,
     });
   }
@@ -344,6 +345,21 @@ class PublicStore {
     }
     alert(message);
     PublicActions.getEmbargoElements(col_id);
+  }
+
+  handleEmbargoAssign(result) {
+    if (result.error) {
+      alert(result.error);
+    } else {
+      alert(result.message);
+      // refresh embargo list
+      PublicActions.fetchEmbargoBundle();
+      // refresh element list
+      PublicActions.getElements(
+        this.selectType, this.selectState, this.searchType,
+        this.searchValue, this.page, this.perPage
+      );
+    }
   }
 }
 

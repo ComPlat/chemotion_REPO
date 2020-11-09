@@ -422,7 +422,7 @@ module Chemotion
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
           elements.push(
             id: e.element_id, svg: svg_file, type: element_type, title: title,
-            published_by: u&.name, submit_at: e.updated_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
+            published_by: u&.name, submitter_id: u&.id, submit_at: e.updated_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
           )
         end
         { elements: elements }
@@ -436,6 +436,41 @@ module Chemotion
           cols = Collection.where(ancestry: current_user.publication_embargo_collection.id).order('label ASC')
         end
         { repository: cols, current_user: {id: current_user.id, type: current_user.type} }
+      end
+
+      namespace :assign_embargo do
+        desc 'assign to an embargo bundle'
+        params do
+          requires :new_embargo, type: Integer, desc: 'Collection id'
+          requires :element, type: Hash, desc: 'Element'
+        end
+        after_validation do
+          @p_element = params[:element]
+          @p_embargo = params[:new_embargo]
+          pub = Publication.find_by(element_type: @p_element['type'].classify, element_id: @p_element['id'])
+          error!('404 Publication not found', 404) unless pub
+          error!("404 Publication state must be #{Publication::STATE_REVIEWED}", 404) unless pub.state == Publication::STATE_REVIEWED
+          error!('401 Unauthorized', 401) unless pub.published_by == current_user.id
+          if @p_embargo.to_i.positive?
+            e_col = Collection.find(@p_embargo.to_i)
+            error!('404 This embargo has been released.', 404) unless e_col.ancestry.to_i == current_user.publication_embargo_collection.id
+          end
+        end
+        post do
+          embargo_collection = fetch_embargo_collection(@p_embargo.to_i) if @p_embargo.to_i >= 0
+          case @p_element['type'].classify
+          when 'Sample'
+            CollectionsSample
+          when 'Reaction'
+            CollectionsReaction
+          end.create_in_collection(@p_element['id'], [embargo_collection.id])
+          { element: @p_element,
+            new_embargo: embargo_collection,
+            is_new_embargo: @p_embargo.to_i.zero?,
+            message: "#{@p_element['type']} [#{@p_element['title']}] has been moved to Embargo Bundle [#{embargo_collection.label}]" }
+        rescue StandardError => e
+          { error: e.message }
+        end
       end
 
       resource :compound do

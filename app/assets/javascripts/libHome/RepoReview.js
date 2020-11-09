@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
 import SVG from 'react-inlinesvg';
-import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl } from 'react-bootstrap';
+import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Select from 'react-select';
 import RepoReviewDetails from './RepoReviewDetails';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
+import UserStore from '../components/stores/UserStore';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
-import { IconToMyDB, SvgPath, ElStateLabel, ElSubmitTime, SchemeWord } from './RepoCommon';
+import { SvgPath, ElStateLabel, ElSubmitTime, SchemeWord } from './RepoCommon';
 
-const renderElement = (e, currentElement) => {
+const renderElement = (e, currentElement, embargoBtn) => {
   if (e.type === 'Reaction') {
     const listClass = (currentElement !== null && currentElement.reaction && currentElement.reaction.id === e.id) ? 'list_focus_on' : 'list_focus_off';
     const schemeOnly = (e && e.scheme_only === true) || false;
@@ -24,6 +25,7 @@ const renderElement = (e, currentElement) => {
           </span>
           &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
           {ElSubmitTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+          &nbsp;{embargoBtn}
           <div>
             <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
           </div>
@@ -44,6 +46,7 @@ const renderElement = (e, currentElement) => {
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
         {ElSubmitTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+        &nbsp;{embargoBtn}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
         </div>
@@ -66,18 +69,25 @@ export default class RepoReview extends Component {
       searchType: 'All',
       searchValue: '',
       listTypeOptions: [],
-      selectState: defaultState
+      selectState: defaultState,
+      bundles: [],
+      showEmbargoModal: false,
+      selectedElement: null,
+      selectedEmbargo: null
     };
     this.onChange = this.onChange.bind(this);
     this.handleElementSelection = this.handleElementSelection.bind(this);
     this.handleSelectType = this.handleSelectType.bind(this);
     this.handleSelectAdvValue = this.handleSelectAdvValue.bind(this);
     this.handleSearchNameInput = this.handleSearchNameInput.bind(this);
+    this.onEmbargoBtnClick = this.onEmbargoBtnClick.bind(this);
+    this.onEmbargoBtnSave = this.onEmbargoBtnSave.bind(this);
   }
 
   componentDidMount() {
     PublicStore.listen(this.onChange);
     PublicActions.getElements.defer();
+    PublicActions.fetchEmbargoBundle();
   }
 
   componentWillUnmount() {
@@ -88,19 +98,42 @@ export default class RepoReview extends Component {
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
-
   onPerPageChange(e) {
-    const { page, selectType, selectState, searchType, searchValue } = this.state;
+    const {
+      page, selectType, selectState, searchType, searchValue
+    } = this.state;
     const perPage = e.target.value;
     this.setState({ perPage });
     PublicActions.getElements(selectType, selectState, searchType, searchValue, page, perPage);
   }
 
   onPaginationSelect(eventKey) {
-    const { pages, perPage, selectType, selectState, searchType, searchValue } = this.state;
+    const {
+      pages, perPage, selectType, selectState, searchType, searchValue
+    } = this.state;
     if (eventKey > 0 && eventKey <= pages) {
-      PublicActions.getElements(selectType, selectState, searchType, searchValue, eventKey, perPage);
+      PublicActions.getElements(
+        selectType, selectState, searchType, searchValue,
+        eventKey, perPage
+      );
     }
+  }
+
+  onEmbargoBtnClick(e, element) {
+    e.preventDefault();
+    e.stopPropagation();
+    const selectedElement = !this.state.showEmbargoModal ? element : null;
+    this.setState({ showEmbargoModal: !this.state.showEmbargoModal, selectedElement });
+  }
+
+  onEmbargoBtnSave(e, element) {
+    const { selectedEmbargo, selectedElement } = this.state;
+    if (selectedEmbargo === null) {
+      return alert('Please select an embargo first!');
+    }
+    PublicActions.assignEmbargo(selectedEmbargo.value, selectedElement);
+    this.onEmbargoBtnClick(e, element);
+    return true;
   }
 
   perPageInput() {
@@ -166,7 +199,6 @@ export default class RepoReview extends Component {
         console.log(errorMessage);
       });
     } else {
-      //this.setState({ searchType: val, searchValue: '' });
       PublicActions.getElements(selectType, selectState, val, '', 1, perPage);
     }
   }
@@ -179,7 +211,9 @@ export default class RepoReview extends Component {
   }
 
   handleSelectAdvValue(val) {
-    const { perPage, selectType, selectState, searchType } = this.state;
+    const {
+      perPage, selectType, selectState, searchType
+    } = this.state;
     if (val) {
       this.setState({ page: 1, searchValue: val });
       PublicActions.getElements(selectType, selectState, searchType, val, 1, perPage);
@@ -198,7 +232,9 @@ export default class RepoReview extends Component {
   }
 
   handleKeyDown(event) {
-    const { perPage, selectType, selectState, searchType, searchValue } = this.state;
+    const {
+      perPage, selectType, selectState, searchType, searchValue
+    } = this.state;
     switch (event.keyCode) {
       case 13: // Enter
         PublicActions.getElements(selectType, selectState, searchType, searchValue, 1, perPage);
@@ -225,6 +261,7 @@ export default class RepoReview extends Component {
         console.log(errorMessage);
       });
   }
+
   renderMenuItems(t, elements) {
     const menu = elements.map(element => (
       <MenuItem key={element} onSelect={() => this.handleElementSelection(t, element)}>
@@ -254,7 +291,6 @@ export default class RepoReview extends Component {
           className={customClass}
           id="type-inner-dropdown"
           title={this.state.selectType === 'All' ? 'Type' : this.state.selectType}
-          // style={{ width: '100px' }}
         >
           {this.renderMenuItems('type', optSearchType)}
         </DropdownButton>
@@ -262,7 +298,6 @@ export default class RepoReview extends Component {
           className={customClass}
           id="state-inner-dropdown"
           title={this.state.selectState}
-          // style={{ width: '100px' }}
         >
           {this.renderMenuItems('state', optSearchState)}
         </DropdownButton>
@@ -335,8 +370,51 @@ export default class RepoReview extends Component {
     );
   }
 
+  renderEmabrgoModal() {
+    const { showEmbargoModal, bundles, selectedElement } = this.state;
+    const defaultBundles = [{ value: '0', name: 'new', label: '--Create a new Embargo Bundle--' }];
+    const allBundles = defaultBundles.concat(bundles);
+    const element = selectedElement || {};
+    return (
+      <Modal backdrop="static" show={showEmbargoModal}>
+        <Modal.Header><Modal.Title>{element.type}: [{element.title}]</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <Panel bsStyle="success">
+            <Panel.Heading>
+              <Panel.Title>Move {element.type} [{element.title}] to :</Panel.Title>
+            </Panel.Heading>
+            <Panel.Body>
+              <Select
+                value={this.state.selectedEmbargo}
+                onChange={e => this.setState({ selectedEmbargo: e })}
+                options={allBundles}
+                className="select-assign-collection"
+              />
+              <br />
+              <ButtonToolbar>
+                <Button bsStyle="warning" onClick={e => this.onEmbargoBtnClick(e, element)}>Cancel</Button>
+                <Button bsStyle="primary" onClick={e => this.onEmbargoBtnSave(e, element)}>Move Embargoed Bundle</Button>
+              </ButtonToolbar>
+            </Panel.Body>
+          </Panel>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
   render() {
     const { elements, currentElement } = this.state;
+    const { currentUser } = UserStore.getState();
+    const embargoBtn = (element) => {
+      if (element.state === 'reviewed' && element.embargo === '' && element.submitter_id === currentUser.id) {
+        return (
+          <OverlayTrigger placement="bottom" overlay={<Tooltip id="moveEmbargo">Move to an embargoed bundle</Tooltip>}>
+            <Button bsSize="xsmall" onClick={e => this.onEmbargoBtnClick(e, element)}><i className="fa fa-exchange" aria-hidden="true" /></Button>
+          </OverlayTrigger>
+        );
+      }
+      return null;
+    };
     return (
       <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
         <Col md={currentElement ? 4 : 12} >
@@ -348,7 +426,7 @@ export default class RepoReview extends Component {
             <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
               <Table striped className="review-entries">
                 <tbody striped="true" bordered="true" hover="true">
-                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => renderElement(r, currentElement)) }
+                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => renderElement(r, currentElement, embargoBtn(r))) }
                 </tbody>
               </Table>
             </div>
@@ -360,11 +438,9 @@ export default class RepoReview extends Component {
             </div>
           </div>
         </Col>
-        <Col
-          className="review-element"
-          md={currentElement ? 8 : 0}
-          // style={this.state.currentElement ? {} : { display: 'none' }}
-        ><RepoReviewDetails />
+        <Col className="review-element" md={currentElement ? 8 : 0}>
+          <RepoReviewDetails />
+          {this.renderEmabrgoModal()}
         </Col>
       </Row>
     );
