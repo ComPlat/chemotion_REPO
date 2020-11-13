@@ -55,6 +55,7 @@ class ViewSpectra extends React.Component {
     this.buildOthers = this.buildOthers.bind(this);
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
     this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
+    this.updateROPredict = this.updateROPredict.bind(this);
   }
 
   componentDidMount() {
@@ -381,6 +382,11 @@ class ViewSpectra extends React.Component {
     this.writeCommon(params, isMpy);
   }
 
+  updateROPredict() {
+    const { sample } = this.props;
+    ElementActions.fetchSampleById(sample.id);
+  }
+
   writeMpyOp(params) {
     const isMpy = true;
     this.writeCommon(params, isMpy);
@@ -517,7 +523,7 @@ class ViewSpectra extends React.Component {
       predict,
       targetPeaks,
       layout,
-      handleSubmit,
+      sample.can_update === true ? handleSubmit : this.updateROPredict,
       keepPred,
     );
   }
@@ -556,6 +562,10 @@ class ViewSpectra extends React.Component {
         { name: 'save', value: this.saveOp },
         { name: 'save & close', value: this.saveCloseOp },
       ];
+    }
+
+    if (baseOps.length === 0) {
+      baseOps = [{ name: '- -', value: this.predictOp }];
     }
 
     return baseOps;
