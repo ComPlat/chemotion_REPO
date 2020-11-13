@@ -231,7 +231,7 @@ const StaticsBoard = (params) => {
                 <div className="italic-desc">
                   {stsAnalysisSort[0].e_cnt}&nbsp;{stsAnalysisSort[0].ex_type}
                   <br />
-                  {stsAnalysisSort[0].e_cnt}&nbsp;{stsAnalysisSort[1].ex_type}
+                  {stsAnalysisSort[1].e_cnt}&nbsp;{stsAnalysisSort[1].ex_type}
                   <br />
                   {stsAnalysisSort[2].e_cnt}&nbsp;{stsAnalysisSort[2].ex_type}
                 </div>
