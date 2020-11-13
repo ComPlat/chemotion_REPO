@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 
 import LoadingActions from './actions/LoadingActions';
 import SpectraActions from './actions/SpectraActions';
+import ElementActions from './actions/ElementActions';
 import SpectraStore from './stores/SpectraStore';
 import { SpectraOps } from './utils/quillToolbarSymbol';
 import ResearchPlan from './models/ResearchPlan';
@@ -47,6 +48,7 @@ class ViewSpectra extends React.Component {
     this.getQDescVal = this.getQDescVal.bind(this);
     this.buildOthers = this.buildOthers.bind(this);
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
+    this.updateROPredict = this.updateROPredict.bind(this);
   }
 
   componentDidMount() {
@@ -283,6 +285,11 @@ class ViewSpectra extends React.Component {
     this.writeCommon(params, isMpy);
   }
 
+  updateROPredict() {
+    const { sample } = this.props;
+    ElementActions.fetchSampleById(sample.id);
+  }
+
   writeMpyOp(params) {
     const isMpy = true;
     this.writeCommon(params, isMpy);
@@ -416,7 +423,7 @@ class ViewSpectra extends React.Component {
       predict,
       targetPeaks,
       layout,
-      handleSubmit,
+      sample.can_update === true ? handleSubmit : this.updateROPredict,
       keepPred,
     );
     // this.closeOp();
@@ -471,6 +478,10 @@ class ViewSpectra extends React.Component {
         { name: 'save', value: this.saveOp },
         { name: 'save & close', value: this.saveCloseOp },
       ];
+    }
+
+    if (baseOps.length === 0) {
+      baseOps = [{ name: '- -', value: this.predictOp }];
     }
 
     return baseOps;
