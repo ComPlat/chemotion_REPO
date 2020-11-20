@@ -15,6 +15,7 @@ const registedCompoundTooltip = (
 );
 
 const listCom = (xvialCom) => {
+  if (typeof xvialCom === 'undefined') return <br />;
   if (!xvialCom.allowed) return <br />;
   const listComData = xvialCom.hasData ? (
     xvialCom.data.map(x => (
