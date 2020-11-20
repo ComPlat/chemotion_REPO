@@ -241,14 +241,32 @@ module Chemotion
               group by m.id
             ) c on c.molecule_id = molecules.id
           SQL
-          molecules = paginate(Molecule.joins(:samples).joins(xvial_count).where("samples.id in (?)", samples).includes(:tag)).select(
+          com_config = Rails.configuration.compound_opendata
+          xvial_com = <<~SQL
+            inner join (select -1 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
+          SQL
+          if com_config.present?
+            xvial_com = if com_config.allowed_uids.include?(current_user&.id)
+                          <<~SQL
+                            inner join (
+                              select count(a.x_id) as xvial_com, m.id molcule_id from molecules m left outer join com_xvial(true) a on a.x_inchikey = m.inchikey
+                              group by m.id
+                            ) cod on cod.molcule_id = molecules.id
+                          SQL
+                        else
+                          <<~SQL
+                            inner join (select -2 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
+                          SQL
+                        end
+          end
+          molecules = paginate(Molecule.joins(:samples).joins(xvial_count).joins(xvial_com).where("samples.id in (?)", samples).includes(:tag)).select(
             <<~SQL
-            molecules.*, max(samples.sample_svg_file) sample_svg_file, xvial_count
+            molecules.*, max(samples.sample_svg_file) sample_svg_file, xvial_count, xvial_com
             SQL
-          ).group('molecules.id, xvial_count').uniq
+          ).group('molecules.id, xvial_count, xvial_com').uniq
           serialized_molecules = molecules.map { |m| MoleculeGuestListSerializer.new(m).serializable_hash }
           filter_reactions = Reaction.where("id in (?)", reactions)
-          serialized_reactions = paginate(filter_reactions).map { |r| ReactionGuestListSerializer.new(r).serializable_hash }
+          serialized_reactions = paginate(filter_reactions).map { |r| ReactionGuestListSerializer.new(r, scope: OpenStruct.new(current_user: current_user)).serializable_hash }
           return {
             publicMolecules: {
               molecules: serialized_molecules,
