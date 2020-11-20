@@ -4,7 +4,7 @@ user = 'prod'
 set :repo_url, 'git@git.scc.kit.edu:ComPlat/chemotion_REPO.git'
 set :branch, 'server_chemotion_net'
 
-before 'deploy:migrate', 'deploy:backup'
+#before 'deploy:migrate', 'deploy:backup'
 
 server 'www.chemotion.net', user: user, roles: %w{app web db}
 
