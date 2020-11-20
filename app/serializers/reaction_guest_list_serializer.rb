@@ -15,7 +15,7 @@ class ReactionGuestListSerializer < ActiveModel::Serializer
     com_config = Rails.configuration.compound_opendata
     return -1 unless com_config.present?
 
-    return -2 unless com_config.allowed_uids.include?(scope.current_user&.id)
+    return -2 unless com_config.allowed_uids.include?(scope&.current_user&.id)
 
     xvial_com = <<~SQL
       inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
