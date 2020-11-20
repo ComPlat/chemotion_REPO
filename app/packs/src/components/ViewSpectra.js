@@ -328,7 +328,7 @@ class ViewSpectra extends React.Component {
   saveOp({
     peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength,
   }) {
-    const { handleSubmit } = this.props;
+    const { handleSubmit, sample } = this.props;
     const si = this.getSpcInfo();
     if (!si) return;
     const fPeaks = FN.rmRef(peaks, shift);
@@ -346,7 +346,7 @@ class ViewSpectra extends React.Component {
       JSON.stringify(integration),
       JSON.stringify(multiplicity),
       predict,
-      handleSubmit,
+      sample.can_update === true ? handleSubmit : this.updateROPredict,
       keepPred,
       waveLengthStr
     );
@@ -481,7 +481,7 @@ class ViewSpectra extends React.Component {
     }
 
     if (baseOps.length === 0) {
-      baseOps = [{ name: '- -', value: this.predictOp }];
+      baseOps = [{ name: 'predict', value: this.predictOp }];
     }
 
     return baseOps;
