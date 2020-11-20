@@ -422,7 +422,7 @@ class ViewSpectra extends React.Component {
       JSON.stringify(selectedIntegration),
       JSON.stringify(selectedMutiplicity),
       predict,
-      handleSubmit,
+      sample.can_update === true ? handleSubmit : this.updateROPredict,
       keepPred,
       waveLengthStr,
       cyclicvolta,
@@ -565,7 +565,7 @@ class ViewSpectra extends React.Component {
     }
 
     if (baseOps.length === 0) {
-      baseOps = [{ name: '- -', value: this.predictOp }];
+      baseOps = [{ name: 'predict', value: this.predictOp }];
     }
 
     return baseOps;
