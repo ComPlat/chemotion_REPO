@@ -37,6 +37,10 @@ class LoadingStore {
           RepositoryActions.reviewPublish,
           PublicActions.updateComment,
           PublicActions.reviewPublish,
+          PublicActions.getSearchReactions,
+          PublicActions.getSearchMolecules,
+          PublicActions.getReactions,
+          PublicActions.getMolecules,
         ],
     });
   }
