@@ -18,6 +18,7 @@ import PublicFetcher from '../components/fetchers/PublicFetcher';
 import AutoCompleteInput from '../components/search/AutoCompleteInput';
 import StructureEditorModal from '../components/structure_editor/StructureEditorModal';
 import Formula from '../components/common/Formula';
+import LoadingActions from '../components/actions/LoadingActions';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -203,6 +204,7 @@ export default class RepoPubl extends Component {
       selection,
       ...ps
     };
+    LoadingActions.start();
     if (isSearch) {
       switch (this.state.listType) {
         case 'reaction':

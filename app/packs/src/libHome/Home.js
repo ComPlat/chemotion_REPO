@@ -29,6 +29,7 @@ import RepoHowToEditor from './RepoHowToEditor';
 import PublicStore from '../components/stores/PublicStore';
 import RepoElementDetails from './RepoElementDetails';
 import NavFooter from './NavFooter';
+import LoadingModal from '../components/common/LoadingModal';
 
 const extraHomes = () => {
   const homes = [];
@@ -141,6 +142,7 @@ class Home extends Component {
             </div>
           )
         }
+        <LoadingModal />
       </div>
     );
   }
