@@ -293,6 +293,7 @@ module ReportHelpers
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
       , #{rest_of_selections}
       , ets.taggable_data#>>'{publication,doi}' as "doi"
+      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
       from (#{s_subquery}) as s_dl
       inner join samples s on s_dl.s_id = s.id #{collection_join}
       left join molecules m on s.molecule_id = m.id
@@ -493,7 +494,9 @@ module ReportHelpers
         when r_s.type = 'ReactionsSolventSample' then '3 solvent'
         when r_s.type = 'ReactionsProductSample' then '4 product' end as "type"
       , ets.taggable_data#>>'{publication,doi}' as "doi"
+      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
       , etr.taggable_data#>>'{publication,doi}' as "r doi"
+      , 'https://dx.doi.org/' || (etr.taggable_data#>>'{publication,doi}') as "r url"
       from (
         select
           s.id as s_id
