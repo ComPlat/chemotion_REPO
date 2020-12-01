@@ -240,39 +240,40 @@ const LabelPublication = ({ element }) => {
   const time = new Date(publication.published_at || publication.doi_reg_at);
   const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
   const contributor = publication.contributors && publication.contributors.name;
-  const publishedBy = publication.creators && publication.creators[0] && publication.creators[0].name;
-  const tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${formattedTime}`;
+  const publishedBy = publication.creators && publication.creators[0] &&
+    publication.creators[0].name;
+  let tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${formattedTime}`;
   const schemeOnly = (element && element.publication && element.publication.taggable_data &&
     element.publication.taggable_data.scheme_only === true) || false;
-  const pubDoi = (element.type === 'reaction' && schemeOnly === true) ? `/home/publications/reactions/${element.id}` : `https://dx.doi.org/${publication.doi}`
-
-
-  if (publication.published_at) {
+  let openUrl = (element.type === 'reaction' && schemeOnly === true) ? `/home/publications/reactions/${element.id}` : `https://dx.doi.org/${publication.doi}`;
+  let btnStyle = 'default';
+  if (!publication.published_at && element.publication) {
+    const pub = element.publication;
+    let pubCreatedAt = new Date(pub.created_at);
+    pubCreatedAt = `${pubCreatedAt.getDate()}-${pubCreatedAt.getMonth() + 1}-${pubCreatedAt.getFullYear()} `;
+    tooltipText = `Submitted by ${contributor == null ? publishedBy : contributor} on ${pubCreatedAt}`;
+    openUrl = `/pid/${element.publication.id}`;
+    btnStyle = 'success';
+  }
+  if (publication.published_at || element.publication) {
     return (
       <OverlayTrigger
         placement="bottom"
         overlay={<Tooltip id="printCode">{tooltipText}</Tooltip>}
         onClick={e => e.stopPropagation()}
       >
-        <Button
-          bsSize="xsmall"
-          bsStyle="default"
-          style={labelStyle}
-          target="_blank"
-          href={pubDoi}
-        >
+        <Button bsSize="xsmall" bsStyle={btnStyle} style={labelStyle} onClick={() => { window.open(openUrl, '_blank'); }}>
           <i className="fa fa-newspaper-o" aria-hidden="true" />
         </Button>
       </OverlayTrigger>
     );
-  } else {
-    return (<span />);
   }
-}
+  return <span />;
+};
 
 LabelPublication.propTypes = {
   element: PropTypes.object,
-}
+};
 
 
 const ChemotionTag = ({ tagData, firstOnly = false }) => {
