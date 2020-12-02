@@ -383,6 +383,17 @@ class PublicActions {
     }
   }
 
+  getEmbargoBundle() {
+    return (dispatch) => {
+      RepositoryFetcher.fetchEmbargoCollections()
+      .then((result) => {
+        dispatch(result)
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      });
+    }
+  }
+
   publishedStatics() {
     return (dispatch) => {
       PublicFetcher.publishedStatics()

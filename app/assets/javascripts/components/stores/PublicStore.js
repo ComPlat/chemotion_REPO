@@ -61,6 +61,7 @@ class PublicStore {
       handleEmbargoMove: PublicActions.moveEmbargo,
       handleEmbargoAssign: PublicActions.assignEmbargo,
       handleRefreshPubElements: PublicActions.refreshPubElements,
+      handleRefreshEmbargoBundles: PublicActions.getEmbargoBundle,
     });
   }
 
@@ -315,6 +316,18 @@ class PublicStore {
     }
   }
 
+  handleRefreshEmbargoBundles(result) {
+    const cols = result.repository;
+    const { current_user } = result;
+    const bundles = [];
+    if (cols && cols.length > 0) {
+      cols.forEach((col) => {
+        bundles.push({ value: col.id, name: col.label, label: col.label });
+      });
+    }
+    this.setState({ bundles, current_user });
+  }
+
   handleDisplayEmbargoElement(result) {
     const publication = (result.element && result.element.publication) || {};
 
@@ -353,7 +366,7 @@ class PublicStore {
     } else {
       alert(result.message);
       // refresh embargo list
-      PublicActions.fetchEmbargoBundle();
+      PublicActions.getEmbargoBundle();
       // refresh element list
       PublicActions.getElements(
         this.selectType, this.selectState, this.searchType,
