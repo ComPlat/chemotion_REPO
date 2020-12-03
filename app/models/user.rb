@@ -188,8 +188,9 @@ class User < ApplicationRecord
     return if orcid.nil?
 
     result = Chemotion::OrcidService.record_person(orcid)
-    oc_given_names = result&.person&.given_names
-    oc_family_name = result&.person&.family_name
+    oc_given_names = result&.person&.given_names&.strip
+    oc_family_name = result&.person&.family_name&.strip
+
     if result.nil?
       errors.add(:orcid, ' does not exist! Please check.')
     elsif oc_given_names&.casecmp(first_name) != 0 || oc_family_name&.casecmp(last_name) != 0
