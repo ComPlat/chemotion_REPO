@@ -1,7 +1,8 @@
 import React from 'react'
-import {Button, FormControl} from 'react-bootstrap'
+import {Button, FormControl, ButtonGroup, OverlayTrigger, Tooltip} from 'react-bootstrap'
 import Select from 'react-select'
 import UIActions from 'src/stores/alt/actions/UIActions';
+import PublicFetcher from '../fetchers/PublicFetcher';
 
 export default class SearchFilter extends React.Component {
   constructor(props) {
@@ -9,6 +10,8 @@ export default class SearchFilter extends React.Component {
 
     this.state = {
       showFilters: props.show,
+      advValue: null,
+      advType: 'Authors',
       filters: [
         {
           link: '',
@@ -78,6 +81,9 @@ export default class SearchFilter extends React.Component {
     this.showFilters = this.showFilters.bind(this)
     this.renderField = this.renderField.bind(this)
     this.handleUpdateFilters = this.handleUpdateFilters.bind(this)
+    this.handleSelectAdvType = this.handleSelectAdvType.bind(this);
+    this.loadAdvValuesByName = this.loadAdvValuesByName.bind(this);
+    this.handleSelectAdvValue = this.handleSelectAdvValue.bind(this);
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
@@ -92,6 +98,33 @@ export default class SearchFilter extends React.Component {
     }
 
     this.setState({ showFilters: show })
+  }
+
+  loadAdvValuesByName(input) {
+    if (!input || input.length < 3) {
+      return Promise.resolve({ options: [] });
+    }
+    return PublicFetcher.fetchAdvancedValues(this.state.advType, input)
+      .then(res => ({
+        options: res.result
+          .map(u => ({
+            value: u.key,
+            name: u.name,
+            label: u.label
+          }))
+      })).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+
+  handleSelectAdvType(val) {
+    if (val) { this.setState({ advType: val, advValue: null }); }
+  }
+
+  handleSelectAdvValue(val) {
+    if (val) {
+      this.setState({ advValue: val });
+    }
   }
 
   handleUpdateFilters(idx, field, val) {
@@ -111,7 +144,7 @@ export default class SearchFilter extends React.Component {
   }
 
   search() {
-    let { filters } = this.state;
+    let { filters, advType, advValue } = this.state;
 
     // Remove invalid filter
     filters = filters.filter((f, id) => {
@@ -119,10 +152,10 @@ export default class SearchFilter extends React.Component {
         (id == 0 && f.field && f.value)
     })
 
+    const advValIds = (advValue && advValue.map(val => (val.value))) || null;
     this.setState({
       showFilters: false,
-      filters
-    }, this.props.searchFunc(filters))
+    }, this.props.searchFunc(filters, { type: advType, value: advValIds }));
   }
 
   renderField(val) {
@@ -170,6 +203,57 @@ export default class SearchFilter extends React.Component {
     return dynamicRow
   }
 
+
+  renderAdvancedSearch() {
+    const { showFilters, advType, advValue } = this.state;
+    if (showFilters === true) {
+      this.listAdvOptions = [
+        {
+          value: 'Authors',
+          label: 'by authors'
+        },
+        {
+          value: 'Contributors',
+          label: 'by contributors'
+        }
+      ];
+      return (
+        <div className="adv-search-row">
+          <span style={{ flex: '0 0 127px' }} />
+          <span className="match-select">
+            <Select
+              simpleValue
+              searchable={false}
+              options={this.listAdvOptions}
+              placeholder="Select search field"
+              clearable={false}
+              valueKey="value"
+              labelKey="label"
+              onChange={this.handleSelectAdvType}
+              defaultValue="Authors"
+              value={advType}
+              className="o-author"
+            />
+          </span>
+          <span className="field-select-full">
+            <Select.Async
+              multi
+              isLoading
+              backspaceRemoves
+              value={advValue}
+              valueKey="value"
+              labelKey="label"
+              loadOptions={this.loadAdvValuesByName}
+              onChange={this.handleSelectAdvValue}
+              className="o-name"
+            />
+          </span>
+        </div>
+      );
+    }
+    return (<div />);
+  }
+
   render() {
     let {showFilters, currentOption, filters} = this.state
     if (!showFilters) return (<span />)
@@ -198,6 +282,7 @@ export default class SearchFilter extends React.Component {
             />
           </div>
           {this.renderDynamicRow()}
+          {this.renderAdvancedSearch()}
         </div>
         <div className="footer">
           <Button bsStyle="primary" onClick={this.search}>

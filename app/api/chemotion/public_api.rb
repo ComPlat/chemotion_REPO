@@ -116,13 +116,13 @@ module Chemotion
         desc 'Find top 3 matched advanced values'
         params do
           requires :name, type: String, allow_blank: false, regexp: /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/
-          requires :adv_type, type: String, allow_blank: false, desc: 'Type', values: %w[Authors Ontologies]
+          requires :adv_type, type: String, allow_blank: false, desc: 'Type', values: %w[Authors Contributors Ontologies]
         end
         get do
           result = case params[:adv_type]
-                   when 'Authors'
+                   when 'Authors', 'Contributors'
                      query_authors(params[:name])
-                   when 'Ontologies'
+                    when 'Ontologies'
                      query_ontologies(params[:name])
                    else
                      []
