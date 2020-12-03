@@ -100,11 +100,12 @@ export default class Navigation extends React.Component {
     UIActions.updateModalProps(modalProps);
   }
 
-  advancedSearch(filters) {
+  advancedSearch(filters, authors) {
     const uiState = UIStore.getState();
     const selection = {
       elementType: 'all',
       advanced_params: filters,
+      authors_params: authors,
       search_by_method: 'advanced',
       page_size: uiState.number_of_results
     };

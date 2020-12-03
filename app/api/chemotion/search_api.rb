@@ -395,33 +395,58 @@ module Chemotion
                   end
                 end
 
-        if search_method == 'advanced' && molecule_sort == false
-          arg_value_str = adv_params.first['value'].split(/(\r)?\n/).map(&:strip)
-                                    .select{ |s| !s.empty? }.join(',')
-          return scope.order(Arel.sql(
-            "position(','||(#{adv_params.first['field']['column']}::text)||',' in ','||(#{ActiveRecord::Base.connection.quote(arg_value_str)}::text)||',')"
-          ))
-        elsif search_method == 'advanced' && molecule_sort == true
-          return scope.order('samples.updated_at DESC')
-        elsif search_method != 'advanced' && molecule_sort == true
-          return scope.includes(:molecule)
-                      .joins(:molecule)
-                      .order(Arel.sql("LENGTH(SUBSTRING(molecules.sum_formular, 'C\\d+'))"))
-                      .order('molecules.sum_formular')
-        elsif search_by_method.start_with?("element_short_label_")
-          klass = Labimotion::ElementKlass.find_by(name: search_by_method.sub("element_short_label_",""))
-          return Labimotion::Element.by_collection_id(c_id).by_klass_id_short_label(klass.id, arg)
+        if ((c_id = Collection.public_collection_id) &&
+          (params[:selection] && params[:selection][:authors_params] && params[:selection][:authors_params][:type] && params[:selection][:authors_params][:value] && params[:selection][:authors_params][:value].length > 0))
+          if params[:selection][:authors_params][:type] == 'Authors'
+            adv_search = <<~SQL
+              INNER JOIN publication_authors pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
+              and author_id in ('#{params[:selection][:authors_params][:value].join("','")}')
+            SQL
+          elsif params[:selection][:authors_params][:type] == 'Contributors'
+            adv_search = <<~SQL
+              INNER JOIN publications pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
+              and published_by in ('#{params[:selection][:authors_params][:value].join("','")}')
+            SQL
+          end
         end
-        scope
+
+        if adv_params && adv_params.length > 0
+          if search_method == 'advanced' && molecule_sort == false
+            arg_value_str = adv_params.first['value'].split(/(\r)?\n|,/).map(&:strip)
+                                      .select{ |s| !s.empty? }.join(',')
+            return scope.order(
+              "position(','||(#{adv_params.first['field']['column']}::text)||',' in ','||(#{ActiveRecord::Base.connection.quote(arg_value_str)}::text)||',')"
+            )
+          elsif search_method == 'advanced' && molecule_sort == true
+            return scope.order('samples.updated_at DESC')
+          elsif search_method != 'advanced' && molecule_sort == true
+            return scope.includes(:molecule)
+                        .joins(:molecule)
+                        .order(
+                          "LENGTH(SUBSTRING(molecules.sum_formular, 'C\\d+'))"
+                        ).order('molecules.sum_formular')
+          end
+        end
+
+        return scope.joins(adv_search) unless adv_search.nil?
+        return scope
       end
 
       def elements_by_scope(scope, collection_id = @c_id)
         elements = {}
         user_samples = Sample.by_collection_id(collection_id)
-        user_reactions = Reaction.by_collection_id(collection_id)
-        user_wellplates = Wellplate.by_collection_id(collection_id)
-        user_screens = Screen.by_collection_id(collection_id)
-        user_elements = Labimotion::Element.by_collection_id(collection_id)
+          .includes(molecule: :tag)
+        user_reactions = Reaction.by_collection_id(collection_id).includes(
+          :literatures, :tag,
+          # reactions_starting_material_samples: :sample,
+          # reactions_solvent_samples: :sample,
+          # reactions_reactant_samples: :sample,
+          reactions_product_samples: :sample,
+        )
+        # user_wellplates = Wellplate.by_collection_id(collection_id).includes(
+        #   wells: :sample
+        # )
+        # user_screens = Screen.by_collection_id(collection_id)
 
         case scope&.first
         when Sample
