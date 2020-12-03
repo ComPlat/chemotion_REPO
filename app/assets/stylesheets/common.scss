@@ -140,6 +140,11 @@ $color-required: #d9534f;
     margin-left: 5px;
   }
 
+  .field-select-full {
+    margin: 5px;
+    flex: 100%;
+  }
+
   .field-select {
     margin: 5px;
     flex: 0 0 205px;
