@@ -16,7 +16,7 @@ module Entities
       cols = object.tag&.taggable_data['collection_labels']&.select do |c|
         c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
       end
-      cols.length > 0
+      (cols && cols.length > 0) || false
     end
 
     class Level0 < SampleEntity
