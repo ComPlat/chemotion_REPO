@@ -1745,6 +1745,7 @@ class RenderPublishAnalysesPanel extends Component {
           <b>Datasets</b>
           <RepoContainerDatasets
             container={this.props.analysis}
+            isPublic={this.props.isPublic}
           />
         </div>
       </div>
@@ -1872,6 +1873,7 @@ class RenderPublishAnalyses extends Component {
               <b>Datasets</b>
               <RepoContainerDatasets
                 container={this.props.analysis}
+                isPublic={this.props.isPublic}
               />
             </Col>
           </Panel.Body>
@@ -1892,7 +1894,8 @@ RenderPublishAnalyses.propTypes = {
     affiliation_ids: PropTypes.arrayOf(PropTypes.array),
     affiliations: PropTypes.object,
     published_at: PropTypes.string,
-  }).isRequired
+  }).isRequired,
+  isPublic: PropTypes.bool.isRequired
 };
 
 class PublishAnalysesTag extends Component {
@@ -2128,7 +2131,7 @@ ReactionTlc.propTypes = {
   bodyAttrs: PropTypes.object
 };
 
-const DatasetDetail = ({ element }) => {
+const DatasetDetail = ({ isPublished, element }) => {
   const { molecule } = element;
   molecule.tag = {
     taggable_data: { pubchem_cid: molecule.pubchem_cid }
@@ -2145,6 +2148,7 @@ const DatasetDetail = ({ element }) => {
       elementType="Sample"
       license={element.license}
       publication={element.publication}
+      isPublic={isPublished}
     />
   );
 
@@ -2162,7 +2166,7 @@ const DatasetDetail = ({ element }) => {
 };
 
 DatasetDetail.propTypes = {
-  element: PropTypes.object.isRequired,
+  element: PropTypes.object.isRequired, isPublished: PropTypes.bool.isRequired
 };
 
 const ClosePanel = ({ element }) => (

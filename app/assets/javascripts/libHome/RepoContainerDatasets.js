@@ -52,6 +52,7 @@ export default class RepoContainerDatasets extends Component {
                     dataset_container={datasetContainer}
                     handleModalOpen={() => this.handleModalOpen(datasetContainer)}
                     disabled
+                    isPublic={this.props.isPublic}
                   />
                 </ListGroupItem>
               );

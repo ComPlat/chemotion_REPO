@@ -32,7 +32,7 @@ export default class RepoElementDetails extends Component {
       return <span />;
     }
     switch (elementType) {
-      case 'dataset': return <DatasetDetail element={currentElement} />;
+      case 'dataset': return <DatasetDetail isPublished element={currentElement} />;
       case 'molecule': return (
         <RepoSampleDetails
           isPublished

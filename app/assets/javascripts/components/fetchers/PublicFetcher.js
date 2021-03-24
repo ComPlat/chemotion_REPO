@@ -1,5 +1,5 @@
-import 'whatwg-fetch'
-import _ from 'lodash'
+import 'whatwg-fetch';
+import _ from 'lodash';
 import Molecule from '../models/Molecule';
 import Reaction from '../models/Reaction';
 
@@ -225,5 +225,33 @@ export default class PublicFetcher {
       credentials: 'same-origin'
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
+  static downloadZip(id) {
+    let fileName = 'dataset.zip';
+    return fetch(`/api/v1/public/download/dataset?id=${id}`, {
+      credentials: 'same-origin', method: 'GET',
+    }).then((response) => {
+      const disposition = response.headers.get('Content-Disposition');
+      if (disposition && disposition.indexOf('attachment') !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          fileName = matches[1].replace(/['"]/g, '');
+        }
+      }
+      return response.blob();
+    }).then((blob) => {
+      const a = document.createElement('a');
+      a.style = 'display: none';
+      document.body.appendChild(a);
+      const url = window.URL.createObjectURL(blob);
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
   }
 }
