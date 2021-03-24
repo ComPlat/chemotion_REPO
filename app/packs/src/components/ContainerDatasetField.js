@@ -6,6 +6,7 @@ import InboxActions from './actions/InboxActions';
 import DragDropItemTypes from './DragDropItemTypes';
 import AttachmentFetcher from './fetchers/AttachmentFetcher';
 import { GenericDSMisType, absOlsTermId } from '../admin/generic/Utils';
+import PublicFetcher from './fetchers/PublicFetcher';
 
 const dataTarget = {
   canDrop(props, monitor) {
@@ -82,8 +83,10 @@ class ContainerDatasetField extends Component{
     }
 
   render() {
-    const {connectDropTarget, isOver, canDrop, dataset_container, handleUndo, kind,
+    const {connectDropTarget, isOver, canDrop, dataset_container, handleUndo, kind, isPublic,
             handleModalOpen, disabled} = this.props;
+    const downloadClick = isPublic ? () => PublicFetcher.downloadZip(dataset_container.id) : () => AttachmentFetcher.downloadZip(dataset_container.id);
+
     if(dataset_container.is_deleted){
       return (
         <div><strike>{dataset_container.name}</strike>
@@ -108,7 +111,7 @@ class ContainerDatasetField extends Component{
           {dataset_container.name || 'new'}
         </a>
         <ButtonToolbar className="pull-right">
-          <Button bsSize="xsmall" bsStyle="info" onClick={() => AttachmentFetcher.downloadZip(dataset_container.id)}>
+          <Button bsSize="xsmall" bsStyle="info" onClick={downloadClick}>
             <i className="fa fa-download"></i>
           </Button>
           {this.removeButton(dataset_container)}
@@ -125,4 +128,7 @@ export default DropTarget([DragDropItemTypes.DATA, DragDropItemTypes.UNLINKED_DA
 ContainerDatasetField.propTypes = {
   isOver: PropTypes.bool.isRequired,
   canDrop: PropTypes.bool.isRequired,
+  isPublic: PropTypes.bool
 };
+
+ContainerDatasetField.defaultProps = { isPublic: false };

@@ -707,6 +707,63 @@ module Chemotion
         end
       end
 
+      resource :download do
+        desc 'download publication file'
+        params do
+          requires :id, type: Integer, desc: 'Id'
+        end
+        resource :attachment do
+          desc 'download publication attachment'
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            content_type 'application/octet-stream'
+            header['Content-Disposition'] = "attachment; filename=#{@attachment.filename}"
+            env['api.format'] = :binary
+            @attachment.read_file
+          end
+        end
+        resource :dataset do
+          desc 'download publication dataset as zip'
+          after_validation do
+            @container = Container.find_by(id: params[:id])
+            error!('404 Dataset not found', 404) unless @container
+            @publication = @container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            content_type 'application/zip, application/octet-stream'
+            filename = URI.escape("#{@container.parent&.name.gsub(/\s+/, '_')}-#{@container.name.gsub(/\s+/, '_')}.zip")
+            header['Content-Disposition'] = "attachment; filename=#{filename}"
+            env['api.format'] = :binary
+            zip_f = Zip::OutputStream.write_buffer do |zip|
+              @container.attachments.each do |att|
+                zip.put_next_entry att.filename
+                zip.write att.read_file
+              end
+              zip.put_next_entry 'dataset_description.txt'
+              zip.write <<~DESC
+                dataset name: #{@container.name}
+                instrument: #{@container.extended_metadata.fetch('instrument', nil)}
+                description:
+                #{@container.description}
+
+                Files:
+              DESC
+              @container.attachments.each do |att|
+                zip.write "#{att.filename} #{att.checksum}\n"
+              end
+            end
+            zip_f.rewind
+            zip_f.read
+          end
+        end
+      end
+
       resource :metadata do
         desc "metadata of publication"
         params do
