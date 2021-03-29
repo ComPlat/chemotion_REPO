@@ -139,12 +139,11 @@ export default class ManagingActions extends React.Component {
 
   collectionChanged(state) {
     const { currentCollection } = state;
-    if (typeof currentCollection === 'undefined' || currentCollection == null) {
-      return false;
-    }
-    const { id, is_sync_to_me } = currentCollection;
-    return this.state.currentCollection.id !== id ||
-      this.state.currentCollection.is_sync_to_me !== is_sync_to_me;
+    if (typeof this.state.currentCollection === 'undefined' || this.state.currentCollection == null
+    || typeof currentCollection === 'undefined' || currentCollection == null) return false;
+
+    return this.state.currentCollection.id !== currentCollection.id ||
+      this.state.currentCollection.is_sync_to_me !== currentCollection.is_sync_to_me;
   }
 
   checkUIState(state) {

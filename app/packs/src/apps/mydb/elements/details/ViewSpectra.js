@@ -194,13 +194,14 @@ class ViewSpectra extends React.Component {
     const sis = spcInfos.filter(x => x.idx === spcIdx);
     const si = sis.length > 0 ? sis[0] : spcInfos[0];
 
-    const ops = sample.analysesContainers().map((ae) => {
+    const opsTmp = sample.analysesContainers().map((ae) => {
       if (ae.id !== si.idAe) return null;
       return ae.children.map((ai) => {
         if (ai.id !== si.idAi) return null;
         return ai.extended_metadata.content.ops; // eslint-disable-line
       }).filter(r => r !== null);
-    }).filter(r => r !== null)[0][0];
+    }).filter(r => r !== null);
+    const ops = opsTmp && opsTmp[0] && opsTmp[0][0];
     return ops;
   }
 
