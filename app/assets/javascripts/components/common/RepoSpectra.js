@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip, Button, OverlayTrigger } from 'react-bootstrap';
-import { BuildSpcInfos, JcampIds } from '../utils/SpectraHelper';
+import { BuildSpcInfos } from '../utils/SpectraHelper';
 import SpectraActions from '../actions/SpectraActions';
 import ViewSpectra from '../ViewSpectra';
 import NotificationActions from '../actions/NotificationActions';
@@ -22,21 +22,15 @@ const RepoSpectraBtn = (props) => {
       SpectraActions.LoadSpectra.defer(spcInfos);
     }
   };
-  const jcampIds = JcampIds(analysis);
-  const hasJcamp = jcampIds.orig.length > 0;
   return (
     <span>
-      <OverlayTrigger
-        placement="top"
-        delayShow={500}
-        overlay={<Tooltip id="spectra">click to view spectra</Tooltip>}
-      >
+      <OverlayTrigger placement="top" delayShow={500} overlay={<Tooltip id="spectra">click to view spectra</Tooltip>}>
         <Button
           bsSize="xsmall"
           className="button-right"
           onToggle={(open, event) => { if (event) { event.stopPropagation(); } }}
           onClick={toggleSpectraModal}
-          disabled={!hasJcamp || !(spcInfos.length > 0)}
+          disabled={!(spcInfos.length > 0)}
         >
           <i className="fa fa-area-chart" aria-hidden="true" />
         </Button>
@@ -46,12 +40,7 @@ const RepoSpectraBtn = (props) => {
   );
 };
 
-RepoSpectraBtn.propTypes = {
-  element: PropTypes.object,
-  analysis: PropTypes.object,
-  isLogin: PropTypes.bool
-};
-
+RepoSpectraBtn.propTypes = { element: PropTypes.object, analysis: PropTypes.object, isLogin: PropTypes.bool };
 RepoSpectraBtn.defaultProps = { isLogin: false };
 
 export default RepoSpectraBtn;
