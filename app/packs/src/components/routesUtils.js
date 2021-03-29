@@ -23,7 +23,7 @@ const collectionShow = (e) => {
   }
 
   collectionPromise.then((result) => {
-    const collection = result.collection;
+    const collection = result && result.collection;
 
     if (currentSearchSelection) {
       UIActions.selectCollectionWithoutUpdating(collection);

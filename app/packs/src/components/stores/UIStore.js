@@ -281,7 +281,7 @@ class UIStore {
 
   handleSelectCollection(collection, hasChanged = false) {
     const state = this.state;
-    const isSync = collection.is_sync_to_me ? true : false;
+    const isSync = collection && collection.is_sync_to_me ? true : false;
     const { filterCreatedAt, fromDate, toDate, productOnly } = state;
 
     if (!hasChanged) {
@@ -291,13 +291,13 @@ class UIStore {
       hasChanged = hasChanged || state.currentSearchSelection != null;
     }
 
-    if (collection['clearSearch']){
+    if (collection && collection['clearSearch']){
       this.handleClearSearchSelection();
       hasChanged = true;
       collection['clearSearch'] = undefined;
     }
 
-    if(hasChanged && !collection.noFetch) {
+    if(hasChanged && collection && !collection.noFetch) {
       this.state.isSync = isSync;
       this.state.currentCollection = collection;
       const per_page = state.number_of_results;
