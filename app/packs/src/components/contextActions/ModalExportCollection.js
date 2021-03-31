@@ -13,7 +13,17 @@ export default class ModalExportCollection extends React.Component {
     // this.gatherCheckboxes(collecState.sharedRoots, checkboxes)
     // this.gatherCheckboxes(collecState.remoteRoots, checkboxes)
     collecState.lockedRoots = collecState.lockedRoots.filter(c => c.label !== 'All');
-    this.gatherCheckboxes(collecState.lockedRoots, checkboxes)
+
+    let embargoRoots = [];
+    // eslint-disable-next-line no-unused-expressions
+    collecState.syncInRoots && collecState.syncInRoots.forEach((root) => {
+      const cols = root.children.filter(c => c.label == 'My Published Elements' || c.label == 'Embargoed Publications');
+      embargoRoots = embargoRoots.concat(cols);
+    });
+
+    collecState.syncInRoots = embargoRoots;
+    this.gatherCheckboxes(collecState.lockedRoots, checkboxes);
+    this.gatherCheckboxes(collecState.syncInRoots, checkboxes, true);
 
     this.state = {
       processing: false,
@@ -21,6 +31,7 @@ export default class ModalExportCollection extends React.Component {
       // sharedRoots: collecState.sharedRoots,
       // remoteRoots: collecState.remoteRoots,
       lockedRoots: collecState.lockedRoots,
+      syncInRoots: collecState.syncInRoots,
       checkboxes: checkboxes
     }
 
@@ -29,10 +40,11 @@ export default class ModalExportCollection extends React.Component {
     this.handleClick = this.handleClick.bind(this)
   }
 
-  gatherCheckboxes(roots, checkboxes) {
+  gatherCheckboxes(roots, checkboxes, isSync = false) {
     if (Array.isArray(roots) && roots.length > 0) {
       roots.map((root, index) => {
-        checkboxes[root.id] = false;
+        const rootId = isSync === true ? `S_${root.id}` : root.id;
+        checkboxes[rootId] = false;
         this.gatherCheckboxes(root.children, checkboxes)
       })
     }
@@ -72,12 +84,17 @@ export default class ModalExportCollection extends React.Component {
     this.setState({ processing: true });
 
     const collections = [];
+    const sync_collections = [];
     Object.keys(this.state.checkboxes).map((key) => {
-      if (this.state.checkboxes[key]) { collections.push(key); }
+      // eslint-disable-next-line no-restricted-globals
+      if (!isNaN(key) && this.state.checkboxes[key]) { collections.push(key); }
+      if (isNaN(key) && key.startsWith('S_') && this.state.checkboxes[key]) { sync_collections.push(key.substr(2)); }
     });
 
     const params = {
       collections,
+      sync_collections,
+      isSync: false,
       format: 'zip',
       nested: false
     };
@@ -115,6 +132,19 @@ export default class ModalExportCollection extends React.Component {
     }
   }
 
+  renderEmbargoCollections(label, key) {
+    let roots = this.state[key];
+
+    if (Array.isArray(roots) && roots.length > 0) {
+      return (
+        <div>
+          <h4>{label}</h4>
+          {this.renderUserSubtrees(roots, true)}
+        </div>
+      )
+    }
+  }
+
   renderSharedCollections(label, key) {
     let roots = this.state[key]
 
@@ -128,7 +158,7 @@ export default class ModalExportCollection extends React.Component {
     }
   }
 
-  renderUserSubtrees(roots) {
+  renderUserSubtrees(roots, isSync= false) {
     if (Array.isArray(roots) && roots.length > 0) {
 
       let nodes = roots.map((root, index) => {
@@ -145,7 +175,7 @@ export default class ModalExportCollection extends React.Component {
         return (
           <li key={index}>
             <h6>{label}</h6>
-            {this.renderSubtrees(root.children)}
+            {this.renderSubtrees(root.children, isSync)}
           </li>
         )
       })
@@ -158,16 +188,17 @@ export default class ModalExportCollection extends React.Component {
     }
   }
 
-  renderSubtrees(roots) {
+  renderSubtrees(roots, isSync=false) {
     if (Array.isArray(roots) && roots.length > 0) {
       let nodes = roots.map((root, index) => {
+        const rootId = isSync==true ? `S_${root.id}` : root.id;
         return (
           <li key={index}>
             <input className="common-checkbox" type="checkbox"
                    id={"export-collection-" + root.id}
-                   value={root.id}
+                   value={rootId}
                    onChange={this.handleCheckboxChange}
-                   checked={this.isChecked(root.id)} />
+                   checked={this.isChecked(rootId)} />
             <label className="g-marginLeft--10" htmlFor={"export-collection-" + root.id}>
               { root.label }
             </label>
@@ -224,6 +255,7 @@ export default class ModalExportCollection extends React.Component {
     return (
       <div className="export-collections-modal">
         {this.renderCollections('Global collections', 'lockedRoots')}
+        {this.renderEmbargoCollections('Embargo collections', 'syncInRoots')}
         {/* {this.renderCollections('My collections', 'unsharedRoots')} */}
         {/* {this.renderSharedCollections('My shared collections', 'sharedRoots')} */}
         {/* {this.renderSharedCollections('Shared with me', 'remoteRoots')} */}
