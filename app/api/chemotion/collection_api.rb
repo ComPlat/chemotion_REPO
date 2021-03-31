@@ -459,19 +459,18 @@ module Chemotion
       namespace :exports do
         desc "Create export job"
         params do
-          requires :collections, type: Array[Integer]
-          requires :format, type: Symbol, values: %i[json zip udm]
+          optional :collections, type: Array[Integer]
+          optional :sync_collections, type: Array[Integer]
+          requires :format, type: Symbol, values: [:json, :zip, :udm]
           requires :nested, type: Boolean
         end
 
         post do
-          collection_ids = params[:collections].uniq
+          collection_ids = params[:collections]&.uniq
+          sync_col_ids = params[:sync_collections]&.uniq
           nested = params[:nested] == true
 
-          if collection_ids.empty?
-            # no collection was given, export all collections for this user
-            collection_ids = Collection.belongs_to_or_shared_by(current_user.id, current_user.group_ids).pluck(:id)
-          else
+          if collection_ids.present?
             # check if the user is allowed to export these collections
             collection_ids.each do |collection_id|
               collection = Collection.belongs_to_or_shared_by(current_user.id, current_user.group_ids).find_by(id: collection_id)
@@ -482,7 +481,16 @@ module Chemotion
               error!('401 Unauthorized', 401) unless collection
             end
           end
-          ExportCollectionsJob.perform_now(collection_ids, params[:format].to_s, nested, current_user.id)
+
+          if sync_col_ids.present?
+            sync_col_ids.each do |sync_col_id|
+              sync_col = SyncCollectionsUser.find_by(id: sync_col_id, user_id: current_user.id)
+              col = Collection.find(sync_col.collection_id) if sync_col.present?
+              collection_ids << sync_col.collection_id if col.present? && col.parent.present? && ['My Published Elements', 'Embargoed Publications'].include?(col.parent&.label)
+            end
+          end
+
+          ExportCollectionsJob.perform_later(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
           status 204
         end
       end
