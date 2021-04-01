@@ -1253,7 +1253,7 @@ const ReactionTlc = ({
             </Row>
             <Row style={{ paddingBottom: '8px' }}>
               <Col sm={2} md={2} lg={2}><b>Rf-Value</b></Col>
-              <Col sm={10} md={10} lg={10}>{reaction.rf_value || ''}</Col>
+              <Col sm={10} md={10} lg={10}>{reaction.rf_value && reaction.rf_value !== '0' ? reaction.rf_value : ''}</Col>
             </Row>
             <Row style={{ paddingBottom: '8px' }}>
               <Col sm={2} md={2} lg={2}><b>TLC-Description</b></Col>
