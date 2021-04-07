@@ -20,7 +20,7 @@ module Chemotion
             # polymer_type
           #]
           optional :elementType, type: String, values: %w[
-            All Samples Reactions Wellplates Screens all samples reactions wellplates screens elements
+            All Samples Reactions Wellplates Screens all samples reactions wellplates screens elements embargo
           ]
           optional :molfile, type: String
           optional :search_type, type: String, values: %w[similar sub]
@@ -636,6 +636,30 @@ module Chemotion
           serialization_by_elements_and_page(
             elements_by_scope(screens),
             params[:page]
+          )
+        end
+      end
+
+      namespace :embargo do
+        desc "Return samples and reactions by embargo"
+        params do
+          use :search_params
+        end
+        post do
+          col_id = Collection.find_by(label: params[:selection][:name], is_synchronized: true)&.id
+
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless col_id.present?
+
+          scope = Sample.by_collection_id(col_id)
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless scope
+
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless ElementsPolicy.new(current_user, scope).read?
+
+          elements_ids = elements_by_scope(scope, col_id)
+          serialization_by_elements_and_page(
+            elements_ids,
+            params[:page],
+            params[:molecule_sort]
           )
         end
       end

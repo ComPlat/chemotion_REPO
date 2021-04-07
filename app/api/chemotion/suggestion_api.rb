@@ -206,8 +206,14 @@ module Chemotion
         end
         get do
           params[:element_type]
-          search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
-          { suggestions: search_possibilities_to_suggestions(search_possibilities) }
+          if params[:element_type] == 'embargo'
+            cols = Collection.all_embargos(current_user.id).where("label like '#{params[:query]}%'").order(:label)
+            suggestions = cols.map { |col| { name: col.label, search_by_method: 'embargo' } }
+            { suggestions: suggestions }
+          else
+            search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
+            { suggestions: search_possibilities_to_suggestions(search_possibilities) }
+          end
         end
       end
     end
