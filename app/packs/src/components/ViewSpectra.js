@@ -49,6 +49,7 @@ class ViewSpectra extends React.Component {
     this.buildOthers = this.buildOthers.bind(this);
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
     this.updateROPredict = this.updateROPredict.bind(this);
+    this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
   }
 
   componentDidMount() {
