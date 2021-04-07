@@ -296,7 +296,8 @@ export default class AutoCompleteInput extends React.Component {
       sum_formula : {icon: 'icon-sample', label: 'Sum Formula'},
       requirements : {icon: 'icon-screen', label: 'Requirement'},
       conditions : {icon: 'icon-screen', label: 'Condition'},
-      element_short_label: {icon: 'icon-element', label: 'Element Short Label'}
+      element_short_label: {icon: 'icon-element', label: 'Element Short Label'},
+      embargo : {icon: 'fa fa-object-group', label: 'Embargo Bundle Number'}
     }
     if(suggestions) {
       return (

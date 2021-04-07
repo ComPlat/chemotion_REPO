@@ -182,4 +182,15 @@ class Collection < ApplicationRecord
     Collection.where(id: collection_id, user_id: user_id, is_shared: true)
               .each(&:destroy)
   end
+
+  def self.all_embargos(user_id)
+    Collection.where(
+      <<~SQL
+        id in (
+          select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements') union
+          select co.id from collections co where co.ancestry in (select c.id::text from collections c, sync_collections_users scu
+          where c.label = 'Embargoed Publications' and scu.collection_id = c.id and scu.user_id = #{user_id}))
+      SQL
+    )
+  end
 end

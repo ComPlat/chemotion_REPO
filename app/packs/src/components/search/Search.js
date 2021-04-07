@@ -191,6 +191,12 @@ export default class Search extends React.Component {
         Advanced Search
       </MenuItem>
     );
+    menu.push(<MenuItem key="divider" divider />);
+    menu.push(
+      <MenuItem key="embargo" onSelect={() => this.handleElementSelection('embargo')}>
+        Embargo Bundle#
+      </MenuItem>
+    );
 
     menu.push(<MenuItem key="divider-generic" divider />);
 
@@ -271,18 +277,15 @@ export default class Search extends React.Component {
       }
     };
 
-    const searchIcon = (elementType) => {
-      if (elementType === 'all') return 'All';
-      if (['samples', 'reactions', 'screens', 'wellplates'].includes(elementType.toLowerCase())) return (<i className={`icon-${elementType.toLowerCase().slice(0, -1)}`} />);
-      if (this.state.genericEl) return (<i className={this.state.genericEl.icon_name} />);
-      return elementType;
-    }
+    let title = (<i className={`icon-${this.state.elementType.toLowerCase().slice(0, -1)}`} />);
+    if (this.state.elementType === 'all') title = 'All';
+    if (this.state.elementType === 'embargo') title = (<i className="fa fa-object-group" />);
 
     const innerDropdown = (
       <DropdownButton
         className={customClass}
         id="search-inner-dropdown"
-        title={searchIcon(this.state.elementType)}
+        title={title}
         style={{ width: '50px' }}
       >
         {this.renderMenuItems()}
