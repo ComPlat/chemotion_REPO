@@ -19,6 +19,7 @@ import AutoCompleteInput from '../components/search/AutoCompleteInput';
 import StructureEditorModal from '../components/structure_editor/StructureEditorModal';
 import Formula from '../components/common/Formula';
 import LoadingActions from '../components/actions/LoadingActions';
+import { ElStateLabel } from './RepoCommon';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -68,7 +69,7 @@ const renderReaction = (element, currentElement, isPubElement) => {
         </div>
       </td>
       <td>
-        {xvialTag(element)}
+        {xvialTag(element)}&nbsp;{ElStateLabel(element.embargo)}
       </td>
     </tr>
   );

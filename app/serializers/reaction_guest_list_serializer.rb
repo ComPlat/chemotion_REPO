@@ -2,7 +2,7 @@
 
 # reaction list class for guest
 class ReactionGuestListSerializer < ActiveModel::Serializer
-  attributes :id, :name, :reaction_svg_file, :tag, :xvial_count, :xvial_com
+  attributes :id, :name, :reaction_svg_file, :tag, :xvial_count, :xvial_com, :embargo
 
   def xvial_count
     xvial_count = <<~SQL
@@ -23,5 +23,12 @@ class ReactionGuestListSerializer < ActiveModel::Serializer
       inner join com_xvial(true) a on a.x_inchikey = m.inchikey
     SQL
     ReactionsSample.joins(xvial_com).where(type: 'ReactionsProductSample', reaction_id: id).length
+  end
+
+  def embargo
+    embargo = <<~SQL
+      inner join collections_reactions cr on collections.id = cr.collection_id and cr.reaction_id = #{id}
+    SQL
+    Collection.joins(embargo).where("ancestry in (select c.id::text from collections c where c.label = 'Published Elements')")&.first&.label
   end
 end
