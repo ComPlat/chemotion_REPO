@@ -251,6 +251,7 @@ export default class RepoReactionDetails extends Component {
                 show={showScheme}
                 isPublic
                 bodyAttrs={bodyAttrs}
+                canComment={canComment}
               />
             </Col>
           </Row>
@@ -392,7 +393,6 @@ export default class RepoReactionDetails extends Component {
       canClose,
     } = this.props;
     let { buttons } = this.props;
-
     if (typeof (reaction) === 'undefined' || !reaction) {
       return <div />;
     }

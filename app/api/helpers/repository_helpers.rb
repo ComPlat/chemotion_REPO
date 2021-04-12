@@ -39,7 +39,7 @@ module RepositoryHelpers
       <<~SQL
       reactions_samples.id,
       molecules.iupac_name, molecules.sum_formular,
-      molecules.molecular_weight,
+      molecules.molecular_weight, samples.name,
       samples.real_amount_value, samples.real_amount_unit,
       samples.target_amount_value, samples.target_amount_unit,
       samples.purity, samples.density, samples.external_label,
