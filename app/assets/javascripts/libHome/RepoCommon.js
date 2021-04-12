@@ -110,22 +110,20 @@ const AuthorTitle = (authorIds) => {
     return 'Author:';
   }
   return '';
-}
+};
 
 const NewsroomTemplate = {
   title: '', content: {}, article: []
 };
 
-const HomeFeature = (props) => {
-  return (
-    <div className="feature-block">
-      <h3><div><i className={`${props.fa}`} aria-hidden="true" /></div>&nbsp;{props.title}</h3>
-      <p>
-        {props.intro}
-      </p>
-    </div>
-  );
-};
+const HomeFeature = props => (
+  <div className="feature-block">
+    <h3><div><i className={`${props.fa}`} aria-hidden="true" /></div>&nbsp;{props.title}</h3>
+    <p>
+      {props.intro}
+    </p>
+  </div>
+);
 
 HomeFeature.propTypes = {
   fa: PropTypes.string.isRequired,
@@ -411,21 +409,19 @@ EmbargoCom.defaultProps = {
   cc0Deed: { consent1: false, consent2: false }
 };
 
-const PublishTypeAs = (props) => {
-  return (
-    <div style={{ display: 'inline' }}>
-      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tip_publish_as">Choose the publication type as Full or Scheme-Only</Tooltip>}>
-        <i className="fa fa-question-circle" aria-hidden="true" />
-      </OverlayTrigger>&nbsp;
-      <DropdownButtonSelection
-        options={props.options}
-        selected={props.selected}
-        placeholder="Select publication type..."
-        onSelect={e => props.onChange(e)}
-      />
-    </div>
-  );
-};
+const PublishTypeAs = props => (
+  <div style={{ display: 'inline' }}>
+    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tip_publish_as">Choose the publication type as Full or Scheme-Only</Tooltip>}>
+      <i className="fa fa-question-circle" aria-hidden="true" />
+    </OverlayTrigger>&nbsp;
+    <DropdownButtonSelection
+      options={props.options}
+      selected={props.selected}
+      placeholder="Select publication type..."
+      onSelect={e => props.onChange(e)}
+    />
+  </div>
+);
 
 PublishTypeAs.propTypes = {
   options: PropTypes.arrayOf(PropTypes.string),
@@ -546,18 +542,16 @@ const DateFormatDMYTime = (dt) => {
   }
 };
 
-const EditorTips = () => {
-  return (
-    <ol>
-      {/* <li>Use <b>Preview</b> to see how your work will look like.</li> */}
-      <li>Use&nbsp;&nbsp;<i className="fa fa-file-text-o" aria-hidden="true" />&nbsp;&nbsp;to open a text editor and add into the content.</li>
-      <li>Use&nbsp;&nbsp;<i className="fa fa-picture-o" aria-hidden="true" />&nbsp;&nbsp;to open a image editor and add into the content.</li>
-      <li>Use&nbsp;&nbsp;<i className="fa fa-arrows" aria-hidden="true" />&nbsp;&nbsp;to change the section order.</li>
-      <li>Use&nbsp;&nbsp;<i className="fa fa-trash-o" aria-hidden="true" />&nbsp;&nbsp;to remove the section from the content.</li>
-      <li>In text editor, use&nbsp;&nbsp;<i className="fa fa-link" aria-hidden="true" />&nbsp;&nbsp;to link to the url.</li>
-    </ol>
-  );
-};
+const EditorTips = () => (
+  <ol>
+    {/* <li>Use <b>Preview</b> to see how your work will look like.</li> */}
+    <li>Use&nbsp;&nbsp;<i className="fa fa-file-text-o" aria-hidden="true" />&nbsp;&nbsp;to open a text editor and add into the content.</li>
+    <li>Use&nbsp;&nbsp;<i className="fa fa-picture-o" aria-hidden="true" />&nbsp;&nbsp;to open a image editor and add into the content.</li>
+    <li>Use&nbsp;&nbsp;<i className="fa fa-arrows" aria-hidden="true" />&nbsp;&nbsp;to change the section order.</li>
+    <li>Use&nbsp;&nbsp;<i className="fa fa-trash-o" aria-hidden="true" />&nbsp;&nbsp;to remove the section from the content.</li>
+    <li>In text editor, use&nbsp;&nbsp;<i className="fa fa-link" aria-hidden="true" />&nbsp;&nbsp;to link to the url.</li>
+  </ol>
+);
 
 const BackSoonPage = () => {
   return (
@@ -1046,7 +1040,7 @@ ToggleIndicator.defaultProps = {
 
 
 const ReactionTable = ({
-  reaction, toggle, show, bodyAttrs, isPublic = true
+  reaction, toggle, show, bodyAttrs, canComment, isPublic = true
 }) => {
   let schemes = [];
   let sumSolvents = 0.0;
@@ -1056,25 +1050,25 @@ const ReactionTable = ({
     reaction.publication.taggable_data.scheme_only === true) || false;
 
   if (isPublic) {
-    schemes = reaction.schemes;
+    ({ schemes } = reaction);
   } else {
     reaction.starting_materials.map((s) => {
-      const ns = new Sample(s)
+      const ns = new Sample(s);
       ns.mat_group = 'starting_materials';
       schemes.push(ns);
     });
     reaction.reactants.map((s) => {
-      const ns = new Sample(s)
+      const ns = new Sample(s);
       ns.mat_group = 'reactants';
       schemes.push(ns);
     });
     reaction.products.map((s) => {
-      const ns = new Sample(s)
+      const ns = new Sample(s);
       ns.mat_group = 'products';
       schemes.push(ns);
     });
     reaction.solvents.map((s) => {
-      const ns = new Sample(s)
+      const ns = new Sample(s);
       sumSolvents += ns.amount_l;
       ns.mat_group = 'solvents';
       schemes.push(ns);
@@ -1090,16 +1084,16 @@ const ReactionTable = ({
     switch (s.mat_group) {
       case 'products':
         if (schemeOnly === true) {
-          val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`
+          val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`;
         } else {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`
+          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
         }
         break;
       case 'solvents':
         if (isPublic) {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`
+          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
         } else {
-          val = `${materialCalc((s.amount_l / sumSolvents) * 100, 1, 1).toString()}%`
+          val = `${materialCalc((s.amount_l / sumSolvents) * 100, 1, 1).toString()}%`;
         }
         break;
       default:
@@ -1107,17 +1101,17 @@ const ReactionTable = ({
     }
     return (
       val
-    )
-  }
+    );
+  };
 
   const rows = (samples) => {
     let currentType = '';
-
     return (
       typeof samples !== 'undefined'
         ? samples.map((sample, i) => {
           const matType = sample.mat_group && sample.mat_group[0].toUpperCase() + sample.mat_group.replace('_', ' ').slice(1);
           let label = isPublic ? sample.iupac_name : sample.molecule_iupac_name;
+          label = canComment ? (label || sample.name) : label;
           if (sample.mat_group === 'solvents') label = sample.external_label;
           let title = null;
           if (currentType !== sample.mat_group) {
@@ -1140,7 +1134,7 @@ const ReactionTable = ({
           );
         })
         : null
-    )
+    );
   };
 
   const table = dataRows => (
@@ -1174,7 +1168,7 @@ const ReactionTable = ({
       </Panel>
     </span>
   );
-}
+};
 
 const ReactionRinChiKey = ({
   reaction, toggle, show, bodyAttrs
