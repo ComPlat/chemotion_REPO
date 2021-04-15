@@ -398,14 +398,17 @@ module Chemotion
         if ((c_id = Collection.public_collection_id) &&
           (params[:selection] && params[:selection][:authors_params] && params[:selection][:authors_params][:type] && params[:selection][:authors_params][:value] && params[:selection][:authors_params][:value].length > 0))
           if params[:selection][:authors_params][:type] == 'Authors'
+            author_sql = ActiveRecord::Base.send(:sanitize_sql_array, [" author_id in (?)", params[:selection][:authors_params][:value].join("','")])
+
             adv_search = <<~SQL
               INNER JOIN publication_authors pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
-              and author_id in ('#{params[:selection][:authors_params][:value].join("','")}')
+              and #{author_sql}
             SQL
           elsif params[:selection][:authors_params][:type] == 'Contributors'
+            contributor_sql = ActiveRecord::Base.send(:sanitize_sql_array, [" published_by in (?)", params[:selection][:authors_params][:value].join("','")])
             adv_search = <<~SQL
               INNER JOIN publications pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
-              and published_by in ('#{params[:selection][:authors_params][:value].join("','")}')
+              and #{contributor_sql}
             SQL
           end
         end
