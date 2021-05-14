@@ -7,6 +7,7 @@ set :branch, 'server_chemotion_net'
 #before 'deploy:migrate', 'deploy:backup'
 
 server 'www.chemotion.net', user: user, roles: %w{app web db}
+#server '141.52.79.134', user: user, roles: %w{app web db}
 
 set :ssh_options, {
   forward_agent: false,
@@ -34,11 +35,11 @@ set :user, user
 #set :bundle_without, %w{}.join(' ')
 set :bundle_flags, '--frozen --deployment ' #--quiet
 
-set :slackistrano, {
-  klass: Slackistrano::SlackistranoCustomMessaging,
-  channel: '#cap_deploy',
-  webhook: 'https://hooks.slack.com/services/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'
-}
+#set :slackistrano, {
+#  klass: Slackistrano::SlackistranoCustomMessaging,
+#  channel: '#cap_deploy',
+#  webhook: 'https://hooks.slack.com/services/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'
+#}
 set :log_file, 'log/cap-server_complat-eln.log'
 set :slack_members, ['pi_r', 'nicole']
 
