@@ -72,7 +72,6 @@ set :default_env, fetch(:default_env, {}).merge({
 # set :keep_releases, 5
 
 
-
 namespace :git do
   task :update_repo_url do
     on roles(:all) do
