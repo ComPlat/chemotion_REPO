@@ -18,6 +18,7 @@ set :ssh_options, {
 set :linked_files, fetch(:linked_files, []).push(
   '.ruby-version',
   '.ruby-gemset',
+  'config/compound_open_data.yml',
   'config/spectra.yml',
   'config/node_service.yml'
 )
