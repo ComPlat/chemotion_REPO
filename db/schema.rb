@@ -1844,53 +1844,20 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
        RETURNS json
        LANGUAGE plpgsql
       AS $function$
-         begin
-          if (in_user_id = in_current_user_id) then
-            return null;
-          else
-            return (select row_to_json(result) from (
-            select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-            from users where id = $1
-            ) as result);
+      begin
+      	if p_allow IS false then
+      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
+      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
+      	else
+      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
           end if;
-          end;
-       $function$
+      END
+      $function$
   SQL
-  create_function :user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
-       RETURNS json
-       LANGUAGE sql
-      AS $function$
-         select row_to_json(result) from (
-           select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-           from users where id = $1
-         ) as result
-       $function$
-  SQL
-  create_function :user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_ids(user_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-          select $1 as id
-          union
-          (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
-         and users.type in ('Group') and users_groups.user_id = $1)
-        $function$
-  SQL
-  create_function :user_instrument, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_instrument(user_id integer, sc text)
-       RETURNS TABLE(instrument text)
-       LANGUAGE sql
-      AS $function$
-             select distinct extended_metadata -> 'instrument' as instrument from containers c
-             where c.container_type='dataset' and c.id in
-             (select ch.descendant_id from containers sc,container_hierarchies ch, samples s, users u
-             where sc.containable_type in ('Sample','Reaction') and ch.ancestor_id=sc.id and sc.containable_id=s.id
-             and s.created_by = u.id and u.id = $1 and ch.generations=3 group by descendant_id)
-             and upper(extended_metadata -> 'instrument') like upper($2 || '%')
-             order by extended_metadata -> 'instrument' limit 10
-           $function$
+
+  create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
+      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE PROCEDURE update_users_matrix()
   SQL
 
   create_view "literal_groups", sql_definition: <<-SQL
@@ -2054,5 +2021,32 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
+  SQL
+  create_view "compound_open_data_locals", sql_definition: <<-SQL
+      SELECT c.x_id,
+      c.x_sample_id,
+      c.x_data,
+      c.x_created_at,
+      c.x_updated_at,
+      c.x_inchikey,
+      c.x_sum_formular,
+      c.x_cano_smiles,
+      c.x_external_label,
+      c.x_short_label,
+      c.x_name,
+      c.x_stereo
+     FROM ( SELECT NULL::integer AS x_id,
+              NULL::integer AS x_sample_id,
+              NULL::jsonb AS x_data,
+              NULL::timestamp without time zone AS x_created_at,
+              NULL::timestamp without time zone AS x_updated_at,
+              NULL::character varying AS x_inchikey,
+              NULL::character varying AS x_sum_formular,
+              NULL::character varying AS x_cano_smiles,
+              NULL::character varying AS x_external_label,
+              NULL::character varying AS x_short_label,
+              NULL::character varying AS x_name,
+              NULL::jsonb AS x_stereo) c
+    WHERE (c.x_id IS NOT NULL);
   SQL
 end
