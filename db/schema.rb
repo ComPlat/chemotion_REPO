@@ -899,7 +899,7 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.boolean  "waste",        default: false
     t.float    "coefficient",  default: 1.0
     t.float    "scheme_yield"
-    t.boolean  "show_label",  default: false, null: false
+    t.boolean  "show_label",   default: false, null: false
   end
 
   add_index "reactions_samples", ["reaction_id"], name: "index_reactions_samples_on_reaction_id", using: :btree
@@ -1228,18 +1228,18 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.string "first_name", null: false
     t.string "last_name", null: false
     t.datetime "deleted_at"
-    t.hstore "counters", default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"}, null: false
-    t.string "name_abbreviation", limit: 12
-    t.string "type", default: "Person"
-    t.string "reaction_name_prefix", limit: 3, default: "R"
-    t.string "confirmation_token"
+    t.hstore   "counters",                          default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"},                                   null: false
+    t.string   "name_abbreviation",      limit: 12
+    t.string   "type",                              default: "Person"
+    t.string   "reaction_name_prefix",   limit: 3,  default: "R"
+    t.hstore   "layout",                            default: {"sample"=>"1", "screen"=>"4", "reaction"=>"2", "wellplate"=>"3", "research_plan"=>"5"}, null: false
+    t.string   "confirmation_token"
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
-    t.string "unconfirmed_email"
-    t.hstore "layout", default: {"sample"=>"1", "screen"=>"4", "reaction"=>"2", "wellplate"=>"3", "research_plan"=>"5"}, null: false
-    t.integer "selected_device_id"
-    t.integer "failed_attempts", default: 0, null: false
-    t.string "unlock_token"
+    t.string   "unconfirmed_email"
+    t.integer  "selected_device_id"
+    t.integer  "failed_attempts",                   default: 0,                                                                                       null: false
+    t.string   "unlock_token"
     t.datetime "locked_at"
     t.boolean "account_active"
     t.integer "matrix", default: 0
@@ -1330,45 +1330,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
        ) as result
        $function$
   SQL
-  create_function :user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_ids(user_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-          select $1 as id
-          union
-          (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
-         and users.type in ('Group') and users_groups.user_id = $1)
-        $function$
-  SQL
-  create_function :user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
-       RETURNS json
-       LANGUAGE sql
-      AS $function$
-         select row_to_json(result) from (
-           select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-           from users where id = $1
-         ) as result
-       $function$
-  SQL
-  create_function :shared_user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.shared_user_as_json(in_user_id integer, in_current_user_id integer)
-       RETURNS json
-       LANGUAGE plpgsql
-      AS $function$
-         begin
-          if (in_user_id = in_current_user_id) then
-            return null;
-          else
-            return (select row_to_json(result) from (
-            select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-            from users where id = $1
-            ) as result);
-          end if;
-          end;
-       $function$
-  SQL
   create_function :detail_level_for_sample, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.detail_level_for_sample(in_user_id integer, in_sample_id integer)
        RETURNS TABLE(detail_level_sample integer, detail_level_wellplate integer)
@@ -1402,16 +1363,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
           return query select coalesce(i_detail_level_sample,0) detail_level_sample, coalesce(i_detail_level_wellplate,0) detail_level_wellplate;
       end;$function$
   SQL
-  create_function :group_user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.group_user_ids(group_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-             select id from users where type='Person' and id= $1
-             union
-             select user_id from users_groups where group_id = $1
-      $function$
-  SQL
   create_function :generate_notifications, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.generate_notifications(in_channel_id integer, in_message_id integer, in_user_id integer, in_user_ids integer[])
        RETURNS integer
@@ -1443,95 +1394,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
       	return in_message_id;
       end;$function$
   SQL
-  create_function :labels_by_user_sample, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
-       RETURNS TABLE(labels text)
-       LANGUAGE sql
-      AS $function$
-         select string_agg(title::text, ', ') as labels from (select title from user_labels ul where ul.id in (
-           select d.list
-           from element_tags et, lateral (
-             select value::integer as list
-             from jsonb_array_elements_text(et.taggable_data  -> 'user_labels')
-           ) d
-           where et.taggable_id = $2 and et.taggable_type = 'Sample'
-         ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
-       $function$
-  SQL
-
-  create_function :generate_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
-       RETURNS boolean
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if in_user_ids is null then
-          update users u set matrix = (
-      	    select coalesce(sum(2^mx.id),0) from (
-      		    select distinct m1.* from matrices m1, users u1
-      				left join users_groups ug1 on ug1.user_id = u1.id
-      		      where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      	      except
-      		    select distinct m2.* from matrices m2, users u2
-      				left join users_groups ug2 on ug2.user_id = u2.id
-      		      where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      	    ) mx
-          );
-      	else
-      		  update users u set matrix = (
-      		  	select coalesce(sum(2^mx.id),0) from (
-      			   select distinct m1.* from matrices m1, users u1
-      				 left join users_groups ug1 on ug1.user_id = u1.id
-      			     where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      			   except
-      			   select distinct m2.* from matrices m2, users u2
-      				 left join users_groups ug2 on ug2.user_id = u2.id
-      			     where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      			  ) mx
-      		  ) where ((in_user_ids) @> array[u.id]) or (u.id in (select ug3.user_id from users_groups ug3 where (in_user_ids) @> array[ug3.group_id]));
-      	end if;
-        return true;
-      end
-      $function$
-  SQL
-  create_function :update_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.update_users_matrix()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if (TG_OP='INSERT') then
-          PERFORM generate_users_matrix(null);
-      	end if;
-
-      	if (TG_OP='UPDATE') then
-      	  if new.enabled <> old.enabled or new.deleted_at <> new.deleted_at then
-            PERFORM generate_users_matrix(null);
-      	  elsif new.include_ids <> old.include_ids then
-            PERFORM generate_users_matrix(new.include_ids || old.include_ids);
-          elsif new.exclude_ids <> old.exclude_ids then
-            PERFORM generate_users_matrix(new.exclude_ids || old.exclude_ids);
-      	  end if;
-      	end if;
-        return new;
-      end
-      $function$
-  SQL
-  create_function :literatures_by_element, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
-       RETURNS TABLE(literatures text)
-       LANGUAGE sql
-      AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
-         and l.element_type = $1 and l.element_id = $2
-       $function$
-  SQL
-
-  create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
-      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
-  SQL
-
   create_function :group_user_ids, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.group_user_ids(group_id integer)
        RETURNS TABLE(user_ids integer)
@@ -1606,6 +1468,99 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
              and upper(extended_metadata -> 'instrument') like upper($2 || '%')
              order by extended_metadata -> 'instrument' limit 10
            $function$
+  SQL
+  create_function :labels_by_user_sample, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
+       RETURNS TABLE(labels text)
+       LANGUAGE sql
+      AS $function$
+         select string_agg(title::text, ', ') as labels from (select title from user_labels ul where ul.id in (
+           select d.list
+           from element_tags et, lateral (
+             select value::integer as list
+             from jsonb_array_elements_text(et.taggable_data  -> 'user_labels')
+           ) d
+           where et.taggable_id = $2 and et.taggable_type = 'Sample'
+         ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
+       $function$
+  SQL
+  create_function :generate_users_matrix, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
+       RETURNS boolean
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if in_user_ids is null then
+          update users u set matrix = (
+      	    select coalesce(sum(2^mx.id),0) from (
+      		    select distinct m1.* from matrices m1, users u1
+      				left join users_groups ug1 on ug1.user_id = u1.id
+      		      where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
+      	      except
+      		    select distinct m2.* from matrices m2, users u2
+      				left join users_groups ug2 on ug2.user_id = u2.id
+      		      where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
+      	    ) mx
+          );
+      	else
+      		  update users u set matrix = (
+      		  	select coalesce(sum(2^mx.id),0) from (
+      			   select distinct m1.* from matrices m1, users u1
+      				 left join users_groups ug1 on ug1.user_id = u1.id
+      			     where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
+      			   except
+      			   select distinct m2.* from matrices m2, users u2
+      				 left join users_groups ug2 on ug2.user_id = u2.id
+      			     where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
+      			  ) mx
+      		  ) where ((in_user_ids) @> array[u.id]) or (u.id in (select ug3.user_id from users_groups ug3 where (in_user_ids) @> array[ug3.group_id]));
+      	end if;
+        return true;
+      end
+      $function$
+  SQL
+  create_function :update_users_matrix, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.update_users_matrix()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if (TG_OP='INSERT') then
+          PERFORM generate_users_matrix(null);
+      	end if;
+
+      	if (TG_OP='UPDATE') then
+      	  if new.enabled <> old.enabled or new.deleted_at <> new.deleted_at then
+            PERFORM generate_users_matrix(null);
+      	  elsif new.include_ids <> old.include_ids then
+            PERFORM generate_users_matrix(new.include_ids || old.include_ids);
+          elsif new.exclude_ids <> old.exclude_ids then
+            PERFORM generate_users_matrix(new.exclude_ids || old.exclude_ids);
+      	  end if;
+      	end if;
+        return new;
+      end
+      $function$
+  SQL
+  create_function :com_xvial, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.com_xvial(p_allow boolean DEFAULT false)
+       RETURNS SETOF compound_open_data_locals
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if p_allow IS false then
+      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
+      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
+      	else
+      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+          end if;
+      END
+      $function$
+  SQL
+
+  create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
+      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE PROCEDURE update_users_matrix()
   SQL
 
   create_view "literal_groups", sql_definition: <<-SQL
@@ -1750,5 +1705,32 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
+  SQL
+  create_view "compound_open_data_locals", sql_definition: <<-SQL
+      SELECT c.x_id,
+      c.x_sample_id,
+      c.x_data,
+      c.x_created_at,
+      c.x_updated_at,
+      c.x_inchikey,
+      c.x_sum_formular,
+      c.x_cano_smiles,
+      c.x_external_label,
+      c.x_short_label,
+      c.x_name,
+      c.x_stereo
+     FROM ( SELECT NULL::integer AS x_id,
+              NULL::integer AS x_sample_id,
+              NULL::jsonb AS x_data,
+              NULL::timestamp without time zone AS x_created_at,
+              NULL::timestamp without time zone AS x_updated_at,
+              NULL::character varying AS x_inchikey,
+              NULL::character varying AS x_sum_formular,
+              NULL::character varying AS x_cano_smiles,
+              NULL::character varying AS x_external_label,
+              NULL::character varying AS x_short_label,
+              NULL::character varying AS x_name,
+              NULL::jsonb AS x_stereo) c
+    WHERE (c.x_id IS NOT NULL);
   SQL
 end
