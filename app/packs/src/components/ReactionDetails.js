@@ -130,7 +130,7 @@ export default class ReactionDetails extends Component {
       nextReaction.updated_at !== reaction.updated_at ||
       nextReaction.reaction_svg_file !== reaction.reaction_svg_file ||
       !!nextReaction.changed || !!nextReaction.editedSample ||
-      nextActiveTab !== activeTab || nextVisible !== visible
+      nextActiveTab !== activeTab || nextVisible !== visible ||
       nextState.commentScreen !== this.state.commentScreen ||
       nextProps.fullScreen !== this.props.fullScreen ||
       ((nextState.reaction.validates || false)) ||

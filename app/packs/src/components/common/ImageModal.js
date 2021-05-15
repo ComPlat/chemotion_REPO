@@ -13,8 +13,6 @@ const defaultImageStyle = {
 };
 import UserStore from '../stores/UserStore';
 
-const defaultImageStyle = { style: { cursor: 'default' } };
-
 export default class ImageModal extends Component {
   constructor(props) {
     super(props);
