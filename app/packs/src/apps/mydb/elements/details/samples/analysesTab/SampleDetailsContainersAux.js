@@ -95,7 +95,7 @@ const SpectraEditorBtn = ({
           <i className="fa fa-refresh" /> Reprocess
         </MenuItem>
         {
-          hasEditedJcamp ? 
+          hasEditedJcamp ?
             (<MenuItem
               id="regenerate-edited-spectra"
               key="regenerate-edited-spectra"

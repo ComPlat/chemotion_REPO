@@ -180,7 +180,7 @@ module Chemotion
         response = nil
         url = Rails.configuration.spectra.chemspectra.url
         api_endpoint = "#{url}/zip_image"
-        
+
         File.open(path, 'r') do |f|
           response = HTTParty.post(
             api_endpoint,
@@ -227,7 +227,7 @@ module Chemotion
           response = nil
           url = Rails.configuration.spectra.chemspectra.url
           api_endpoint = "#{url}/predict/by_peaks_form"
-          
+
           File.open(molfile.path, 'r') do |file|
             body = build_body(file, layout, peaks, shift, spectrum)
             response = HTTParty.post(
@@ -295,7 +295,7 @@ module Chemotion
           response = nil
           url = Rails.configuration.spectra.chemspectra.url
           api_endpoint = "#{url}/predict/ms"
-          
+
           File.open(molfile.path, 'r') do |f_molfile|
             File.open(spectrum.path, 'r') do |f_spectrum|
               body = build_body(f_molfile, f_spectrum)
@@ -342,7 +342,7 @@ module Chemotion
         response = nil
         url = Rails.configuration.spectra.chemspectra.url
         api_endpoint = "#{url}/zip_jcamp_n_img"
-        
+
         File.open(file_path, 'r') do |file|
           File.open(mol_path, 'r') do |molfile|
             body = build_body(file, molfile)
@@ -378,7 +378,7 @@ module Chemotion
         response = nil
         url = Rails.configuration.spectra.chemspectra.url
         api_endpoint = "#{url}/nmrium"
-        
+
         File.open(path, 'r') do |f|
           response = HTTParty.post(
             api_endpoint,
