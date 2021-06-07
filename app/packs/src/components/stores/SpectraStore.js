@@ -30,6 +30,7 @@ class SpectraStore {
       handleWriteStop: SpectraActions.WriteStop,
       handleSelectIdx: SpectraActions.SelectIdx,
       handleAddOthers: SpectraActions.AddOthers,
+      handleRegenerateEdited: SpectraActions.RegenerateEdited,
     });
   }
 
@@ -105,6 +106,10 @@ class SpectraStore {
   }
 
   handleRegenerate() {
+    // no further process needed.
+  }
+
+  handleRegenerateEdited() {
     // no further process needed.
   }
 

@@ -62,7 +62,7 @@ const qCheckMsg = (sample, container) => {
 
 const SpectraEditorBtn = ({
   sample, spcInfos, hasJcamp, hasChemSpectra,
-  toggleSpectraModal, confirmRegenerate,
+  toggleSpectraModal, confirmRegenerate, confirmRegenerateEdited, hasEditedJcamp
 }) => (
   <OverlayTrigger
     placement="bottom"
@@ -91,6 +91,20 @@ const SpectraEditorBtn = ({
         >
           <i className="fa fa-refresh" /> Reprocess
         </MenuItem>
+        {
+          hasEditedJcamp ? 
+            (<MenuItem
+              id="regenerate-edited-spectra"
+              key="regenerate-edited-spectra"
+              onSelect={(eventKey, event) => {
+                event.stopPropagation();
+                confirmRegenerateEdited(event);
+              }}
+            >
+              <i className="fa fa-refresh" /> Regenerate unoriginal files
+            </MenuItem>) : <span></span>
+        }
+        
       </SplitButton>
     </ButtonGroup>
   ) : (
@@ -114,6 +128,8 @@ SpectraEditorBtn.propTypes = {
   hasChemSpectra: PropTypes.bool,
   toggleSpectraModal: PropTypes.func.isRequired,
   confirmRegenerate: PropTypes.func.isRequired,
+  confirmRegenerateEdited: PropTypes.func.isRequired,
+  hasEditedJcamp: PropTypes.bool,
 };
 
 SpectraEditorBtn.defaultProps = {
@@ -121,6 +137,7 @@ SpectraEditorBtn.defaultProps = {
   spcInfos: [],
   sample: {},
   hasChemSpectra: false,
+  hasEditedJcamp: false
 };
 
 const editModeBtn = (toggleMode, isDisabled) => (
@@ -290,6 +307,18 @@ const headerBtnGroup = (
       SpectraActions.Regenerate(jcampIds, handleSubmit);
     }
   };
+
+  const hasEditedJcamp = jcampIds.edited.length > 0;
+  const confirmRegenerateEdited = (e) => {
+    e.stopPropagation();
+    if (confirm('Regenerate edited spectra?\nWARNING: This process will override the simulated signals')) {
+      LoadingActions.start();
+      SpectraActions.RegenerateEdited(jcampIds, sample.molfile, () => {
+        LoadingActions.stop();
+      });
+    }
+  }
+
   const { hasChemSpectra } = UIStore.getState();
 
   return (
@@ -313,8 +342,10 @@ const headerBtnGroup = (
         hasJcamp={hasJcamp}
         spcInfos={spcInfos}
         hasChemSpectra={hasChemSpectra}
+        hasEditedJcamp={hasEditedJcamp}
         toggleSpectraModal={toggleSpectraModal}
         confirmRegenerate={confirmRegenerate}
+        confirmRegenerateEdited={confirmRegenerateEdited}
       />
       <span
         className="button-right add-to-report"
