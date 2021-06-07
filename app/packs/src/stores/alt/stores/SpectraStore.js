@@ -95,7 +95,7 @@ class SpectraStore {
     if (newArrSpcIdx.length <= 1) {
       newArrSpcIdx = [];
     }
-    
+
     this.setState({
       spcInfos: sortedSpcInfo,
       spcMetas,
@@ -207,7 +207,7 @@ class SpectraStore {
     });
   }
 
-  
+
 }
 
 export default alt.createStore(SpectraStore, 'SpectraStore');
