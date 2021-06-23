@@ -652,3 +652,9 @@ $bs-successcolor: #5cb85c;
     opacity: 0;
   }
 }
+
+.bs_tooltip {
+  .tooltip-inner {
+    max-width: 200px;
+  }
+}
