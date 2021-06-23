@@ -872,8 +872,6 @@ class ClipboardCopyBtn extends Component {
   }
 }
 
-
-
 const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
   let svgPath = `/images/molecules/${molecule.molecule_svg_file}`;
   if (sample_svg_file && sample_svg_file != '') {
@@ -911,7 +909,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
             <div className="repo-registed-compound-desc">
               A physical sample of this molecule was registered to the Molecule Archive of the
               Compound Platform&nbsp;
-              <OverlayTrigger trigger="click" rootClose placement="top" overlay={<Tooltip id="registed_compound_tooltip">{registedCompoundTooltip}</Tooltip>}>
+              <OverlayTrigger trigger="click" rootClose placement="top" overlay={<Tooltip id="registed_compound_tooltip" className="left_tooltip bs_tooltip">{registedCompoundTooltip}</Tooltip>}>
                 <i className="fa fa-info-circle" aria-hidden="true" />
               </OverlayTrigger>
             </div> : null

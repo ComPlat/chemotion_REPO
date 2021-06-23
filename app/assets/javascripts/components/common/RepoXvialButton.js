@@ -8,8 +8,8 @@ import NotificationActions from '../actions/NotificationActions';
 const registedCompoundTooltip = (
   <div className="repo-xvial-info">
     For availability please contact the Compound Platform team (<span className="env"><i className="fa fa-envelope-o" aria-hidden="true" /></span>). An explanation can be accessed via our Youtube channel&nbsp;
-    <a rel="noopener noreferrer" target="_blank" href="https://www.youtube.com/channel/UCWBwk4ZSXwmDzFo_ZieBcAw?"><i className="fa fa-youtube-play youtube" /></a>&nbsp;
-      or on our how-to pages
+    <a rel="noopener noreferrer" target="_blank" href="https://www.youtube.com/channel/UCWBwk4ZSXwmDzFo_ZieBcAw?"><i className="fa fa-youtube-play youtube" /></a>
+    &nbsp;or on our how-to pages
     <a rel="noopener noreferrer" target="_blank" href="https://www.chemotion-repository.net/home/howto/cf3ede44-b09a-400a-b0d4-b067735e4262"><img alt="chemotion_first" src="/favicon.ico" className="pubchem-logo" /></a>
   </div>
 );
@@ -146,7 +146,7 @@ export default class RepoXvialButton extends React.Component {
       </OverlayTrigger>
     ) : null;
     const info = requestLink ? (
-      <OverlayTrigger trigger="click" rootClose placement="top" overlay={<Tooltip id="registed_compound_tooltip">{registedCompoundTooltip}</Tooltip>}>
+      <OverlayTrigger trigger="click" rootClose placement="top" overlay={<Tooltip id="registed_compound_tooltip" className="left_tooltip bs_tooltip">{registedCompoundTooltip}</Tooltip>}>
         <a rel="noopener noreferrer"><i className="fa fa-info-circle" aria-hidden="true" /></a>
       </OverlayTrigger>
     ) : null;
