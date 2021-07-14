@@ -21,6 +21,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import ElementsTableGroupedEntries from 'src/apps/mydb/elements/list/ElementsTableGroupedEntries';
 import Select from 'react-select';
 import PropTypes from 'prop-types';
+import { stopEvent } from './utils/DomHelper';
 
 export default class ElementsTable extends React.Component {
   constructor(props) {
@@ -77,13 +78,23 @@ export default class ElementsTable extends React.Component {
     }
   }
 
-  handleNumberOfResultsChange(event) {
+  handleNumberOfResultsChange(event, query=false) {
     const { value } = event.target;
     const { type } = this.props;
 
     if (parseInt(value, 10) > 0) {
       UIActions.changeNumberOfResultsShown(value);
-      ElementActions.refreshElements(type);
+      if (query === true) ElementActions.refreshElements(type);
+    }
+  }
+
+  handleKeyDown(event) {
+    switch (event.keyCode) {
+      case 13: // Enter
+        stopEvent(event);
+        break;
+      default:
+        break;
     }
   }
 
@@ -293,8 +304,10 @@ export default class ElementsTable extends React.Component {
               style={
                 { textAlign: 'center', zIndex: 0 }
               }
-              onChange={(event) => this.handleNumberOfResultsChange(event)}
-              value={ui.number_of_results ? ui.number_of_results : 0}
+              onChange={event => this.handleNumberOfResultsChange(event, false)}
+              onBlur={event => this.handleNumberOfResultsChange(event, true)}
+              onKeyDown={event => this.handleKeyDown(event)}
+              value={ui.number_of_results ? ui.number_of_results : 0} />
             />
           </InputGroup>
         </FormGroup>

@@ -111,6 +111,7 @@ export default class RepoSampleDetails extends Component {
         sid: s.sid,
         short_label: s.short_label || '',
         xvial: s.xvial,
+        embargo: s.embargo,
         pub_info: s.pub_info,
         ana_infos: s.ana_infos,
         affiliation_ids: s.affiliation_ids || tagData.affiliation_ids,
