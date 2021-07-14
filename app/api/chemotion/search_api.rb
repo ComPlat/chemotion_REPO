@@ -291,16 +291,12 @@ module Chemotion
 
         ids = Kaminari.paginate_array(reactions).page(page).per(page_size)
         serialized_reactions = Reaction.includes(
-          :literatures, :tag,
+          :tag,
           reactions_starting_material_samples: :sample,
-          reactions_solvent_samples: :sample,
-          reactions_reactant_samples: :sample,
-          reactions_product_samples: :sample,
-          container: :attachments
+          reactions_product_samples: :sample
         ).find(ids).map {|s|
           ReactionSerializer.new(s).serializable_hash.deep_symbolize_keys
         }
-
         ids = Kaminari.paginate_array(wellplates).page(page).per(page_size)
         klass = "WellplateListSerializer::Level#{@dl_wp || 0}".constantize
         serialized_wellplates = Wellplate.includes(
@@ -732,7 +728,7 @@ module Chemotion
 
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless col_id.present?
 
-          scope = Sample.by_collection_id(col_id)
+          scope = Sample.by_collection_id(col_id).where.not(short_label: %w[solvent reactant])
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless scope
 
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless ElementsPolicy.new(current_user, scope).read?

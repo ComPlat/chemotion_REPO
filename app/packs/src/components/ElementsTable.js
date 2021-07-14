@@ -9,6 +9,7 @@ import deepEqual from 'deep-equal';
 import UIStore from './stores/UIStore';
 import UIActions from './actions/UIActions';
 import ElementActions from './actions/ElementActions';
+import { stopEvent } from './utils/DomHelper';
 
 import ElementStore from './stores/ElementStore';
 import ElementAllCheckbox from './ElementAllCheckbox';
@@ -187,13 +188,23 @@ export default class ElementsTable extends React.Component {
     )
   }
 
-  handleNumberOfResultsChange(event) {
+  handleNumberOfResultsChange(event, query=false) {
     const { value } = event.target;
     const { type } = this.props;
     console.log(type);
     if (parseInt(value, 10) > 0) {
       UIActions.changeNumberOfResultsShown(value);
-      ElementActions.refreshElements(type);
+      if (query === true) ElementActions.refreshElements(type);
+    }
+  }
+
+  handleKeyDown(event) {
+    switch (event.keyCode) {
+      case 13: // Enter
+        stopEvent(event);
+        break;
+      default:
+        break;
     }
   }
 
@@ -205,8 +216,10 @@ export default class ElementsTable extends React.Component {
           <InputGroup>
             <InputGroup.Addon>Show</InputGroup.Addon>
             <FormControl type="text" style={{textAlign: 'center', zIndex: 0}}
-               onChange={event => this.handleNumberOfResultsChange(event)}
-               value={ui.number_of_results ? ui.number_of_results : 0} />
+              onChange={event => this.handleNumberOfResultsChange(event, false)}
+              onBlur={event => this.handleNumberOfResultsChange(event, true)}
+              onKeyDown={event => this.handleKeyDown(event)}
+              value={ui.number_of_results ? ui.number_of_results : 0} />
           </InputGroup>
         </FormGroup>
       </Form>
