@@ -678,7 +678,7 @@ module Chemotion
 
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless col_id.present?
 
-          scope = Sample.by_collection_id(col_id)
+          scope = Sample.by_collection_id(col_id).where.not(short_label: %w[solvent reactant])
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless scope
 
           return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless ElementsPolicy.new(current_user, scope).read?
