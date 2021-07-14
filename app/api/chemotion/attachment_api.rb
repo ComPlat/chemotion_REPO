@@ -158,6 +158,13 @@ module Chemotion
                           (ElementPolicy.new(current_user, element).read? &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
             end
+
+            if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
+              element = Segment.find(@attachment.attachable_id)&.element
+              can_dwnld = @attachment.created_for == current_user.id ||
+                          (ElementPolicy.new(current_user, element).read? &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
+            end
           end
           error!('401 Unauthorized', 401) unless can_dwnld
         end
@@ -537,6 +544,35 @@ module Chemotion
           att.rewrite_file_data!
           { status: true }
 
+        end
+      end
+
+      desc 'Regenerate edited spectra'
+      params do
+        requires :edited, type: Array[Integer]
+        optional :molfile, type: String
+      end
+      post 'regenerate_edited_spectrum' do
+        pm = to_rails_snake_case(params)
+        pm[:edited].each do |g_id|
+          att = Attachment.find(g_id)
+          next unless att
+          can_edit = writable?(att)
+          if can_edit
+            abs_path = att.abs_path
+            molfile = pm[:molfile]
+            result =  Tempfile.create('molfile') do |t_molfile|
+              t_molfile.write(molfile)
+              t_molfile.rewind
+              Chemotion::Jcamp::RegenerateJcamp.spectrum(
+                abs_path, t_molfile.path
+              )
+            end
+
+            att.file_data = result
+            att.rewrite_file_data!
+            { status: true }
+          end
         end
       end
 

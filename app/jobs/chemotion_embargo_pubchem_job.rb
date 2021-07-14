@@ -83,6 +83,26 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
       PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
       raise e
     end
+
+    begin
+      pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
+      if pub_col.present? && pub_col.state == 'accepted'
+        pub_col.transition_from_start_to_metadata_uploading!
+        pub_col.transition_from_metadata_uploading_to_uploaded!
+        pub_col.transition_from_metadata_uploaded_to_doi_registering!
+        pub_col.transition_from_doi_registering_to_registered!
+        pub_col.transition_from_doi_registered_to_completing!
+        pub_col.transition_from_completing_to_completed!
+      end
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name} send collection DOI error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+      TXT
+      raise e
+    end
+
   end
 
   def remove_publish_pending

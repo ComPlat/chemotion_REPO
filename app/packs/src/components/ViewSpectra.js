@@ -190,14 +190,13 @@ class ViewSpectra extends React.Component {
     const sis = spcInfos.filter(x => x.idx === spcIdx);
     const si = sis.length > 0 ? sis[0] : spcInfos[0];
 
-    const opsTmp = sample.analysesContainers().map((ae) => {
+    const ops = sample.analysesContainers().map((ae) => {
       if (ae.id !== si.idAe) return null;
       return ae.children.map((ai) => {
         if (ai.id !== si.idAi) return null;
         return ai.extended_metadata.content.ops; // eslint-disable-line
       }).filter(r => r !== null);
-    }).filter(r => r !== null);
-    const ops = opsTmp && opsTmp[0] && opsTmp[0][0];
+    }).filter(r => r !== null)[0][0];
     return ops;
   }
 
@@ -663,13 +662,6 @@ class ViewSpectra extends React.Component {
             options={dsOptions}
             value={si.idDt}
             clearable={false}
-            style={{ width: 200 }}
-            onChange={e => this.onDSSelectChange(e)}
-          />
-          <TreeSelect
-            treeData={options}
-            value={isShowMultiSelect ? arrSpcIdx : idx}
-            treeCheckable={isShowMultiSelect}
             style={{ width: 500 }}
             maxTagCount={1}
             onChange={onSelectChange} />
@@ -705,7 +697,7 @@ class ViewSpectra extends React.Component {
   render() {
     const { showModal } = this.state;
 
-    const { jcamp, predictions, idx, listMuliSpcs, listEntityFiles } = this.getContent();
+    const { jcamp, predictions, idx } = this.getContent();
     const dialogClassName = 'spectra-editor-dialog';
     // WORKAROUND: react-stickydiv duplicates elements.
     const specElements = Array.from(document.getElementsByClassName(dialogClassName));

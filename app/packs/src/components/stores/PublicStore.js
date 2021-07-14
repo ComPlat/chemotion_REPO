@@ -71,6 +71,7 @@ class PublicStore {
     } else if (this.guestPage === 'review') {
       Aviator.navigate('/review', { silent: true });
     } else {
+      console.log('else..........');
       Aviator.navigate('/publications', { silent: true });
     }
   }
@@ -197,6 +198,8 @@ class PublicStore {
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
 
+
+
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });
   }
@@ -274,6 +277,10 @@ class PublicStore {
     });
   }
 
+
+  handleUnitsSystem(result) {
+    this.setState({ unitsSystem: result });
+  }
 
   handleUnitsSystem(result) {
     this.setState({ unitsSystem: result });

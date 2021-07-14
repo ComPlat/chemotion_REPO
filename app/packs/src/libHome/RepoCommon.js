@@ -115,16 +115,6 @@ ChemotionId.propTypes = {
 const SchemeWord = () => <span className="reaction-scheme-word">(scheme)</span>;
 
 
-const AuthorTitle = (authorIds) => {
-  if (authorIds && authorIds.length > 1) {
-    return 'Authors:';
-  }
-  if (authorIds && authorIds.length === 1) {
-    return 'Author:';
-  }
-  return '';
-};
-
 const NewsroomTemplate = {
   title: '', content: {}, article: []
 };
@@ -172,17 +162,17 @@ const LicenseLegalCode = (cp) => {
 
 const nmrMsg = (sample, container) => {
   if (sample.molecule && container.extended_metadata &&
-    (typeof container.extended_metadata.kind === 'undefined' ||
-      (container.extended_metadata.kind.split('|')[0].trim() !== chmoConversions.nmr_1h.termId && container.extended_metadata.kind.split('|')[0].trim() !== chmoConversions.nmr_13c.termId)
+    (typeof container.extended_metadata?.kind === 'undefined' ||
+      (container.extended_metadata?.kind?.split('|')[0].trim() !== chmoConversions.nmr_1h?.termId && container.extended_metadata.kind?.split('|')[0].trim() !== chmoConversions.nmr_13c?.termId)
     )) {
     return '';
   }
   const nmrStr = container.extended_metadata && contentToText(container.extended_metadata.content);
 
-  if (container.extended_metadata.kind.split('|')[0].trim() === chmoConversions.nmr_1h.termId) {
+  if (container.extended_metadata.kind?.split('|')[0].trim() === chmoConversions.nmr_1h?.termId) {
     const msg = hNmrCheckMsg(sample.molecule.sum_formular, nmrStr);
     return msg === '' ? (<div style={{ display: 'inline', color: 'green' }}>&nbsp;<i className="fa fa-check" /></div>) : (<div style={{ display: 'inline', color: 'red' }}>&nbsp;(<sup>1</sup>H {msg})</div>);
-  } else if (container.extended_metadata.kind.split('|')[0].trim() === chmoConversions.nmr_13c.termId) {
+  } else if (container.extended_metadata?.kind?.split('|')[0].trim() === chmoConversions.nmr_13c?.termId) {
     const msg = cNmrCheckMsg(sample.molecule.sum_formular, nmrStr);
     return msg === '' ? (<div style={{ display: 'inline', color: 'green' }}>&nbsp;<i className="fa fa-check" /></div>) : (<div style={{ display: 'inline', color: 'red' }}>&nbsp;(<sup>13</sup>C {msg})</div>);
   }
@@ -196,9 +186,9 @@ const isFileTypePass = (analysisType, attachments) => {
   let files = [];
   switch (analysisType) {
     case '1H NMR':
-    case chmoConversions.nmr_1h.termId:
+    case chmoConversions.nmr_1h?.termId:
     case '13C NMR':
-    case chmoConversions.nmr_13c.termId:
+    case chmoConversions.nmr_13c?.termId:
     case '15N NMR':
     case 'NMR':
     case 'IR':
@@ -239,10 +229,10 @@ const isDatasetPass = (analysis) => {
 const isNmrPass = (analysis, sample) => {
   const nmrStr = analysis.extended_metadata && contentToText(analysis.extended_metadata.content);
   const nmrType = analysis.extended_metadata && (analysis.extended_metadata.kind || '').split('|').shift().trim();
-  if (nmrType !== '1H NMR' && nmrType !== '13C NMR' && nmrType !== chmoConversions.nmr_1h.termId && nmrType !== chmoConversions.nmr_13c.termId) return true;
-  if (nmrType === '1H NMR' || nmrType === chmoConversions.nmr_1h.termId) {
+  if (nmrType !== '1H NMR' && nmrType !== '13C NMR' && nmrType !== chmoConversions.nmr_1h?.termId && nmrType !== chmoConversions.nmr_13c?.termId) return true;
+  if (nmrType === '1H NMR' || nmrType === chmoConversions.nmr_1h?.termId) {
     return hNmrCheckMsg(sample.molecule.sum_formular, nmrStr) === '';
-  } else if (nmrType === '13C NMR' || nmrType === chmoConversions.nmr_13c.termId) {
+  } else if (nmrType === '13C NMR' || nmrType === chmoConversions.nmr_13c?.termId) {
     return cNmrCheckMsg(sample.molecule.sum_formular, nmrStr) === '';
   }
   return true;
@@ -601,16 +591,6 @@ const BackSoonPage = () => {
       <h4>&mdash; ComPlat Team</h4>
     </div>
   );
-};
-
-const ShowIndicator = (show) => {
-  return show ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
-};
-
-const labelStyle = {
-  display: 'inline-block',
-  marginLeft: '2px',
-  marginRight: '2px'
 };
 
 const IconToMyDB = ({
@@ -1057,6 +1037,14 @@ const RenderAnalysisHeader = (props) => {
           <RepoSegment segments={element.segments} />
         </Col>
       </Row>
+      <Row>
+        <Col sm={12} md={12} lg={12}>
+          <h5><b>Physical Properties:</b></h5>
+          <div>Melting point: {getFormattedRange(element.melting_point)}</div>
+          <div>Boiling point: {getFormattedRange(element.boiling_point)}</div>
+        </Col>
+      </Row>
+      < br/>
     </div>
   );
 };
@@ -2335,7 +2323,6 @@ export {
   AnalysesTypeJoinLabel,
   AffiliationList,
   AuthorList,
-  AuthorTitle,
   BackSoonPage,
   CalcDuration,
   ChemotionId,
@@ -2379,7 +2366,6 @@ export {
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
-  ShowIndicator,
   SvgPath,
   ToggleIndicator,
   CollectionDesc

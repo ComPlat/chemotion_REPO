@@ -32,6 +32,28 @@ const Doi = (props) => {
   );
 };
 
+const Doi = (props) => {
+  const {
+    type, id, doi
+  } = props;
+
+  const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
+  const data = (
+    <span>
+      <Button key={`${type}-jumbtn-${id}`} bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doi}`; }}>
+        {doi}
+      </Button>
+      <DownloadMetadataBtn type={type} id={id} />
+    </span>
+  );
+  return (
+    <h5>
+      <b>{title} </b>
+      {data}
+    </h5>
+  );
+};
+
 const MetadataModal = ({ showModal, label, metadata, onCloseFn, elementId, elementType }) => {
   const contentUrl = `/api/v1/public/metadata/download?type=${elementType.toLowerCase()}&id=${elementId}`;
   return (

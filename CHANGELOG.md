@@ -1,4 +1,5 @@
-# Chemotion_ELN Changelog
+
+# Chemotion_Repository Changelog
 
 ## [v1.8.0]
 > (2023-10-24)
@@ -494,72 +495,32 @@
 ## [v1.0.2]
 > 2021-10-19: https://github.com/ComPlat/chemotion_ELN/releases/tag/v1.0.2
 
-* Fixes
-  * DB migration: fix typo that could prevent updating from 0.9.1
-  * structure editor: chemdrawjs-20 support
-  * gate transfer: attachment checksum bckwrd compatibility
+## [1.1.0]
+> 2023-06-12
 
+* Enhancements:
 
-## [v1.0.1]
-> 2021-10-11: https://github.com/ComPlat/chemotion_ELN/releases/tag/v1.0.1
+  * Integration of Molecule Archive to enhance data visibility and management capabilities.
+  * Support for assigning Collection DOIs, enabling persistent identification of collections.
+  * Shibboleth support for streamlined authentication and authorization processes.
+  * JSON-LD format support for enriched metadata representation.
+  * Open API for convenient downloading of metadata in JSON-LD format.
+  * Addition of group leader review functionality, facilitating improved collaboration and oversight.
+  * Support for publishing MOF reactions.
+  * Introduction of the Converter service, enabling format conversion for data.
+  * Introduction of the Ketcher backend service.
+  * Enriched metadata support for various types of published samples.
+  * Redesigned sample representation on the landing page for improved usability.
+  * Support for ORCID authentication, providing seamless user identification.
+  * Upgraded Chemspectra function.
+  * Styling improvements to enhance the user experience.
 
-* Improvements
-  * LCSS display info only from ECHA source
-  * QuillEditor: added special characters menu for ResearchPlan
+* Bug Fixes:
 
-* Fixes
-  * postinstall rewrite of some imports in citation.js to fix wbpk assets compilation
-  * Reaction SVG refresh  after editing or adding samples
-  * Fix Cron Jobs for LCSS and Pubchem Info
-  * dev: fix reaction seeds
-
-
-## [v1.0.0]
-> 2021-09-22: https://github.com/ComPlat/chemotion_ELN/releases/tag/v1.0.0
-
-* Improvements
-  * Resize private note field and remove save button [Private note rework #534](https://github.com/ComPlat/chemotion_ELN/issues/534)
-  * Add hover over information to generic elements' symbols [add hover over information to generic elements' symbols #524](https://github.com/ComPlat/chemotion_ELN/issues/524)
-  * Structure editor configuration [documentation](https://www.chemotion.net/chemotionsaurus/docs/eln/settings#structure-editor)
-
-* Fixes
-  * Adapt install_development.sh to Rails 5 environment [adapt install_development.sh to Rails 5 environment #530](https://github.com/ComPlat/chemotion_ELN/pull/530)
-  * Tab headers in navigation items are italic [Tab headers in navigation items are italic #500](https://github.com/ComPlat/chemotion_ELN/issues/500)
-  * Reaction svg shrinking or dedoubling
-  * Reaction svg size become smaller and the svg is overlapping
-  * Prevent hidden cell from being added to visible layout in tabslayout
-  * QC curation tab is not working
-
-
-## [v1.0.0-beta]
-> 2021-08-26
-
-* Updates
-  * upd to rails from 4.2 to 5.2
-  * now using yarn instead of npm, and webpack instead of browserify
-
-* New features and improvements
-  * Private notes for samples
-  * Generic elements/segments/datasets
-    - Element details tab layout: segment tab to show if data present [Element details tab layout: segment tab to show if data present #506](https://github.com/ComPlat/chemotion_ELN/issues/506)
-    - In user view, enable the sorting of lines of a table [generic elements, segments and analyses #480](https://github.com/ComPlat/chemotion_ELN/issues/480)
-    - Add samples to generic element in table #461 [Add samples to generic element in table #461](https://github.com/ComPlat/chemotion_ELN/issues/461)
-    - Generic element/segment units (Joule) [generic element/segment units (Joule) #457](https://github.com/ComPlat/chemotion_ELN/issues/457)
-    - Administrator can export/import the generic template [generic template upload and download #444](https://github.com/ComPlat/chemotion_ELN/issues/444)
-    - Revision control, track changes of the template and user inputs [generic revision feature #443](https://github.com/ComPlat/chemotion_ELN/issues/443)
-    - Drag and drop sample/molecule to the table [ELN Adminstration/generic elements: Create a table for drag and drop Sample/Molecule #437](https://github.com/ComPlat/chemotion_ELN/issues/437)
-    - new units for generic sections [new units for generic sections #436](https://github.com/ComPlat/chemotion_ELN/issues/436)
-    - new units for generic sections [new units for generic sections #434](https://github.com/ComPlat/chemotion_ELN/issues/434)
-    - Add new field type: Upload in generic element/segment #400 [Upload option in generic element/segment #400](https://github.com/ComPlat/chemotion_ELN/issues/400)
-  * Send welcome email for new users [Customized welcome email to new user #483](https://github.com/ComPlat/chemotion_ELN/issues/483)
-  * Instance customizable home page as MD file [Display customized welcome message at home page #470](https://github.com/ComPlat/chemotion_ELN/issues/470)
-  * Decoupled sample
-    - Remove name in scheme for decoupled sample [remove name in scheme for decoupled sample #465](https://github.com/ComPlat/chemotion_ELN/issues/465)
-    - Add "undefined structure" as default value for decoupled samples [Add "undefined structure" as default value for decoupled samples #463](https://github.com/ComPlat/chemotion_ELN/issues/463)
-    - Provide table function in generic element/segment [table function #414](https://github.com/ComPlat/chemotion_ELN/issues/414)
-  * Revamp of analytics inbox
-  * Report template management
-  * Device metadata
+  * Addressed an issue with the exporting function when data includes hyperlinks.
+  * Resolved a QC issue related to the usage of 'mass spectrometry' and 'IR'.
+  * Corrected the nmrium aasm_state to ensure accurate representation.
+  * Fixed an issue where the embargo job would get stuck if the mail server did not respond.
 
 * Fixes
   * rename chemotion.net to chemotion-repository.net in the Collection Bar [rename chemotion.net to chemotion-repository.net in the Collection Bar #515](https://github.com/ComPlat/chemotion_ELN/issues/515)

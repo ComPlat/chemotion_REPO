@@ -290,7 +290,6 @@ export default class RepoReview extends Component {
         console.log(errorMessage);
       });
   }
-
   renderMenuItems(t, elements) {
     const menu = elements.map(element => (
       <MenuItem key={element} onSelect={() => this.handleElementSelection(t, element)}>

@@ -191,7 +191,6 @@ export default class ElementsTable extends React.Component {
   handleNumberOfResultsChange(event, query=false) {
     const { value } = event.target;
     const { type } = this.props;
-    console.log(type);
     if (parseInt(value, 10) > 0) {
       UIActions.changeNumberOfResultsShown(value);
       if (query === true) ElementActions.refreshElements(type);

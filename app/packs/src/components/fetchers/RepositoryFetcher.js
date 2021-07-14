@@ -179,7 +179,6 @@ export default class RepositoryFetcher {
   }
 
 
-
   static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
     const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';
     const paramSearchValue = (searchValue && searchValue !== '') ? `&search_value=${searchValue}` : '';
@@ -329,7 +328,6 @@ export default class RepositoryFetcher {
         console.log(errorMessage);
       });
   }
-
   static saveRepoAuthors(params = {}) {
     return fetch('/api/v1/repository/save_repo_authors', {
       credentials: 'same-origin',

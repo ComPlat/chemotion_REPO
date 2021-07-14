@@ -217,7 +217,7 @@ class PublicationMailer < ActionMailer::Base
     #approved_notify
     mail(
       to: @creator.email,
-      bcc: reviewers,
+      bcc: group_leaders,
       subject: "Chemotion Repository: Embargo collection: #{@embargo_collection.label} released",
     ) do |format|
       format.html

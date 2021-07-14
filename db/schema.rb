@@ -545,31 +545,10 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
     t.index ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id"
   end
 
-  add_index "element_klasses_revisions", ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id", using: :btree
-  create_table "dois", force: :cascade do |t|
-    t.integer  "molecule_id"
-    t.string   "inchikey"
-    t.integer  "molecule_count"
-    t.integer  "analysis_id"
-    t.string   "analysis_type"
-    t.integer  "analysis_count"
-    t.jsonb    "metadata",       default: {}
-    t.boolean  "minted",         default: false
-    t.datetime "minted_at"
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
-    t.integer  "doiable_id"
-    t.string   "doiable_type"
-    t.string   "suffix"
-  end
-
-  add_index "dois", ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true, using: :btree
-  add_index "dois", ["suffix"], name: "index_dois_on_suffix", unique: true, using: :btree
-
-  create_table "element_tags", force: :cascade do |t|
-    t.string   "taggable_type"
-    t.integer  "taggable_id"
-    t.jsonb    "taggable_data"
+  create_table "element_tags", id: :serial, force: :cascade do |t|
+    t.string "taggable_type"
+    t.integer "taggable_id"
+    t.jsonb "taggable_data"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["taggable_id"], name: "index_element_tags_on_taggable_id"
@@ -1857,9 +1836,39 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
   SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
-      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE PROCEDURE update_users_matrix()
+      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
+  SQL
+  create_trigger :set_segment_klasses_identifier, sql_definition: <<-SQL
+      CREATE TRIGGER set_segment_klasses_identifier AFTER INSERT ON public.segment_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_segment_klasses_identifier()
   SQL
 
+  create_view "compound_open_data_locals", sql_definition: <<-SQL
+      SELECT c.x_id,
+      c.x_sample_id,
+      c.x_data,
+      c.x_created_at,
+      c.x_updated_at,
+      c.x_inchikey,
+      c.x_sum_formular,
+      c.x_cano_smiles,
+      c.x_external_label,
+      c.x_short_label,
+      c.x_name,
+      c.x_stereo
+     FROM ( SELECT NULL::integer AS x_id,
+              NULL::integer AS x_sample_id,
+              NULL::jsonb AS x_data,
+              NULL::timestamp without time zone AS x_created_at,
+              NULL::timestamp without time zone AS x_updated_at,
+              NULL::character varying AS x_inchikey,
+              NULL::character varying AS x_sum_formular,
+              NULL::character varying AS x_cano_smiles,
+              NULL::character varying AS x_external_label,
+              NULL::character varying AS x_short_label,
+              NULL::character varying AS x_name,
+              NULL::jsonb AS x_stereo) c
+    WHERE (c.x_id IS NOT NULL);
+  SQL
   create_view "literal_groups", sql_definition: <<-SQL
       SELECT lits.element_type,
       lits.element_id,
@@ -2021,32 +2030,5 @@ ActiveRecord::Schema.define(version: 2023_08_29_100000) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
-  SQL
-  create_view "compound_open_data_locals", sql_definition: <<-SQL
-      SELECT c.x_id,
-      c.x_sample_id,
-      c.x_data,
-      c.x_created_at,
-      c.x_updated_at,
-      c.x_inchikey,
-      c.x_sum_formular,
-      c.x_cano_smiles,
-      c.x_external_label,
-      c.x_short_label,
-      c.x_name,
-      c.x_stereo
-     FROM ( SELECT NULL::integer AS x_id,
-              NULL::integer AS x_sample_id,
-              NULL::jsonb AS x_data,
-              NULL::timestamp without time zone AS x_created_at,
-              NULL::timestamp without time zone AS x_updated_at,
-              NULL::character varying AS x_inchikey,
-              NULL::character varying AS x_sum_formular,
-              NULL::character varying AS x_cano_smiles,
-              NULL::character varying AS x_external_label,
-              NULL::character varying AS x_short_label,
-              NULL::character varying AS x_name,
-              NULL::jsonb AS x_stereo) c
-    WHERE (c.x_id IS NOT NULL);
   SQL
 end
