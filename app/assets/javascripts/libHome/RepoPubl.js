@@ -503,6 +503,10 @@ export default class RepoPubl extends Component {
         {
           value: 'Ontologies',
           label: 'by analysis type'
+        },
+        {
+          value: 'Embargo',
+          label: 'by Embargo Bundle#'
         }
       ];
       return (

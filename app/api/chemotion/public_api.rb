@@ -1605,7 +1605,7 @@ module Chemotion
           optional :pages, type: Integer, desc: "pages"
           optional :per_page, type: Integer, desc: "per page"
           optional :adv_flag, type: Boolean, desc: 'advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
@@ -1624,6 +1624,12 @@ module Chemotion
               adv_search = <<~SQL
                 INNER JOIN publication_ontologies pub on pub.element_id = samples.id and pub.element_type = 'Sample'
                 and term_id in ('#{params[:adv_val].join("','")}')
+              SQL
+            when 'Embargo'
+              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' css.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              adv_search = <<~SQL
+                INNER JOIN collections_samples css on css.sample_id = samples.id and css.deleted_at ISNULL
+                and #{param_sql}
               SQL
             end
           end
@@ -1683,7 +1689,7 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'is it advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :scheme_only, type: Boolean, desc: 'is it a scheme-only reaction?', default: false
         end
@@ -1698,10 +1704,15 @@ module Chemotion
                 and author_id in ('#{params[:adv_val].join("','")}')
               SQL
             when 'Ontologies'
-              str_term_id = params[:adv_val].split(',').map { |val| val}.to_s
               adv_search = <<~SQL
                 INNER JOIN publication_ontologies pub on pub.element_id = reactions.id and pub.element_type = 'Reaction'
                 and term_id in ('#{params[:adv_val].join("','")}')
+              SQL
+            when 'Embargo'
+              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' cr.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              adv_search = <<~SQL
+                INNER JOIN collections_reactions cr on cr.reaction_id = reactions.id and cr.deleted_at is null
+                and #{param_sql}
               SQL
             else
               adv_search = ' '
@@ -1881,7 +1892,7 @@ module Chemotion
         params do
           requires :id, type: Integer, desc: "Molecule id"
           optional :adv_flag, type: Boolean, desc: "advanced search flag"
-          optional :adv_type, type: String, desc: "advanced search type", allow_blank: true, values: %w[Authors Ontologies]
+          optional :adv_type, type: String, desc: "advanced search type", allow_blank: true, values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
         end
         get do
@@ -1948,8 +1959,12 @@ module Chemotion
               next if info.empty?
               ana_infos[pp.element_id] = info['comment']
             end
+            em_sql = <<~SQL
+              inner join collections_samples cs on collections.id = cs.collection_id and cs.sample_id = #{s.id}
+            SQL
+            embargo = Collection.joins(em_sql).where("ancestry in (select c.id::text from collections c where c.label = 'Published Elements')")&.first&.label
             tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label,
-              sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info)
+              sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info)
 
           end
           x = published_samples.select { |s| s[:xvial].present? }
