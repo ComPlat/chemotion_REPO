@@ -64,7 +64,7 @@ Rails.application.routes.draw do
     get 'generic_datasets_admin', to: 'pages#gda'
   end
 
-  get 'home/*any', to: 'pages#home'
+  # get 'home/*any', to: 'pages#home'
   get 'home', to: 'pages#home'
 
   # Standalone page for ChemScanner

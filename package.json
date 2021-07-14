@@ -75,6 +75,7 @@
     "react-color": "^2.17.3",
     "react-contextmenu": "^2.14.0",
     "react-cookie": "^0.4.8",
+    "react-countup": "^6.3.2",
     "react-datepicker": "~1.4.1",
     "react-datetime-picker": "^4.1.1",
     "react-dnd": "^14.0.3",

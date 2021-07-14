@@ -28,7 +28,6 @@ export default class RepoReviewDetails extends Component {
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
-
   switchTypeRender() {
     const { currentElement, elementType } = this.state;
     if (typeof (currentElement) === 'undefined' || !currentElement) {

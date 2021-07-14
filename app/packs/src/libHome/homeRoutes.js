@@ -64,6 +64,15 @@ const routes = {
     },
     '/': 'show'
   },
+  '/moleculeArchive': {
+    target: {
+      show: function(e) {
+        PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE });
+        PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.MOLECULE_ARCHIVE}`)
+      },
+    },
+    '/': 'show'
+  },
   '/review': {
     target: {
       show: function(e) {

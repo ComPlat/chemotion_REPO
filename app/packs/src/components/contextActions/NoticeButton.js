@@ -39,7 +39,6 @@ const handleNotification = (nots, act, needCallback = true) => {
               const params = { ids: [] };
               params.ids[0] = n.id;
               MessagesFetcher.acknowledgedMessage(params);
-              // .then((result) => { console.log(JSON.stringify(result)); });
             }
           }
         }
@@ -51,9 +50,11 @@ const handleNotification = (nots, act, needCallback = true) => {
           CollectionActions.fetchRemoteCollectionRoots();
           break;
         case 'CollectionActions.fetchSyncInCollectionRoots':
+          CollectionActions.fetchSyncInCollectionRoots();
+          break;
         case 'Repository_ReviewRequest':
         case 'Repository_Published':
-          CollectionActions.fetchSyncInCollectionRoots();
+          // CollectionActions.fetchSyncInCollectionRoots();
           break;
         case 'Repository_ReviewRequest':
         case 'Repository_Published':

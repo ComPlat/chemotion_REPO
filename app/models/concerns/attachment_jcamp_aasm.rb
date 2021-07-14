@@ -213,6 +213,10 @@ module AttachmentJcampProcess
     generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
   end
 
+  def generate_nmrium_att(nmrium_tmp, addon, to_edit = false)
+    generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
+  end
+
   def build_params(params = {})
     _, extname = extension_parts
     params[:mass] = 0.0
@@ -314,7 +318,7 @@ module AttachmentJcampProcess
     end
 
     set_backup
-    delete_tmps(tmp_files_to_be_deleted)
+    delete_tmps([tmp_jcamp, tmp_img])
     delete_related_imgs(img_att)
     delete_related_edit_peak(jcamp_att)
     jcamp_att

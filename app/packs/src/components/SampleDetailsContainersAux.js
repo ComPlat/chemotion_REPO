@@ -25,8 +25,9 @@ import MatrixCheck from 'src/components/common/MatrixCheck';
 import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 
-import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
+
+import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
 
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>

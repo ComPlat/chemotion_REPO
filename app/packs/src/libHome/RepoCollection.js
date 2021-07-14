@@ -87,10 +87,12 @@ export default class RepoCollection extends Component {
   }
 
   componentDidMount() {
+    EmbargoStore.listen(this.onChange);
     PublicStore.listen(this.onChange);
   }
 
   componentWillUnmount() {
+    EmbargoStore.unlisten(this.onChange);
     PublicStore.unlisten(this.onChange);
   }
 

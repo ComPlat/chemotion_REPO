@@ -504,12 +504,58 @@ class User < ApplicationRecord
       .where("collections.label = 'Reviewing'").first
   end
 
+  def sync_reviewing_collection
+    su_id = User.chemotion_user.id
+    SyncCollectionsUser.joins(
+      "INNER JOIN collections ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Reviewing'").first
+  end
+
+
+  def sync_element_to_review_collection
+    su_id = User.chemotion_user.id
+    SyncCollectionsUser.joins(
+      "INNER JOIN collections ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Element To Review'").first
+  end
+
+  def find_or_create_grouplead_collection
+    chemotion_user = User.chemotion_user
+    sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
+    sys_review_collection = Collection.find_or_create_by(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}", shared_by_id: id)
+
+    col_attributes = {
+      user: self,
+      shared_by_id: chemotion_user.id,
+      is_locked: true,
+      is_shared: true
+    }
+
+    rc = Collection.find_by(col_attributes)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_review_collection.id,
+      permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    sys_review_collection
+  end
+
   def published_collection
     su_id = User.chemotion_user.id
     Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
               .where("sync_collections_users.shared_by_id = #{su_id}")
               .where("sync_collections_users.user_id = #{self.id}")
               .where("collections.label = 'Published Elements'").first
+  end
+
+  def sync_published_collection
+    SyncCollectionsUser.joins("INNER JOIN collections on collections.id = sync_collections_users.collection_id")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.id = #{Collection.public_collection_id}").first
+
   end
 
   def publication_embargo_collection
