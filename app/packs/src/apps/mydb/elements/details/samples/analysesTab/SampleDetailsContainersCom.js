@@ -105,6 +105,7 @@ function RndEdit({
   handleChange,
   handleUndo,
   publish,
+  isReviewer,
 }) {
   const headerDeletedFunc = (container) => (
     <HeaderDeleted container={container} handleUndo={handleUndo} mode={mode} />
@@ -124,6 +125,7 @@ function RndEdit({
       handleAccordionOpen={handleAccordionOpen}
       toggleAddToReport={toggleAddToReport}
       publish={publish}
+      isReviewer={isReviewer || false}
     />
   );
 
