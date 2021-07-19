@@ -237,6 +237,7 @@ export default class SampleDetailsContainers extends Component {
             addButton={this.addButton}
             toggleMode={this.toggleMode}
             publish={this.props.publish}
+            isReviewer={this.props.isReviewer || false}
           />
         );
       }
@@ -265,8 +266,10 @@ SampleDetailsContainers.propTypes = {
   sample: PropTypes.object.isRequired,
   handleSampleChanged: PropTypes.func.isRequired,
   handleSubmit: PropTypes.func.isRequired,
+  isReviewer: PropTypes.bool,
 };
 
 SampleDetailsContainers.defaultProps = {
-  readOnly: false
+  readOnly: false,
+  isReviewer: false
 }

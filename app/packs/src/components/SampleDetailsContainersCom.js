@@ -67,7 +67,7 @@ const RndEdit = ({
   sample, mode, handleRemove, handleSubmit, handleAccordionOpen,
   toggleAddToReport, toggleMode, activeAnalysis, orderContainers, readOnly,
   isDisabled, addButton, handleChange, handleUndo,
-  publish,
+  publish, isReviewer
 }) => {
   const headerDeletedFunc = container => (
     <HeaderDeleted
@@ -91,6 +91,7 @@ const RndEdit = ({
       handleAccordionOpen={handleAccordionOpen}
       toggleAddToReport={toggleAddToReport}
       publish={publish}
+      isReviewer={isReviewer || false}
     />
   );
 

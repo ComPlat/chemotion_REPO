@@ -62,7 +62,7 @@ const qCheckMsg = (sample, container) => {
 
 const SpectraEditorBtn = ({
   sample, spcInfos, hasJcamp, hasChemSpectra,
-  toggleSpectraModal, confirmRegenerate, confirmRegenerateEdited, hasEditedJcamp
+  toggleSpectraModal, confirmRegenerate, confirmRegenerateEdited, hasEditedJcamp, isReviewer
 }) => (
   <OverlayTrigger
     placement="bottom"
@@ -92,7 +92,7 @@ const SpectraEditorBtn = ({
           <i className="fa fa-refresh" /> Reprocess
         </MenuItem>
         {
-          hasEditedJcamp ? 
+          hasEditedJcamp && isReviewer ?
             (<MenuItem
               id="regenerate-edited-spectra"
               key="regenerate-edited-spectra"
@@ -104,7 +104,7 @@ const SpectraEditorBtn = ({
               <i className="fa fa-refresh" /> Regenerate unoriginal files
             </MenuItem>) : <span></span>
         }
-        
+
       </SplitButton>
     </ButtonGroup>
   ) : (
@@ -218,7 +218,7 @@ const HeaderDeleted = ({ container, handleUndo, mode }) => {
 const headerBtnGroup = (
   container, sample, mode, handleRemove, handleSubmit,
   toggleAddToReport, isDisabled, readOnly,
-  publish,
+  publish, isReviewer
 ) => {
   if (mode !== 'edit') {
     return null;
@@ -346,6 +346,7 @@ const headerBtnGroup = (
         toggleSpectraModal={toggleSpectraModal}
         confirmRegenerate={confirmRegenerate}
         confirmRegenerateEdited={confirmRegenerateEdited}
+        isReviewer={isReviewer}
       />
       <span
         className="button-right add-to-report"
@@ -360,7 +361,7 @@ const headerBtnGroup = (
 const HeaderNormal = ({
   sample, container, mode, readOnly, isDisabled, serial,
   handleRemove, handleSubmit, handleAccordionOpen, toggleAddToReport,
-  publish,
+  publish,isReviewer
 }) => {
   const clickToOpen = () => handleAccordionOpen(serial);
 
@@ -420,7 +421,7 @@ const HeaderNormal = ({
           headerBtnGroup(
             container, sample, mode, handleRemove, handleSubmit,
             toggleAddToReport, isDisabled, readOnly,
-            publish,
+            publish, isReviewer
           )
         }
         <div className="lower-text">
