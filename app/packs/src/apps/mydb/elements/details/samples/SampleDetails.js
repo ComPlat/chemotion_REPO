@@ -1272,7 +1272,7 @@ export default class SampleDetails extends React.Component {
     )
   }
   sampleContainerTab(ind) {
-    const { sample } = this.state;
+    const { sample, currentUser } = this.state;
     const isPub = !!(sample.publication && sample.publication.published_at);
     return (
       <Tab eventKey={ind} title="Analyses" key={'Container' + sample.id.toString()}>
@@ -1284,6 +1284,7 @@ export default class SampleDetails extends React.Component {
             handleSubmit={this.handleSubmit}
             fromSample
             publish={isPub}
+            isReviewer={!!currentUser.is_reviewer}
           />
         </ListGroupItem>
       </Tab>
