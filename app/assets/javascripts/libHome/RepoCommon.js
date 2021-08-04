@@ -900,9 +900,9 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
         <br />
-        <h5><b>Canonical Smiles: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h5>
-        <h5><b>Inchi: </b> <ClipboardCopyLink text={molecule.inchistring} /></h5>
-        <h5><b>Inchikey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h5>
+        <h5><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h5>
+        <h5><b>InChi: </b> <ClipboardCopyLink text={molecule.inchistring} /></h5>
+        <h5><b>InChiKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h5>
         <h5><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h5>
         {
           hasXvial ?
