@@ -7,7 +7,9 @@ TEMPLATE_LIST = [
   [ "Spectra.docx", "Supporting Information - Spectra", "spectrum" ],
   [ nil, "Supporting Information - Reaction List (.xlsx)", "rxn_list_xlsx" ],
   [ nil, "Supporting Information - Reaction List (.csv)", "rxn_list_csv" ],
-  [ "rxn_list.html.erb", "Supporting Information - Reaction List (.html)", "rxn_list_html" ]
+  [ "rxn_list.html.erb", "Supporting Information - Reaction List (.html)", "rxn_list_html" ],
+  [ nil, "Supporting Information - DOI List (.xlsx)", "doi_list_xlsx" ],
+
 ]
 
 def create_template(file_name, template_name, template_type)
@@ -24,7 +26,7 @@ def create_template(file_name, template_name, template_type)
     ReportTemplate.create!(
       name: "#{template_name}", report_type: "#{template_type}", attachment: attachment
     )
-  
+
     primary_store = Rails.configuration.storage.primary_store
     attachment.update!(storage: primary_store)
   else

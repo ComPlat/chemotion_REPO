@@ -28,7 +28,7 @@ const RepoPreviewImage = (props) => {
       <ImageModal
         imageStyle={imageStyle}
         hasPop={hasPop}
-        preivewObject={{ src: previewImg }}
+        previewObject={{ src: previewImg }}
         popObject={{
           title, src: previewImg, fetchNeeded, fetchId, fetchFilename
         }}

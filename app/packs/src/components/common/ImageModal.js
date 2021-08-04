@@ -80,7 +80,7 @@ export default class ImageModal extends Component {
   }
 
   handleImageError() {
-    this.setState({ fetchSrc: this.props.preivewObject.src });
+    this.setState({ fetchSrc: this.props.previewObject.src });
   }
 
   onDocumentLoadSuccess(numPages) {
@@ -144,7 +144,7 @@ export default class ImageModal extends Component {
       <div>
         <OverlayTrigger placement="top" overlay={<Tooltip id="id_enlarge_image">click to enlarge image</Tooltip>}>
           <div className="preview-table" onClick={this.handleModalShow}>
-            <img src={preivewObject.src} alt="" style={{ cursor: 'pointer', ...imageStyle }} />
+            <img src={previewObject.src} alt="" style={{ cursor: 'pointer', ...imageStyle }} />
           </div>
         </OverlayTrigger>
         <Modal show={this.state.showModal} onHide={this.handleModalClose} dialogClassName="noticeModal">
