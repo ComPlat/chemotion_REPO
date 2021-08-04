@@ -529,6 +529,10 @@ module Chemotion
           requires :id, type: Integer, desc: "Reaction id"
           optional :is_public, type: Boolean, default: true
         end
+        after_validation do
+          @element_policy = ElementPolicy.new(current_user, Reaction.find(params[:id]))
+          error!('401 Unauthorized', 401) unless @element_policy.read?
+        end
         get do
           reaction = Reaction.where(id: params[:id])
           .select(
@@ -566,6 +570,10 @@ module Chemotion
         params do
           requires :id, type: Integer, desc: "Sample id"
           optional :is_public, type: Boolean, default: true
+        end
+        after_validation do
+          @element_policy = ElementPolicy.new(current_user, Sample.find(params[:id]))
+          error!('401 Unauthorized', 401) unless @element_policy.read?
         end
         get do
           sample = Sample.where(id: params[:id])
