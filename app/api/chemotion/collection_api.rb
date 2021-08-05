@@ -147,7 +147,8 @@ module Chemotion
         end
 
         put ':id' do
-          Collection.shared(current_user.id).find(params[:id]).update!(params[:collection_attributes])
+          declared_params = declared(params, include_missing: false)
+          Collection.shared(current_user.id).find(declared_params[:id]).update!(declared_params[:collection_attributes])
         end
 
         desc "Create shared collections"
