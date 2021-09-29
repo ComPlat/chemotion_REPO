@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import {
   Panel,
@@ -14,7 +15,6 @@ const RepoReactionSchemeInfo = (props) => {
     && content.ops[0].insert) ? content.ops[0].insert.trim().length : 0;
   const descQV = contentlength > 0 ?
     (<span><b>Description:</b><QuillViewer value={content} /></span>) : null;
-
   return (
     <Panel style={{ marginBottom: '4px' }}>
       <Panel.Body style={{ paddingBottom: '1px' }}>

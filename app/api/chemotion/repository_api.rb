@@ -666,8 +666,8 @@ module Chemotion
         helpers do
           def query_submitter(element_type, state)
             if User.reviewer_ids.include?(current_user.id)
-              state_sql = (state == 'All' || state.empty?) ? " state in ('pending', 'reviewed', 'accepted')" : sanitize_sql([' state=? '], state)
-              type_sql = (element_type == 'All' || element_type.empty?) ? " element_type in ('Sample', 'Reaction')" : sanitize_sql([' element_type=? '], element_type.chop)
+              state_sql = (state == 'All' || state.empty?) ? " state in ('pending', 'reviewed', 'accepted')" : ActiveRecord::Base.send(:sanitize_sql_array, [' state=? ', state])
+              type_sql = (element_type == 'All' || element_type.empty?) ? " element_type in ('Sample', 'Reaction')" : ActiveRecord::Base.send(:sanitize_sql_array, [' element_type=? ', element_type.chop])
               search_scope = User.where(type: 'Person').where(
                 <<~SQL
                   users.id in (

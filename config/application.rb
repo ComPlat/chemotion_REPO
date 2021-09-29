@@ -37,6 +37,8 @@ module Chemotion
       dep.groups.include?(:plugins)
     end.map(&:name)
 
+    Rack::Utils.multipart_part_limit = 200
+
     config.before_configuration do
       ## TODO fix this for ELN pugin
       # For each registered plugin gem (group :plugins in Gemfile) browserify needs to find

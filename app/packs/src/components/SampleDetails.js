@@ -763,8 +763,8 @@ export default class SampleDetails extends React.Component {
       this.smilesInput.value = sample.molecule_cano_smiles;
     }
     return (
-      <InputGroup className="sample-molecule-identifier">
-        <InputGroup.Addon>Canonical Smiles</InputGroup.Addon>
+      <InputGroup className='sample-molecule-identifier'>
+        <InputGroup.Addon>Canonical SMILES</InputGroup.Addon>
         <FormGroup controlId="smilesInput">
           <FormControl
             type="text"
