@@ -250,6 +250,7 @@ export default class RepoReactionDetails extends Component {
                 toggle={this.toggleScheme}
                 show={showScheme}
                 isPublic
+                isReview={this.props.isReview}
                 bodyAttrs={bodyAttrs}
               />
             </Col>
@@ -528,6 +529,7 @@ RepoReactionDetails.propTypes = {
   canComment: PropTypes.bool,
   reviewLevel: PropTypes.number,
   isSubmitter: PropTypes.bool,
+  isReview: PropTypes.bool,
   history: PropTypes.array,
   canClose: PropTypes.bool,
   buttons: PropTypes.arrayOf(PropTypes.string),
@@ -538,6 +540,7 @@ RepoReactionDetails.defaultProps = {
   canComment: false,
   isSubmitter: false,
   reviewLevel: 0,
+  isReview: false,
   history: [],
   canClose: true,
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],

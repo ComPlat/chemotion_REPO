@@ -41,6 +41,7 @@ export default class RepoReviewDetails extends Component {
             canComment
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
+            isReview={true}
             history={this.state.historyInfo ? this.state.historyInfo : []}
           />);
       case 'sample':

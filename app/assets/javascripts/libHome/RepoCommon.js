@@ -973,9 +973,9 @@ class RenderAnalysisHeader extends Component {
               </span>
               {nameOrFormula}
               {iupacUserDefined}
-              <h6><b>Canonical Smiles: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
-              <h6><b>Inchi: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
-              <h6><b>Inchikey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
+              <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
+              <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
+              <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
               <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
               <h6><b>DOI: </b>
                 {
@@ -1106,7 +1106,7 @@ const ReactionTable = ({
     )
   }
 
-  const rows = (samples) => {
+  const rows = (samples, isReview=false) => {
     let currentType = '';
 
     return (
@@ -1124,7 +1124,7 @@ const ReactionTable = ({
             <tbody key={i}>
               {title}
               <tr>
-                <td style={{ width: '26%' }}>{label}</td>
+                {label}
                 <td style={{ width: '12%' }}>{isPublic ? sample.sum_formular : sample.molecule.sum_formular}</td>
                 <td style={{ width: '14%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' ' : isPublic ? sample.dmv: !sample.has_molarity && !sample.has_density ? '- / -' : sample.has_density ? + sample.density + ' / - ' : ' - / ' + sample.molarity_value + sample.molarity_unit}</td>
                 <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1, 3)}</td>
@@ -1163,7 +1163,7 @@ const ReactionTable = ({
         <Panel.Collapse>
           <Panel.Body {...bodyAttrs} >
             <div>
-              {table(rows(schemes))}
+              {table(rows(schemes, isReview))}
             </div>
           </Panel.Body>
         </Panel.Collapse>
@@ -1580,6 +1580,7 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
               toggle={toggleScheme}
               show={showScheme}
               isPublic={isPublic}
+              isReview={false}
               bodyAttrs={bodyAttrs}
             />
           </Col>
