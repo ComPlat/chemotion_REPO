@@ -262,10 +262,10 @@ export default class MoleculeModeratorComponent extends Component {
         <div className="container">
           <Panel>
             <Panel.Heading>
-              <b>InChiKey:</b>&nbsp;{this.props.molecule.inchikey}
+              <b>InChIKey:</b>&nbsp;{this.props.molecule.inchikey}
               &nbsp;(<b>Chemotion molecule id:</b>&nbsp;{this.props.molecule.id})
               <br />
-              <b>Canonical Smiles:</b>&nbsp;{this.props.molecule.cano_smiles}
+              <b>Canonical SMILES:</b>&nbsp;{this.props.molecule.cano_smiles}
             </Panel.Heading>
             <Panel.Body>
               <Row>
