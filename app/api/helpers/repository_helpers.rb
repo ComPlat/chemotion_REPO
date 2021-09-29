@@ -38,8 +38,9 @@ module RepositoryHelpers
     .select(
       <<~SQL
       reactions_samples.id,
+      (select name from molecule_names mn where mn.id = samples.molecule_name_id) as molecule_name,
       molecules.iupac_name, molecules.sum_formular,
-      molecules.molecular_weight, samples.name,
+      molecules.molecular_weight, samples.name, samples.short_label,
       samples.real_amount_value, samples.real_amount_unit,
       samples.target_amount_value, samples.target_amount_unit,
       samples.purity, samples.density, samples.external_label,
@@ -64,10 +65,9 @@ module RepositoryHelpers
     ).order('reactions_samples.position ASC').as_json
 
     schemeSorted = schemeAll.sort_by {|o| o['type_seq']}
-
     solvents_sum = schemeAll.select{ |d| d['mat_group'] === 'solvents'}.sum { |r|
-    value = r['real_amount_value'].nil? ? r['target_amount_value'].to_f : r['real_amount_value'].to_f
-    unit = r['real_amount_value'].nil? ? r['target_amount_unit'] : r['real_amount_unit']
+    value = (r['real_amount_value'].nil? || r['real_amount_value'].zero?) ? r['target_amount_value'].to_f : r['real_amount_value'].to_f
+    unit = (r['real_amount_value'].nil? || r['real_amount_value'].zero?) ? r['target_amount_unit'] : r['real_amount_unit']
 
     has_molarity = !r['molarity_value'].nil? && r['molarity_value'] > 0.0 && (r['density'] === 0.0) || false
     has_density = !r['density'].nil? && r['density'] > 0.0 && (r['molarity_value'] === 0.0) || false
@@ -85,9 +85,8 @@ module RepositoryHelpers
     schemeList = []
     schemeList = schemeSorted.map do |r|
       scheme = {}
-      value = r['real_amount_value'].nil? ? r['target_amount_value'].to_f : r['real_amount_value'].to_f
-      unit = r['real_amount_value'].nil? ? r['target_amount_unit'] : r['real_amount_unit']
-
+      value = (r['real_amount_value'].nil? || r['real_amount_value'].zero?) ? r['target_amount_value'].to_f : r['real_amount_value'].to_f
+      unit = (r['real_amount_value'].nil? || r['real_amount_value'].zero?) ? r['target_amount_unit'] : r['real_amount_unit']
       has_molarity = !r['molarity_value'].nil? && r['molarity_value'] > 0.0 && (r['density'] === 0.0) || false
       has_density = !r['density'].nil? && r['density'] > 0.0 && (r['molarity_value'] === 0.0) || false
 
