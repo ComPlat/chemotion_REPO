@@ -504,6 +504,15 @@ module Chemotion
             select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
           SQL
 
+          com_config = Rails.configuration.compound_opendata
+          embargo_sql = <<~SQL
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, publications.taggable_data,
+            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
+            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+          SQL
+
           if params[:scheme_only]
             col_scope = Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           else
