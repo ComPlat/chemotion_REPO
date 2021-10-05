@@ -38,7 +38,7 @@ module RepositoryHelpers
     .select(
       <<~SQL
       reactions_samples.id,
-      (select name from molecule_names mn where mn.id = samples.molecule_name_id) as molecule_name,
+      (select name from molecule_names mn where mn.id = samples.molecule_name_id) as molecule_iupac_name,
       molecules.iupac_name, molecules.sum_formular,
       molecules.molecular_weight, samples.name, samples.short_label,
       samples.real_amount_value, samples.real_amount_unit,
