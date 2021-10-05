@@ -1106,7 +1106,7 @@ const ReactionTable = ({
     )
   }
 
-  const rows = (samples, isReview=false) => {
+  const rows = (samples, isReview = false) => {
     let currentType = '';
 
     return (
@@ -1124,7 +1124,7 @@ const ReactionTable = ({
             <tbody key={i}>
               {title}
               <tr>
-                {label}
+                <td style={{ width: '26%' }}>{label}</td>
                 <td style={{ width: '12%' }}>{isPublic ? sample.sum_formular : sample.molecule.sum_formular}</td>
                 <td style={{ width: '14%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' ' : isPublic ? sample.dmv: !sample.has_molarity && !sample.has_density ? '- / -' : sample.has_density ? + sample.density + ' / - ' : ' - / ' + sample.molarity_value + sample.molarity_unit}</td>
                 <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1, 3)}</td>
@@ -1138,7 +1138,6 @@ const ReactionTable = ({
         : null
     )
   };
-
   const table = dataRows => (
     <Table responsive>
       <thead>
