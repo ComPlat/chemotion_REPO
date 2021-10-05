@@ -1,3 +1,4 @@
+// PLEASE check carefully when performing ELN rebasing
 import React, { Component, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button } from 'react-bootstrap';
@@ -5,6 +6,7 @@ import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import { stopEvent } from 'src/utilities/DomHelper';
 import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Document, Page, pdfjs } from 'react-pdf';
+import UserStore from '../stores/UserStore';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 const defaultImageStyle = {
@@ -12,7 +14,6 @@ const defaultImageStyle = {
     cursor: 'default'
   }
 };
-import UserStore from '../stores/UserStore';
 
 export default class ImageModal extends Component {
   constructor(props) {
@@ -45,28 +46,6 @@ export default class ImageModal extends Component {
     if (this.props.popObject.fetchNeeded &&
       (this.props.popObject.fetchId !== prevProps.popObject.fetchId)) {
       this.fetchImage();
-    }
-  }
-
-  fetchImage() {
-    const { currentUser } = UserStore.getState();
-    if (!currentUser) {
-      const fileSrc = ['/images/publications', this.props.popObject.fetchId, this.props.popObject.fetchFilename].join('/');
-      this.setState({ fetchSrc: fileSrc });
-    } else {
-    AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
-      .then((result) => {
-        if (result.data != null) {
-          this.setState({ fetchSrc: result.data });
-          if (result.type === "application/pdf") {
-            this.setState({ isPdf: true });
-          }
-          else {
-            this.setState({ isPdf: false });
-          }
-        }
-      });
-
     }
   }
 
@@ -112,10 +91,16 @@ export default class ImageModal extends Component {
   }
 
   fetchImage() {
-    AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
-      .then((result) => {
-        if (result.data != null) { this.setState({ fetchSrc: result.data, isPdf: (result.type === 'application/pdf') }); }
-      });
+    const { currentUser } = UserStore.getState();
+    if (!currentUser) {
+      const fileSrc = ['/images/publications', this.props.popObject.fetchId, this.props.popObject.fetchFilename].join('/');
+      this.setState({ fetchSrc: fileSrc });
+    } else {
+      AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId })
+        .then((result) => {
+          if (result.data != null) { this.setState({ fetchSrc: result.data, isPdf: (result.type === 'application/pdf') }); }
+        });
+    }
   }
 
   handleModalClose(e) {
