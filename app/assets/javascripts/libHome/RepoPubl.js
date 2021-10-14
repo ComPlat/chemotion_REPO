@@ -19,7 +19,7 @@ import AutoCompleteInput from '../components/search/AutoCompleteInput';
 import StructureEditorModal from '../components/structure_editor/StructureEditorModal';
 import Formula from '../components/common/Formula';
 import LoadingActions from '../components/actions/LoadingActions';
-import { ElStateLabel } from './RepoCommon';
+import RepoReactionList from './RepoReactionList';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -55,25 +55,9 @@ const pubchemTag = (molecule) => {
   return false;
 };
 
-const renderReaction = (element, currentElement, isPubElement) => {
-  const listClass = (currentElement !== null && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
-  return (
-    <tr
-      key={`list-reaction-${element.type}-${element.id}`}
-      className={listClass}
-      onClick={() => PublicActions.displayReaction(element.id)}
-    >
-      <td style={{ position: 'relative' }}>
-        <div>
-          {svgTag(element.svgPath, 'reaction', isPubElement)}
-        </div>
-      </td>
-      <td>
-        {xvialTag(element)}&nbsp;{ElStateLabel(element.embargo)}
-      </td>
-    </tr>
-  );
-};
+const renderReaction = (element, currentElement, isPubElement, schemeOnly = false) => (
+  <RepoReactionList element={element} currentElement={currentElement} isPubElement={isPubElement} schemeOnly={schemeOnly} />
+);
 
 const hints = {
   reaction: {
@@ -709,6 +693,8 @@ export default class RepoPubl extends Component {
 
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
 
+    console.log(reactions);
+
     const elementList = () => {
       switch (listType) {
         case 'reaction':
@@ -716,7 +702,7 @@ export default class RepoPubl extends Component {
         case 'sample':
           return (molecules || []).map(m => this.renderMolecule(m, isPubElement));
         case 'scheme':
-          return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
+          return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement, true));
         default:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
       }
