@@ -446,8 +446,7 @@ module Chemotion
           optional :scheme_only, type: Boolean, desc: 'is it a scheme-only reaction?', default: false
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
-        get '/', each_serializer: ReactionGuestListSerializer do
-
+        get '/' do
           if params[:adv_flag] === true && params[:adv_type].present? && params[:adv_val].present?
             case params[:adv_type]
             when 'Authors'
@@ -473,11 +472,43 @@ module Chemotion
             adv_search = ' '
           end
 
+          com_config = Rails.configuration.compound_opendata
+          embargo_sql = <<~SQL
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, publications.taggable_data, 
+            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
+            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+          SQL
+
           if params[:scheme_only]
-            paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).includes(:publication).references(:publication).order('publications.published_at desc').uniq)
+            list = paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
           else
-            paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).includes(:publication).references(:publication).order('publications.published_at desc').uniq)
+            list = paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
           end
+
+          entities = Entities::ReactionPublicationListEntity.represent(list, serializable: true)
+
+          ids = entities.map { |e| e[:id] }
+
+          xvial_count_sql = <<~SQL
+            inner join element_tags e on e.taggable_id = reactions_samples.sample_id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          x_cnt_ids = ReactionsSample.joins(xvial_count_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) || []
+
+          xvial_com_sql = <<~SQL
+            inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
+            inner join molecules m on m.id = s.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          x_com_ids = ReactionsSample.joins(xvial_com_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          entities = entities.each do |obj|
+            obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:id])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:id])
+          end
+
+          entities
         end
       end
 
@@ -617,7 +648,7 @@ module Chemotion
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:products].each do |p|
             pub_product = p
-            p[:xvialCom] = build_xvial_com(p[:molecule]['inchikey'], current_user&.id)
+            p[:xvialCom] = build_xvial_com(p[:molecule][:inchikey], current_user&.id)
             pub_product_tag = pub_product[:tag]['taggable_data']
             next if pub_product_tag.nil?
 
