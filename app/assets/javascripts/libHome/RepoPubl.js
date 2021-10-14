@@ -75,7 +75,7 @@ const hints = {
 };
 
 const overTip = tab => (
-  <Tooltip id="t_tip">
+  <Tooltip id="t_tip" className="left_tooltip bs_tooltip">
     <i className="fa fa-lightbulb-o" aria-hidden="true" />&nbsp;{hints[tab].content}
   </Tooltip>
 );
@@ -692,9 +692,6 @@ export default class RepoPubl extends Component {
     )));
 
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
-
-    console.log(reactions);
-
     const elementList = () => {
       switch (listType) {
         case 'reaction':
@@ -723,7 +720,7 @@ export default class RepoPubl extends Component {
             </Navbar.Form>
           </Navbar>
 
-          <div className={listClass} style={{ backgroundColor: '#f5f5f5' }} >
+          <div className={listClass} style={{ backgroundColor: '#efefef' }}>
             <Table className="sample-entries">
               <tbody>
                 {elementList()}

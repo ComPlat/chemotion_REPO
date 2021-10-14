@@ -262,15 +262,6 @@ $color-required: #d9534f;
   font-size: 1.2em;
 }
 
-.list_focus_off {
-  cursor: pointer;
-  background-color: white;
-}
-.list_focus_on {
-  cursor: pointer;
-  background-color: white !important;
-}
-
 .feature {
   display: flex;
   .feature-block {
