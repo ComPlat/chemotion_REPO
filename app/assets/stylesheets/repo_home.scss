@@ -659,15 +659,33 @@ $bs-successcolor: #5cb85c;
   }
 }
 
+.home_reaction {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  // box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  margin-top: 15px;
+  padding: 10px;
+}
+
 .home_wrapper {
   display: flex;
-  background-color: white;
+  div:last-child {
+    border: none;
+  }
 }
 
 .home_wrapper_item {
   flex: 1 20%;
   text-align: center;
-  margin: 10px;
+  border-right: 1px lightgrey dashed;
+  div:first-child {
+    color: rgb(141, 140, 140);
+  }
+  .item_xvial {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .home_wrapper_item > div {
@@ -675,3 +693,13 @@ $bs-successcolor: #5cb85c;
   text-align: center;
 }
 
+.list_focus_off {
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.list_focus_on {
+  cursor: pointer;
+  border: 1px #337ab7 solid;
+  background-color: #f0f8ff;
+}
