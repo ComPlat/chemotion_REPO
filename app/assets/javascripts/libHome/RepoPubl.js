@@ -706,6 +706,8 @@ export default class RepoPubl extends Component {
 
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
 
+    console.log(reactions);
+
     const elementList = () => {
       switch (listType) {
         case 'reaction':
@@ -713,7 +715,7 @@ export default class RepoPubl extends Component {
         case 'sample':
           return (molecules || []).map(m => this.renderMolecule(m, isPubElement));
         case 'scheme':
-          return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
+          return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement, true));
         default:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
       }
