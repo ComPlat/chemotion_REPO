@@ -15,7 +15,7 @@ const xvialTag = (element, hasXvial = null) => {
   } else {
     hasXCom = (element.xvial_com > 0);
   }
-  if (!hasX && !hasXCom) return ('-');
+  if (!hasX && !hasXCom) return (<span className="xvial-span xvial" style={{ border: 'unset' }}>-</span>);
   return (<span className={`xvial-span ${hasX ? 'xvial' : ''} ${hasXCom ? 'xvial-com' : ''}`}><i className="icon-xvial" /></span>);
 };
 
