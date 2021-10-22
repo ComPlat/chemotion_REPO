@@ -225,7 +225,7 @@ const StaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="cnt">{stsAnalysisCnt}</div>
+              <div className="cnt">{stsAnalysisCnt}&nbsp;<span className="tit">published</span></div>
               <div style={{ display: 'flex' }}>
                 <div>Top 3:&nbsp;&nbsp;</div>
                 <div className="italic-desc">
@@ -278,7 +278,7 @@ class RepoHome extends Component {
       metadata: {
         fa: 'fa fa-file-code-o',
         title: 'Metadata',
-        intro: 'Keep your research data findable and accessible and collect descriptions about the data. Based on DataCite Metadata Scheme 4.0.'
+        intro: 'Keep your research data findable and accessible and collect descriptions about the data. Based on DataCite Metadata Scheme.'
       },
       doi: {
         fa: 'fa fa-id-card-o',
