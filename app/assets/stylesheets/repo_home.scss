@@ -491,6 +491,8 @@ $bs-successcolor: #5cb85c;
       font-size: 1.5vmin;
       .tit {
         color: $statisticcolor;
+        font-size: initial;
+        font-weight: initial;
       }
       .cnt {
         font-size: 3vmin;
@@ -701,5 +703,5 @@ $bs-successcolor: #5cb85c;
 .list_focus_on {
   cursor: pointer;
   border: 1px #337ab7 solid;
-  background-color: #f0f8ff;
+  background-color: #f0f8ff !important;
 }

@@ -4,7 +4,6 @@ import uuid from 'uuid';
 import SVG from 'react-inlinesvg';
 import PropTypes from 'prop-types';
 import { Popover, OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
-import { ElStateLabel } from './RepoCommon';
 import PublicActions from '../components/actions/PublicActions';
 
 const xvialTag = (element, hasXvial = null) => {
@@ -15,7 +14,7 @@ const xvialTag = (element, hasXvial = null) => {
   } else {
     hasXCom = (element.xvial_com > 0);
   }
-  if (!hasX && !hasXCom) return (<span className="xvial-span xvial" style={{ border: 'unset' }}>-</span>);
+  if (!hasX && !hasXCom) return (<span className="xvial-span xvial" style={{ border: 'unset', backgroundColor: 'unset' }}>-</span>);
   return (<span className={`xvial-span ${hasX ? 'xvial' : ''} ${hasXCom ? 'xvial-com' : ''}`}><i className="icon-xvial" /></span>);
 };
 
