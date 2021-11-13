@@ -83,6 +83,7 @@ const BuildSpcInfos = (sample, container) => {
       idAi: container.id,
       idDt: file.idDt,
       idx: file.id,
+      svg: sample.svgPath
     }
   ));
 };

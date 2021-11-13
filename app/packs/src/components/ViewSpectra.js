@@ -555,7 +555,8 @@ class ViewSpectra extends React.Component {
       molecule: 'molecule',
       predictions,
     };
-
+    const { spcInfos } = this.state;
+    const spcSvg = spcInfos && spcInfos[0] && spcInfos[0].svg;
     return (
       <Modal.Body>
         {
@@ -566,7 +567,7 @@ class ViewSpectra extends React.Component {
               others={others}
               operations={operations}
               forecast={forecast}
-              molSvg={sample.svgPath}
+              molSvg={spcSvg || sample.svgPath}
               descriptions={descriptions}
               canChangeDescription={true}
               onDescriptionChanged={this.onSpectraDescriptionChanged}
