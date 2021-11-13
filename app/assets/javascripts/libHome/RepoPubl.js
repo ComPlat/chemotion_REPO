@@ -11,7 +11,6 @@ import uuid from 'uuid';
 import UIActions from '../components/actions/UIActions';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
-import PubchemLabels from '../components/PubchemLabels';
 import RepoElementDetails from './RepoElementDetails';
 import SuggestionsFetcher from '../components/fetchers/SuggestionsFetcher';
 import PublicFetcher from '../components/fetchers/PublicFetcher';
@@ -293,36 +292,9 @@ export default class RepoPubl extends Component {
     const {
       advFlag, advType, advValue, currentElement
     } = this.state;
-    const pubchemInfo = pubchemTag(molecule);
-    const svgPathSample = molecule.sample_svg_file
-      ? `/images/samples/${molecule.sample_svg_file}`
-      : `/images/molecules/${molecule.molecule_svg_file}`;
-    const listClass = (currentElement !== null && currentElement.molecule && currentElement.molecule.id === molecule.id) ? 'list_focus_on' : 'list_focus_off';
+
     return (
-      <tr
-        key={molecule.id}
-        className={listClass}
-        onClick={() => PublicActions.displayMolecule(molecule.id, advFlag, advType, advValue)}
-      >
-        <td
-          colSpan="2"
-          style={{ position: 'relative' }}
-        >
-          <div style={{ float: 'left' }}>
-            {svgTag(svgPathSample, 'molecule', isPubElement)}
-          </div>
-          <div style={{ paddingLeft: 5, wordWrap: 'break-word' }}>
-            <h4> <Formula formula={molecule.sum_formular} /> </h4>
-            <h4>
-              {molecule.iupac_name}
-              <span className="repo-pub-list-icons">
-                {pubchemInfo ? <PubchemLabels element={pubchemTag(molecule)} /> : null }
-                {xvialTag(molecule)}
-              </span>
-            </h4>
-          </div>
-        </td>
-      </tr>
+      <RepoMoleculeList molecule={molecule} currentElement={currentElement} isPubElement={isPubElement} advFlag={advFlag} advValue={advValue} advType={advType}/>
     );
   }
 
