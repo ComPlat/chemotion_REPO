@@ -6,7 +6,7 @@ module Entities
     expose :id, :reaction_svg_file, :name
 
     expose :embargo do |obj|
-      obj[:embargo]
+      obj[:embargo] || ''
     end
 
     expose :taggable_data do |obj|
@@ -14,11 +14,11 @@ module Entities
     end
 
     expose :pub_id do |obj|
-      obj[:pub_id] || {}
+      obj[:pub_id] || ''
     end
 
     expose :ana_cnt do |obj|
-      obj[:ana_cnt] || {}
+      obj[:ana_cnt] || ''
     end
   end
 end
