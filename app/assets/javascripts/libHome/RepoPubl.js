@@ -11,49 +11,14 @@ import uuid from 'uuid';
 import UIActions from '../components/actions/UIActions';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
-import PubchemLabels from '../components/PubchemLabels';
 import RepoElementDetails from './RepoElementDetails';
 import SuggestionsFetcher from '../components/fetchers/SuggestionsFetcher';
 import PublicFetcher from '../components/fetchers/PublicFetcher';
 import AutoCompleteInput from '../components/search/AutoCompleteInput';
 import StructureEditorModal from '../components/structure_editor/StructureEditorModal';
-import Formula from '../components/common/Formula';
 import LoadingActions from '../components/actions/LoadingActions';
 import RepoReactionList from './RepoReactionList';
-
-const xvialTag = (element, hasXvial = null) => {
-  const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
-  let hasXCom = hasX && (element.xvial_com && element.xvial_com !== 0);
-  if (element.xvial_com === -1 || element.xvial_com === -2) {
-    hasXCom = hasX;
-  } else {
-    hasXCom = (element.xvial_com > 0);
-  }
-  return (<span className={`xvial-span ${hasX ? 'xvial' : ''} ${hasXCom ? 'xvial-com' : ''}`}><i className="icon-xvial" /></span>);
-};
-
-const svgTag = (path, klassName, isPubElement) => {
-  const popHover = (
-    <Popover id="repo-pub-popover-svg" style={{ maxWidth: 'none', maxHeight: 'none' }}>
-      <img src={path} alt="" style={{ height: '26vh', width: '52vw' }} />
-    </Popover>
-  );
-  return isPubElement ? (
-    <OverlayTrigger trigger={['hover', 'focus']} placement="right" rootClose onHide={null} overlay={popHover}>
-      <div><SVG src={path} className={klassName} key={path} /></div>
-    </OverlayTrigger>
-  ) : <SVG src={path} className={klassName} key={path} />;
-};
-
-const pubchemTag = (molecule) => {
-  if (molecule && molecule.tag &&
-    molecule.tag.taggable_data && molecule.tag.taggable_data.pubchem_cid) {
-    return {
-      pubchem_tag: { pubchem_cid: molecule.tag.taggable_data.pubchem_cid }
-    };
-  }
-  return false;
-};
+import RepoMoleculeList from './RepoMoleculeList';
 
 const renderReaction = (element, currentElement, isPubElement, schemeOnly = false) => (
   <RepoReactionList element={element} currentElement={currentElement} isPubElement={isPubElement} schemeOnly={schemeOnly} />
@@ -280,36 +245,9 @@ export default class RepoPubl extends Component {
     const {
       advFlag, advType, advValue, currentElement
     } = this.state;
-    const pubchemInfo = pubchemTag(molecule);
-    const svgPathSample = molecule.sample_svg_file
-      ? `/images/samples/${molecule.sample_svg_file}`
-      : `/images/molecules/${molecule.molecule_svg_file}`;
-    const listClass = (currentElement !== null && currentElement.molecule && currentElement.molecule.id === molecule.id) ? 'list_focus_on' : 'list_focus_off';
+
     return (
-      <tr
-        key={molecule.id}
-        className={listClass}
-        onClick={() => PublicActions.displayMolecule(molecule.id, advFlag, advType, advValue)}
-      >
-        <td
-          colSpan="2"
-          style={{ position: 'relative' }}
-        >
-          <div style={{ float: 'left' }}>
-            {svgTag(svgPathSample, 'molecule', isPubElement)}
-          </div>
-          <div style={{ paddingLeft: 5, wordWrap: 'break-word' }}>
-            <h4> <Formula formula={molecule.sum_formular} /> </h4>
-            <h4>
-              {molecule.iupac_name}
-              <span className="repo-pub-list-icons">
-                {pubchemInfo ? <PubchemLabels element={pubchemTag(molecule)} /> : null }
-                {xvialTag(molecule)}
-              </span>
-            </h4>
-          </div>
-        </td>
-      </tr>
+      <RepoMoleculeList molecule={molecule} currentElement={currentElement} isPubElement={isPubElement} advFlag={advFlag} advValue={advValue} advType={advType}/>
     );
   }
 
