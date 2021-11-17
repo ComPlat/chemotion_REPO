@@ -407,6 +407,7 @@ module Chemotion
               and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
               select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
             (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
+            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
             (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
           SQL
 
@@ -428,7 +429,6 @@ module Chemotion
           SQL
           x_com_ids = Sample.joins(xvial_com_sql).where(id: sids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
 
-          
           entities = entities.each do |obj|
             obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:sid])
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
@@ -477,7 +477,7 @@ module Chemotion
 
           com_config = Rails.configuration.compound_opendata
           embargo_sql = <<~SQL
-            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, publications.taggable_data, 
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
             (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (

@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-prop-types */
-import React, { Component } from 'react';
+import React from 'react';
 import uuid from 'uuid';
 import SVG from 'react-inlinesvg';
 import PropTypes from 'prop-types';
@@ -26,11 +26,10 @@ const svgTag = (path, klassName, isPubElement) => {
   );
   return isPubElement ? (
     <OverlayTrigger trigger={['hover', 'focus']} placement="right" rootClose onHide={null} overlay={popHover}>
-      <div><SVG src={path} className={klassName} key={path} /></div>
+      <div><SVG src={path} className={`layout_svg_${klassName}`} key={path} height={300} /></div>
     </OverlayTrigger>
-  ) : <SVG src={path} className={klassName} key={path} />;
+  ) : <SVG src={path} className={`layout_svg_${klassName}`} key={path} />;
 };
-
 
 const infoTag = (reaction, schemeOnly) => {
   const pubData = (reaction && reaction.pub_id) || '';
@@ -38,9 +37,9 @@ const infoTag = (reaction, schemeOnly) => {
 
   let authorInfo = '';
   if (taggData && taggData.creators && taggData.creators.length > 0) {
-    authorInfo = (<div className="home_wrapper_item"><div>Author</div><div>{taggData.creators[0] && taggData.creators[0].name}</div></div>);
+    authorInfo = (<div className="home_wrapper_item"><div>Author</div><div className="item_xvial">{taggData.creators[0] && taggData.creators[0].name}</div></div>);
   } else if (taggData && taggData.contributors) {
-    authorInfo = (<div className="home_wrapper_item"><div>Contributor</div><div>{taggData.contributors.name}</div></div>);
+    authorInfo = (<div className="home_wrapper_item"><div>Contributor</div><div className="item_xvial">{taggData.contributors.name}</div></div>);
   } else {
     authorInfo = (<div className="home_wrapper_item"><div>Author</div><div /></div>);
   }
@@ -49,17 +48,20 @@ const infoTag = (reaction, schemeOnly) => {
     <Row key={`list-reaction-info-${reaction.id}`} className="home_wrapper">
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">Chemotion-Repository unique ID</Tooltip>}>
         <div className="home_wrapper_item">
-          <div>ID</div><div>{`CRR-${pubData}`}</div>
+          <div>ID</div><div className="item_xvial">{`CRR-${pubData}`}</div>
         </div>
       </OverlayTrigger>
-      <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">an embargo bundle contains publications which has been published at the same time</Tooltip>}>
+      <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">an embargo bundle contains publications which have been published at the same time</Tooltip>}>
         <div className="home_wrapper_item">
-          <div>Embargo</div><div>{reaction.embargo}</div>
+          <div>Embargo</div><div className="item_xvial">{reaction.embargo}</div>
         </div>
       </OverlayTrigger>
       {authorInfo}
       <div className="home_wrapper_item">
-        <div>Analyses</div><div>{reaction.ana_cnt || 0}</div>
+        <div>Published on</div><div className="item_xvial">{reaction.published_at}</div>
+      </div>
+      <div className="home_wrapper_item">
+        <div>Analyses</div><div className="item_xvial">{reaction.ana_cnt || 0}</div>
       </div>
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">When the X-Vial icon available, a physical sample of this molecule was registered to the Molecule Archive of the Compound Platform and can be requested from there</Tooltip>}>
         <div className="home_wrapper_item">
@@ -68,36 +70,25 @@ const infoTag = (reaction, schemeOnly) => {
       </OverlayTrigger>
     </Row>
   );
-}
-
-export default class RepoReactionList extends Component {
-  constructor(props) {
-      super(props);
-  }
-
-  componentDidMount() {
-  }
-
-  render() {
-    const {
-      element, currentElement, isPubElement, schemeOnly
-    } = this.props;
-    const listClass = (currentElement !== null && currentElement && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
-    return (
-      <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => PublicActions.displayReaction(element.id)}>
-        <div className={`home_reaction ${listClass}`}>
-          <Row key={`list-reaction-svg-${element.id}`}>
-            <Col md={12}>
-              {svgTag(element.svgPath, 'reaction', isPubElement)}
-            </Col>
-          </Row>
-          {infoTag(element, schemeOnly, listClass)}
-        </div>
-      </Col>
-    );
-  }
-}
-
+};
+const RepoReactionList = (props) => {
+  const {
+    element, currentElement, isPubElement, schemeOnly
+  } = props;
+  const listClass = (currentElement !== null && currentElement && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
+  return (
+    <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => PublicActions.displayReaction(element.id)}>
+      <div className={`home_reaction ${listClass}`}>
+        <Row key={`list-reaction-svg-${element.id}`}>
+          <Col md={12}>
+            {svgTag(element.svgPath, 'reaction', isPubElement)}
+          </Col>
+        </Row>
+        {infoTag(element, schemeOnly, listClass)}
+      </div>
+    </Col>
+  );
+};
 
 RepoReactionList.propTypes = {
   element: PropTypes.object.isRequired,
@@ -106,9 +97,10 @@ RepoReactionList.propTypes = {
   schemeOnly: PropTypes.bool
 };
 
-
 RepoReactionList.defaultProps = {
   isPubElement: false,
   schemeOnly: false,
   currentElement: null
 };
+
+export default RepoReactionList;
