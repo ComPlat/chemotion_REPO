@@ -34,7 +34,7 @@ module Chemotion
           end
           store_idx = store.key?('index.json') ? store['index.json'] : []
           updated_file = (store_idx&.length > 0 && store_idx&.select{ |a| a['key'] == key }) || []
-          raise '401 Unauthorized' if updated_file&.length > 0 && updated_file[0]['creator_id'] != current_user.id
+          # raise '401 Unauthorized' if updated_file&.length > 0 && updated_file[0]['creator_id'] != current_user.id
           created_at = updated_file&.length > 0 ? updated_file[0]['created_at'] : Time.now
           published_at = params[:published_at].blank? ? created_at : DateTime.parse(params[:published_at]).to_time
           updated_at = params[:updated_at].blank? ? published_at : DateTime.parse(params[:updated_at]).to_time

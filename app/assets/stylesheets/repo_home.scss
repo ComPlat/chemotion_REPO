@@ -667,7 +667,7 @@ $bs-successcolor: #5cb85c;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
   // box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   margin-top: 15px;
-  padding: 10px;
+  padding: 5px;
 }
 
 .home_wrapper {
@@ -681,8 +681,12 @@ $bs-successcolor: #5cb85c;
   flex: 1 20%;
   text-align: center;
   border-right: 1px lightgrey dashed;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
   div:first-child {
     color: rgb(141, 140, 140);
+    max-height: 20px;
   }
   .item_xvial {
     display: flex;
@@ -693,6 +697,7 @@ $bs-successcolor: #5cb85c;
 .home_wrapper_item > div {
   flex: 1 100%;
   text-align: center;
+  align-items: center;
 }
 
 .list_focus_off {
@@ -704,4 +709,16 @@ $bs-successcolor: #5cb85c;
   cursor: pointer;
   border: 1px #337ab7 solid;
   background-color: #f0f8ff !important;
+}
+
+.layout_svg_reaction > svg {
+  height: 120px;
+  max-height: unset;
+  width: 90%;
+  margin-left: 10px;
+}
+
+.layout_svg_molecule > svg {
+  height: 120px;
+  width: 120px;
 }

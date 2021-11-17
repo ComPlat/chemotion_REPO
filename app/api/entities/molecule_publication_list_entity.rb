@@ -21,6 +21,10 @@ module Entities
       obj[:pub_id] || ''
     end
 
+    expose :published_at do |obj|
+      obj[:published_at] || ''
+    end
+
     expose :ana_cnt do |obj|
       obj[:ana_cnt] || ''
     end
