@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import SVG from 'react-inlinesvg';
 import {
   Pagination, Table, Form, Col, Row, InputGroup, ButtonGroup, Button,
   Glyphicon, Grid, Radio, DropdownButton, MenuItem,
   FormGroup, FormControl, Navbar, Tooltip, OverlayTrigger,
-  Tabs, Tab, Popover
+  Tabs, Tab
 } from 'react-bootstrap';
 import Select from 'react-select';
 import uuid from 'uuid';
@@ -20,8 +19,24 @@ import LoadingActions from '../components/actions/LoadingActions';
 import RepoReactionList from './RepoReactionList';
 import RepoMoleculeList from './RepoMoleculeList';
 
+const renderMolecule = (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
+  <RepoMoleculeList
+    molecule={molecule}
+    currentElement={currentElement}
+    isPubElement={isPubElement}
+    advFlag={advFlag}
+    advValue={advValue}
+    advType={advType}
+  />
+);
+
 const renderReaction = (element, currentElement, isPubElement, schemeOnly = false) => (
-  <RepoReactionList element={element} currentElement={currentElement} isPubElement={isPubElement} schemeOnly={schemeOnly} />
+  <RepoReactionList
+    element={element}
+    currentElement={currentElement}
+    isPubElement={isPubElement}
+    schemeOnly={schemeOnly}
+  />
 );
 
 const hints = {
@@ -234,21 +249,9 @@ export default class RepoPubl extends Component {
 
   changeSort(e) {
     this.setState({
-      // isSearch: false,
-      // defaultSearchValue: null,
       page: 1,
       listType: e
     }, () => this.getList());
-  }
-
-  renderMolecule(molecule, isPubElement) {
-    const {
-      advFlag, advType, advValue, currentElement
-    } = this.state;
-
-    return (
-      <RepoMoleculeList molecule={molecule} currentElement={currentElement} isPubElement={isPubElement} advFlag={advFlag} advValue={advValue} advType={advType}/>
-    );
   }
 
   renderMenuItems() {
@@ -264,7 +267,6 @@ export default class RepoPubl extends Component {
 
     return menu;
   }
-
 
   handleTanimotoChange(e) {
     const val = e.target && e.target.value;
@@ -421,18 +423,9 @@ export default class RepoPubl extends Component {
     const { advFlag, advType, advValue } = this.state;
     if (advFlag === true) {
       this.listOptions = [
-        {
-          value: 'Authors',
-          label: 'by authors'
-        },
-        {
-          value: 'Ontologies',
-          label: 'by analysis type'
-        },
-        {
-          value: 'Embargo',
-          label: 'by Embargo Bundle#'
-        }
+        { value: 'Authors', label: 'by authors' },
+        { value: 'Ontologies', label: 'by analysis type' },
+        { value: 'Embargo', label: 'by Embargo Bundle#' }
       ];
       return (
         <div className="home-adv-search">
@@ -619,7 +612,7 @@ export default class RepoPubl extends Component {
 
   render() {
     const {
-      molecules, listType, reactions, currentElement, showSearch
+      molecules, listType, reactions, currentElement, showSearch, advFlag, advType, advValue
     } = this.state;
 
     const isPubElement = !!(((currentElement && this.state.currentElement.publication &&
@@ -628,14 +621,13 @@ export default class RepoPubl extends Component {
       && this.state.currentElement.published_samples.length > 0 &&
       this.state.currentElement.published_samples[0].published_at
     )));
-
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
     const elementList = () => {
       switch (listType) {
         case 'reaction':
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
         case 'sample':
-          return (molecules || []).map(m => this.renderMolecule(m, isPubElement));
+          return (molecules || []).map(m => renderMolecule(m, currentElement, isPubElement, advFlag, advType, advValue));
         case 'scheme':
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement, true));
         default:
