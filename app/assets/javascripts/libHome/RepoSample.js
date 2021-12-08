@@ -1,6 +1,7 @@
+/* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Jumbotron, Panel, Label } from 'react-bootstrap';
+import { Button, Jumbotron, Panel } from 'react-bootstrap';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AffiliationList,
@@ -26,6 +27,15 @@ import RepoXvialButton from '../components/common/RepoXvialButton';
 import PublicActions from '../components/actions/PublicActions';
 import Sample from '../components/models/Sample';
 
+const scrollView = () => {
+  const anchor = window.location.hash.split('#')[1];
+  if (anchor) {
+    const anchorElement = document.getElementById(anchor);
+    if (anchorElement) {
+      anchorElement.scrollIntoView({ block: 'start', behavior: 'auto' });
+    }
+  }
+};
 export default class RepoSample extends Component {
   constructor(props) {
     super(props);
@@ -35,6 +45,10 @@ export default class RepoSample extends Component {
     this.toggleSA = this.toggleSA.bind(this);
     this.renderAnalyses = this.renderAnalyses.bind(this);
   }
+
+  componentDidMount() { scrollView(); }
+
+  componentDidUpdate() { scrollView(); }
 
   toggleSA() {
     const { expandSA } = this.state;
@@ -113,7 +127,7 @@ export default class RepoSample extends Component {
           <span className="repo-pub-title"><DateInfo pubData={pubData} tagData={tagData} isPublished={isPublished} /></span>&nbsp;
           <SidToPubChem sid={sample.sid} />&nbsp;
           <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={sample.id} data={sample.xvial} saveCallback={() => this.updateRepoXvial(sample.molecule_id)} xvialCom={xvialCom} />
-          {IconLicense(sample.license, (sample.author_ids.length > 1))}
+          {IconLicense(sample.doi, sample.license, (sample.author_ids.length > 1))}
           <RepoPublicComment isReviewer={isReviewer} id={sample.id} type="Sample" title={sample.showed_name} userInfo={userInfo} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
           <RepoUserComment isLogin={isLogin} id={sample.id} type="Sample" title={sample.showed_name} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
           {ElStateLabel(sample.embargo)}
@@ -165,7 +179,6 @@ RepoSample.propTypes = {
   tagData: PropTypes.object.isRequired,
   isPublished: PropTypes.bool.isRequired,
   canComment: PropTypes.bool,
-  showPublicModal: PropTypes.bool,
   handleCommentBtn: PropTypes.func,
   isLogin: PropTypes.bool,
   isReviewer: PropTypes.bool

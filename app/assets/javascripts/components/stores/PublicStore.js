@@ -82,22 +82,32 @@ class PublicStore {
     }
   }
 
-  handleClearSearchSelection(){
+  handleClearSearchSelection() {
     PublicActions.getMolecules.defer();
   }
 
   handleGetMolecules(results) {
-    const { molecules, page, pages, perPage } = results;
-    this.setState({ molecules, page, pages, perPage });
+    const {
+      molecules, page, pages, perPage
+    } = results;
+    this.setState({
+      molecules, page, pages, perPage
+    });
   }
 
   handleGetReactions(results) {
-    const { reactions, page, pages, perPage } = results;
-    this.setState({ reactions, page, pages, perPage });
+    const {
+      reactions, page, pages, perPage
+    } = results;
+    this.setState({
+      reactions, page, pages, perPage
+    });
   }
 
   handleSearchMolecules(results) {
-    const { molecules, page, perPage, totalElements } = results;
+    const {
+      molecules, page, perPage, totalElements
+    } = results;
     let { pages } = results;
     if (totalElements && perPage) {
       pages = Math.ceil(totalElements / perPage);
@@ -132,7 +142,7 @@ class PublicStore {
     }
   }
 
-  handleLastPublishedSample(lastPublishedSample){
+  handleLastPublishedSample(lastPublishedSample) {
     if (lastPublishedSample) {
       this.setState({ lastPublishedSample });
     }
@@ -149,8 +159,7 @@ class PublicStore {
       queryId: result.id,
       currentElement: result.dataset
     });
-    Aviator.navigate(`/publications/datasets/${result.id}`,
-      { silent: true });
+    Aviator.navigate(`/publications/datasets/${result.id}`, { silent: true });
   }
 
   handleDisplayMolecule(moleculeList) {
@@ -160,7 +169,8 @@ class PublicStore {
       queryId: moleculeList.id,
       currentElement: moleculeList.moleculeData
     });
-    Aviator.navigate(`/publications/molecules/${moleculeList.id}`, { silent: true });
+    const suf = (moleculeList.anchor && moleculeList.anchor !== 'undefined') ? `#${moleculeList.anchor}` : '';
+    Aviator.navigate(`/publications/molecules/${moleculeList.id}${suf}`, { silent: true });
   }
 
   handleDisplayReaction(reactionList) {
@@ -230,8 +240,12 @@ class PublicStore {
   }
 
   handleGetElements(results) {
-    const { elements, page, perPage, pages, selectType, selectState, searchType, searchValue } = results;
-    this.setState({ elements, page, perPage, pages, selectType, selectState, searchType, searchValue });
+    const {
+      elements, page, perPage, pages, selectType, selectState, searchType, searchValue
+    } = results;
+    this.setState({
+      elements, page, perPage, pages, selectType, selectState, searchType, searchValue
+    });
   }
 
   handleGetEmbargoElements(results) {
@@ -261,11 +275,9 @@ class PublicStore {
   handleDisplayReviewReaction(result) {
     const publication = (result.element && result.element.reaction && result.element.reaction.publication) || {};
 
-
     if (result.element && result.element.reviewLevel === 0) {
       Aviator.navigate('/home');
     } else {
-
       this.setState({
         guestPage: 'review',
         elementType: 'reaction',
@@ -376,4 +388,4 @@ class PublicStore {
   }
 }
 
-export default alt.createStore(PublicStore, 'PublicStore')
+export default alt.createStore(PublicStore, 'PublicStore');
