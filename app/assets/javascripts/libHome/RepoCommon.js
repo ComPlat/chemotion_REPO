@@ -579,7 +579,8 @@ const labelStyle = {
   marginRight: '2px'
 };
 
-const IconLicense = (cp, hasCoAuthors = false) => {
+const IconLicense = (doi, cp, hasCoAuthors = false) => {
+  const anc = doi == null ? '' : doi.split('/').pop();
   const presentStyle = { height: '26px' };
   let presentHref = 'http://creativecommons.org/licenses/by-sa/4.0/';
   let presentAlt = 'This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.';
@@ -616,7 +617,7 @@ const IconLicense = (cp, hasCoAuthors = false) => {
     default:
       break;
   }
-  return presentHref === '' ? null : <a rel="noreferrer noopener" target="_blank" href={presentHref}><img src={presentPath} style={presentStyle} alt={presentAlt} title={presentAlt} /></a>;
+  return presentHref === '' ? null : <a name={anc} id={anc} rel="noreferrer noopener" target="_blank" href={presentHref}><img src={presentPath} style={presentStyle} alt={presentAlt} title={presentAlt} /></a>;
 };
 
 const IconToMyDB = ({
@@ -973,7 +974,7 @@ class RenderAnalysisHeader extends Component {
               <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
               <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
               <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
-              <h6><b>DOI: </b>
+              <h6><b>Sample DOI: </b>
                 {
                   this.props.isPublic ?
                   (
@@ -1638,7 +1639,7 @@ const AnalysisHeaderSample = ({ sample, sampleType }) => {
         </Col>
         <Col sm={8} md={8} lg={8}>
           <h5><i className="icon-sample" style={{ fontSize: '1.5em' }} /> <b>{sampleType} </b></h5>
-          <b> DOI: </b>
+          <b> Sample DOI: </b>
           <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doiLink}`; }}>
             {doiLink}
           </Button>
@@ -1670,12 +1671,12 @@ class RenderPublishAnalysesPanel extends Component {
 
     const doiLink = (isPublic === false) ? (
       <div className="sub-title" inline="true">
-        <b>DOI: </b>
+        <b>Analysis DOI: </b>
         {analysis.dataset_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
       </div>
     ) : (
       <div className="sub-title" inline="true">
-        <b>DOI: </b>
+        <b>Analysis DOI: </b>
         <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${analysis.dataset_doi}`; }}>
           {analysis.dataset_doi}
         </Button>
@@ -1796,7 +1797,7 @@ class RenderPublishAnalyses extends Component {
         <div className="abstract">
           <div className="lower-text">
             <div className="sub-title" inline="true">
-              <b>DOI: </b>
+              <b>Analysis DOI: </b>
               <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${analysis.dataset_doi}`; }}>
                 {analysis.dataset_doi}
               </Button>
@@ -2226,7 +2227,7 @@ const Doi = (props) => {
   } = props;
 
   let data = '';
-
+  const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
   if (isPublished) {
     data = (
       <span>
@@ -2247,7 +2248,7 @@ const Doi = (props) => {
 
   return (
     <h5>
-      <b>DOI: </b>
+      <b>{title} </b>
       {data}
     </h5>
   );
