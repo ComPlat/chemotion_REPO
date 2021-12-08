@@ -121,7 +121,11 @@ const routes = {
       show: function(e) {
         PublicActions.displayMolecule(e.params.moleculeId)
       },
+      tag: function (e) {
+        PublicActions.displayMolecule(e.params.moleculeId, e.params.suffix)
+      }
     },
+    '/:moleculeId/:suffix': 'tag',
     '/:moleculeId': 'show'
   },
 

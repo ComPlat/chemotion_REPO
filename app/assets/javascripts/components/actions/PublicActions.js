@@ -112,10 +112,10 @@ class PublicActions {
     }
   }
 
-  displayMolecule(id, advFlag = false, advType = '', advVal = '') {
+  displayMolecule(id, anchor = '', advFlag = false, advType = '', advVal = '') {
     return (dispatch) => { PublicFetcher.fetchMolecule(id, advFlag, advType, advVal)
       .then((result) => {
-        dispatch({moleculeData: result, id: id})
+        dispatch({moleculeData: result, id: id, anchor: anchor})
       }).catch((errorMessage) => {
         console.log(errorMessage)
       })

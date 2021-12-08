@@ -60,7 +60,7 @@ const RepoMoleculeList = (props) => {
     : `/images/molecules/${molecule.molecule_svg_file}`;
   const pubchemInfo = pubchemTag(molecule);
   return (
-    <Col md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, advFlag, advType, advValue)}>
+    <Col md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, '', advFlag, advType, advValue)}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${molecule.id}`}>
           <Col md={2}>

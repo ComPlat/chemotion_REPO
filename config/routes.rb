@@ -136,10 +136,9 @@ Rails.application.routes.draw do
     element = doi.doiable
 
     element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))
-
     case element.class.name
     when 'Sample'
-      url =  "#{url}molecules/#{element.molecule_id}"
+      url =  "#{url}molecules/#{element.molecule_id}/#{suffix}"
     when 'Reaction'
       url = "#{url}reactions/#{element.id}"
     when 'Container'
@@ -178,8 +177,14 @@ Rails.application.routes.draw do
     "/home/publications/datasets/#{params[:id]}"
   }
 
-  get '/molecules/:id' => redirect { |params, request|
-    "/home/publications/molecules/#{params[:id]}"
+  get '/molecules/:id(/*suffix)(.:version)' => redirect { |params, request|
+    suffix = params[:suffix]
+    if suffix.blank?
+      "/home/publications/molecules/#{params[:id]}"
+    else
+      suffix.concat('.', params[:version]) if params[:version].present?
+      "/home/publications/molecules/#{params[:id]}/#{suffix}"
+    end
   }
 
   get '/reactions/:id' => redirect { |params, request|
@@ -188,7 +193,9 @@ Rails.application.routes.draw do
 
   mount API => '/'
 
-  mount GrapeSwaggerRails::Engine => '/swagger'
+  if Rails.env.development?
+    mount GrapeSwaggerRails::Engine => '/swagger_doc'
+  end
 
   #root to: redirect('home')
   root to: 'pages#root_page' # , as: :unauthenticated_root
