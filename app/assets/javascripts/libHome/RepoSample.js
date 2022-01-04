@@ -97,10 +97,9 @@ export default class RepoSample extends Component {
     const { expandSA } = this.state;
 
     const affiliationMap = AffiliationMap(sample.affiliation_ids);
-
     const references = sample.literatures ? sample.literatures.map(lit => (
       <li key={`li_${lit.id}`} style={{ display: 'flex' }}>
-        <RefByUserInfo info={lit.ref_added_by} />&nbsp;
+        <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />&nbsp;
         <Citation key={lit.id} literature={lit} />
       </li>
     )) : [];

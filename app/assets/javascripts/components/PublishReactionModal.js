@@ -27,6 +27,7 @@ import { groupByCitation, Citation } from '../components/LiteratureCommon';
 import LiteraturesFetcher from '../components/fetchers/LiteraturesFetcher';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
 import { contentToText } from './utils/quillFormat';
+import { CitationTypeMap, CitationTypeEOL } from './CitationType';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
@@ -476,6 +477,12 @@ export default class PublishReactionModal extends Component {
         <tbody>
           {sids.map((id) => {
             const citation = rows.get(id);
+            let { litype } = citation;
+            if (typeof litype === 'undefined' || CitationTypeEOL.includes(litype)) {
+              litype = 'uncategorized';
+            }
+            const chkDisabled = litype === 'uncategorized';
+            const chkDesc = chkDisabled ? 'citation type is uncategorized, cannot publish this reference' : 'publish this reference';
             return (
               <tr key={id}>
                 <td className="padding-right" style={{ display: 'inline-flex;' }}>
@@ -485,14 +492,18 @@ export default class PublishReactionModal extends Component {
                 <td>
                   <OverlayTrigger
                     placement="left"
-                    overlay={<Tooltip id="checkAnalysis">publish this reference</Tooltip>}
+                    overlay={<Tooltip id="checkAnalysis">{chkDesc}</Tooltip>}
                   >
-                    <Checkbox
-                      checked={selectedRefs.includes(id)}
-                      onChange={() => { this.handleRefCheck(id); }}
-                    >
-                      <span>Add to publication</span>
-                    </Checkbox>
+                    <span>
+                      <Checkbox
+                        disabled={chkDisabled}
+                        checked={selectedRefs.includes(id)}
+                        onChange={() => { this.handleRefCheck(id); }}
+                      >
+                        <span>Add to publication</span><br />
+                        <span>({CitationTypeMap[litype].short})</span>
+                      </Checkbox>
+                    </span>
                   </OverlayTrigger>
                 </td>
               </tr>
@@ -806,7 +817,7 @@ export default class PublishReactionModal extends Component {
                 >
                   <Panel.Heading style={{ paddingBottom: '1px', paddingTop: '1px' }}>
                     <Panel.Title toggle>
-                      <h4> Select Reference ({selectedRefs.length})</h4>
+                      <h4> Select References ({selectedRefs.length})</h4>
                     </Panel.Title>
                   </Panel.Heading>
                   <Panel.Body collapsible>

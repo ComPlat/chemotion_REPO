@@ -14,6 +14,8 @@ import UserStore from './stores/UserStore';
 import NotificationActions from './actions/NotificationActions';
 import LoadingActions from './actions/LoadingActions';
 import CitationTable from './CitationTable';
+import CitationPanel from './CitationPanel';
+import { CitationTypeMap } from './CitationType';
 
 const Cite = require('citation-js');
 require('@citation-js/plugin-isbn');
@@ -22,10 +24,97 @@ const notification = message => ({
   title: 'Add Literature', message, level: 'error', dismissible: 'button', autoDismiss: 5, position: 'tr', uid: uuid.v4()
 });
 
+const clipboardTooltip = () => (
+  <Tooltip id="assign_button">copy to clipboard</Tooltip>
+);
+
+const CitationTable = ({ rows, sortedIds, userId, removeCitation }) => (
+  <Table>
+    <tbody>
+      {sortedIds.map((id, k, ids) => {
+        const citation = rows.get(id)
+        const prevCit = (k > 0) ? rows.get(ids[k-1]) : null
+        const sameRef = prevCit && prevCit.id === citation.id
+        const content = literatureContent(citation, true);
+        return sameRef ? (
+          <tr key={`header-${id}-${citation.id}`} className={`collapse literature_id_${citation.id}`}>
+            <td className="padding-right">
+              <CitationUserRow literature={citation} userId={userId} />
+            </td>
+            <td>
+              <Button
+                bsSize="small"
+                bsStyle="danger"
+                onClick={() => removeCitation(citation)}
+              >
+                <i className="fa fa-trash-o" />
+              </Button>
+            </td>
+          </tr>
+        ) : (
+          <tr key={id} className={``}>
+            <td className="padding-right">
+              <Citation literature={citation}/>
+            </td>
+            <td>
+              <Button
+                data-toggle="collapse"
+                data-target={`.literature_id_${citation.id}`}
+                bsSize="sm"
+              >
+                <Glyphicon
+                  glyph={   true  ? 'chevron-right' : 'chevron-down' }
+                  title="Collapse/Uncollapse"
+                  // onClick={() => this.collapseSample(sampleCollapseAll)}
+                  style={{
+                    // fontSize: '20px',
+                    cursor: 'pointer',
+                    color: '#337ab7',
+                    top: 0
+                  }}
+                />
+              </Button>
+              <OverlayTrigger placement="bottom" overlay={clipboardTooltip()}>
+                <Button bsSize="small" active className="clipboardBtn" data-clipboard-text={content} >
+                  <i className="fa fa-clipboard" aria-hidden="true" />
+                </Button>
+              </OverlayTrigger>
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </Table>
+);
+CitationTable.propTypes = {
+  rows: PropTypes.instanceOf(Immutable.Map),
+  sortedIds: PropTypes.array,
+  userId: PropTypes.number,
+  removeCitation: PropTypes.func
+};
+
+CitationTable.defaultProps = {
+  rows: new Immutable.Map(),
+  sortedIds: [],
+  userId: 0
+};
+
+const sameConseqLiteratureId = (citations, sortedIds, i) => {
+  if (i === 0) { return false; }
+  const a = citations.get(sortedIds[i])
+  const b = citations.get(sortedIds[i-1])
+  return (a.id === b.id)
+};
+
 const checkElementStatus = (element) => {
   const type = element.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   if (element.isNew) {
     NotificationActions.add(notification(`Create ${type} first.`));
+    return false;
+  }
+  const isPub = !!(element.publication && element.publication.state === 'completed');
+  if (isPub) {
+    NotificationActions.add(notification('Already published. This data can not be changed.'));
     return false;
   }
   return true;
@@ -40,6 +129,7 @@ export default class DetailsTabLiteratures extends Component {
       sortedIds: [],
     };
     this.handleInputChange = this.handleInputChange.bind(this);
+    this.handleTypeUpdate = this.handleTypeUpdate.bind(this);
     this.handleLiteratureAdd = this.handleLiteratureAdd.bind(this);
     this.handleLiteratureRemove = this.handleLiteratureRemove.bind(this);
     this.fetchDOIMetadata = this.fetchDOIMetadata.bind(this);
@@ -76,8 +166,22 @@ export default class DetailsTabLiteratures extends Component {
     this.setState(prevState => ({ ...prevState, literature }));
   }
 
+  handleTypeUpdate(updId, rType) {
+    const { element } = this.props;
+    if (!checkElementStatus(element)) { return; }
+    LoadingActions.start();
+    const params = {
+      element_id: element.id, element_type: element.type, id: updId, litype: rType
+    };
+    LiteraturesFetcher.updateReferenceType(params)
+      .then((literatures) => {
+        this.setState({ literatures, sortedIds: groupByCitation(literatures), sorting: 'literature_id' }, LoadingActions.stop());
+      });
+  }
+
   handleLiteratureRemove(literature) {
     const { element } = this.props;
+    if (!checkElementStatus(element)) { return; }
     if (isNaN(element.id) && element.type === 'reaction') {
       this.setState(prevState => ({
         ...prevState,
@@ -86,7 +190,9 @@ export default class DetailsTabLiteratures extends Component {
       }));
       if (element.type === 'reaction') {
         element.literatures = element.literatures && element.literatures.delete(literature.literal_id);
-        this.setState({ reaction: element });
+        this.setState({
+          reaction: element
+        });
       }
     } else {
       LiteraturesFetcher.deleteElementReference({ element, literature })
@@ -96,6 +202,8 @@ export default class DetailsTabLiteratures extends Component {
             literatures: prevState.literatures.delete(literature.literal_id),
             sortedIds: groupByCitation(prevState.literatures.delete(literature.literal_id))
           }));
+        }).catch((errorMessage) => {
+          NotificationActions.add(notification(errorMessage.error));
         });
     }
   }
@@ -171,8 +279,8 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             doi,
-            title: data.title || '',
-            year: (data && data.issued && data.issued['date-parts'][0]) || '',
+            title,
+            year,
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));
@@ -180,7 +288,7 @@ export default class DetailsTabLiteratures extends Component {
       }
     }).catch(() => {
       LoadingActions.stop();
-      NotificationActions.add(notification(`unable to fetch metadata for this doi: ${doi}`));
+      NotificationActions.add(notification(`unable to fetch metadata for this doi: ${doi}, error: ${errorMessage}`));
     });
   }
 
@@ -197,9 +305,9 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             isbn,
-            title: data.title || '',
-            year: (data && data.issued && data.issued['date-parts'][0]) || '',
-            url: (data && data.URL) || '',
+            title: json.data[0].title || '',
+            year: (json.data[0] && json.data[0].issued && json.data[0].issued['date-parts'][0]) || '',
+            url: (json.data[0] && json.data[0].URL) || '',
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));
@@ -207,7 +315,7 @@ export default class DetailsTabLiteratures extends Component {
       }
     }).catch(() => {
       LoadingActions.stop();
-      NotificationActions.add(notification(`unable to fetch metadata for this ISBN: ${isbn}`));
+      NotificationActions.add(notification(`unable to fetch metadata for this ISBN: ${isbn}, error: ${errorMessage}`));
     });
   }
 
@@ -216,10 +324,7 @@ export default class DetailsTabLiteratures extends Component {
     const { currentUser } = UserStore.getState();
     return (
       <ListGroup fill="true">
-        <ListGroupItem>
-          <CitationTable rows={literatures} sortedIds={sortedIds} removeCitation={this.handleLiteratureRemove} userId={currentUser && currentUser.id} />
-        </ListGroupItem>
-        <ListGroupItem>
+        <ListGroupItem style={{ border: 'unset' }}>
           <Row>
             <Col md={8} style={{ paddingRight: 0 }}>
               <LiteratureInput handleInputChange={this.handleInputChange} literature={literature} field="doi_isbn" placeholder="DOI: 10.... or  http://dx.doi.org/10... or 10. ... or ISBN: 978 ..." />
@@ -252,6 +357,11 @@ export default class DetailsTabLiteratures extends Component {
               <AddButton onLiteratureAdd={this.handleLiteratureAdd} literature={literature} />
             </Col>
           </Row>
+        </ListGroupItem>
+        <ListGroupItem style={{ border: 'unset' }}>
+          {
+            Object.keys(CitationTypeMap).map(e => <CitationPanel key={`_citation_panel_${e}`} title={e} fnDelete={this.handleLiteratureRemove} sortedIds={sortedIds} rows={literatures} uid={currentUser && currentUser.id} fnUpdate={this.handleTypeUpdate} />)
+          }
         </ListGroupItem>
       </ListGroup>
     );

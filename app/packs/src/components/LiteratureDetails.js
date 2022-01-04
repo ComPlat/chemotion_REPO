@@ -15,6 +15,7 @@ import {
   Tooltip
 } from 'react-bootstrap';
 import Immutable from 'immutable';
+import Cite from 'citation-js';
 import { uniqBy } from 'lodash';
 import {
   Citation,
@@ -109,7 +110,6 @@ ElementTypeLink.defaultProps = {
 
 const CitationTable = ({ rows, sortedIds, userId, removeCitation }) => (
   <Table>
-    <thead><tr><th width="10%" /><th width="10%" /><th width="10%" /></tr></thead>
     <tbody>
       {sortedIds.map((id, k, ids) => {
         const citation = rows.get(id);

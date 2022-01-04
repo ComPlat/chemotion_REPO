@@ -1103,9 +1103,9 @@ export default class SampleDetails extends React.Component {
     if (!sample) { return null; }
     return (
       <Tab
-        eventKey="references"
+        eventKey={ind}
         title="References"
-        key={`References_${sample.id}`}
+        key={`Literature_${sample.id}`}
       >
         <ListGroupItem style={{ paddingBottom: 20 }} >
           <SampleDetailsLiteratures
@@ -1376,8 +1376,9 @@ export default class SampleDetails extends React.Component {
     }
 
     const tabTitlesMap = {
-      qc_curation: 'qc curation',
-      computed_props: 'computed props',
+      literature: 'References',
+      qc_curation: 'QC & Curation',
+      computed_props: 'Computed Props',
       nmr_sim: 'NMR Simulation'
     };
 

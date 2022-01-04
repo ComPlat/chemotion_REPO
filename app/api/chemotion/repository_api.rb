@@ -301,7 +301,8 @@ module Chemotion
               element_id: element.id,
               element_type: lit.element_type,
               category: 'detail',
-              user_id: lit.user_id
+              user_id: lit.user_id,
+              litype: lit.litype
            }
            Literal.create(attributes)
           end

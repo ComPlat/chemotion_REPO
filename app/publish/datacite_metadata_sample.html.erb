@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
-  <identifier identifierType="DOI"><%= "#{dois[:sample][:DOI]}" %></identifier>
+  <identifier identifierType="DOI">https://dx.doi.org/<%= "#{dois[:sample][:DOI]}" %></identifier>
   <creators>
     <% pub_tag['creators'].each do |creator| %>
     <creator>
@@ -61,10 +61,13 @@
 
   <relatedIdentifiers>
     <% dois[:analyses_dois].each do |_, ds| %>
-      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart"><%= "#{ds[:DOI]}" %></relatedIdentifier>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>
     <% end %>
     <% if parent_element.presence %>
-      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf"><%= "#{parent_element.full_doi}" %></relatedIdentifier>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{parent_element.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% lits.each do |ref| %>
+      <relatedIdentifier relatedIdentifierType="<%=ref['relatedidentifiertype'].split(' {|} ').shift%>" relationType="<%=ref['relationtype']%>"><%=ref['relatedidentifiertype'].split(' {|} ').pop%></relatedIdentifier>
     <% end %>
   </relatedIdentifiers>
 </resource>
