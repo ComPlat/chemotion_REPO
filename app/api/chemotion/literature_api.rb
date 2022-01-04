@@ -35,7 +35,7 @@ module Chemotion
             params[:element_id],
             [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id]
           ).presence
-          error!('401 Unauthorized', 401) unless allowed || @is_public
+          error!('401 Unauthorized', 401) unless allowed
           @cat = @is_public ? 'public' : 'detail'
         end
       end
@@ -51,7 +51,7 @@ module Chemotion
         Literal.find(params[:id])&.update(litype: params[:litype])
 
         present(
-          citation_for_elements,
+          citation_for_elements(params[:element_id], @element_klass, @cat),
           with: Entities::LiteratureEntity,
           root: :literatures,
           with_element_count: false,

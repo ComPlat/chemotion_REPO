@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Button, FormControl, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
 import uuid from 'uuid';
 import Literature from 'src/models/Literature';
 import { CitationType, CitationTypeMap } from 'src/apps/mydb/elements/details/literature/CitationType';
+import Cite from 'citation-js';
 
 const RefByUserInfo = ({ info, litype }) => {
   if (typeof (info) === 'undefined' || !info || info.length === 0) {

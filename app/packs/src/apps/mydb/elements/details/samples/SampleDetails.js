@@ -1291,9 +1291,28 @@ export default class SampleDetails extends React.Component {
     );
   }
 
+
   moleculeCreatorTooltip() {
     return (
       <Tooltip id="assign_button">create molecule</Tooltip>
+    );
+  }
+
+  sampleLiteratureTab() {
+    const { sample } = this.state;
+    if (!sample) { return null; }
+    return (
+      <Tab
+        eventKey={ind}
+        title="References"
+        key={`Literature_${sample.id}`}
+      >
+        <ListGroupItem style={{ paddingBottom: 20 }} >
+          <SampleDetailsLiteratures
+            element={sample}
+          />
+        </ListGroupItem>
+      </Tab>
     );
   }
 

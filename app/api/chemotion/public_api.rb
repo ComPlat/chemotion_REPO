@@ -740,7 +740,8 @@ module Chemotion
               .select(
                 <<~SQL
                 literatures.*,
-                json_object_agg(users.name_abbreviation, users.first_name || chr(32) || users.last_name) as ref_added_by
+                json_object_agg(literals.id, literals.litype) as litype,
+                json_object_agg(literals.id, users.first_name || chr(32) || users.last_name) as ref_added_by
                 SQL
               ).group('literatures.id').as_json
             reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
