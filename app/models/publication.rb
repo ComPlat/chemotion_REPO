@@ -366,8 +366,8 @@ class Publication < ActiveRecord::Base
 
   def datacite_metadata_xml
     parent_element = parent&.element
-
-    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data)
+    literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
+    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -584,6 +584,26 @@ class Publication < ActiveRecord::Base
 
     log_invalid_transition(to_state) unless valid
     valid
+  end
+
+  def literals_sql(e_id, e_type)
+    <<~SQL
+    select l.*,
+    case l.litype
+    when 'citedOwn' then 'IsCitedBy'
+    when 'citedRef' then 'Continues'
+    when 'referTo' then 'References'
+    end relationtype,
+    case
+    when nullif(l2.doi,'') is not null then 'DOI' || ' {|} ' || 'https://dx.doi.org/' || doi
+    when nullif(l2.isbn,'') is not null then 'ISBN' || ' {|} ' || isbn
+    when nullif(l2.url,'') is not null then 'URL' || ' {|} ' || url
+    end relatedIdentifiertype,
+    l2.title, l2.url, l2.refs, l2.doi, l2.isbn
+    from literals l
+    join literatures l2 on l.literature_id = l2.id
+    where l.element_id = #{e_id} and l.element_type = '#{e_type}' and l.litype in ('citedOwn', 'citedRef', 'referTo')
+    SQL
   end
 
   def log_invalid_transition(to_state)

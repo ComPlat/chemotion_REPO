@@ -20,6 +20,8 @@ import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import CitationPanel from 'src/apps/mydb/elements/details/literature/CitationPanel';
 import { CitationTypeMap } from 'src/apps/mydb/elements/details/literature/CitationType';
 
+import CitationTable from './CitationTable';
+
 const Cite = require('citation-js');
 require('@citation-js/plugin-isbn');
 
@@ -43,10 +45,97 @@ const warningNotification = (message) => ({
   uid: uuid.v4()
 });
 
+const clipboardTooltip = () => (
+  <Tooltip id="assign_button">copy to clipboard</Tooltip>
+);
+
+const CitationTable = ({ rows, sortedIds, userId, removeCitation }) => (
+  <Table>
+    <tbody>
+      {sortedIds.map((id, k, ids) => {
+        const citation = rows.get(id)
+        const prevCit = (k > 0) ? rows.get(ids[k-1]) : null
+        const sameRef = prevCit && prevCit.id === citation.id
+        const content = literatureContent(citation, true);
+        return sameRef ? (
+          <tr key={`header-${id}-${citation.id}`} className={`collapse literature_id_${citation.id}`}>
+            <td className="padding-right">
+              <CitationUserRow literature={citation} userId={userId} />
+            </td>
+            <td>
+              <Button
+                bsSize="small"
+                bsStyle="danger"
+                onClick={() => removeCitation(citation)}
+              >
+                <i className="fa fa-trash-o" />
+              </Button>
+            </td>
+          </tr>
+        ) : (
+          <tr key={id} className={``}>
+            <td className="padding-right">
+              <Citation literature={citation}/>
+            </td>
+            <td>
+              <Button
+                data-toggle="collapse"
+                data-target={`.literature_id_${citation.id}`}
+                bsSize="sm"
+              >
+                <Glyphicon
+                  glyph={   true  ? 'chevron-right' : 'chevron-down' }
+                  title="Collapse/Uncollapse"
+                  // onClick={() => this.collapseSample(sampleCollapseAll)}
+                  style={{
+                    // fontSize: '20px',
+                    cursor: 'pointer',
+                    color: '#337ab7',
+                    top: 0
+                  }}
+                />
+              </Button>
+              <OverlayTrigger placement="bottom" overlay={clipboardTooltip()}>
+                <Button bsSize="small" active className="clipboardBtn" data-clipboard-text={content} >
+                  <i className="fa fa-clipboard" aria-hidden="true" />
+                </Button>
+              </OverlayTrigger>
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </Table>
+);
+CitationTable.propTypes = {
+  rows: PropTypes.instanceOf(Immutable.Map),
+  sortedIds: PropTypes.array,
+  userId: PropTypes.number,
+  removeCitation: PropTypes.func
+};
+
+CitationTable.defaultProps = {
+  rows: new Immutable.Map(),
+  sortedIds: [],
+  userId: 0
+};
+
+const sameConseqLiteratureId = (citations, sortedIds, i) => {
+  if (i === 0) { return false; }
+  const a = citations.get(sortedIds[i])
+  const b = citations.get(sortedIds[i-1])
+  return (a.id === b.id)
+};
+
 const checkElementStatus = (element) => {
   const type = element.type.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   if (element.isNew) {
     NotificationActions.add(notification(`Create ${type} first.`));
+    return false;
+  }
+  const isPub = !!(element.publication && element.publication.state === 'completed');
+  if (isPub) {
+    NotificationActions.add(notification('Already published. This data can not be changed.'));
     return false;
   }
   return true;
@@ -116,6 +205,19 @@ export default class DetailsTabLiteratures extends Component {
           },
           LoadingActions.stop()
         );
+      });
+  }
+
+  handleTypeUpdate(updId, rType) {
+    const { element } = this.props;
+    if (!checkElementStatus(element)) { return; }
+    LoadingActions.start();
+    const params = {
+      element_id: element.id, element_type: element.type, id: updId, litype: rType
+    };
+    LiteraturesFetcher.updateReferenceType(params)
+      .then((literatures) => {
+        this.setState({ literatures, sortedIds: groupByCitation(literatures), sorting: 'literature_id' }, LoadingActions.stop());
       });
   }
 

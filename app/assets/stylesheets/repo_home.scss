@@ -722,3 +722,11 @@ $bs-successcolor: #5cb85c;
   height: 90px;
   width: 90px;
 }
+.panel-cite {
+  border-color: white !important;
+  .panel-heading {
+    background-color: unset !important;
+    padding: unset !important;
+    border-color: white !important;
+  }
+}

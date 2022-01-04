@@ -305,10 +305,8 @@ export default class RepoReactionDetails extends Component {
     );
   }
 
-  renderAnalysisView(container, type, product = null, idx = -1, isLogin = false, isReviewer = false) {
-    if (typeof (container) === 'undefined' || !container) {
-      return <span />;
-    }
+  renderAnalysisView(container, type, product = null, idx = -1, isLogin = false, isReviewer = false, references = []) {
+    if (typeof (container) === 'undefined' || !container) return <span />;
 
     const analyses = ArrayUtils.sortArrByIndex(head(filter(container.children, o => o.container_type === 'analyses')).children);
     const show = this.state.showRA[idx];
@@ -316,7 +314,7 @@ export default class RepoReactionDetails extends Component {
       return <div />;
     }
     const pdInfos = (this.props.reaction.infos && this.props.reaction.infos.pd_infos && this.props.reaction.infos.pd_infos[product && product.id]) || '';
-    const productHeader = (typeof (product) !== 'undefined' && product) ? <RenderAnalysisHeader key={`reaction-product-header-${product.id}`} reactionId={this.props.reaction.id} element={product} isPublic={this.props.isPublished} isLogin={isLogin} isReviewer={isReviewer} userInfo={pdInfos} updateRepoXvial={() => this.updateRepoXvial()} xvialCom={product.xvialCom} /> : <span />;
+    const productHeader = (typeof (product) !== 'undefined' && product) ? <RenderAnalysisHeader key={`reaction-product-header-${product.id}`} reactionId={this.props.reaction.id} element={product} isPublic={this.props.isPublished} isLogin={isLogin} isReviewer={isReviewer} userInfo={pdInfos} updateRepoXvial={() => this.updateRepoXvial()} xvialCom={product.xvialCom} literatures={references} /> : <span />;
     const specSample = (type === 'Sample' && typeof (product) !== 'undefined' && product) ? new Sample(product) : null;
     const analysesView = analyses.map((analysis) => {
       const kind = analysis.extended_metadata && analysis.extended_metadata.kind && analysis.extended_metadata['kind'].split('|').pop().trim();
@@ -372,13 +370,14 @@ export default class RepoReactionDetails extends Component {
     );
   }
 
-  renderProductAnalysisView(products, isLogin = false, isReviewer = false) {
+  renderProductAnalysisView(products, isLogin = false, isReviewer = false, references = []) {
     if (typeof (products) === 'undefined' || !products || products.length === 0) {
       return <span />;
     }
+    const prdReferences = (_sid, _references) => (_references ? _references.filter(r => r.element_type === 'Sample' && r.element_id === _sid) : []);
     return products.map((product, idx) => (
       <div key={`product-${product.id}`}>
-        {this.renderAnalysisView(product.container, 'Sample', product, idx, isLogin, isReviewer)}
+        {this.renderAnalysisView(product.container, 'Sample', product, idx, isLogin, isReviewer, prdReferences(product.id, references))}
       </div>
     ));
   }
@@ -407,7 +406,7 @@ export default class RepoReactionDetails extends Component {
     const { literatures } = reaction;
     const references = literatures ? literatures.map(lit => (
       <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
-        <RefByUserInfo info={lit.ref_added_by} />&nbsp;
+        <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />&nbsp;
         <i className={`icon-${lit.element_type.toLowerCase()}`} />&nbsp;
         <Citation key={lit.id} literature={lit} />
       </li>
@@ -490,7 +489,7 @@ export default class RepoReactionDetails extends Component {
               {this.reactionInfo(reaction)}
             </h5>
             {schemeOnly ? '' : this.renderAnalysisView(reaction.container, 'Reaction', null, -1, idyLogin, idyReview)}
-            {schemeOnly ? '' : this.renderProductAnalysisView(reaction.products, idyLogin, idyReview)}
+            {schemeOnly ? '' : this.renderProductAnalysisView(reaction.products, idyLogin, idyReview, literatures)}
           </Jumbotron>
         </div>
         {

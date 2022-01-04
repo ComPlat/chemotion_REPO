@@ -24,10 +24,11 @@ module RepositoryHelpers
       .joins("inner join users on literals.user_id = users.id")
       .select(
         <<~SQL
-        literatures.* , literals.element_type,
-        json_object_agg(users.name_abbreviation, users.first_name || chr(32) || users.last_name) as ref_added_by
+        literatures.* , literals.element_type, literals.element_id,
+        json_object_agg(literals.id, literals.litype) as litype,
+        json_object_agg(literals.id, users.first_name || chr(32) || users.last_name) as ref_added_by
         SQL
-      ).group('literatures.id, literals.element_type').as_json
+      ).group('literatures.id, literals.element_type, literals.element_id').as_json
     literatures
   end
 
