@@ -207,8 +207,8 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             doi,
-            title: data.title || '',
-            year: (data && data.issued && data.issued['date-parts'][0]) || '',
+            title,
+            year,
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));
@@ -233,9 +233,9 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             isbn,
-            title: data.title || '',
-            year: (data && data.issued && data.issued['date-parts'][0]) || '',
-            url: (data && data.URL) || '',
+            title: json.data[0].title || '',
+            year: (json.data[0] && json.data[0].issued && json.data[0].issued['date-parts'][0]) || '',
+            url: (json.data[0] && json.data[0].URL) || '',
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));

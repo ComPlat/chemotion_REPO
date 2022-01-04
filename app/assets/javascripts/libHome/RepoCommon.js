@@ -1,3 +1,4 @@
+/* eslint-disable react/no-multi-comp */
 import React, { Component } from 'react';
 import SVG from 'react-inlinesvg';
 import { replace } from 'lodash';
@@ -50,6 +51,7 @@ import RepoPublicComment from '../components/common/RepoPublicComment';
 import { previewContainerImage } from '../components/utils/imageHelper';
 import RepoXvialButton from '../components/common/RepoXvialButton';
 import RepoPreviewImage from '../components/common/RepoPreviewImage';
+import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
 
 const CollectionDesc = (props) => {
   let { label } = props;
@@ -1013,7 +1015,82 @@ class RenderAnalysisHeader extends Component {
       </div>
     );
   }
-}
+  const nameOrFormula = molecule.iupac_name && molecule.iupac_name !== ''
+    ? <span><b>IUPAC Name: </b> {molecule.iupac_name} (<Formula formula={molecule.sum_formular} />)</span>
+    : <span><b>Formula: </b> <Formula formula={molecule.sum_formular} /></span>;
+
+  const iupacUserDefined = element.showed_name == (molecule.iupac_name)
+    ? <span />
+    : <h5><b>Name: </b> {element.showed_name} </h5>;
+
+  const rinchiStyle = { borderStyle: 'none', boxShadow: 'none' };
+  const crsId = (element.publication && element.publication.id) || '';
+  const xvial = (element.tag && element.tag.taggable_data && element.tag.taggable_data.xvial && element.tag.taggable_data.xvial.num) || '';
+  const references = literatures ? literatures.map(lit => (
+    <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
+      <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />&nbsp;
+      <Citation key={lit.id} literature={lit} />
+    </li>
+  )) : [];
+  return (
+    <div>
+      <br />
+      <Row style={rinchiStyle}>
+        <Col sm={6} md={6} lg={6}>
+          {resizableSvg(svgPath)}
+        </Col>
+        <Col sm={6} md={6} lg={6}>
+          <span className="repo-pub-sample-header">
+            <span className="repo-pub-title"><IconToMyDB isLogin={isLogin} id={element.id} type="sample" /></span>&nbsp;
+            <span className="repo-pub-title"><b>Product</b></span>&nbsp;
+            <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={element.id} data={xvial} saveCallback={updateRepoXvial} xvialCom={xvialCom} />
+            <RepoPublicComment isReviewer={isReviewer} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} userInfo={userInfo} pageType="reactions" pageId={reactionId} />&nbsp;
+            <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
+            <br /><br />
+          </span>
+          {nameOrFormula}
+          {iupacUserDefined}
+          <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
+          <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
+          <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
+          <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
+          <h6><b>Sample DOI: </b>
+            {
+              isPublic ?
+              (
+                <span className="sub-title" inline="true">
+                  <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doiLink}`; }}>
+                    {doiLink}
+                  </Button>
+                  <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
+                  <DownloadMetadataBtn type="sample" id={element.id} />
+                </span>
+              )
+              :
+              (
+                <span className="sub-title" inline="true">
+                  {doiLink}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
+                </span>
+              )
+            }
+          </h6>
+          <h6>
+            <b>ID: </b>
+            <Button key={`reaction-jumbtn-${element.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${crsId}`; }}>
+              CRS-{crsId}
+            </Button><ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${crsId}`} />
+          </h6>
+        </Col>
+      </Row>
+      <Row>
+        <Col sm={12} md={12} lg={12}>
+          <h5><b>Reference{references.length > 1 ? 's' : null}: </b></h5>
+          <ul style={{ listStyle: 'none' }}>{references}</ul>
+        </Col>
+      </Row>
+    </div>
+  );
+};
 
 const ToggleIndicator = ({ onClick, name, indicatorStyle }) => (
   <span
@@ -2044,7 +2121,7 @@ class PublishAnalysesTag extends Component {
               <span style={{ float: 'left', marginRight: '5px' }}>
                 Content:
               </span>
-              <QuillViewer value={content}  />
+              <QuillViewer value={content} />
             </div>
           </div>
         </div>
