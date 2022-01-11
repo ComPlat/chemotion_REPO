@@ -21,6 +21,24 @@ module Chemotion
         end
       end
 
+      namespace :publication do
+        desc "Return the 'All' collection of the current user"
+        get do
+          current_user.sync_published_collection
+        end
+      end
+
+      namespace :review do
+        desc "Return the 'All' collection of the current user"
+        get do
+          if User.reviewer_ids.include?(current_user.id)
+            current_user.sync_element_to_review_collection
+          else
+            current_user.sync_reviewing_collection
+          end
+        end
+      end
+
       namespace :take_ownership do
         desc 'Take ownership of collection with specified sync_collections_user id'
         params do
