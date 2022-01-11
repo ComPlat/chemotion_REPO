@@ -109,7 +109,7 @@ export default class RepoSample extends Component {
     return (
       <Jumbotron key={`sample-${sample.id}`}>
         <span className="repo-pub-sample-header">
-          <span className="repo-pub-title"><IconToMyDB isLogin={isLogin} id={sample.id} type="sample" /></span>&nbsp;
+          <span className="repo-pub-title"><IconToMyDB isLogin={isLogin} isPublished={isPublished} id={sample.id} type="sample" /></span>&nbsp;
           <span className="repo-pub-title"><DateInfo pubData={pubData} tagData={tagData} isPublished={isPublished} /></span>&nbsp;
           <SidToPubChem sid={sample.sid} />&nbsp;
           <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={sample.id} data={sample.xvial} saveCallback={() => this.updateRepoXvial(sample.molecule_id)} xvialCom={xvialCom} />

@@ -462,7 +462,7 @@ export default class RepoReactionDetails extends Component {
             }
             {canClose ? <ClosePanel element={reaction} /> : ''}
             <h4>
-              <IconToMyDB isLogin={idyLogin} id={reaction.id} type="reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;
+              <IconToMyDB isLogin={idyLogin} isPublished={isPublished} id={reaction.id} type="reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;
               <DateInfo pubData={pubData} tagData={taggData} isPublished={isPublished} />
               {IconLicense(license, (taggData.author_ids && (taggData.author_ids.length > 1)))}
               <RepoPublicComment isReviewer={idyReview} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} userInfo={userInfo} />&nbsp;

@@ -417,7 +417,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
     const taggData = this.state.taggData || this.props.taggData;
     const creators = taggData.creators || [];
 
-    if (this.props.isSubmitter != true || this.props.schemeOnly == true) {
+    if (this.props.schemeOnly === true) {
       return '';
     }
 
