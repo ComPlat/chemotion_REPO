@@ -370,12 +370,40 @@ class User < ApplicationRecord
       .where("collections.label = 'Reviewing'").first
   end
 
+  def sync_reviewing_collection
+    su_id = User.chemotion_user.id
+    SyncCollectionsUser.joins(
+      "INNER JOIN collections ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Reviewing'").first
+  end
+
+
+  def sync_element_to_review_collection
+    su_id = User.chemotion_user.id
+    SyncCollectionsUser.joins(
+      "INNER JOIN collections ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'Element To Review'").first
+  end
+
   def published_collection
     su_id = User.chemotion_user.id
     Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
               .where("sync_collections_users.shared_by_id = #{su_id}")
               .where("sync_collections_users.user_id = #{self.id}")
               .where("collections.label = 'Published Elements'").first
+  end
+
+  def sync_published_collection
+    SyncCollectionsUser.joins("INNER JOIN collections on collections.id = sync_collections_users.collection_id")
+              .where("sync_collections_users.user_id = #{self.id}")
+              .where("collections.id = #{Collection.public_collection_id}").first
+
   end
 
   def publication_embargo_collection
