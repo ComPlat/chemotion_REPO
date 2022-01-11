@@ -281,7 +281,7 @@ module Chemotion
         pub_coll = Collection.public_collection
         if current_user
           coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll.id)
-          { id: coll.id, is_sync_to_me: true  }
+          { id: coll&.id, is_sync_to_me: true  }
         else
           { id: nil }
         end

@@ -1067,11 +1067,14 @@ module Chemotion
         end
 
         after_validation do
-          @pub = Publication.find_by(element_id: declared_params[:elementId], element_type: declared_params[:elementType], published_by: current_user.id)
-          error!('404 No publication found', 404) unless @pub
+          unless User.reviewer_ids.include?(current_user.id)
+            @pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType], published_by: current_user.id)
+            error!('404 No publication found', 404) unless @pub
+          end
         end
 
         post do
+          pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType])
           declared_params = declared(params, include_missing: false)
 
           et = ElementTag.find_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
@@ -1081,7 +1084,7 @@ module Chemotion
           tagg_data['affiliation_ids'] = tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq
           tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].include?(k.to_i) }
 
-          pub_taggable_data = @pub.taggable_data
+          pub_taggable_data = pub.taggable_data
           pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
           pub.update(taggable_data: pub_taggable_data)
 

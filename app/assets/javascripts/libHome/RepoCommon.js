@@ -621,12 +621,13 @@ const IconLicense = (doi, cp, hasCoAuthors = false) => {
 };
 
 const IconToMyDB = ({
-  id, type, tooltipTitle = 'Link to My DB', isLogin = false
+  id, type, tooltipTitle = 'Link to My DB', isLogin = false, isPublished = true
 }) => {
+  const dt = isPublished ? 'publication' : 'review';
   if (isLogin) {
     return (
       <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">{tooltipTitle}</Tooltip>}>
-        <Button className="animation-ring" bsStyle="link" href={`/mydb/collection/all/${type}/${id}`} target="_blank">
+        <Button className="animation-ring" bsStyle="link" href={`/mydb/scollection/${dt}/${type}/${id}`} target="_blank">
           <i className={`icon-${type}`} />
         </Button>
       </OverlayTrigger>
@@ -640,11 +641,13 @@ IconToMyDB.propTypes = {
   type: PropTypes.string.isRequired,
   tooltipTitle: PropTypes.string,
   isLogin: PropTypes.bool,
+  isPublished: PropTypes.bool,
 };
 
 IconToMyDB.defaultProps = {
   tooltipTitle: 'Link to My DB',
-  isLogin: false
+  isLogin: false,
+  isPublished: true,
 };
 
 const SidToPubChem = ({ sid }) => {

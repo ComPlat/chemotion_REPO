@@ -141,7 +141,7 @@ module Chemotion
             end
           end
           chemotion_id = pids || []
-          element_short_label = dl_e.positive? && search_by_element_short_label.call(Element, qry) || []
+          element_short_label = dl_e&.positive? && search_by_element_short_label.call(Element, qry) || []
           sample_name = dl_s.positive? && search_by_field.call(Sample, :name, qry) || []
           sample_short_label = dl_s.positive? && search_by_field.call(Sample, :short_label, qry) || []
           sample_external_label = dl_s > -1 && search_by_field.call(Sample, :external_label, qry) || []
