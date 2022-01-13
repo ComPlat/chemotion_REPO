@@ -671,7 +671,7 @@ module Chemotion
               search_scope = User.where(type: 'Person').where(
                 <<~SQL
                   users.id in (
-                    select published_by from publications pub where ancestry is null
+                    select published_by from publications pub where ancestry is null and deleted_at is null
                     and #{state_sql} and #{type_sql})
                 SQL
               )
