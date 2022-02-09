@@ -21,7 +21,7 @@ export default class TabLayoutContainer extends React.Component {
     let { visible, hidden } = this.state;
 
     if (!dragItem.isHidden && hoverItem.isHidden && visible.size === 1) return;
-    
+
     if (dragItem.isHidden && dragItem.title === 'hidden') return
 
     if (dragItem.isHidden) {

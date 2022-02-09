@@ -3,7 +3,6 @@ import Screen from '../models/Screen';
 import UIStore from '../stores/UIStore'
 import AttachmentFetcher from './AttachmentFetcher'
 import BaseFetcher from './BaseFetcher';
-import GenericElsFetcher from './GenericElsFetcher';
 
 export default class ScreensFetcher {
   static fetchById(id) {
@@ -29,54 +28,56 @@ export default class ScreensFetcher {
   }
 
   static update(screen) {
-    const files = AttachmentFetcher.getFileListfrom(screen.container);
-    const promise = () => fetch(`/api/v1/screens/${screen.id}`, {
+    let files = AttachmentFetcher.getFileListfrom(screen.container)
+
+    let promise = () => fetch('/api/v1/screens/' + screen.id, {
       credentials: 'same-origin',
       method: 'put',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(screen.serialize())
-    }).then(response => response.json())
-      .then(json => GenericElsFetcher.uploadGenericFiles(screen, json.screen.id, 'Screen')
-        .then(() => this.fetchById(json.screen.id))).catch((errorMessage) => {
-        console.log(errorMessage);
-      });
-      
-    if (files.length > 0) {
-      let tasks = [];
-      files.forEach(file => tasks.push(AttachmentFetcher.uploadFile(file).then()));
-      return Promise.all(tasks).then(() => {
-        return promise();
-      });
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      return new Screen(json.screen);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+
+    if(files.length > 0 ){
+        return AttachmentFetcher.uploadFiles(files)().then(()=> promise());
+    }else{
+      return promise()
     }
-    return promise();
+
   }
 
   static create(screen) {
-    const files = AttachmentFetcher.getFileListfrom(screen.container);
-    const promise = () => fetch('/api/v1/screens/', {
+    let files = AttachmentFetcher.getFileListfrom(screen.container)
+
+    let promise = () => fetch('/api/v1/screens/', {
       credentials: 'same-origin',
       method: 'post',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(screen.serialize())
-    }).then(response => response.json())
-      .then(json => GenericElsFetcher.uploadGenericFiles(screen, json.screen.id, 'Screen')
-        .then(() => this.fetchById(json.screen.id))).catch((errorMessage) => {
-        console.log(errorMessage);
-      });
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      return new Screen(json.screen);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
 
-    if (files.length > 0) {
-      let tasks = [];
-      files.forEach(file => tasks.push(AttachmentFetcher.uploadFile(file).then()));
-      return Promise.all(tasks).then(() => {
-        return promise();
-      });
+    if(files.length > 0){
+      return AttachmentFetcher.uploadFiles(files)().then(()=> promise());
+    }else{
+      return promise()
     }
-    return promise();
+
   }
 }

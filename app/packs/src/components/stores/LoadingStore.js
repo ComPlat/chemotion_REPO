@@ -4,6 +4,8 @@ import ReportActions from '../actions/ReportActions';
 import ElementActions from '../actions/ElementActions';
 import InboxActions from '../actions/InboxActions';
 import PredictionActions from '../actions/PredictionActions';
+import RepositoryActions from '../actions/RepositoryActions';
+import PublicActions from '../actions/PublicActions';
 
 class LoadingStore {
   constructor() {
@@ -33,6 +35,13 @@ class LoadingStore {
           ElementActions.updateWellplate,
           InboxActions.fetchInbox,
           PredictionActions.infer,
+          RepositoryActions.reviewPublish,
+          PublicActions.updateComment,
+          PublicActions.reviewPublish,
+          PublicActions.getSearchReactions,
+          PublicActions.getSearchMolecules,
+          PublicActions.getReactions,
+          PublicActions.getMolecules,
         ],
       handleStartLoadingWithProgress: LoadingActions.startLoadingWithProgress,
       handleStopLoadingWithProgress: LoadingActions.stopLoadingWithProgress,
