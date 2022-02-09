@@ -57,10 +57,12 @@ const WarningBox = ({ handleCancelBtn, hideWarning, show }) => (show ?
         <p>This sample has parents or descendants, and they will not be changed.</p>
         <p>Are you sure?</p>
         <br />
-        <Button bsStyle="danger" onClick={handleCancelBtn} className="g-marginLeft--10">
+        <Button bsStyle="danger" onClick={handleCancelBtn}
+          className="g-marginLeft--10">
           Cancel
         </Button>
-        <Button bsStyle="warning" onClick={hideWarning} className="g-marginLeft--10">
+        <Button bsStyle="warning" onClick={hideWarning}
+          className="g-marginLeft--10">
           Continue Editing
         </Button>
       </Panel.Body>
@@ -97,11 +99,10 @@ export default class StructureEditorModal extends React.Component {
     this.updateEditor = this.updateEditor.bind(this);
   }
 
-  componentDidMount() {
-    UserStore.listen(this.onChangeUser);
+    this.handleEditorSelection = this.handleEditorSelection.bind(this);
   }
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps) {
     this.setState({
       showModal: nextProps.showModal,
       molfile: nextProps.molfile
@@ -148,11 +149,11 @@ export default class StructureEditorModal extends React.Component {
 
   initializeEditor() {
     const { editor, molfile } = this.state;
-    if (editor) { editor.structureDef.molfile = molfile; }
+    editor.molfile = molfile;
   }
 
   handleEditorSelection(e) {
-    this.setState(prevState => ({ ...prevState, editor: this.editors[e.value] }));
+    this.setState(prevState => ({ ...prevState, editor: this.props.editors[e.value] }));
   }
 
   handleCancelBtn() {
@@ -211,9 +212,10 @@ export default class StructureEditorModal extends React.Component {
     const handleSaveBtn = !this.props.onSave ? null : this.handleSaveBtn.bind(this);
     const { cancelBtnText, submitBtnText } = this.props;
     const submitAddons = this.props.submitAddons ? this.props.submitAddons : '';
-    const { editor, showWarning, molfile } = this.state;
+    const { editor, showWarning } = this.state;
+
     const iframeHeight = showWarning ? '0px' : '730px';
-    const iframeStyle = showWarning ? { border: 'none' } : {};
+    const iframeStyle = showWarning ? { border: 'none' } : { };
     const buttonToolStyle = showWarning ? { marginTop: '20px', display: 'none' } : { marginTop: '20px' };
 
     let useEditor = (
@@ -259,12 +261,10 @@ export default class StructureEditorModal extends React.Component {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              <EditorList
-                value={editor.id}
-                fnChange={this.handleEditorSelection}
-                options={editorOptions}
+              <EditorSelector
+                value={editor}
+                updateEditorSelection={this.handleEditorSelection}
               />
-              {citeMarvin}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body >
@@ -273,7 +273,17 @@ export default class StructureEditorModal extends React.Component {
               hideWarning={this.hideWarning.bind(this)}
               show={!!showWarning}
             />
-            {useEditor}
+            <div>
+              <iframe
+                id={editor.id}
+                src={editor.src}
+                title={`${editor.title}`}
+                height={iframeHeight}
+                width="100%"
+                style={iframeStyle}
+                ref={(f) => { this.ifr = f; }}
+              />
+            </div>
             <div style={buttonToolStyle}>
               <ButtonToolbar>
                 <Button bsStyle="warning" onClick={this.handleCancelBtn.bind(this)}>
@@ -295,6 +305,7 @@ export default class StructureEditorModal extends React.Component {
 }
 
 StructureEditorModal.propTypes = {
+  editors: PropTypes.objectOf(PropTypes.instanceOf(StructureEditor)),
   molfile: PropTypes.string,
   showModal: PropTypes.bool,
   hasChildren: PropTypes.bool,
@@ -306,12 +317,11 @@ StructureEditorModal.propTypes = {
 };
 
 StructureEditorModal.defaultProps = {
-  molfile: '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n',
+  editors: EditorList,
+  molfile: "\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n",
   showModal: false,
   hasChildren: false,
   hasParent: false,
-  onCancel: () => {},
-  onSave: () => {},
   submitBtnText: 'Save',
   cancelBtnText: 'Cancel',
 };

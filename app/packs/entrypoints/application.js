@@ -18,3 +18,10 @@ var GenericElementsAdmin = require('src/apps/generic/GenericElementsAdmin');
 var GenericSegmentsAdmin = require('src/apps/generic/GenericSegmentsAdmin');
 var GenericDatasetsAdmin = require('src/apps/generic/GenericDatasetsAdmin');
 var mydb = require('src/apps/mydb');
+
+// Fro REPO
+var RepoNewsEditor = require('./libHome/RepoNewsEditor');
+var RepoNewsReader = require('./libHome/RepoNewsReader');
+var RepoHowToEditor = require('./libHome/RepoHowToEditor');
+var RepoHowToReader = require('./libHome/RepoHowToReader');
+

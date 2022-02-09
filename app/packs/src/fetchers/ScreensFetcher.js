@@ -34,13 +34,13 @@ export default class ScreensFetcher {
       credentials: 'same-origin',
       method: 'put',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(screen.serialize())
     }).then(response => response.json())
       .then(json => GenericElsFetcher.uploadGenericFiles(screen, json.screen.id, 'Screen')
-      .then(()=>BaseFetcher.updateAnnotationsInContainer(screen))  
+      .then(()=>BaseFetcher.updateAnnotationsInContainer(screen))
       .then(() => this.fetchById(json.screen.id))).catch((errorMessage) => {
           console.log(errorMessage);
         });
@@ -52,7 +52,7 @@ export default class ScreensFetcher {
         return promise();
       });
     }
-    return promise();
+
   }
 
   static create(screen) {
@@ -62,7 +62,7 @@ export default class ScreensFetcher {
       credentials: 'same-origin',
       method: 'post',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(screen.serialize())
@@ -72,14 +72,12 @@ export default class ScreensFetcher {
           console.log(errorMessage);
         });
 
-    if (files.length > 0) {
-      let tasks = [];
-      files.forEach(file => tasks.push(AttachmentFetcher.uploadFile(file).then()));
-      return Promise.all(tasks).then(() => {
-        return promise();
-      });
+    if(files.length > 0){
+      return AttachmentFetcher.uploadFiles(files)().then(()=> promise());
+    }else{
+      return promise()
     }
-    return promise();
+
   }
 
   static addResearchPlan(screen_id, collection_id) {
