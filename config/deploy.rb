@@ -14,11 +14,11 @@ set :unicorn_rack_env, 'production'
 set :whenever_identifier, -> { "#{fetch(:application)}_#{fetch(:stage)}" }
 set :bundle_jobs, 4 # parallel bundler
 
-set :nvm_type, :user
-set :nvm_node, (File.exist?('.nvmrc') && File.read('.nvmrc').strip) || 'v14.20.0'
-set :npm_version, File.exist?('.npm-version') && File.read('.npm-version').strip || '7.11.1'
-set :nvm_map_bins, fetch(:nvm_map_bins, []).push('rake')
-set :nvm_map_bins, fetch(:nvm_map_bins, []).push('bundle')
+# set :nvm_type, :user
+# set :nvm_node, File.exist?('.nvmrc') && File.read('.nvmrc').strip || 'v14.16.0'
+# set :npm_version, File.exist?('.npm-version') && File.read('.npm-version').strip || '7.11.1'
+# set :nvm_map_bins, fetch(:nvm_map_bins, []).push('rake')
+# set :nvm_map_bins, fetch(:nvm_map_bins, []).push('bundle')
 # Default value for :format is :pretty
 # set :format, :pretty
 
@@ -204,13 +204,13 @@ namespace :delayed_job do
   end
 end
 
-before 'nvm:validate', 'deploy:nvm_check'
+# before 'nvm:validate', 'deploy:nvm_check'
 
 ## Clear all npm packages
-after 'deploy:nvm_check', 'deploy:clear_node_module'
+# after 'deploy:nvm_check', 'deploy:clear_node_module'
 
 ## Install defined version of npm if not selected
-after 'nvm:validate', 'deploy:npm_install_npm'
+# after 'nvm:validate', 'deploy:npm_install_npm'
 
 # after 'deploy:compile_assets', 'deploy:webpk'
 

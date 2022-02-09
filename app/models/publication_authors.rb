@@ -10,5 +10,5 @@
 #  ancestry     :string
 #
 
-class PublicationAuthors < ActiveRecord::Base
+class PublicationAuthors < ApplicationRecord
 end

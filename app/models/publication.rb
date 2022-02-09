@@ -20,6 +20,7 @@
 #  published_by          :integer
 #  published_at          :datetime
 #  review                :jsonb
+#  accepted_at           :datetime
 #
 # Indexes
 #
@@ -41,7 +42,7 @@ class Publication < ActiveRecord::Base
   acts_as_paranoid
   has_ancestry
   belongs_to :element, polymorphic: true
-  belongs_to :original_element, polymorphic: true
+  belongs_to :original_element, polymorphic: true, optional: true
   belongs_to :doi
 
   STATE_START = 'start'

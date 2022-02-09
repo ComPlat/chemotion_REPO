@@ -7,5 +7,5 @@
 #  collaborator_id :integer
 #
 
-class UsersCollaborator < ActiveRecord::Base
+class UsersCollaborator < ApplicationRecord
 end

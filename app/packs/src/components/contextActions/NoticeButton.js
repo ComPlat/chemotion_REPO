@@ -122,12 +122,15 @@ const createUpgradeNotification = (serverVersion, localVersion) => {
     `Current version: ${serverVersion}`,
     '--------------------------',
   ].join('\n');
-  const contentJson = {
-    data: content,
-    url: '/about',
-    urlTitle: "Check what's new here",
+  const contentJson = { data: content };
+  const options = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   };
-  const infoTimeString = formatDate(new Date().toString());
+  const infoTimeString = new Date().toLocaleDateString('de-DE', options);
   const not = {
     id: -1,
     sender_name: 'System Administrator',
