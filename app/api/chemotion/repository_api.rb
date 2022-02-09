@@ -1200,6 +1200,7 @@ module Chemotion
             col.sync_collections_users.destroy_all
             col.really_destroy!
           end
+
         end
         desc 'Generate account with chosen Embargo'
         params do
