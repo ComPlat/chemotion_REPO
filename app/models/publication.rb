@@ -20,6 +20,7 @@
 #  published_by          :integer
 #  published_at          :datetime
 #  review                :jsonb
+#  accepted_at           :datetime
 #
 # Indexes
 #

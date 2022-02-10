@@ -20,7 +20,7 @@
 
 module Chemscanner
   # Hold ChemScanner output information
-  class Scheme < ActiveRecord::Base
+  class Scheme < ApplicationRecord
     acts_as_paranoid
 
     belongs_to :creator, foreign_key: :created_by, class_name: User

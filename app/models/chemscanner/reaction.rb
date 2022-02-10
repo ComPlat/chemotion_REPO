@@ -25,7 +25,7 @@
 
 module Chemscanner
   # ChemScanner scanned reaction(s)
-  class Reaction < ActiveRecord::Base
+  class Reaction < ApplicationRecord
     acts_as_paranoid
 
     belongs_to :scheme, class_name: Scheme, foreign_key: :scheme_id

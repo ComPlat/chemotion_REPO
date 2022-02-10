@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, FormControl, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
 import uuid from 'uuid';
-import Cite from 'citation-js';
 import Literature from './models/Literature';
 import { CitationType, CitationTypeMap } from './CitationType';
 

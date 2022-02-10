@@ -641,6 +641,7 @@ export default class SampleDetails extends React.Component {
         {decoupleCb}
         <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
         <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
+        {decoupleCb}
         <div style={{ display: 'inline-block', marginLeft: '10px' }}>
           <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
           {colLabel}
@@ -1098,7 +1099,7 @@ export default class SampleDetails extends React.Component {
     );
   }
 
-  sampleLiteratureTab() {
+  sampleLiteratureTab(ind) {
     const { sample } = this.state;
     if (!sample) { return null; }
     return (
@@ -1362,7 +1363,7 @@ export default class SampleDetails extends React.Component {
     const tabContentsMap = {
       properties: this.samplePropertiesTab('properties'),
       analyses: this.sampleContainerTab('analyses'),
-      references: this.sampleLiteratureTab(),
+      references: this.sampleLiteratureTab('references'),
       results: this.sampleImportReadoutTab('results'),
       qc_curation: this.qualityCheckTab('qc_curation')
     };
@@ -1376,7 +1377,6 @@ export default class SampleDetails extends React.Component {
     }
 
     const tabTitlesMap = {
-      literature: 'References',
       qc_curation: 'QC & Curation',
       computed_props: 'Computed Props',
       nmr_sim: 'NMR Simulation'

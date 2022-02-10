@@ -88,11 +88,7 @@ const createUpgradeNotification = (serverVersion, localVersion) => {
     `Your version: ${localVersion}`, `Current version: ${serverVersion}`,
     '--------------------------',
   ].join('\n');
-  const contentJson = {
-    data: content,
-    url: '/about',
-    urlTitle: 'Check what\'s new here'
-  };
+  const contentJson = { data: content };
   const options = {
     year: 'numeric',
     month: 'long',

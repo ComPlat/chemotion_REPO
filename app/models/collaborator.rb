@@ -20,7 +20,7 @@
 #  last_name              :string           not null
 #  deleted_at             :datetime
 #  counters               :hstore           not null
-#  name_abbreviation      :string(5)
+#  name_abbreviation      :string(12)
 #  type                   :string           default("Person")
 #  reaction_name_prefix   :string(3)        default("R")
 #  layout                 :hstore           not null
@@ -33,12 +33,14 @@
 #  unlock_token           :string
 #  locked_at              :datetime
 #  account_active         :boolean
+#  matrix                 :integer          default(0)
 #
 # Indexes
 #
 #  index_users_on_confirmation_token    (confirmation_token) UNIQUE
 #  index_users_on_deleted_at            (deleted_at)
 #  index_users_on_email                 (email) UNIQUE
+#  index_users_on_name_abbreviation     (name_abbreviation) UNIQUE WHERE (name_abbreviation IS NOT NULL)
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #  index_users_on_unlock_token          (unlock_token) UNIQUE
 #

@@ -525,7 +525,7 @@ const isNmrPass = (analysis, sample) => {
   return true;
 };
 
-module.exports = {
+export {
   rfValueFormat,
   hNmrCheckMsg,
   cNmrCheckMsg,

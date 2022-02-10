@@ -12,7 +12,6 @@
 #  molecule_id         :integer
 #  molfile             :binary
 #  purity              :float            default(1.0)
-#  deprecated_solvent  :string           default("")
 #  impurities          :string           default("")
 #  location            :string           default("")
 #  is_top_secret       :boolean          default(FALSE)

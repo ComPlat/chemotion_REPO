@@ -60,7 +60,7 @@ EditorBaseBtn.defaultProps = {
   onClick: null,
 };
 
-module.exports = {
+export {
   FaBtn,
   EditorBtn,
   EditorBaseBtn,

@@ -22,7 +22,7 @@
 # ChemScanner scanned reaction(s)
 module Chemscanner
   # ChemScanner reaction steps
-  class ReactionStep < ActiveRecord::Base
+  class ReactionStep < ApplicationRecord
     acts_as_paranoid
 
     belongs_to :reaction, class_name: Reaction, foreign_key: :output_id

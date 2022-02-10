@@ -16,7 +16,7 @@
 
 module Chemscanner
   # Chemscanner reaction molecule join table
-  class ReactionsMolecule < ActiveRecord::Base
+  class ReactionsMolecule < ApplicationRecord
     acts_as_paranoid
 
     belongs_to :reaction

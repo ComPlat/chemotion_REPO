@@ -13,7 +13,6 @@ import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
 import UserStore from './stores/UserStore';
 import NotificationActions from './actions/NotificationActions';
 import LoadingActions from './actions/LoadingActions';
-import CitationTable from './CitationTable';
 import CitationPanel from './CitationPanel';
 import { CitationTypeMap } from './CitationType';
 
@@ -27,77 +26,6 @@ const notification = message => ({
 const clipboardTooltip = () => (
   <Tooltip id="assign_button">copy to clipboard</Tooltip>
 );
-
-const CitationTable = ({ rows, sortedIds, userId, removeCitation }) => (
-  <Table>
-    <tbody>
-      {sortedIds.map((id, k, ids) => {
-        const citation = rows.get(id)
-        const prevCit = (k > 0) ? rows.get(ids[k-1]) : null
-        const sameRef = prevCit && prevCit.id === citation.id
-        const content = literatureContent(citation, true);
-        return sameRef ? (
-          <tr key={`header-${id}-${citation.id}`} className={`collapse literature_id_${citation.id}`}>
-            <td className="padding-right">
-              <CitationUserRow literature={citation} userId={userId} />
-            </td>
-            <td>
-              <Button
-                bsSize="small"
-                bsStyle="danger"
-                onClick={() => removeCitation(citation)}
-              >
-                <i className="fa fa-trash-o" />
-              </Button>
-            </td>
-          </tr>
-        ) : (
-          <tr key={id} className={``}>
-            <td className="padding-right">
-              <Citation literature={citation}/>
-            </td>
-            <td>
-              <Button
-                data-toggle="collapse"
-                data-target={`.literature_id_${citation.id}`}
-                bsSize="sm"
-              >
-                <Glyphicon
-                  glyph={   true  ? 'chevron-right' : 'chevron-down' }
-                  title="Collapse/Uncollapse"
-                  // onClick={() => this.collapseSample(sampleCollapseAll)}
-                  style={{
-                    // fontSize: '20px',
-                    cursor: 'pointer',
-                    color: '#337ab7',
-                    top: 0
-                  }}
-                />
-              </Button>
-              <OverlayTrigger placement="bottom" overlay={clipboardTooltip()}>
-                <Button bsSize="small" active className="clipboardBtn" data-clipboard-text={content} >
-                  <i className="fa fa-clipboard" aria-hidden="true" />
-                </Button>
-              </OverlayTrigger>
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </Table>
-);
-CitationTable.propTypes = {
-  rows: PropTypes.instanceOf(Immutable.Map),
-  sortedIds: PropTypes.array,
-  userId: PropTypes.number,
-  removeCitation: PropTypes.func
-};
-
-CitationTable.defaultProps = {
-  rows: new Immutable.Map(),
-  sortedIds: [],
-  userId: 0
-};
 
 const sameConseqLiteratureId = (citations, sortedIds, i) => {
   if (i === 0) { return false; }
@@ -279,14 +207,14 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             doi,
-            title,
-            year,
+            title: data.title || '',
+            year: (data && data.issued && data.issued['date-parts'][0]) || '',
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));
         this.handleLiteratureAdd(this.state.literature);
       }
-    }).catch(() => {
+    }).catch((errorMessage) => {
       LoadingActions.stop();
       NotificationActions.add(notification(`unable to fetch metadata for this doi: ${doi}, error: ${errorMessage}`));
     });
@@ -313,7 +241,7 @@ export default class DetailsTabLiteratures extends Component {
         }));
         this.handleLiteratureAdd(this.state.literature);
       }
-    }).catch(() => {
+    }).catch((errorMessage) => {
       LoadingActions.stop();
       NotificationActions.add(notification(`unable to fetch metadata for this ISBN: ${isbn}, error: ${errorMessage}`));
     });

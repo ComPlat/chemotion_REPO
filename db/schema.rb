@@ -16,6 +16,7 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
   enable_extension "hstore"
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
+  enable_extension "postgres_fdw"
   enable_extension "uuid-ossp"
 
   create_table "affiliations", id: :serial, force: :cascade do |t|
@@ -92,103 +93,102 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "chemscanner_molecules", force: :cascade do |t|
-    t.integer  "scheme_id",                         null: false
-    t.integer  "external_id"
-    t.integer  "clone_from"
-    t.string   "mdl"
-    t.string   "cano_smiles"
-    t.string   "label"
-    t.string   "abbreviation"
-    t.string   "description"
-    t.jsonb    "aliases",           default: {}
-    t.jsonb    "details",           default: {}
-    t.jsonb    "extended_metadata", default: {}
-    t.boolean  "is_approved",       default: false
-    t.integer  "imported_id"
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
+  create_table "chemscanner_molecules", id: :serial, force: :cascade do |t|
+    t.integer "scheme_id", null: false
+    t.integer "external_id"
+    t.integer "clone_from"
+    t.string "mdl"
+    t.string "cano_smiles"
+    t.string "label"
+    t.string "abbreviation"
+    t.string "description"
+    t.jsonb "aliases", default: {}
+    t.jsonb "details", default: {}
+    t.jsonb "extended_metadata", default: {}
+    t.boolean "is_approved", default: false
+    t.integer "imported_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.datetime "deleted_at"
-    t.string   "inchistring"
-    t.string   "inchikey"
+    t.string "inchistring"
+    t.string "inchikey"
   end
 
-  create_table "chemscanner_reaction_steps", force: :cascade do |t|
-    t.integer  "reaction_id",                       null: false
-    t.integer  "reaction_external_id",              null: false
-    t.integer  "reagent_ids",          default: [],              array: true
-    t.string   "reagent_smiles",       default: [],              array: true
-    t.integer  "step_number",                       null: false
-    t.string   "description"
-    t.string   "temperature"
-    t.string   "time"
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
-    t.datetime "deleted_at"
-  end
-
-  create_table "chemscanner_reactions", force: :cascade do |t|
-    t.integer  "scheme_id",                         null: false
-    t.integer  "external_id",                       null: false
-    t.integer  "clone_from"
-    t.string   "description"
-    t.string   "temperature"
-    t.string   "time"
-    t.string   "status"
-    t.float    "yield"
-    t.jsonb    "details",           default: {}
-    t.jsonb    "extended_metadata", default: {}
-    t.boolean  "is_approved",       default: false
-    t.integer  "imported_id"
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
+  create_table "chemscanner_reaction_steps", id: :serial, force: :cascade do |t|
+    t.integer "reaction_id", null: false
+    t.integer "reaction_external_id", null: false
+    t.integer "reagent_ids", default: [], array: true
+    t.string "reagent_smiles", default: [], array: true
+    t.integer "step_number", null: false
+    t.string "description"
+    t.string "temperature"
+    t.string "time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.datetime "deleted_at"
   end
 
-  create_table "chemscanner_reactions_molecules", force: :cascade do |t|
-    t.integer  "reaction_id", null: false
-    t.integer  "molecule_id", null: false
-    t.string   "type",        null: false
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
+  create_table "chemscanner_reactions", id: :serial, force: :cascade do |t|
+    t.integer "scheme_id", null: false
+    t.integer "external_id", null: false
+    t.integer "clone_from"
+    t.string "description"
+    t.string "temperature"
+    t.string "time"
+    t.string "status"
+    t.float "yield"
+    t.jsonb "details", default: {}
+    t.jsonb "extended_metadata", default: {}
+    t.boolean "is_approved", default: false
+    t.integer "imported_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.datetime "deleted_at"
   end
 
-  create_table "chemscanner_schemes", force: :cascade do |t|
-    t.integer  "source_id",                         null: false
-    t.boolean  "is_approved",       default: false
-    t.jsonb    "extended_metadata", default: {}
-    t.integer  "index",             default: 0
-    t.string   "image_data",        default: ""
-    t.string   "version",           default: ""
-    t.integer  "created_by",                        null: false
-    t.datetime "created_at",                        null: false
-    t.datetime "updated_at",                        null: false
+  create_table "chemscanner_reactions_molecules", id: :serial, force: :cascade do |t|
+    t.integer "reaction_id", null: false
+    t.integer "molecule_id", null: false
+    t.string "type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+  end
+
+  create_table "chemscanner_schemes", id: :serial, force: :cascade do |t|
+    t.integer "source_id", null: false
+    t.boolean "is_approved", default: false
+    t.jsonb "extended_metadata", default: {}
+    t.integer "index", default: 0
+    t.string "image_data", default: ""
+    t.string "version", default: ""
+    t.integer "created_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.datetime "deleted_at"
   end
 
   create_table "chemscanner_source_hierarchies", id: false, force: :cascade do |t|
-    t.integer "ancestor_id",   null: false
+    t.integer "ancestor_id", null: false
     t.integer "descendant_id", null: false
-    t.integer "generations",   null: false
+    t.integer "generations", null: false
+    t.index ["ancestor_id", "descendant_id", "generations"], name: "chemscanner_source_anc_desc_idx", unique: true
+    t.index ["descendant_id"], name: "chemscanner_source_desc_idx"
   end
 
-  add_index "chemscanner_source_hierarchies", ["ancestor_id", "descendant_id", "generations"], name: "chemscanner_source_anc_desc_idx", unique: true, using: :btree
-  add_index "chemscanner_source_hierarchies", ["descendant_id"], name: "chemscanner_source_desc_idx", using: :btree
-
-  create_table "chemscanner_sources", force: :cascade do |t|
-    t.integer  "parent_id"
-    t.integer  "file_id",                        null: false
-    t.jsonb    "extended_metadata", default: {}
-    t.integer  "created_by",                     null: false
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
+  create_table "chemscanner_sources", id: :serial, force: :cascade do |t|
+    t.integer "parent_id"
+    t.integer "file_id", null: false
+    t.jsonb "extended_metadata", default: {}
+    t.integer "created_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
-  create_table "code_logs", id: :uuid, default: "uuid_generate_v4()", force: :cascade do |t|
-    t.string   "source"
-    t.integer  "source_id"
-    t.string   "value",      limit: 40
+  create_table "code_logs", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.string "source"
+    t.integer "source_id"
+    t.string "value", limit: 40
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -421,6 +421,25 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.index ["device_id"], name: "index_device_metadata_on_device_id"
   end
 
+  create_table "dois", id: :serial, force: :cascade do |t|
+    t.integer "molecule_id"
+    t.string "inchikey"
+    t.integer "molecule_count"
+    t.integer "analysis_id"
+    t.string "analysis_type"
+    t.integer "analysis_count"
+    t.jsonb "metadata", default: {}
+    t.boolean "minted", default: false
+    t.datetime "minted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "doiable_id"
+    t.string "doiable_type"
+    t.string "suffix"
+    t.index ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true
+    t.index ["suffix"], name: "index_dois_on_suffix", unique: true
+  end
+
   create_table "element_klasses", id: :serial, force: :cascade do |t|
     t.string "name"
     t.string "label"
@@ -453,31 +472,10 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.index ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id"
   end
 
-  add_index "element_klasses_revisions", ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id", using: :btree
-  create_table "dois", force: :cascade do |t|
-    t.integer  "molecule_id"
-    t.string   "inchikey"
-    t.integer  "molecule_count"
-    t.integer  "analysis_id"
-    t.string   "analysis_type"
-    t.integer  "analysis_count"
-    t.jsonb    "metadata",       default: {}
-    t.boolean  "minted",         default: false
-    t.datetime "minted_at"
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
-    t.integer  "doiable_id"
-    t.string   "doiable_type"
-    t.string   "suffix"
-  end
-
-  add_index "dois", ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true, using: :btree
-  add_index "dois", ["suffix"], name: "index_dois_on_suffix", unique: true, using: :btree
-
-  create_table "element_tags", force: :cascade do |t|
-    t.string   "taggable_type"
-    t.integer  "taggable_id"
-    t.jsonb    "taggable_data"
+  create_table "element_tags", id: :serial, force: :cascade do |t|
+    t.string "taggable_type"
+    t.integer "taggable_id"
+    t.jsonb "taggable_data"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["taggable_id"], name: "index_element_tags_on_taggable_id"
@@ -790,16 +788,16 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
 
   create_table "pg_search_documents", id: :serial, force: :cascade do |t|
     t.text "content"
-    t.string "searchable_type"
     t.integer "searchable_id"
+    t.string "searchable_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["searchable_type", "searchable_id"], name: "index_pg_search_documents_on_searchable_type_and_searchable_id"
   end
 
   create_table "predictions", id: :serial, force: :cascade do |t|
-    t.string "predictable_type"
     t.integer "predictable_id"
+    t.string "predictable_type"
     t.jsonb "decision", default: {}, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -822,55 +820,53 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.boolean "show_external_name", default: false
     t.integer "user_id", null: false
     t.datetime "deleted_at"
-    t.datetime "created_at",                         null: false
-    t.datetime "updated_at",                         null: false
-    t.jsonb    "data",               default: {},    null: false
-    t.integer  "curation",           default: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "data", default: {}, null: false
+    t.integer "curation", default: 2
+    t.index ["deleted_at"], name: "index_profiles_on_deleted_at"
+    t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
-  add_index "profiles", ["deleted_at"], name: "index_profiles_on_deleted_at", using: :btree
-  add_index "profiles", ["user_id"], name: "index_profiles_on_user_id", using: :btree
-
-  create_table "publications", force: :cascade do |t|
-    t.string   "state"
-    t.jsonb    "metadata",              default: {}
-    t.jsonb    "taggable_data",         default: {}
-    t.jsonb    "dois",                  default: {}
-    t.string   "element_type"
-    t.integer  "element_id"
-    t.integer  "doi_id"
+  create_table "publications", id: :serial, force: :cascade do |t|
+    t.string "state"
+    t.jsonb "metadata", default: {}
+    t.jsonb "taggable_data", default: {}
+    t.jsonb "dois", default: {}
+    t.string "element_type"
+    t.integer "element_id"
+    t.integer "doi_id"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
-    t.string   "original_element_type"
-    t.integer  "original_element_id"
-    t.string   "ancestry"
-    t.text     "metadata_xml"
-    t.integer  "published_by"
+    t.string "original_element_type"
+    t.integer "original_element_id"
+    t.string "ancestry"
+    t.text "metadata_xml"
+    t.integer "published_by"
     t.datetime "published_at"
-    t.jsonb    "review"
+    t.jsonb "review"
     t.datetime "accepted_at"
+    t.index ["ancestry"], name: "index_publications_on_ancestry"
   end
 
-  add_index "publications", ["ancestry"], name: "index_publications_on_ancestry", using: :btree
-
-  create_table "reactions", force: :cascade do |t|
-    t.string   "name"
-    t.datetime "created_at",                                                                   null: false
-    t.datetime "updated_at",                                                                   null: false
-    t.text     "description"
-    t.string   "timestamp_start"
-    t.string   "timestamp_stop"
-    t.text     "observation"
-    t.string   "purification",       default: [],                                                           array: true
-    t.string   "dangerous_products", default: [],                                                           array: true
-    t.string   "tlc_solvents"
-    t.text     "tlc_description"
-    t.string   "rf_value"
-    t.jsonb    "temperature",        default: {"data"=>[], "userText"=>"", "valueUnit"=>"°C"}
-    t.string   "status"
-    t.string   "reaction_svg_file"
-    t.string   "solvent"
+  create_table "reactions", id: :serial, force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "description"
+    t.string "timestamp_start"
+    t.string "timestamp_stop"
+    t.text "observation"
+    t.string "purification", default: [], array: true
+    t.string "dangerous_products", default: [], array: true
+    t.string "tlc_solvents"
+    t.text "tlc_description"
+    t.string "rf_value"
+    t.jsonb "temperature", default: {"data"=>[], "userText"=>"", "valueUnit"=>"°C"}
+    t.string "status"
+    t.string "reaction_svg_file"
+    t.string "solvent"
     t.datetime "deleted_at"
     t.string "short_label"
     t.integer "created_by"
@@ -896,42 +892,40 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.integer "position"
     t.string "type"
     t.datetime "deleted_at"
-    t.boolean  "waste",        default: false
-    t.float    "coefficient",  default: 1.0
-    t.float    "scheme_yield"
-    t.boolean  "show_label",   default: false, null: false
+    t.boolean "waste", default: false
+    t.float "coefficient", default: 1.0
+    t.float "scheme_yield"
+    t.boolean "show_label", default: false, null: false
+    t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
+    t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
   end
 
-  add_index "reactions_samples", ["reaction_id"], name: "index_reactions_samples_on_reaction_id", using: :btree
-  add_index "reactions_samples", ["sample_id"], name: "index_reactions_samples_on_sample_id", using: :btree
-
-  create_table "report_templates", force: :cascade do |t|
-    t.string   "name",          null: false
-    t.string   "report_type",   null: false
-    t.datetime "created_at",    null: false
-    t.datetime "updated_at",    null: false
-    t.integer  "attachment_id"
+  create_table "report_templates", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "report_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "attachment_id"
+    t.index ["attachment_id"], name: "index_report_templates_on_attachment_id"
   end
 
-  add_index "report_templates", ["attachment_id"], name: "index_report_templates_on_attachment_id", using: :btree
-
-  create_table "reports", force: :cascade do |t|
-    t.integer  "author_id"
-    t.string   "file_name"
-    t.text     "file_description"
-    t.text     "configs"
-    t.text     "sample_settings"
-    t.text     "reaction_settings"
-    t.text     "objects"
-    t.string   "img_format"
-    t.string   "file_path"
+  create_table "reports", id: :serial, force: :cascade do |t|
+    t.integer "author_id"
+    t.string "file_name"
+    t.text "file_description"
+    t.text "configs"
+    t.text "sample_settings"
+    t.text "reaction_settings"
+    t.text "objects"
+    t.string "img_format"
+    t.string "file_path"
     t.datetime "generated_at"
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "template", default: "standard"
     t.text "mol_serials", default: "--- []\n"
-    t.text "si_reaction_settings", default: "---\nName: true\nCAS: true\nFormula: true\nSmiles: true\nInCHI: true\nMolecular Mass: true\nExact Mass: true\nEA: true\n"
+    t.text "si_reaction_settings", default: "---\n:Name: true\n:CAS: true\n:Formula: true\n:Smiles: true\n:InCHI: true\n:Molecular Mass: true\n:Exact Mass: true\n:EA: true\n"
     t.text "prd_atts", default: "--- []\n"
     t.integer "report_templates_id"
     t.index ["author_id"], name: "index_reports_on_author_id"
@@ -1025,7 +1019,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.integer "molecule_id"
     t.binary "molfile"
     t.float "purity", default: 1.0
-    t.string "deprecated_solvent", default: ""
     t.string "impurities", default: ""
     t.string "location", default: ""
     t.boolean "is_top_secret", default: false
@@ -1228,18 +1221,18 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.string "first_name", null: false
     t.string "last_name", null: false
     t.datetime "deleted_at"
-    t.hstore   "counters",                          default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"},                                   null: false
-    t.string   "name_abbreviation",      limit: 12
-    t.string   "type",                              default: "Person"
-    t.string   "reaction_name_prefix",   limit: 3,  default: "R"
-    t.hstore   "layout",                            default: {"sample"=>"1", "screen"=>"4", "reaction"=>"2", "wellplate"=>"3", "research_plan"=>"5"}, null: false
-    t.string   "confirmation_token"
+    t.hstore "counters", default: {"samples"=>"0", "reactions"=>"0", "wellplates"=>"0"}, null: false
+    t.string "name_abbreviation", limit: 12
+    t.string "type", default: "Person"
+    t.string "reaction_name_prefix", limit: 3, default: "R"
+    t.hstore "layout", default: {"sample"=>"1", "screen"=>"4", "reaction"=>"2", "wellplate"=>"3", "research_plan"=>"5"}, null: false
+    t.string "confirmation_token"
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
-    t.string   "unconfirmed_email"
-    t.integer  "selected_device_id"
-    t.integer  "failed_attempts",                   default: 0,                                                                                       null: false
-    t.string   "unlock_token"
+    t.string "unconfirmed_email"
+    t.integer "selected_device_id"
+    t.integer "failed_attempts", default: 0, null: false
+    t.string "unlock_token"
     t.datetime "locked_at"
     t.boolean "account_active"
     t.integer "matrix", default: 0
@@ -1260,15 +1253,12 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.index ["user_id"], name: "index_users_admins_on_user_id"
   end
 
-  add_index "users_admins", ["admin_id"], name: "index_users_admins_on_admin_id", using: :btree
-  add_index "users_admins", ["user_id"], name: "index_users_admins_on_user_id", using: :btree
-
-  create_table "users_collaborators", force: :cascade do |t|
+  create_table "users_collaborators", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "collaborator_id"
   end
 
-  create_table "users_devices", force: :cascade do |t|
+  create_table "users_devices", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "device_id"
   end
@@ -1307,10 +1297,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
     t.index ["wellplate_id"], name: "index_wells_on_wellplate_id"
   end
 
-  add_index "wells", ["deleted_at"], name: "index_wells_on_deleted_at", using: :btree
-  add_index "wells", ["sample_id"], name: "index_wells_on_sample_id", using: :btree
-  add_index "wells", ["wellplate_id"], name: "index_wells_on_wellplate_id", using: :btree
-
   add_foreign_key "dois", "molecules"
   add_foreign_key "literals", "literatures"
   add_foreign_key "report_templates", "attachments"
@@ -1329,6 +1315,22 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
        group by  sync_collections_users.id,users.type,users.name_abbreviation,users.first_name,users.last_name,sync_collections_users.permission_level
        ) as result
        $function$
+  SQL
+  create_function :com_xvial, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.com_xvial(p_allow boolean DEFAULT false)
+       RETURNS SETOF compound_open_data_locals
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if p_allow IS false then
+      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
+      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
+      	else
+      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+          end if;
+      END
+      $function$
   SQL
   create_function :detail_level_for_sample, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.detail_level_for_sample(in_user_id integer, in_sample_id integer)
@@ -1394,6 +1396,41 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
       	return in_message_id;
       end;$function$
   SQL
+  create_function :generate_users_matrix, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
+       RETURNS boolean
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if in_user_ids is null then
+          update users u set matrix = (
+      	    select coalesce(sum(2^mx.id),0) from (
+      		    select distinct m1.* from matrices m1, users u1
+      				left join users_groups ug1 on ug1.user_id = u1.id
+      		      where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
+      	      except
+      		    select distinct m2.* from matrices m2, users u2
+      				left join users_groups ug2 on ug2.user_id = u2.id
+      		      where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
+      	    ) mx
+          );
+      	else
+      		  update users u set matrix = (
+      		  	select coalesce(sum(2^mx.id),0) from (
+      			   select distinct m1.* from matrices m1, users u1
+      				 left join users_groups ug1 on ug1.user_id = u1.id
+      			     where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
+      			   except
+      			   select distinct m2.* from matrices m2, users u2
+      				 left join users_groups ug2 on ug2.user_id = u2.id
+      			     where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
+      			  ) mx
+      		  ) where ((in_user_ids) @> array[u.id]) or (u.id in (select ug3.user_id from users_groups ug3 where (in_user_ids) @> array[ug3.group_id]));
+      	end if;
+        return true;
+      end
+      $function$
+  SQL
   create_function :group_user_ids, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.group_user_ids(group_id integer)
        RETURNS TABLE(user_ids integer)
@@ -1403,6 +1440,21 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
              union
              select user_id from users_groups where group_id = $1
       $function$
+  SQL
+  create_function :labels_by_user_sample, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
+       RETURNS TABLE(labels text)
+       LANGUAGE sql
+      AS $function$
+         select string_agg(title::text, ', ') as labels from (select title from user_labels ul where ul.id in (
+           select d.list
+           from element_tags et, lateral (
+             select value::integer as list
+             from jsonb_array_elements_text(et.taggable_data  -> 'user_labels')
+           ) d
+           where et.taggable_id = $2 and et.taggable_type = 'Sample'
+         ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
+       $function$
   SQL
   create_function :pub_reactions_by_molecule, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
@@ -1432,6 +1484,29 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
           end if;
           end;
        $function$
+  SQL
+  create_function :update_users_matrix, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.update_users_matrix()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if (TG_OP='INSERT') then
+          PERFORM generate_users_matrix(null);
+      	end if;
+
+      	if (TG_OP='UPDATE') then
+      	  if new.enabled <> old.enabled or new.deleted_at <> new.deleted_at then
+            PERFORM generate_users_matrix(null);
+      	  elsif new.include_ids <> old.include_ids then
+            PERFORM generate_users_matrix(new.include_ids || old.include_ids);
+          elsif new.exclude_ids <> old.exclude_ids then
+            PERFORM generate_users_matrix(new.exclude_ids || old.exclude_ids);
+      	  end if;
+      	end if;
+        return new;
+      end
+      $function$
   SQL
   create_function :user_as_json, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
@@ -1469,100 +1544,48 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
              order by extended_metadata -> 'instrument' limit 10
            $function$
   SQL
-  create_function :labels_by_user_sample, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
-       RETURNS TABLE(labels text)
+  create_function :literatures_by_element, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
+       RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(title::text, ', ') as labels from (select title from user_labels ul where ul.id in (
-           select d.list
-           from element_tags et, lateral (
-             select value::integer as list
-             from jsonb_array_elements_text(et.taggable_data  -> 'user_labels')
-           ) d
-           where et.taggable_id = $2 and et.taggable_type = 'Sample'
-         ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
+         and l.element_type = $1 and l.element_id = $2
        $function$
-  SQL
-  create_function :generate_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
-       RETURNS boolean
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if in_user_ids is null then
-          update users u set matrix = (
-      	    select coalesce(sum(2^mx.id),0) from (
-      		    select distinct m1.* from matrices m1, users u1
-      				left join users_groups ug1 on ug1.user_id = u1.id
-      		      where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      	      except
-      		    select distinct m2.* from matrices m2, users u2
-      				left join users_groups ug2 on ug2.user_id = u2.id
-      		      where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      	    ) mx
-          );
-      	else
-      		  update users u set matrix = (
-      		  	select coalesce(sum(2^mx.id),0) from (
-      			   select distinct m1.* from matrices m1, users u1
-      				 left join users_groups ug1 on ug1.user_id = u1.id
-      			     where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      			   except
-      			   select distinct m2.* from matrices m2, users u2
-      				 left join users_groups ug2 on ug2.user_id = u2.id
-      			     where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      			  ) mx
-      		  ) where ((in_user_ids) @> array[u.id]) or (u.id in (select ug3.user_id from users_groups ug3 where (in_user_ids) @> array[ug3.group_id]));
-      	end if;
-        return true;
-      end
-      $function$
-  SQL
-  create_function :update_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.update_users_matrix()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if (TG_OP='INSERT') then
-          PERFORM generate_users_matrix(null);
-      	end if;
-
-      	if (TG_OP='UPDATE') then
-      	  if new.enabled <> old.enabled or new.deleted_at <> new.deleted_at then
-            PERFORM generate_users_matrix(null);
-      	  elsif new.include_ids <> old.include_ids then
-            PERFORM generate_users_matrix(new.include_ids || old.include_ids);
-          elsif new.exclude_ids <> old.exclude_ids then
-            PERFORM generate_users_matrix(new.exclude_ids || old.exclude_ids);
-      	  end if;
-      	end if;
-        return new;
-      end
-      $function$
-  SQL
-  create_function :com_xvial, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.com_xvial(p_allow boolean DEFAULT false)
-       RETURNS SETOF compound_open_data_locals
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if p_allow IS false then
-      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
-      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
-      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
-      	else
-      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
-          end if;
-      END
-      $function$
   SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
-      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE PROCEDURE update_users_matrix()
+      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
   SQL
 
+  create_view "compound_open_data_locals", sql_definition: <<-SQL
+      SELECT c.x_id,
+      c.x_sample_id,
+      c.x_data,
+      c.x_created_at,
+      c.x_updated_at,
+      c.x_inchikey,
+      c.x_sum_formular,
+      c.x_cano_smiles,
+      c.x_external_label,
+      c.x_short_label,
+      c.x_name,
+      c.x_stereo
+     FROM ( SELECT NULL::integer AS x_id,
+              NULL::integer AS x_sample_id,
+              NULL::jsonb AS x_data,
+              NULL::timestamp without time zone AS x_created_at,
+              NULL::timestamp without time zone AS x_updated_at,
+              NULL::character varying AS x_inchikey,
+              NULL::character varying AS x_sum_formular,
+              NULL::character varying AS x_cano_smiles,
+              NULL::character varying AS x_external_label,
+              NULL::character varying AS x_short_label,
+              NULL::character varying AS x_name,
+              NULL::jsonb AS x_stereo) c
+    WHERE (c.x_id IS NOT NULL);
+  SQL
   create_view "literal_groups", sql_definition: <<-SQL
       SELECT lits.element_type,
       lits.element_id,
@@ -1705,32 +1728,5 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
-  SQL
-  create_view "compound_open_data_locals", sql_definition: <<-SQL
-      SELECT c.x_id,
-      c.x_sample_id,
-      c.x_data,
-      c.x_created_at,
-      c.x_updated_at,
-      c.x_inchikey,
-      c.x_sum_formular,
-      c.x_cano_smiles,
-      c.x_external_label,
-      c.x_short_label,
-      c.x_name,
-      c.x_stereo
-     FROM ( SELECT NULL::integer AS x_id,
-              NULL::integer AS x_sample_id,
-              NULL::jsonb AS x_data,
-              NULL::timestamp without time zone AS x_created_at,
-              NULL::timestamp without time zone AS x_updated_at,
-              NULL::character varying AS x_inchikey,
-              NULL::character varying AS x_sum_formular,
-              NULL::character varying AS x_cano_smiles,
-              NULL::character varying AS x_external_label,
-              NULL::character varying AS x_short_label,
-              NULL::character varying AS x_name,
-              NULL::jsonb AS x_stereo) c
-    WHERE (c.x_id IS NOT NULL);
   SQL
 end
