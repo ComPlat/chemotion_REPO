@@ -207,8 +207,8 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             doi,
-            title,
-            year,
+            title: data.title || '',
+            year: (data && data.issued && data.issued['date-parts'][0]) || '',
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));

@@ -338,6 +338,7 @@ export default class ReactionDetails extends Component {
       const name = s.preferred_label;
       return name;
     }).filter(s => s);
+  }
 
   onUIStoreChange(state) {
     if (state.reaction.activeTab != this.state.activeTab) {

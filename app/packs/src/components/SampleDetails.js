@@ -643,6 +643,7 @@ export default class SampleDetails extends React.Component {
         {decoupleCb}
         <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
         <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
+        {decoupleCb}
         <div style={{ display: 'inline-block', marginLeft: '10px' }}>
           <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
           {colLabel}
