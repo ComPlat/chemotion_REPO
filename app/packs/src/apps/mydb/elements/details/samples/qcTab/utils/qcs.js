@@ -27,7 +27,7 @@ const extractInfer = (ai, files) => {
 };
 
 const buildQcs = (sample, infer) => {
-  const { files } = infer.result;
+  const { files } = infer.result || {};
   let irQc = {};
   let msQc = {};
   let hnmrQc = {};

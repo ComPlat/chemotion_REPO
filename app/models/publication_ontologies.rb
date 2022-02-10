@@ -11,5 +11,5 @@
 #  label        :text
 #
 
-class PublicationOntologies < ActiveRecord::Base
+class PublicationOntologies < ApplicationRecord
 end

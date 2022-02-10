@@ -1,5 +1,6 @@
 import React from 'react';
 import { Panel, ButtonGroup, Button, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
+import { uniq } from 'lodash';
 import { Citation, literatureContent } from './LiteratureCommon';
 import { CitationType, CitationTypeMap, CitationTypeEOL } from './CitationType';
 
@@ -21,7 +22,7 @@ const changeTypeBtn = (litype, updId, fn) => {
 };
 
 const buildRow = (title, fnDelete, sortedIds, rows, fnUpdate) => {
-  const unis = [...new Set(sortedIds)];
+  const unis = uniq(sortedIds);
   let cnt = 0;
   let result = unis.map((id) => {
     const citation = rows.get(id);

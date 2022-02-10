@@ -14,7 +14,6 @@ import {
   Tooltip
 } from 'react-bootstrap';
 import Immutable from 'immutable';
-import Cite from 'citation-js';
 import { uniqBy } from 'lodash';
 import {
   Citation,

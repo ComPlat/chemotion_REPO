@@ -316,7 +316,7 @@ ChemotionTag.defaultProps = {
   tagData: {},
 };
 
-module.exports = {
+export {
   LabelPublication,
   PublishedTag,
   ChemotionTag,

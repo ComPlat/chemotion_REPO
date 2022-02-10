@@ -1298,24 +1298,6 @@ export default class SampleDetails extends React.Component {
     );
   }
 
-  sampleLiteratureTab() {
-    const { sample } = this.state;
-    if (!sample) { return null; }
-    return (
-      <Tab
-        eventKey={ind}
-        title="References"
-        key={`Literature_${sample.id}`}
-      >
-        <ListGroupItem style={{ paddingBottom: 20 }} >
-          <SampleDetailsLiteratures
-            element={sample}
-          />
-        </ListGroupItem>
-      </Tab>
-    );
-  }
-
   moleculeCanoSmiles(sample) {
     if (this.state.smileReadonly && typeof (this.smilesInput) !== 'undefined'
       && this.smilesInput && typeof (sample.molecule_cano_smiles) !== 'undefined'
