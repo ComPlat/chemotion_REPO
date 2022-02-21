@@ -5,7 +5,7 @@ development:
       :reaction: 2
 #      :wellplate: 3
 #      :screen: 4
-#      :research_plan: 5
+      :research_plan: 5
     :layout_detail_research_plan:
       :research_plan:
         1
@@ -59,7 +59,7 @@ production:
       :reaction: 2
 #      :wellplate: 3
 #      :screen: 4
-#      :research_plan: 5
+      :research_plan: 5
     :layout_detail_research_plan:
       :research_plan:
         1
@@ -113,7 +113,7 @@ test:
       :reaction: 2
 #      :wellplate: 3
 #      :screen: 4
-#      :research_plan: 5
+      :research_plan: 5
     :layout_detail_research_plan:
       :research_plan:
         1
