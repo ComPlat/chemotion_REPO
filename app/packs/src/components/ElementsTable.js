@@ -368,8 +368,8 @@ export default class ElementsTable extends React.Component {
       moleculeSort
     } = this.state
 
-    const {overview, type} = this.props
-    let elementsTableEntries = null
+    const { overview, type } = this.props;
+    let elementsTableEntries = null;
 
     if (type === 'sample') {
       elementsTableEntries = (
@@ -378,14 +378,14 @@ export default class ElementsTable extends React.Component {
           showDragColumn={!overview} ui={ui} moleculeSort={moleculeSort}
           onChangeCollapse={(checked) => this.collapseSample(!checked)}
         />
-      )
+      );
     } else {
       elementsTableEntries = (
         <ElementsTableEntries
           elements={elements} currentElement={currentElement}
           showDragColumn={!overview} ui={ui}
         />
-      )
+      );
     }
 
     return (

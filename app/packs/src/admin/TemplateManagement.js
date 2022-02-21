@@ -366,7 +366,7 @@ export default class TemplateManagement extends React.Component {
           {idx + 1}
         </td>
         <td width="30%"> {g.name} </td>
-        <td width="30%"> {this.state.reportTemplateTypes.find(({ value }) => value === g.report_type).label} </td>
+        <td width="30%"> {(this.state.reportTemplateTypes.find(({ value }) => value === g.report_type) || {}).label} </td>
         <td width="2%"> {g.id} </td>
         <td width="12%">
           <OverlayTrigger placement="bottom" overlay={editTooltip} >

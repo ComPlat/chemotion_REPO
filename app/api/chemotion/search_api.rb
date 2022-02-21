@@ -232,55 +232,98 @@ module Chemotion
         screens = elements.fetch(:screens, [])
 
         if params[:is_public]
-          xvial_count = <<~SQL
-            inner join (
-              select count(e.id) as xvial_count, m.id as molecule_id from molecules m
-              inner join samples s on s.molecule_id = m.id
-              inner join publications p on p.element_type='Sample' and p.element_id=s.id  and p.deleted_at isnull
-              left outer join element_tags e on e.taggable_id = s.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
-              group by m.id
-            ) c on c.molecule_id = molecules.id
-          SQL
           com_config = Rails.configuration.compound_opendata
-          xvial_com = <<~SQL
-            inner join (select -1 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
+          sample_join = <<~SQL
+            INNER JOIN (
+              SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
+              FROM (
+              SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
+              FROM samples, publications pub
+              WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
+                and samples.id IN (#{samples.join(',')})) s where rownum = 1
+            ) s on s.molecule_id = molecules.id
           SQL
-          if com_config.present?
-            xvial_com = if com_config.allowed_uids.include?(current_user&.id)
-                          <<~SQL
-                            inner join (
-                              select count(a.x_id) as xvial_com, m.id molcule_id from molecules m left outer join com_xvial(true) a on a.x_inchikey = m.inchikey
-                              group by m.id
-                            ) cod on cod.molcule_id = molecules.id
-                          SQL
-                        else
-                          <<~SQL
-                            inner join (select -2 as xvial_com, m.id molcule_id from molecules m) cod on cod.molcule_id = molecules.id
-                          SQL
-                        end
+
+          embargo_sql = <<~SQL
+            molecules.*, sample_svg_file, sid,
+            (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_samples cs on collections.id = cs.collection_id
+              and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
+              select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
+            (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
+            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
+            (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
+          SQL
+
+          ttl_mol = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          slist = paginate(ttl_mol)
+          sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
+#byebug
+          ssids = sentities.map { |e| e[:sid] }
+
+          xvial_count_ssql = <<~SQL
+            inner join element_tags e on e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          x_cnt_sids = Sample.joins(xvial_count_ssql).where(id: ssids).distinct.pluck(:id) || []
+
+          xvial_com_ssql = <<~SQL
+            inner join molecules m on m.id = samples.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          x_com_sids = Sample.joins(xvial_com_ssql).where(id: ssids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          sentities = sentities.each do |obj|
+            obj[:xvial_count] = 1 if x_cnt_sids.include?(obj[:sid])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_sids || []).include?(obj[:sid])
           end
-          molecules = paginate(Molecule.joins(:samples).joins(xvial_count).joins(xvial_com).where("samples.id in (?)", samples).includes(:tag)).select(
-            <<~SQL
-            molecules.*, max(samples.sample_svg_file) sample_svg_file, xvial_count, xvial_com
-            SQL
-          ).group('molecules.id, xvial_count, xvial_com').uniq
-          serialized_molecules = molecules.map { |m| MoleculeGuestListSerializer.new(m).serializable_hash }
-          filter_reactions = Reaction.where("id in (?)", reactions)
-          serialized_reactions = paginate(filter_reactions).map { |r| ReactionGuestListSerializer.new(r, scope: OpenStruct.new(current_user: current_user)).serializable_hash }
+
+          filter_reactions = Reaction.where("reactions.id in (?)", reactions)
+
+          embargo_rsql = <<~SQL
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
+            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
+            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+          SQL
+
+          reaction_list = paginate(filter_reactions.joins(:publication).select(embargo_rsql).order('publications.published_at desc'))
+          reaction_entities = Entities::ReactionPublicationListEntity.represent(reaction_list, serializable: true)
+          reaction_ids = reaction_entities.map { |e| e[:id] }
+
+
+          xvial_count_sql = <<~SQL
+            inner join element_tags e on e.taggable_id = reactions_samples.sample_id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          reaction_x_cnt_ids = ReactionsSample.joins(xvial_count_sql).where(type: 'ReactionsProductSample', reaction_id: reaction_ids).distinct.pluck(:reaction_id) || []
+
+          xvial_com_sql = <<~SQL
+            inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
+            inner join molecules m on m.id = s.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          reaction_x_com_ids = ReactionsSample.joins(xvial_com_sql).where(type: 'ReactionsProductSample', reaction_id: reaction_ids).distinct.pluck(:reaction_id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          reaction_entities = reaction_entities.each do |obj|
+            obj[:xvial_count] = 1 if reaction_x_cnt_ids.include?(obj[:id])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (reaction_x_com_ids || []).include?(obj[:id])
+          end
+
+
           return {
             publicMolecules: {
-              molecules: serialized_molecules,
-              totalElements: molecules.size,
+              molecules: sentities,
+              totalElements: ttl_mol.size,
               page: page,
               perPage: page_size,
-              ids: molecules.pluck(:id)
+              ids: ssids
             },
             publicReactions: {
-              reactions: serialized_reactions,
+              reactions: reaction_entities,
               totalElements: reactions.size,
               page: page,
               perPage: page_size,
-              ids: filter_reactions.pluck(:id)
+              ids: reaction_ids
             }
           }
         end
