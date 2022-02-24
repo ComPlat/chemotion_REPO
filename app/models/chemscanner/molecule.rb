@@ -30,7 +30,7 @@ module Chemscanner
   class Molecule < ApplicationRecord
     acts_as_paranoid
 
-    belongs_to :scheme, class_name: Scheme, foreign_key: :scheme_id
+    belongs_to :scheme, class_name: 'Scheme', foreign_key: :scheme_id
 
     has_many :reactions_molecules, dependent: :destroy
     has_many :reactions_reactant_molecules, dependent: :destroy

@@ -18,16 +18,16 @@
 module Chemscanner
   # Uploaded files for scanning
   class Source < ActiveRecord::Base
-    belongs_to :creator, foreign_key: :created_by, class_name: User
+    belongs_to :creator, foreign_key: :created_by, class_name: 'User'
 
     belongs_to :file, -> { where attachable_type: 'ChemscannerSource' },
-               class_name: Attachment, foreign_key: :file_id,
+               class_name: 'Attachment', foreign_key: :file_id,
                foreign_type: :attachable_type
 
     # has_one :file, as: :attachable
 
     has_many :schemes,
-             foreign_key: :source_id, class_name: Scheme,
+             foreign_key: :source_id, class_name: 'Scheme',
              dependent: :destroy
 
     accepts_nested_attributes_for :schemes

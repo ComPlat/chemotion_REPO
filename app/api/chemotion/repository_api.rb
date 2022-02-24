@@ -348,24 +348,6 @@ module Chemotion
           has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first.label : ''
         end
 
-        def update_tag_doi(element)
-          unless element.nil? || element&.doi.nil? || element&.tag.nil?
-            mds = Datacite::Mds.new
-            et = element.tag
-            tag_data = (et.taggable_data && et.taggable_data['publication']) || {}
-            tag_data['doi'] = "#{mds.doi_prefix}/#{element&.doi.suffix}"
-            et.update!(
-              taggable_data: (et.taggable_data || {}).merge(publication: tag_data)
-            )
-            if element&.class&.name == 'Reaction'
-              element&.publication.children.each do |child|
-                next unless child&.element&.class&.name == 'Sample'
-
-                update_tag_doi(child.element)
-              end
-            end
-          end
-        end
       end
 
       desc 'Get review list'
@@ -1182,7 +1164,6 @@ module Chemotion
               { error: "Embargo #{@embargo_collection.label} release failed, because not all elements have been 'accepted'."}
             else
               pub_list.each { |pub| element_submit(pub) }
-byebug
               remove_anonymous(@embargo_collection)
               handle_embargo_collections(@embargo_collection)
               case ENV['PUBLISH_MODE']
