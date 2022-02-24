@@ -874,7 +874,6 @@ DEPENDENCIES
   capybara
   caxlsx
   charlock_holmes
-  chem_scanner!
   chronic
   closure_tree
   countries
