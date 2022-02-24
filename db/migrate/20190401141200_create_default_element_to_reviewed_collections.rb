@@ -1,4 +1,4 @@
-class CreateDefaultElementToReviewedCollections < ActiveRecord::Migration
+class CreateDefaultElementToReviewedCollections < ActiveRecord::Migration[4.2]
  def change
 
    chemotion_user = User.chemotion_user

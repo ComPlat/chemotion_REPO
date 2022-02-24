@@ -1,4 +1,4 @@
-class TagDoiReviewing < ActiveRecord::Migration
+class TagDoiReviewing < ActiveRecord::Migration[4.2]
   def change
     mds = Datacite::Mds.new
 
@@ -10,7 +10,7 @@ class TagDoiReviewing < ActiveRecord::Migration
       tag_data['doi'] = "#{mds.doi_prefix}/#{element&.doi.suffix}"
       et.update!(
         taggable_data: (et.taggable_data || {}).merge(publication: tag_data)
-      )  
+      )
     end
     rescue Exception => e
   end

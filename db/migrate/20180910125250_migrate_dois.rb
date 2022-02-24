@@ -1,4 +1,4 @@
-class MigrateDois < ActiveRecord::Migration
+class MigrateDois < ActiveRecord::Migration[4.2]
   def change
     begin
     file = File.open("log/doi_seeding.log", "w")

@@ -1,4 +1,4 @@
-class AddChemscannerNotification < ActiveRecord::Migration
+class AddChemscannerNotification < ActiveRecord::Migration[4.2]
   def change
     channel = Channel.find_by(subject: Channel::CHEMSCANNER_NOTIFICATION)
     return unless channel.nil?

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Add new column accepted_at to table: publications and data migration
-class AddAcceptedAt < ActiveRecord::Migration
+class AddAcceptedAt < ActiveRecord::Migration[4.2]
   def up
     add_column(:publications, :accepted_at, :datetime) unless column_exists? :publications, :accepted_at
 

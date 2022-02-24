@@ -1,4 +1,4 @@
-class MapAnalysisType < ActiveRecord::Migration
+class MapAnalysisType < ActiveRecord::Migration[4.2]
   CONV = [
     { kind: '1H NMR', ols: 'CHMO:0000593 | 1H nuclear magnetic resonance spectroscopy (1H NMR)' },
     { kind: '13C NMR', ols: 'CHMO:0000595 | 13C nuclear magnetic resonance spectroscopy (13C NMR)' },
