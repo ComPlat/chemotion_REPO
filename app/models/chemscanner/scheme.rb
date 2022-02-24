@@ -23,15 +23,15 @@ module Chemscanner
   class Scheme < ApplicationRecord
     acts_as_paranoid
 
-    belongs_to :creator, foreign_key: :created_by, class_name: User
-    belongs_to :source, foreign_key: :source_id, class_name: Chemscanner::Source
+    belongs_to :creator, foreign_key: :created_by, class_name: 'User'
+    belongs_to :source, foreign_key: :source_id, class_name: 'Chemscanner::Source'
 
     has_many :reactions,
-             class_name: Reaction, foreign_key: :scheme_id,
+             class_name: 'Reaction', foreign_key: :scheme_id,
              dependent: :destroy
 
     has_many :molecules,
-             class_name: Molecule, foreign_key: :scheme_id,
+             class_name: 'Molecule', foreign_key: :scheme_id,
              dependent: :destroy
 
     accepts_nested_attributes_for :reactions, :molecules

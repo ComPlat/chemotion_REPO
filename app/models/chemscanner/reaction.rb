@@ -28,33 +28,33 @@ module Chemscanner
   class Reaction < ApplicationRecord
     acts_as_paranoid
 
-    belongs_to :scheme, class_name: Scheme, foreign_key: :scheme_id
+    belongs_to :scheme, class_name: 'Scheme', foreign_key: :scheme_id
 
-    has_many :steps, class_name: ReactionStep, foreign_key: :reaction_id
+    has_many :steps, class_name: 'ReactionStep', foreign_key: :reaction_id
 
     has_many :reactions_molecules, dependent: :destroy
     has_many :molecules, through: :reactions_molecules, source: :molecule
 
     has_many :reactions_reactant_molecules,
-             class_name: ReactionsReactantMolecule,
+             class_name: 'ReactionsReactantMolecule',
              dependent: :destroy
     has_many :reactants,
              through: :reactions_reactant_molecules, source: :molecule
 
     has_many :reactions_reagent_molecules,
-             class_name: ReactionsReagentMolecule,
+             class_name: 'ReactionsReagentMolecule',
              dependent: :destroy
     has_many :reagents,
              through: :reactions_reagent_molecules, source: :molecule
 
     has_many :reactions_solvent_molecules,
-             class_name: ReactionsSolventMolecule,
+             class_name: 'ReactionsSolventMolecule',
              dependent: :destroy
     has_many :solvents,
              through: :reactions_solvent_molecules, source: :molecule
 
     has_many :reactions_product_molecules,
-             class_name: ReactionsProductMolecule,
+             class_name: 'ReactionsProductMolecule',
              dependent: :destroy
     has_many :products,
              through: :reactions_product_molecules,
