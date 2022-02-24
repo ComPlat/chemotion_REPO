@@ -1,7 +1,7 @@
-class AddSuffixToDois < ActiveRecord::Migration
+class AddSuffixToDois < ActiveRecord::Migration[4.2]
   def change
     add_column :dois, :suffix, :string
-    # remove_index(:dois, name: 'index_on_dois') if index_exists?(:dois, name: 'index_on_dois') 
+    # remove_index(:dois, name: 'index_on_dois') if index_exists?(:dois, name: 'index_on_dois')
     add_index(:dois, :suffix, unique: true)
   end
 end

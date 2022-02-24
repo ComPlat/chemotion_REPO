@@ -1,4 +1,4 @@
-class CreateChemscannerSourceHierarchies < ActiveRecord::Migration
+class CreateChemscannerSourceHierarchies < ActiveRecord::Migration[4.2]
   def change
     create_table :chemscanner_source_hierarchies, id: false do |t|
       t.integer :ancestor_id, null: false

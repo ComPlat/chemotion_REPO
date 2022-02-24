@@ -1,4 +1,4 @@
-class CreateDefaultReviewingCollections < ActiveRecord::Migration
+class CreateDefaultReviewingCollections < ActiveRecord::Migration[4.2]
  def change
    chemotion_user = User.chemotion_user
   users = User.where(type: 'Person')

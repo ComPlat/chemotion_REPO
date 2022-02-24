@@ -1,4 +1,4 @@
-class AddChemScannerFile < ActiveRecord::Migration
+class AddChemScannerFile < ActiveRecord::Migration[4.2]
   def change
     create_table :chemscanner_sources do |t|
       t.integer :parent_id
