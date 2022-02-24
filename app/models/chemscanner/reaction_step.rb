@@ -25,7 +25,7 @@ module Chemscanner
   class ReactionStep < ApplicationRecord
     acts_as_paranoid
 
-    belongs_to :reaction, class_name: Reaction, foreign_key: :output_id
+    belongs_to :reaction, class_name: 'Reaction', foreign_key: :output_id
 
     def assign_from_chemscanner(step)
       assign_attributes(
