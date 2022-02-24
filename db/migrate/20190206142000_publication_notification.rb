@@ -1,4 +1,4 @@
-class PublicationNotification < ActiveRecord::Migration
+class PublicationNotification < ActiveRecord::Migration[4.2]
  def change
    channel = Channel.find_by(subject: Channel::PUBLICATION_REVIEW)
    channel.destroy if channel

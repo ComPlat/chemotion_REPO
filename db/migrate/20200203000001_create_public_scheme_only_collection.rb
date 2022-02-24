@@ -1,4 +1,4 @@
-class CreatePublicSchemeOnlyCollection < ActiveRecord::Migration
+class CreatePublicSchemeOnlyCollection < ActiveRecord::Migration[4.2]
   def change
     chemotion_user = User.chemotion_user
     public_scheme_reaction = Collection.scheme_only_reactions_collection || Collection.create(user: chemotion_user, label: 'Scheme-only reactions', is_shared: false, is_locked: false, is_synchronized: true)

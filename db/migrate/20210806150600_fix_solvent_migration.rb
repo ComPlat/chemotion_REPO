@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Create fix solvent migration
-class FixSolventMigration < ActiveRecord::Migration
+class FixSolventMigration < ActiveRecord::Migration[4.2]
   def change
     solvent_list = {}
     Sample.where.not(solvent: nil).find_each do |sample|
