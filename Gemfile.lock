@@ -1,15 +1,4 @@
 GIT
-  remote: git@git.scc.kit.edu:ComPlat/chem_scanner.git
-  revision: fdb33336301c7fad22039925f1d201ed1ae1c196
-  specs:
-    chem_scanner (0.1.3)
-      chronic_duration (>= 0.10)
-      nokogiri (>= 1.8)
-      rdkit_chem
-      ruby-geometry (>= 0.0.6)
-      ruby-ole (>= 1.2)
-
-GIT
   remote: https://git.scc.kit.edu/ComPlat/rinchi-gem.git
   revision: 214f7db7947c8098685d0617909de229b3dbb7ef
   specs:
@@ -266,8 +255,6 @@ GEM
     childprocess (2.0.0)
       rake (< 13.0)
     chronic (0.10.2)
-    chronic_duration (0.10.6)
-      numerizer (~> 0.1.1)
     chunky_png (1.3.11)
     climate_control (0.2.0)
     closure_tree (7.0.0)
@@ -796,7 +783,6 @@ DEPENDENCIES
   capistrano-yarn
   capybara (~> 3.29.0)
   charlock_holmes
-  chem_scanner!
   chronic
   closure_tree
   countries
