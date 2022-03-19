@@ -324,8 +324,8 @@ export default class PublishSampleModal extends Component {
       <Table>
         <thead>
           <tr>
-            <th width="80%" />
-            <th width="20%" />
+            <th width="60%" />
+            <th width="40%" />
           </tr>
         </thead>
         <tbody>
@@ -354,7 +354,7 @@ export default class PublishSampleModal extends Component {
                         onChange={() => { this.handleRefCheck(id); }}
                       >
                         <span>Add to publication</span><br />
-                        <span>({CitationTypeMap[litype].short})</span>
+                        <span>({CitationTypeMap[litype].def})</span>
                       </Checkbox>
                     </span>
                   </OverlayTrigger>

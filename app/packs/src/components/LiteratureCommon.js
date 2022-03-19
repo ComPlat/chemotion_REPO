@@ -16,7 +16,7 @@ const RefByUserInfo = ({ info, litype }) => {
         <Tooltip id={`ref_by_user_${uuid.v4()}`} className="left_tooltip bs_tooltip">
           Reference added by
           {
-            Object.keys(info).map(lid => (litype[lid] ? ` ${info[lid]} (${CitationTypeMap[litype[lid]].short})` : info[lid])).join(', ')
+            Object.keys(info).map(lid => (litype[lid] ? ` ${info[lid]} (${CitationTypeMap[litype[lid]].def})` : info[lid])).join(', ')
           }
         </Tooltip>
       }
