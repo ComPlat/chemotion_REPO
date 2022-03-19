@@ -59,6 +59,7 @@ export default class CollectionTree extends React.Component {
 
   componentWillUnmount() {
     CollectionStore.unlisten(this.onChange);
+    UIStore.listen(this.onChange);
     InboxStore.unlisten(this.onChange);
   }
 
@@ -281,10 +282,13 @@ export default class CollectionTree extends React.Component {
   }
 
   subtrees(roots, label, isRemote, visible = true) {
+    const { currentCollection, isSync } = UIStore.getState();
+
     let subtrees = roots.map((root, index) => {
       return  <CollectionSubtree
                 root={root}
                 key={index}
+                currentCollection={currentCollection}
                 isRemote={isRemote}
               //  deSelectPublic={this.deSelectPublic}
               />
