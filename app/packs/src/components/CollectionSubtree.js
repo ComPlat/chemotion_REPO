@@ -39,6 +39,7 @@ export default class CollectionSubtree extends React.Component {
 
     this.state = {
       isRemote: props.isRemote,
+      currentCollection: props.currentCollection,
       label: props.root.label,
       selected: false,
       root: props.root,
@@ -83,11 +84,13 @@ export default class CollectionSubtree extends React.Component {
       if (selectedCol) {
         this.setState({
           selected: true,
+          currentCollection: state.currentCollection,
           visible
         });
       } else {
         this.setState({
           selected: false,
+          currentCollection: state.currentCollection,
           visible
         });
       }
@@ -104,8 +107,12 @@ export default class CollectionSubtree extends React.Component {
     return (visibleRootsIds.indexOf(node.id) > -1)
   }
 
-  selectedCssClass() {
-    return (this.state.selected) ? "selected" : "";
+  selectedCssClass(currentCollection) {
+    const { root } = this.state;
+    if (this.state.selected || (currentCollection && currentCollection.id == root.id && currentCollection.is_synchronized == root.is_synchronized)) {
+      return 'selected';
+    }
+    return '';
   }
 
   children() {
@@ -234,7 +241,7 @@ export default class CollectionSubtree extends React.Component {
 
 
   render() {
-    const { root, visible } = this.state
+    const { root, visible, currentCollection } = this.state
     let { label } = this.state
 
     label = labeling(label);
@@ -252,7 +259,7 @@ export default class CollectionSubtree extends React.Component {
       <div className="tree-view" key={root.id}>
         {this.takeOwnershipButton()}
 
-        <div id={`tree-id-${root.label}`} className={"title " + this.selectedCssClass()}
+        <div id={`tree-id-${root.label}`} className={"title " + this.selectedCssClass(currentCollection)}
           onClick={this.handleClick}>
           {this.expandButton()}
           {this.synchronizedIcon()}

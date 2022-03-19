@@ -7,6 +7,7 @@ import {
 } from 'react-bootstrap';
 import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import { findIndex, cloneDeep } from 'lodash';
+import uuid from 'uuid';
 import ElementCollectionLabels from './ElementCollectionLabels';
 import ElementAnalysesLabels from './ElementAnalysesLabels';
 import ElementActions from './actions/ElementActions';
