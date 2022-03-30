@@ -259,6 +259,27 @@ class Publication < ActiveRecord::Base
   def doi_bag
     d = doi
     case element_type
+    when 'Collection'
+      dois = {
+        collection: {
+          DOI: d.full_doi,
+          suffix: d.suffix,
+          inchikey: d.inchikey,
+          count: d.molecule_count
+        },
+        element_dois: {}
+      }
+      eids = taggable_data["eids"]
+      eids.each do |eid|
+        sp = Publication.find(eid)
+        sd = sp.doi
+        dois[:element_dois][sp.element_id.to_s] = {
+          DOI: sd.full_doi,
+          suffix: sd.suffix,
+          type: sd.analysis_type,
+          count: sd.analysis_count
+        }
+      end
     when 'Sample'
       dois = {
         sample: {
@@ -459,6 +480,11 @@ class Publication < ActiveRecord::Base
         doi: short_doi
       }
       element.update_publication_tag(tag_data)
+    when 'Collection'
+      tag_data = {
+        doi_reg_at: doi_date,
+        doi: short_doi
+      }
     end
 
     pd = taggable_data.merge(tag_data)

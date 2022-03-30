@@ -153,6 +153,27 @@ export default class PublicFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+  static fetchEmbargoElements(id) {
+    const api = `/api/v1/public/col_list.json?collection_id=${id}`;
+    return fetch(api, { credentials: 'same-origin' })
+      .then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
+  static fetchEmbargoElement(cid, el) {
+    const api = `/api/v1/public/col_element.json?collection_id=${cid}&el_type=${el.type}&el_id=${el.id}`;
+    return fetch(api, { credentials: 'same-origin' })
+      .then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
+  static fetchEmbargo(id) {
+    const api = `/api/v1/public/embargo.json?id=${id}`;
+    return fetch(api, { credentials: 'same-origin' })
+      .then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
   static queryPid(params) {
     const api = `/api/v1/public/pid/`
 

@@ -62,6 +62,19 @@ export default class RepositoryFetcher {
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
+  static refreshEmbargo(emb) {
+    const api = '/api/v1/repository/embargo/refresh';
+    return fetch(api, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: emb.id, collection_id: emb.element_id })
+    }).then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
 
   static assignEmbargo(embargoVal, element) {
     const api = '/api/v1/repository/assign_embargo';
