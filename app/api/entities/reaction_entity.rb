@@ -18,6 +18,7 @@ module Entities
       expose! :starting_materials,                                                      using: 'Entities::ReactionMaterialEntity'
       expose! :type
       expose :comment_count
+      expose! :embargo, if: -> (obj, opts) { obj.respond_to? :embargo}
 
     end
 

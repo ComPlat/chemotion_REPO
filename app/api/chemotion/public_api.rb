@@ -617,6 +617,65 @@ module Chemotion
         end
       end
 
+      resource :embargo do
+        helpers RepositoryHelpers
+        desc "Return PUBLISHED serialized collection"
+        params do
+          requires :id, type: Integer, desc: "collection id"
+        end
+        get do
+          pub = Publication.find_by(element_type: 'Collection', element_id: params[:id])
+          { col: pub }
+        end
+      end
+
+      resource :col_list do
+        helpers RepositoryHelpers
+        get do
+          @embargo_collection = Collection.find(params[:collection_id])
+          anasql = <<~SQL
+            publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
+          SQL
+          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
+          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
+          list = sample_list + reaction_list
+          elements = []
+          list.each do |e|
+            element_type = e.element&.class&.name
+            u = User.find(e.published_by) unless e.published_by.nil?
+            svg_file = e.element.sample_svg_file if element_type == 'Sample'
+            title = e.element.short_label if element_type == 'Sample'
+
+            svg_file = e.element.reaction_svg_file if element_type == 'Reaction'
+            title = e.element.short_label if element_type == 'Reaction'
+
+            scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
+            elements.push(
+              id: e.element_id, pub_id: e.id, svg: svg_file, type: element_type, title: title, published_at: e.published_at&.strftime('%d-%m-%Y'),
+              published_by: u&.name, submit_at: e.updated_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
+            )
+          end
+          { elements: elements, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
+        end
+      end
+
+      resource :col_element do
+        helpers RepositoryHelpers
+        params do
+          requires :collection_id, type: Integer, desc: "collection id"
+          requires :el_id, type: Integer, desc: "element id"
+        end
+        get do
+          @embargo_collection = Collection.find(params[:collection_id])
+          if params[:el_type] == 'Reaction'
+            return get_pub_reaction(params[:el_id])
+          elsif params[:el_type] == 'Sample'
+            sample = Sample.find(params[:el_id])
+            return get_pub_molecule(sample.molecule_id)
+          end
+        end
+      end
+
       resource :reaction do
         helpers RepositoryHelpers
         desc "Return PUBLISHED serialized reaction"
@@ -627,68 +686,12 @@ module Chemotion
           r = CollectionsReaction.where(reaction_id: params[:id], collection_id: [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id])
           return nil unless r.present?
 
-          reaction = Reaction.where('id = ?', params[:id])
-          .select(
-            <<~SQL
-            reactions.id, reactions.name, reactions.description, reactions.reaction_svg_file, reactions.short_label,
-            reactions.status, reactions.tlc_description, reactions.tlc_solvents, reactions.rf_value,
-            reactions.temperature, reactions.timestamp_start,reactions.timestamp_stop,reactions.observation,
-            reactions.rinchi_string, reactions.rinchi_long_key, reactions.rinchi_short_key,reactions.rinchi_web_key,
-            (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
-            reactions.duration
-            SQL
-          )
-          .includes(
-                container: :attachments
-          ).last
-          literatures = get_literature(params[:id],'Reaction') || []
-          reaction.products.each do |p|
-            literatures += get_literature(p.id,'Sample')
-          end
-
-          pub = Publication.find_by(element_type: 'Reaction', element_id: params[:id])
-          pub_info = (pub.review.present? && pub.review['info'].present? && pub.review['info']['comment']) || ''
-          infos = {}
-          ana_infos = {}
-          pd_infos = {}
-          pub.descendants.each do |pp|
-            review = pp.review || {}
-            info = review['info'] || {}
-            next if info.empty?
-            if pp.element_type == 'Sample'
-              pd_infos[pp.element_id] = info['comment']
-            else
-              ana_infos[pp.element_id] = info['comment']
-            end
-          end
-
-          schemeList = get_reaction_table(params[:id])
-          entities = Entities::ReactionEntity.represent(reaction, serializable: true)
-          entities[:products].each do |p|
-            pub_product = p
-            p[:xvialCom] = build_xvial_com(p[:molecule][:inchikey], current_user&.id)
-            pub_product_tag = pub_product[:tag]['taggable_data']
-            next if pub_product_tag.nil?
-
-            xvial = pub_product_tag['xvial'] && pub_product_tag['xvial']['num']
-            next unless xvial.present?
-
-            unless current_user.present? && User.reviewer_ids.include?(current_user.id)
-              pub_product_tag['xvial']['num'] = 'x'
-            end
-            p[:xvialCom][:hasSample] = true
-          end
-          entities[:publication]['review']['history'] = []
-          entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
-          entities[:schemes] = schemeList unless entities.nil? || schemeList.nil? || schemeList.length == 0
-          entities[:isLogin] = current_user.present?
-          entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
-          entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
-          entities
+          return get_pub_reaction(params[:id])
         end
       end
 
       resource :molecule do
+        helpers RepositoryHelpers
         desc "Return serialized molecule with list of PUBLISHED dataset"
         params do
           requires :id, type: Integer, desc: "Molecule id"
@@ -697,88 +700,7 @@ module Chemotion
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
         end
         get do
-          molecule = Molecule.find(params[:id])
-          xvial_com = build_xvial_com(molecule.inchikey, current_user&.id)
-          pub_id = Collection.public_collection_id
-          if params[:adv_flag].present? && params[:adv_flag] == true && params[:adv_type].present? && params[:adv_type] == 'Authors' && params[:adv_val].present?
-            adv = <<~SQL
-              INNER JOIN publication_authors rs on rs.element_id = samples.id and rs.element_type = 'Sample' and rs.state = 'completed'
-              and rs.author_id in ('#{params[:adv_val].join("','")}')
-            SQL
-          else
-            adv = ''
-          end
-
-          pub_samples = Collection.public_collection.samples
-            .includes(:molecule,:tag).where("samples.molecule_id = ?", molecule.id)
-            .where(
-              <<~SQL
-                samples.id in (
-                  SELECT samples.id FROM samples
-                  INNER JOIN collections_samples cs on cs.collection_id = #{pub_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
-                  INNER JOIN publications pub on pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
-                  #{adv}
-                )
-              SQL
-            )
-            .select(
-              <<~SQL
-              samples.*, (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at
-              SQL
-            )
-            .order('published_at desc')
-          published_samples = pub_samples.map do |s|
-            containers = Entities::ContainerEntity.represent(s.container)
-            tag = s.tag.taggable_data['publication']
-            #u = User.find(s.tag.taggable_data['publication']['published_by'].to_i)
-            #time = DateTime.parse(s.tag.taggable_data['publication']['published_at'])
-            #published_time = time.strftime("%A, %B #{time.day.ordinalize} %Y %H:%M")
-            #aff = u.affiliations.first
-            next unless tag
-            literatures = Literature.by_element_attributes_and_cat(s.id, 'Sample', 'public')
-              .joins("inner join users on literals.user_id = users.id")
-              .select(
-                <<~SQL
-                literatures.*,
-                json_object_agg(literals.id, literals.litype) as litype,
-                json_object_agg(literals.id, users.first_name || chr(32) || users.last_name) as ref_added_by
-                SQL
-              ).group('literatures.id').as_json
-            reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
-            pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
-            sid = pub.taggable_data["sid"] unless pub.nil? || pub.taggable_data.nil?
-            xvial = s.tag.taggable_data['xvial'] && s.tag.taggable_data['xvial']['num'] unless s.tag.taggable_data.nil?
-            if xvial.present?
-              unless current_user.present? && User.reviewer_ids.include?(current_user.id)
-                xvial = 'x'
-              end
-            end
-            pub_info = (pub.review.present? && pub.review['info'].present? && pub.review['info']['comment']) || ''
-            ana_infos = {}
-            pub.descendants.each do |pp|
-              review = pp.review || {}
-              info = review['info'] || {}
-              next if info.empty?
-              ana_infos[pp.element_id] = info['comment']
-            end
-            em_sql = <<~SQL
-              inner join collections_samples cs on collections.id = cs.collection_id and cs.sample_id = #{s.id}
-            SQL
-            embargo = Collection.joins(em_sql).where("ancestry in (select c.id::text from collections c where c.label = 'Published Elements')")&.first&.label
-            tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label,
-              sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info)
-
-          end
-          x = published_samples.select { |s| s[:xvial].present? }
-          xvial_com[:hasSample] = x.length.positive?
-          published_samples = published_samples.flatten.compact
-          {
-            molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
-            published_samples: published_samples,
-            isLogin: current_user.nil? ? false : true,
-            isReviewer: (current_user.present? && User.reviewer_ids.include?(current_user.id)) ? true : false,
-            xvialCom: xvial_com
-          }
+          get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val])
         end
       end
 

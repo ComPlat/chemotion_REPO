@@ -1561,6 +1561,16 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
              order by extended_metadata -> 'instrument' limit 10
            $function$
   SQL
+  create_function :literatures_by_element, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
+       RETURNS TABLE(literatures text)
+       LANGUAGE sql
+      AS $function$
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
+         where l.literature_id = l2.id
+         and l.element_type = $1 and l.element_id = $2
+       $function$
+  SQL
 
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
@@ -1623,5 +1633,17 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
+  SQL
+  create_view "publication_collections", sql_definition: <<-SQL
+      SELECT p.id,
+      p.state,
+      p.element_id,
+      (p.taggable_data ->> 'label'::text) AS label,
+      (p.taggable_data ->> 'col_doi'::text) AS doi,
+      jsonb_array_elements((p.taggable_data -> 'element_dois'::text)) AS elobj,
+      p.doi_id,
+      p.published_by
+     FROM publications p
+    WHERE ((p.deleted_at IS NULL) AND ((p.element_type)::text = 'Collection'::text));
   SQL
 end

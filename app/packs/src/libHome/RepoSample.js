@@ -119,6 +119,15 @@ export default class RepoSample extends Component {
       : <h5><b>Name: </b> {sample.showed_name} </h5>;
     const userInfo = sample.pub_info || '';
     const analyses = (sample.analyses && sample.analyses.children && sample.analyses.children.length > 0 && sample.analyses.children[0].children) || [];
+    let embargo = (<span />);
+    if (sample.embargo) {
+      embargo = (
+        <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${sample.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
+          <i className="fa fa-database" />&nbsp;&nbsp;{sample.embargo}
+        </Button>
+      );
+    }
+
     return (
       <Jumbotron key={`sample-${sample.id}`}>
         <span className="repo-pub-sample-header">
@@ -151,6 +160,7 @@ export default class RepoSample extends Component {
             </Button>
           ))}
         </h5>
+        {embargo}
         <h5>
           <CommentBtn {...this.props} field="Reference" orgInfo={referencesText} onShow={handleCommentBtn} />
           <b>Reference{references.length > 1 ? 's' : null}: </b>

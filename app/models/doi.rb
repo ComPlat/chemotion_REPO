@@ -101,6 +101,8 @@ class Doi < ApplicationRecord
     ik ||= case klass
            when 'Sample'
              element.molecule.inchikey
+           when 'Collection'
+             "collection/" + element.label
            when 'Reaction'
              "reaction/" + element.products_short_rinchikey_trimmed
            end

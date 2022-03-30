@@ -13,6 +13,7 @@ import Navigation from './Navigation';
 import XHome from '../components/extra/HomeXHome';
 import Notifications from '../components/Notifications';
 import RepoEmbargo from './RepoEmbargo';
+import RepoCollection from './RepoCollection';
 import RepoHome from './RepoHome';
 import RepoPubl from './RepoPubl';
 import RepoReview from './RepoReview';
@@ -81,6 +82,8 @@ class Home extends Component {
         return <RepoPubl />;
       case 'review':
         return <RepoReview />;
+      case 'collection':
+        return <RepoCollection />;
       case 'embargo':
         return <RepoEmbargo />;
       case 'dataset':
