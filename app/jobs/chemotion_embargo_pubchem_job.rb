@@ -8,7 +8,6 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
   def perform(embargo_col_id)
     @embargo_collection = Collection.find(embargo_col_id)
     @sync_emb_col = @embargo_collection.sync_collections_users&.first
-
     pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
     pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
     @pub_list = pub_samples + pub_reactions
@@ -38,6 +37,12 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
       publications.each do |pub|
         pub.transition_from_completing_to_completed!
       end
+    end
+    pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
+    if pub_col.present? && pub_col.state == 'accepted'
+      pub_col.update(state: 'dc_doi_registering')
+      pub_col.transition_from_doi_registering_to_registered!
+      pub_col.update(state: 'completed')
     end
 
     begin

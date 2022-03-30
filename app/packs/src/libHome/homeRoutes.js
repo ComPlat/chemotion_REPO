@@ -138,6 +138,15 @@ const routes = {
     '/:reactionId': 'show'
   },
 
+  '/collection': {
+    target: {
+      show: function(e) {
+        PublicActions.displayCollection(e.params.collectionId)
+      },
+    },
+    '/:collectionId': 'show'
+  },
+
   '/pid': {
     target: {
       show: function(e) {

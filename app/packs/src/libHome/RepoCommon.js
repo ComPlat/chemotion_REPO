@@ -479,7 +479,7 @@ const SvgPath = (svg, type) => {
   return 'images/wild_card/no_image_180.svg';
 };
 
-const ElAspect = (e, onClick, user = null, currentElement = null, onMoveClick) => {
+const ElAspect = (e, onClick, user = null, owner, currentElement = null, onMoveClick) => {
   if (!e) {
     return '';
   }
@@ -502,7 +502,7 @@ const ElAspect = (e, onClick, user = null, currentElement = null, onMoveClick) =
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
         {ElSubmitTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
-        &nbsp;{user !== null && user.type === 'Anonymous' ? '' : MoveEmbargoedBundle(e, onMoveClick)}
+        &nbsp;{user !== null && user.id != owner ? '' : MoveEmbargoedBundle(e, onMoveClick)}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
         </div>

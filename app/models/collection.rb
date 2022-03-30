@@ -33,6 +33,7 @@ class Collection < ApplicationRecord
   acts_as_paranoid
   belongs_to :user, optional: true
   has_ancestry
+  include Publishing
 
   has_many :collections_samples, dependent: :destroy
   has_many :collections_reactions, dependent: :destroy
@@ -50,6 +51,8 @@ class Collection < ApplicationRecord
 
   has_many :sync_collections_users,  foreign_key: :collection_id, dependent: :destroy
   has_many :shared_users, through: :sync_collections_users, source: :user
+
+  has_one :doi, as: :doiable
 
   # A collection is locked if it is not allowed to rename or rearrange it
   scope :unlocked, -> { where(is_locked: false) }

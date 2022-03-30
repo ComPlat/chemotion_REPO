@@ -3,6 +3,7 @@ import {
   Panel,
   Row,
   Col,
+  Button,
   Jumbotron,
 } from 'react-bootstrap';
 import PropTypes from 'prop-types';
@@ -442,6 +443,16 @@ export default class RepoReactionDetails extends Component {
     const idyReview = typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
+    let embargo = (<span />);
+    if (reaction.embargo) {
+      embargo = (
+        <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${reaction.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
+          <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
+        </Button>
+      );
+    }
+
+
     return (
       <div style={{ border: 'none' }}>
         <div >
@@ -479,6 +490,7 @@ export default class RepoReactionDetails extends Component {
             />
             {showDOI}
             <ChemotionId id={pubData.id} type="reaction" />
+            {embargo}
             <h5>
               <CommentBtn {...this.props} field="Reference" orgInfo={referencesText} onShow={this.handleCommentBtn} />
               <b>Reference{references.length > 1 ? 's' : null}: </b>
