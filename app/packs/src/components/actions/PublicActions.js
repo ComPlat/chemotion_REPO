@@ -144,6 +144,25 @@ class PublicActions {
     }
   }
 
+  displayCollection(id) {
+    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
+      .then((result) => {
+        dispatch({colData: result, id: id})
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
+  }
+
+  displayEmbargo(id) {
+    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
+      .then((result) => {
+        dispatch({colData: result, id: id})
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
+  }
   articles() {
     return (dispatch) => {
       fetch('/newsroom/index.json',

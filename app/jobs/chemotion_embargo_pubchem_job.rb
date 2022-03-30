@@ -38,6 +38,12 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
         pub.transition_from_completing_to_completed!
       end
     end
+    pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
+    if pub_col.present? && pub_col.state == 'accepted'
+      pub_col.update(state: 'dc_doi_registering')
+      pub_col.transition_from_doi_registering_to_registered!
+      pub_col.update(state: 'completed')
+    end
 
     begin
       pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
