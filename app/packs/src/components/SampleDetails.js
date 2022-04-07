@@ -638,7 +638,6 @@ export default class SampleDetails extends React.Component {
         </OverlayTrigger>
         <PrintCodeButton element={sample} />
         {sample.isNew ? <FastInput fnHandle={this.handleFastInput} /> : null}
-        {decoupleCb}
         <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
         <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
         {decoupleCb}

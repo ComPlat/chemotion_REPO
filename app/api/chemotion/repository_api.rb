@@ -779,7 +779,7 @@ module Chemotion
 
         post :reviewed do
           save_comments(@root_publication, params[:comment], 'review')
-          element_submit(@root_publication)
+          # element_submit(@root_publication)
           @root_publication.update_state(Publication::STATE_REVIEWED)
           @root_publication.process_element(Publication::STATE_REVIEWED)
           @root_publication.inform_users(Publication::STATE_REVIEWED)

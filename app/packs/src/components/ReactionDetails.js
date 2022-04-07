@@ -14,7 +14,6 @@ import ElementActions from './actions/ElementActions';
 import DetailActions from './actions/DetailActions';
 import LoadingActions from './actions/LoadingActions';
 import RepositoryActions from './actions/RepositoryActions';
-
 import ReactionDetailsLiteratures from './DetailsTabLiteratures';
 import ReactionDetailsContainers from './ReactionDetailsContainers';
 import SampleDetailsContainers from './SampleDetailsContainers';

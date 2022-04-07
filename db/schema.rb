@@ -1456,6 +1456,16 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
          ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
        $function$
   SQL
+  create_function :literatures_by_element, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
+       RETURNS TABLE(literatures text)
+       LANGUAGE sql
+      AS $function$
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
+         and l.element_type = $1 and l.element_id = $2
+       $function$
+  SQL
   create_function :pub_reactions_by_molecule, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
        RETURNS TABLE(reaction_ids integer)
@@ -1543,16 +1553,6 @@ ActiveRecord::Schema.define(version: 2022_03_09_182512) do
              and upper(extended_metadata -> 'instrument') like upper($2 || '%')
              order by extended_metadata -> 'instrument' limit 10
            $function$
-  SQL
-  create_function :literatures_by_element, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
-       RETURNS TABLE(literatures text)
-       LANGUAGE sql
-      AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
-         where l.literature_id = l2.id 
-         and l.element_type = $1 and l.element_id = $2
-       $function$
   SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
