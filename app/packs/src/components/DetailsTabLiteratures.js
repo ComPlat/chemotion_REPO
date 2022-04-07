@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { ListGroup, ListGroupItem, Button, Row, Col } from 'react-bootstrap';
+import { ListGroup, ListGroupItem, Button, Row, Col, Tooltip } from 'react-bootstrap';
 import uuid from 'uuid';
 import Immutable from 'immutable';
 import { Citation, doiValid, sanitizeDoi, groupByCitation, AddButton, LiteratureInput, LiteralType } from './LiteratureCommon';
@@ -233,9 +233,9 @@ export default class DetailsTabLiteratures extends Component {
           literature: {
             ...prevState.literature,
             isbn,
-            title: json.data[0].title || '',
-            year: (json.data[0] && json.data[0].issued && json.data[0].issued['date-parts'][0]) || '',
-            url: (json.data[0] && json.data[0].URL) || '',
+            title: data.title || '',
+            year: (data && data.issued && data.issued['date-parts'][0]) || '',
+            url: (data && data.URL) || '',
             refs: { citation, bibtex: citation.format('bibtex') }
           }
         }));
