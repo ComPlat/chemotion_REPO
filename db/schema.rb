@@ -16,7 +16,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
   enable_extension "hstore"
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
-  enable_extension "postgres_fdw"
   enable_extension "uuid-ossp"
 
   create_table "affiliations", id: :serial, force: :cascade do |t|
@@ -388,25 +387,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.string "data_cite_creator_name"
     t.index ["deleted_at"], name: "index_device_metadata_on_deleted_at"
     t.index ["device_id"], name: "index_device_metadata_on_device_id"
-  end
-
-  create_table "dois", id: :serial, force: :cascade do |t|
-    t.integer "molecule_id"
-    t.string "inchikey"
-    t.integer "molecule_count"
-    t.integer "analysis_id"
-    t.string "analysis_type"
-    t.integer "analysis_count"
-    t.jsonb "metadata", default: {}
-    t.boolean "minted", default: false
-    t.datetime "minted_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "doiable_id"
-    t.string "doiable_type"
-    t.string "suffix"
-    t.index ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true
-    t.index ["suffix"], name: "index_dois_on_suffix", unique: true
   end
 
   create_table "element_klasses", id: :serial, force: :cascade do |t|
@@ -893,7 +873,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.datetime "deleted_at"
     t.boolean "waste", default: false
     t.float "coefficient", default: 1.0
-    t.float "scheme_yield"
     t.boolean "show_label", default: false, null: false
     t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
     t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
@@ -1051,6 +1030,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.integer "molecule_id"
     t.binary "molfile"
     t.float "purity", default: 1.0
+    t.string "deprecated_solvent", default: ""
     t.string "impurities", default: ""
     t.string "location", default: ""
     t.boolean "is_top_secret", default: false
@@ -1311,11 +1291,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["user_id"], name: "index_users_admins_on_user_id"
   end
 
-  create_table "users_collaborators", id: :serial, force: :cascade do |t|
-    t.integer "user_id"
-    t.integer "collaborator_id"
-  end
-
   create_table "users_devices", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "device_id"
@@ -1357,7 +1332,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["wellplate_id"], name: "index_wells_on_wellplate_id"
   end
 
-  add_foreign_key "dois", "molecules"
   add_foreign_key "literals", "literatures"
   add_foreign_key "report_templates", "attachments"
   add_foreign_key "sample_tasks", "samples"
@@ -1441,182 +1415,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       	return in_message_id;
       end;$function$
   SQL
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   create_function :generate_users_matrix, sql_definition: <<-'SQL'
-=======
-=======
-=======
-  create_function :generate_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
-       RETURNS boolean
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if in_user_ids is null then
-          update users u set matrix = (
-      	    select coalesce(sum(2^mx.id),0) from (
-      		    select distinct m1.* from matrices m1, users u1
-      				left join users_groups ug1 on ug1.user_id = u1.id
-      		      where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      	      except
-      		    select distinct m2.* from matrices m2, users u2
-      				left join users_groups ug2 on ug2.user_id = u2.id
-      		      where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      	    ) mx
-          );
-      	else
-      		  update users u set matrix = (
-      		  	select coalesce(sum(2^mx.id),0) from (
-      			   select distinct m1.* from matrices m1, users u1
-      				 left join users_groups ug1 on ug1.user_id = u1.id
-      			     where u.id = u1.id and ((m1.enabled = true) or ((u1.id = any(m1.include_ids)) or (u1.id = ug1.user_id and ug1.group_id = any(m1.include_ids))))
-      			   except
-      			   select distinct m2.* from matrices m2, users u2
-      				 left join users_groups ug2 on ug2.user_id = u2.id
-      			     where u.id = u2.id and ((u2.id = any(m2.exclude_ids)) or (u2.id = ug2.user_id and ug2.group_id = any(m2.exclude_ids)))
-      			  ) mx
-      		  ) where ((in_user_ids) @> array[u.id]) or (u.id in (select ug3.user_id from users_groups ug3 where (in_user_ids) @> array[ug3.group_id]));
-      	end if;
-        return true;
-      end
-      $function$
-  SQL
->>>>>>> WIP
-  create_function :group_user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.group_user_ids(group_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-             select id from users where type='Person' and id= $1
-             union
-             select user_id from users_groups where group_id = $1
-      $function$
-  SQL
-  create_function :labels_by_user_sample, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
-       RETURNS TABLE(labels text)
-       LANGUAGE sql
-      AS $function$
-         select string_agg(title::text, ', ') as labels from (select title from user_labels ul where ul.id in (
-           select d.list
-           from element_tags et, lateral (
-             select value::integer as list
-             from jsonb_array_elements_text(et.taggable_data  -> 'user_labels')
-           ) d
-           where et.taggable_id = $2 and et.taggable_type = 'Sample'
-         ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
-       $function$
-  SQL
-  create_function :pub_reactions_by_molecule, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
-       RETURNS TABLE(reaction_ids integer)
-       LANGUAGE sql
-      AS $function$
-          (select r.id from collections c, collections_reactions cr, reactions r, reactions_samples rs, samples s,molecules m
-           where c.id=$1 and c.id = cr.collection_id and cr.reaction_id = r.id
-           and r.id = rs.reaction_id and rs.sample_id = s.id and rs.type in ('ReactionsProductSample')
-           and c.deleted_at is null and cr.deleted_at is null and r.deleted_at is null and rs.deleted_at is null and s.deleted_at is null and m.deleted_at is null
-           and s.molecule_id = m.id and m.id=$2)
-        $function$
-  SQL
-  create_function :shared_user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.shared_user_as_json(in_user_id integer, in_current_user_id integer)
-       RETURNS json
-       LANGUAGE plpgsql
-      AS $function$
-         begin
-          if (in_user_id = in_current_user_id) then
-            return null;
-          else
-            return (select row_to_json(result) from (
-            select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-            from users where id = $1
-            ) as result);
-          end if;
-          end;
-       $function$
-  SQL
-  create_function :update_users_matrix, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.update_users_matrix()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if (TG_OP='INSERT') then
-          PERFORM generate_users_matrix(null);
-      	end if;
-
-      	if (TG_OP='UPDATE') then
-      	  if new.enabled <> old.enabled or new.deleted_at <> new.deleted_at then
-            PERFORM generate_users_matrix(null);
-      	  elsif new.include_ids <> old.include_ids then
-            PERFORM generate_users_matrix(new.include_ids || old.include_ids);
-          elsif new.exclude_ids <> old.exclude_ids then
-            PERFORM generate_users_matrix(new.exclude_ids || old.exclude_ids);
-      	  end if;
-      	end if;
-        return new;
-      end
-      $function$
-  SQL
-  create_function :user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
-       RETURNS json
-       LANGUAGE sql
-      AS $function$
-         select row_to_json(result) from (
-           select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-           from users where id = $1
-         ) as result
-       $function$
-  SQL
-  create_function :user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_ids(user_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-          select $1 as id
-          union
-          (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
-         and users.type in ('Group') and users_groups.user_id = $1)
-        $function$
-  SQL
-  create_function :user_instrument, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.user_instrument(user_id integer, sc text)
-       RETURNS TABLE(instrument text)
-       LANGUAGE sql
-      AS $function$
-             select distinct extended_metadata -> 'instrument' as instrument from containers c
-             where c.container_type='dataset' and c.id in
-             (select ch.descendant_id from containers sc,container_hierarchies ch, samples s, users u
-             where sc.containable_type in ('Sample','Reaction') and ch.ancestor_id=sc.id and sc.containable_id=s.id
-             and s.created_by = u.id and u.id = $1 and ch.generations=3 group by descendant_id)
-             and upper(extended_metadata -> 'instrument') like upper($2 || '%')
-             order by extended_metadata -> 'instrument' limit 10
-           $function$
-  SQL
-<<<<<<< HEAD
->>>>>>> minor upd  Gem.lock db/schema
-  create_function :labels_by_user_sample, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.labels_by_user_sample(user_id integer, sample_id integer)
-       RETURNS TABLE(labels text)
-=======
-  create_function :literatures_by_element, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
-       RETURNS TABLE(literatures text)
->>>>>>> WIP
-       LANGUAGE sql
-      AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
-         and l.element_type = $1 and l.element_id = $2
-       $function$
-  SQL
-<<<<<<< HEAD
-  create_function :generate_users_matrix, sql_definition: <<-SQL
->>>>>>> REPO FACTOR
       CREATE OR REPLACE FUNCTION public.generate_users_matrix(in_user_ids integer[])
        RETURNS boolean
        LANGUAGE plpgsql
@@ -1726,13 +1525,11 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       end
       $function$
   SQL
-<<<<<<< HEAD
   create_function :user_as_json, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
        RETURNS json
        LANGUAGE sql
       AS $function$
-<<<<<<< HEAD
              select row_to_json(result) from (
             	 select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
            	   from users where id = $1
@@ -1749,12 +1546,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
              (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
              and users.type in ('Group') and users_groups.user_id = $1)
            $function$
-=======
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
-         and l.element_type = $1 and l.element_id = $2
-       $function$
->>>>>>> REPO FACTOR
   SQL
   create_function :user_instrument, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.user_instrument(user_id integer, sc text)
@@ -1776,89 +1567,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
   SQL
 
-<<<<<<< HEAD
-=======
-  create_function :group_user_ids, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.group_user_ids(group_id integer)
-       RETURNS TABLE(user_ids integer)
-       LANGUAGE sql
-      AS $function$
-             select id from users where type='Person' and id= $1
-             union
-             select user_id from users_groups where group_id = $1
-      $function$
-  SQL
-  create_function :pub_reactions_by_molecule, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
-       RETURNS TABLE(reaction_ids integer)
-       LANGUAGE sql
-      AS $function$
-          (select r.id from collections c, collections_reactions cr, reactions r, reactions_samples rs, samples s,molecules m
-           where c.id=$1 and c.id = cr.collection_id and cr.reaction_id = r.id
-           and r.id = rs.reaction_id and rs.sample_id = s.id and rs.type in ('ReactionsProductSample')
-           and c.deleted_at is null and cr.deleted_at is null and r.deleted_at is null and rs.deleted_at is null and s.deleted_at is null and m.deleted_at is null
-           and s.molecule_id = m.id and m.id=$2)
-        $function$
-  SQL
-  create_function :shared_user_as_json, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.shared_user_as_json(in_user_id integer, in_current_user_id integer)
-       RETURNS json
-=======
-  create_function :com_xvial, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.com_xvial(p_allow boolean DEFAULT false)
-       RETURNS SETOF compound_open_data_locals
->>>>>>> minor upd  Gem.lock db/schema
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	if p_allow IS false then
-      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
-      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
-      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
-      	else
-      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
-          end if;
-      END
-      $function$
-  SQL
-=======
->>>>>>> WIP
-
-  create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
-      CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
-  SQL
-
-<<<<<<< HEAD
->>>>>>> REPO FACTOR
-=======
-  create_view "compound_open_data_locals", sql_definition: <<-SQL
-      SELECT c.x_id,
-      c.x_sample_id,
-      c.x_data,
-      c.x_created_at,
-      c.x_updated_at,
-      c.x_inchikey,
-      c.x_sum_formular,
-      c.x_cano_smiles,
-      c.x_external_label,
-      c.x_short_label,
-      c.x_name,
-      c.x_stereo
-     FROM ( SELECT NULL::integer AS x_id,
-              NULL::integer AS x_sample_id,
-              NULL::jsonb AS x_data,
-              NULL::timestamp without time zone AS x_created_at,
-              NULL::timestamp without time zone AS x_updated_at,
-              NULL::character varying AS x_inchikey,
-              NULL::character varying AS x_sum_formular,
-              NULL::character varying AS x_cano_smiles,
-              NULL::character varying AS x_external_label,
-              NULL::character varying AS x_short_label,
-              NULL::character varying AS x_name,
-              NULL::jsonb AS x_stereo) c
-    WHERE (c.x_id IS NOT NULL);
-  SQL
->>>>>>> WIP
   create_view "literal_groups", sql_definition: <<-SQL
       SELECT lits.element_type,
       lits.element_id,
@@ -1902,95 +1610,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       users
     WHERE ((channels.id = messages.channel_id) AND (messages.id = notifications.message_id) AND (users.id = messages.created_by));
   SQL
-<<<<<<< HEAD
-=======
-  create_view "publication_authors", sql_definition: <<-SQL
-      SELECT DISTINCT (jsonb_array_elements((publications.taggable_data -> 'creators'::text)) ->> 'id'::text) AS author_id,
-      publications.element_id,
-      publications.element_type,
-          CASE
-              WHEN ((publications.state)::text ~~ 'completed%'::text) THEN 'completed'::character varying
-              ELSE publications.state
-          END AS state,
-      publications.doi_id,
-      publications.ancestry
-     FROM publications
-    WHERE (publications.deleted_at IS NULL);
-  SQL
-  create_view "publication_ontologies", sql_definition: <<-SQL
-      SELECT root.element_type,
-      root.element_id,
-      sub.element_id AS container_id,
-      root.published_at,
-      (containers.extended_metadata -> 'kind'::text) AS ontologies,
-      btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 1)) AS term_id,
-      btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2)) AS label
-     FROM publications root,
-      publications sub,
-      containers
-    WHERE (((root.state)::text ~~ 'complete%'::text) AND ((root.element_type)::text = ANY (ARRAY[('Sample'::character varying)::text, ('Reaction'::character varying)::text])) AND ((sub.element_type)::text = 'Container'::text) AND (root.id = ANY ((string_to_array((sub.ancestry)::text, '/'::text))::integer[])) AND (root.deleted_at IS NULL) AND (sub.element_id = containers.id));
-  SQL
-  create_view "publication_statics", sql_definition: <<-SQL
-      SELECT 'sample'::text AS el_type,
-      'sample-embargo'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text = 'accepted'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'sample'::text AS el_type,
-      'sample-review'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text = ANY (ARRAY[('pending'::character varying)::text, ('reviewed'::character varying)::text])) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'sample'::text AS el_type,
-      'sample'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'reaction'::text AS el_type,
-      'reaction-embargo'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text = 'accepted'::text) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'reaction'::text AS el_type,
-      'reaction-review'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text = ANY (ARRAY[('pending'::character varying)::text, ('reviewed'::character varying)::text])) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'reaction'::text AS el_type,
-      'reaction'::text AS ex_type,
-      count(publications.id) AS e_cnt
-     FROM publications
-    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
-  UNION
-   SELECT 'analysis'::text AS el_type,
-      summ.g_type AS ex_type,
-      sum(summ.c_num) AS e_cnt
-     FROM ( SELECT
-                  CASE
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%NMR%'::text) THEN 'NMR'::text
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%mass%'::text) THEN 'Mass'::text
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%DEPT%'::text) THEN 'DEPT'::text
-                      WHEN (((containers.extended_metadata -> 'kind'::text) ~~ '%X-ray%'::text) OR ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0000156%'::text)) THEN 'X-ray'::text
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0000630%'::text) THEN 'IR'::text
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0001007%'::text) THEN 'TLC'::text
-                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0001075%'::text) THEN 'EA'::text
-                      WHEN (split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2) <> ''::text) THEN btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2))
-                      ELSE (containers.extended_metadata -> 'kind'::text)
-                  END AS g_type,
-              count(containers.id) AS c_num
-             FROM containers
-            WHERE ((containers.id IN ( SELECT publications.element_id
-                     FROM publications
-                    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Container'::text) AND (publications.deleted_at IS NULL)))) AND ((containers.extended_metadata -> 'kind'::text) <> ''::text))
-            GROUP BY (containers.extended_metadata -> 'kind'::text)) summ
-    GROUP BY summ.g_type;
-  SQL
->>>>>>> REPO FACTOR
   create_view "v_samples_collections", sql_definition: <<-SQL
       SELECT cols.id AS cols_id,
       cols.user_id AS cols_user_id,
