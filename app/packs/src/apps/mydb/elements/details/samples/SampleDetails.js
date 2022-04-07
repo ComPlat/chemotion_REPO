@@ -578,14 +578,73 @@ export default class SampleDetails extends React.Component {
 
     const saveAndCloseBtn = belongToReaction && !sample.isNew ? this.saveBtn(sample, true) : null;
     return (
-      <ButtonToolbar>
-        <Button bsStyle="primary" onClick={() => DetailActions.close(sample)}>
-          Close
-        </Button>
-        {this.saveBtn(sample)}
-        {saveAndCloseBtn}
-        {downloadAnalysesBtn}
-      </ButtonToolbar>
+      <div>
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
+          <span><i className="icon-sample" />{sample.title()}</span>
+        </OverlayTrigger>
+        <ConfirmClose el={sample} />
+        <OverlayTrigger
+          placement="bottom"
+          overlay={<Tooltip id="saveCloseSample">Save and Close Sample</Tooltip>}
+        >
+          <Button
+            bsStyle="warning"
+            bsSize="xsmall"
+            className="button-right"
+            onClick={() => this.handleSubmit(true)}
+            style={{ display: saveBtnDisplay }}
+            disabled={!this.sampleIsValid() || !sample.can_update}
+          >
+            <i className="fa fa-floppy-o" />
+            <i className="fa fa-times" />
+          </Button>
+        </OverlayTrigger>
+        <OverlayTrigger
+          placement="bottom"
+          overlay={<Tooltip id="saveSample">Save Sample</Tooltip>}
+        >
+          <Button
+            bsStyle="warning"
+            bsSize="xsmall"
+            className="button-right"
+            onClick={() => this.handleSubmit()}
+            style={{ display: saveBtnDisplay }}
+            disabled={!this.sampleIsValid() || !sample.can_update}
+          >
+            <i className="fa fa-floppy-o" />
+          </Button>
+        </OverlayTrigger>
+        {copyBtn}
+        <OverlayTrigger
+          placement="bottom"
+          overlay={<Tooltip id="fullSample">FullScreen</Tooltip>}
+        >
+          <Button
+            bsStyle="info"
+            bsSize="xsmall"
+            className="button-right"
+            onClick={() => this.props.toggleFullScreen()}
+          >
+            <i className="fa fa-expand" />
+          </Button>
+        </OverlayTrigger>
+        <PrintCodeButton element={sample} />
+        {sample.isNew ? <FastInput fnHandle={this.handleFastInput} /> : null}
+        <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+        <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
+        {decoupleCb}
+        <div style={{ display: 'inline-block', marginLeft: '10px' }}>
+          <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
+          {colLabel}
+          <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
+          <PubchemLabels element={sample} />
+          <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} xvialCom={{ xvialCom: false }} />
+          <PublishedTag element={sample} />
+          <LabelPublication element={sample} />
+          {this.extraLabels().map((Lab, i) => <Lab key={i} element={sample} />)}
+        </div>
+        <ShowUserLabels element={sample} />
+      </div>
     );
   }
 
