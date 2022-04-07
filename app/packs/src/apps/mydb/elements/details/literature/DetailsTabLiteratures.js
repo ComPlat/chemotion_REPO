@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
-  ListGroup, ListGroupItem, Button, Row, Col
+  ListGroup, ListGroupItem, Button, Row, Col, Tooltip
 } from 'react-bootstrap';
 import uuid from 'uuid';
 import Immutable from 'immutable';
