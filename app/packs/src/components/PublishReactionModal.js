@@ -230,14 +230,8 @@ export default class PublishReactionModal extends Component {
 
   loadBundles() {
     RepositoryFetcher.fetchEmbargoCollections().then((result) => {
-      const cols = result.repository;
-      const bundles = [];
-      if (cols && cols.length > 0) {
-        cols.forEach((col) => {
-          bundles.push({ value: col.id, name: col.label, label: col.label });
-        });
-        this.setState({ bundles });
-      }
+      const cols = result.repository || [];
+      this.setState({ bundles: cols });
     });
   }
 
@@ -603,7 +597,7 @@ export default class PublishReactionModal extends Component {
   render() {
     const { show } = this.props;
     const {
-      reaction, selectedUsers, selectedRefs, publishType
+      reaction, selectedUsers, selectedRefs, publishType, bundles
     } = this.state;
 
     const isFullyPublish = publishType.selected === publishOptions.f;
@@ -698,6 +692,13 @@ export default class PublishReactionModal extends Component {
         onChange: this.handlePublishTypeChange
       };
 
+
+      const opts = [];
+      bundles.forEach((col) => {
+        const tag = col.taggable_data || {};
+        opts.push({ value: col.element_id, name: tag.label, label: tag.label });
+      });
+
       return (
         <div>
           <Modal dialogClassName="publishReactionModal" animation show={show} bsSize="large" onHide={() => this.props.onHide(false)}>
@@ -723,7 +724,7 @@ export default class PublishReactionModal extends Component {
             }}
             >
               <EmbargoCom
-                opts={this.state.bundles}
+                opts={opts}
                 selectedValue={selectedEmbargo}
                 onEmbargoChange={this.handleEmbargoChange}
                 selectedLicense={selectedLicense}

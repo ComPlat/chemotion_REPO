@@ -40,6 +40,7 @@ class PublicStore {
       handleDisplayDataset: PublicActions.displayDataset,
       handleDisplayMolecule: PublicActions.displayMolecule,
       handleDisplayReaction: PublicActions.displayReaction,
+      handleDisplayCollection: PublicActions.displayCollection,
       handleReceiveSearchresult: SearchActions.fetchBasedOnSearchSelectionAndCollection,
       handleClearSearchSelection: [UIActions.selectCollection, UIActions.selectSyncCollection],
       handleClose: PublicActions.close,
@@ -51,6 +52,7 @@ class PublicStore {
       handleDisplayHowTo: PublicActions.displayHowTo,
       handleGetElements: PublicActions.getElements,
       handleGetEmbargoElements: PublicActions.getEmbargoElements,
+      handleGetEmbargoElement: PublicActions.getEmbargoElement,
       handleDisplayReviewReaction: PublicActions.displayReviewReaction,
       handleDisplayReviewSample: PublicActions.displayReviewSample,
       handelReviewPublish: PublicActions.reviewPublish,
@@ -183,6 +185,16 @@ class PublicStore {
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
 
+  handleDisplayCollection(collectionList) {
+    this.setState({
+      guestPage: 'collection',
+      elementType: 'collection',
+      queryId: collectionList.id,
+      selectEmbargo: collectionList.colData && collectionList.colData.col
+    });
+    Aviator.navigate(`/publications/collections/${collectionList.id}`, { silent: true });
+  }
+
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });
   }
@@ -258,6 +270,10 @@ class PublicStore {
     });
   }
 
+  handleGetEmbargoElement(results) {
+    this.setState({ currentElement: results })
+  }
+
   handelUpdateComment(result) {
     this.setState({ historyInfo: result.history });
   }
@@ -311,21 +327,12 @@ class PublicStore {
   }
 
   handleFetchBundles(result) {
-    const cols = result.repository;
+    const bundles = result.repository || [];
+    // eslint-disable-next-line camelcase
     const { current_user } = result;
-    const bundles = [];
-    if (cols && cols.length > 0) {
-      cols.forEach((col) => {
-        bundles.push({ value: col.id, name: col.label, label: col.label });
-      });
-      this.setState({
-        bundles, current_user, elements: [], currentElement: null
-      });
-    } else {
-      this.setState({
-        bundles: [], current_user, elements: [], currentElement: null
-      });
-    }
+    this.setState({
+      bundles, current_user, elements: [], currentElement: null
+    });
   }
 
   handleRefreshEmbargoBundles(result) {

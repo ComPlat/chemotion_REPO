@@ -126,6 +126,8 @@ Rails.application.routes.draw do
       url = "#{url}reactions/#{element.id}"
     when 'Container'
       url =  "#{url}datasets/#{element.id}"
+    when 'Collection'
+      url = "#{url}collections/#{element.id}"
     end
     url
   }
@@ -168,6 +170,10 @@ Rails.application.routes.draw do
       suffix.concat('.', params[:version]) if params[:version].present?
       "/home/publications/molecules/#{params[:id]}/#{suffix}"
     end
+  }
+
+  get '/collections/:id' => redirect { |params, request|
+    "/home/collection/#{params[:id]}"
   }
 
   get '/reactions/:id' => redirect { |params, request|

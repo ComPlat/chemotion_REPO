@@ -132,6 +132,25 @@ class PublicActions {
     }
   }
 
+  displayCollection(id) {
+    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
+      .then((result) => {
+        dispatch({colData: result, id: id})
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
+  }
+
+  displayEmbargo(id) {
+    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
+      .then((result) => {
+        dispatch({colData: result, id: id})
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
+  }
   articles() {
     return (dispatch) => {
       fetch('/newsroom/index.json',
@@ -374,7 +393,18 @@ class PublicActions {
 
   getEmbargoElements(id) {
     return (dispatch) => {
-      RepositoryFetcher.fetchEmbargoElements(id)
+      PublicFetcher.fetchEmbargoElements(id)
+      .then((result) => {
+        dispatch(result)
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
+  }
+
+  getEmbargoElement(cid, el) {
+    return (dispatch) => {
+      PublicFetcher.fetchEmbargoElement(cid, el)
       .then((result) => {
         dispatch(result)
       }).catch((errorMessage) => {

@@ -10,25 +10,10 @@ module Chemotion
     helpers CollectionHelpers
     helpers SampleHelpers
     helpers SubmissionHelpers
+    helpers EmbargoHelpers
 
     namespace :repository do
       helpers do
-        def fetch_embargo_collection(cid)
-          if (cid == 0)
-            chemotion_user = User.chemotion_user
-            new_col_label = current_user.initials + '_' + Time.now.strftime('%Y-%m-%d')
-            col_check = Collection.where([' label like ? ', new_col_label + '%'])
-            new_col_label = new_col_label << '_' << (col_check&.length + 1)&.to_s if col_check&.length.positive?
-            new_embargo_col = Collection.create!(user: chemotion_user, label: new_col_label, ancestry: current_user.publication_embargo_collection.id)
-            SyncCollectionsUser.find_or_create_by(user: current_user, shared_by_id: chemotion_user.id, collection_id: new_embargo_col.id,
-            permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10,
-            fake_ancestry: current_user.publication_embargo_collection.sync_collections_users.first.id.to_s)
-            new_embargo_col
-          else
-            Collection.find(cid)
-          end
-        end
-
         def duplicate_analyses(new_element, analyses_arr, ik = nil)
           unless new_element.container
             Container.create_root_container(containable: new_element)
@@ -342,12 +327,6 @@ module Chemotion
           review['history'] = history
           root.update!(review: review)
         end
-
-        def find_embargo_collection(root_publication)
-          has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.find(root_publication.published_by).publication_embargo_collection.id }
-          has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first.label : ''
-        end
-
       end
 
       desc 'Get review list'
@@ -417,12 +396,18 @@ module Chemotion
 
       desc 'Get embargo list'
       get 'embargo_list' do
-        if (current_user.type == 'Anonymous')
-          cols = Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion').order('label ASC')
+        if User.reviewer_ids.include?(current_user.id)
+          es = Publication.where(element_type: 'Collection', state: 'pending').order("taggable_data->>'label' ASC")
         else
-          cols = Collection.where(ancestry: current_user.publication_embargo_collection.id).order('label ASC')
+          if (current_user.type == 'Anonymous')
+            cols = Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
+          else
+            cols = Collection.where(ancestry: current_user.publication_embargo_collection.id)
+          end
+          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order("taggable_data->>'label' ASC") unless cols.empty?
         end
-        { repository: cols, current_user: { id: current_user.id, type: current_user.type } }
+
+        { repository: es, current_user: { id: current_user.id, type: current_user.type } }
       end
 
       namespace :assign_embargo do
@@ -445,7 +430,7 @@ module Chemotion
           end
         end
         post do
-          embargo_collection = fetch_embargo_collection(@p_embargo.to_i) if @p_embargo.to_i >= 0
+          embargo_collection = fetch_embargo_collection(@p_embargo.to_i. current_user) if @p_embargo.to_i >= 0
           case @p_element['type'].classify
           when 'Sample'
             CollectionsSample
@@ -583,13 +568,14 @@ module Chemotion
           error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
         end
         get do
-          sample = Sample.where(id: params[:id])
-          .includes(:molecule,:tag).last
+          sample = Sample.where(id: params[:id]).includes(:molecule,:tag).last
           molecule = Molecule.find(sample.molecule_id) unless sample.nil?
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
+          # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
+
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
             sample: sample,
@@ -856,7 +842,7 @@ module Chemotion
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_sample_data
           pub.process_element
           update_tag_doi(pub.element)
@@ -912,7 +898,7 @@ module Chemotion
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_reaction_data
           pub.process_element
           update_tag_doi(pub.element)
@@ -1041,7 +1027,7 @@ module Chemotion
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_reaction_data
           pub.process_element
           pub.inform_users
@@ -1077,8 +1063,9 @@ module Chemotion
           end
 
           def remove_embargo_collection(col)
-           col.sync_collections_users.destroy_all
-           col.really_destroy!
+            col&.publication.really_destroy!
+            col.sync_collections_users.destroy_all
+            col.really_destroy!
           end
 
         end
@@ -1088,9 +1075,12 @@ module Chemotion
         end
 
         after_validation do
-          @embargo_collection = Collection.find(params[:collection_id])
-          @sync_emb_col = @embargo_collection.sync_collections_users.where(user_id: current_user.id)&.first
-          error!('404 found no collection', 404) unless @sync_emb_col
+          @embargo_collection = Collection.find_by(id: params[:collection_id])
+          error!('404 collection not found', 404) unless @embargo_collection
+          unless User.reviewer_ids.include?(current_user.id)
+            @sync_emb_col = @embargo_collection.sync_collections_users.where(user_id: current_user.id)&.first
+            error!('404 found no collection', 404) unless @sync_emb_col
+          end
         end
 
         get :list do
@@ -1155,32 +1145,45 @@ module Chemotion
 
         post :release do
           begin
-
-            pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
-            pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
-            pub_list = pub_samples + pub_reactions
-            check_state = pub_list.select { |pub| pub.state != Publication::STATE_ACCEPTED }
-            if check_state.present?
-              { error: "Embargo #{@embargo_collection.label} release failed, because not all elements have been 'accepted'."}
+            col_pub = @embargo_collection.publication
+            if col_pub.nil? ||  col_pub.published_by != current_user.id
+              { error: "only the owner of embargo #{@embargo_collection.label} can perform the release."}
             else
-              pub_list.each { |pub| element_submit(pub) }
-              remove_anonymous(@embargo_collection)
-              handle_embargo_collections(@embargo_collection)
-              case ENV['PUBLISH_MODE']
-              when 'production'
-                if Rails.env.production?
-                  ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
+              col_pub.update(accepted_at: Time.now.utc)
+              refresh_embargo_metadata(params[:collection_id])
+              pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
+              pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
+              pub_list = pub_samples + pub_reactions
+
+              check_state = pub_list.select { |pub| pub.state != Publication::STATE_ACCEPTED }
+              if check_state.present?
+                { error: "Embargo #{@embargo_collection.label} release failed, because not all elements have been 'accepted'."}
+              else
+                scheme_only_list = pub_list.select { |pub| pub.taggable_data['scheme_only']  == true }
+                if pub_list.flatten.length == scheme_only_list.flatten.length
+                  col_pub.update(state: 'scheme_only')
+                else
+                  col_pub.update(state: 'accepted')
                 end
-              when 'staging'
-                ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
-                # ChemotionEmbargoPubchemJob.perform_now(@embargo_collection.id)
-              else 'development'
+
+                pub_list.each { |pub| element_submit(pub) }
+                remove_anonymous(@embargo_collection)
+                handle_embargo_collections(@embargo_collection)
+                case ENV['PUBLISH_MODE']
+                when 'production'
+                  if Rails.env.production?
+                    ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
+                  end
+                when 'staging'
+                  # ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
+                  ChemotionEmbargoPubchemJob.perform_now(@embargo_collection.id)
+                else 'development'
+                end
+
+
+                { message: "Embargo #{@embargo_collection.label} has been released" }
               end
-
-
-              { message: "Embargo #{@embargo_collection.label} has been released" }
             end
-
           rescue StandardError => e
             { error: e.message }
           end
@@ -1201,11 +1204,16 @@ module Chemotion
           end
         end
 
+        post :refresh do
+          @id = params[:id]
+          refresh_embargo_metadata(params[:collection_id])
+        end
+
         post :move do
           begin
             # @new_embargo = params[:new_embargo]
             @element = params[:element]
-            @new_embargo_collection = fetch_embargo_collection(params[:new_embargo]&.to_i) if params[:new_embargo].present? && params[:new_embargo]&.to_i >= 0
+            @new_embargo_collection = fetch_embargo_collection(params[:new_embargo]&.to_i, current_user) if params[:new_embargo].present? && params[:new_embargo]&.to_i >= 0
             case @element['type']
             when 'Sample'
               CollectionsSample
