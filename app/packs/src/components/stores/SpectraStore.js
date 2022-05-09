@@ -58,7 +58,11 @@ class SpectraStore {
   decodeSpectra(fetchedFiles = {}) {
     const { files } = fetchedFiles;
     if (!files) return [];
-    return files.map(f => this.decodeSpectrum(f)).filter(r => r !== null);
+    const returnFiles = files.map(f => this.decodeSpectrum(f)).filter(r => r !== null);
+    return returnFiles.sort(function(a, b) {
+      return b.idx - a.idx;
+    });
+    // return files.map(f => this.decodeSpectrum(f)).filter(r => r !== null);
   }
 
   handleToggleModal() {
