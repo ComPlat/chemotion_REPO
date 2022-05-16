@@ -133,7 +133,6 @@ export default class RepoCollection extends Component {
   renderSearch() {
     const { selectEmbargo, elements } = this.state;
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
-    const doiaa = (selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.col_doi) || '';
 
     const actionButtons =
       (
@@ -151,7 +150,10 @@ export default class RepoCollection extends Component {
               disabled={selectEmbargo === null || (elements && elements.length === 0)}
               onClick={() => this.handleInfoShow()}
             >
-              <i className="fa fa-users" aria-hidden="true" />&nbsp;Info
+              <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
+            </Button>
+            <Button href="/home/publications" target="_blank">
+              back to all publications
             </Button>
           </ButtonToolbar>
         </span>
@@ -164,7 +166,7 @@ export default class RepoCollection extends Component {
 
     return (
       <div style={{ paddingLeft: '15px', marginTop: '8px', marginBottom: '8px' }}>
-        <span><b>{la}&nbsp;</b></span>
+        <span><b>The data on this page refers to the data collection: &nbsp;{la}&nbsp;</b></span>
         {filterDropdown}
       </div>
     );

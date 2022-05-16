@@ -1,6 +1,5 @@
 import React from 'react'
 import { NavDropdown, Navbar, MenuItem } from 'react-bootstrap';
-import PublicActions from '../components/actions/PublicActions'
 
 const Title = <span><img alt="chemotion-" src="/images/repo/logo.png" style={{ width: '20%' }} /> Repository</span>
 
