@@ -446,9 +446,12 @@ export default class RepoReactionDetails extends Component {
     let embargo = (<span />);
     if (reaction.embargo) {
       embargo = (
-        <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${reaction.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
-          <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
-        </Button>
+        <span>
+          <b>Access to the DOI and metadata for the whole data collection: </b> &nbsp;
+          <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${reaction.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
+            <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
+          </Button>
+        </span>
       );
     }
 

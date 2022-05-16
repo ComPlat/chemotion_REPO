@@ -765,7 +765,7 @@ module Chemotion
         desc "metadata of publication"
         params do
           requires :id, type: Integer, desc: "Id"
-          requires :type, type: String, desc: "Type", values: %w[sample reaction container]
+          requires :type, type: String, desc: "Type", values: %w[sample reaction container collection]
         end
         after_validation do
           @publication = Publication.find_by(

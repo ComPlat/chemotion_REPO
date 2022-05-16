@@ -24,7 +24,7 @@ import Clipboard from 'clipboard';
 import moment from 'moment';
 import Select from 'react-select';
 import uuid from 'uuid';
-import SvgFileZoomPan from 'react-svg-file-zoom-pan';
+import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import ContainerComponent from './ContainerComponent';
 import Formula from '../components/common/Formula';
 import HelpInfo from '../components/common/HelpInfo';
@@ -238,7 +238,7 @@ const isNmrPass = (analysis, sample) => {
 };
 
 const DownloadMetadataBtn = (l) => {
-  const contentUrl = `/api/v1/public/metadata/download?type=${l.type}&id=${l.id}`;
+  const contentUrl = `/api/v1/public/metadata/download?type=${l.type.toLowerCase()}&id=${l.id}`;
   return (
     <OverlayTrigger
       placement="bottom"
@@ -860,8 +860,12 @@ class ClipboardCopyLink extends Component {
 
 class ClipboardCopyBtn extends Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.clipboard = new Clipboard('.clipboardBtn');
+  }
+
+  componentWillUnmount() {
+    this.clipboard.destroy();
   }
 
   render() {
@@ -2236,7 +2240,6 @@ const Doi = (props) => {
   const {
     type, id, doi, isPublished
   } = props;
-
   let data = '';
   const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
   if (isPublished) {

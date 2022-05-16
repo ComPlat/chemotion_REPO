@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import {Col, FormControl,FormGroup, ControlLabel} from 'react-bootstrap';
+import React, { Component } from 'react';
+import { Col, FormControl, FormGroup, ControlLabel } from 'react-bootstrap';
 import Select from 'react-select'
 import ContainerDatasets from '../components/ContainerDatasets';
 import QuillViewer from '../components/QuillViewer'

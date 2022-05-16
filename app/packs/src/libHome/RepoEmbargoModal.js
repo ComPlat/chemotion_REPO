@@ -1,25 +1,39 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, Label, Modal, ButtonToolbar } from 'react-bootstrap';
-import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
+import Utils from '../components/utils/Functions';
 import {
   AffiliationList,
   AuthorList,
-  ChemotionId,
-  CommentBtn,
   ContributorInfo,
-  DateInfo,
-  Doi,
-  IconLicense,
-  IconToMyDB,
-  RenderPublishAnalysesPanel,
-  SidToPubChem,
-  ToggleIndicator,
-  ElStateLabel
+  DownloadMetadataBtn
 } from './RepoCommon';
 import { AffiliationMap } from './RepoReviewCommon';
 
+const Doi = (props) => {
+  const {
+    type, id, doi
+  } = props;
+
+  const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
+  const data = (
+    <span>
+      <Button key={`${type}-jumbtn-${id}`} bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doi}`; }}>
+        {doi}
+      </Button>
+      <DownloadMetadataBtn type={type} id={id} />
+    </span>
+  );
+  return (
+    <h5>
+      <b>{title} </b>
+      {data}
+    </h5>
+  );
+};
+
 const MetadataModal = ({ showModal, label, metadata, onCloseFn, elementId, elementType }) => {
+  const contentUrl = `/api/v1/public/metadata/download?type=${elementType.toLowerCase()}&id=${elementId}`;
   return (
     <div>
       <Modal
@@ -35,7 +49,7 @@ const MetadataModal = ({ showModal, label, metadata, onCloseFn, elementId, eleme
           <br />
           <ButtonToolbar>
             <Button bsStyle="warning" onClick={onCloseFn}> Close</Button>
-            <Button bsStyle="primary" onClick={() => RepositoryFetcher.zipPreviewMetadata(elementId, elementType)}> Download</Button>
+            <Button bsStyle="primary" onClick={() => Utils.downloadFile({ contents: contentUrl })}> Download</Button>
           </ButtonToolbar>
         </Modal.Body>
       </Modal>
@@ -70,7 +84,7 @@ const InfoModal = ({ showModal, selectEmbargo, onCloseFn }) => {
   const la =  selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
   const isPublished = true;
   const author_ids = tag.author_ids || [];
-  const id = (selectEmbargo && selectEmbargo.elementId) || 0;
+  const id = (selectEmbargo && selectEmbargo.element_id) || 0;
   return (
     <div>
       <Modal

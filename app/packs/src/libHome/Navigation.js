@@ -1,18 +1,12 @@
 import React from 'react';
-import { Nav, Navbar, NavItem, Label } from 'react-bootstrap';
+import { Nav, Navbar, NavItem } from 'react-bootstrap';
 import UserAuth from '../components/UserAuth';
-import ManagingActions from '../components/managing_actions/ManagingActions';
-import ContextActions from '../components/contextActions/ContextActions';
 import UserStore from '../components/stores/UserStore';
 import UIStore from '../components/stores/UIStore';
 import UserActions from '../components/actions/UserActions';
-import UIActions from '../components/actions/UIActions';
-import ElementActions from '../components/actions/ElementActions';
 import NavNewSession from './NavNewSession';
 import NavHead from './NavHead';
 import DocumentHelper from '../components/utils/DocumentHelper';
-import NavigationModal from '../components/NavigationModal';
-import PublicActions from '../components/actions/PublicActions';
 
 export default class Navigation extends React.Component {
   constructor(props) {
