@@ -1,6 +1,5 @@
 import React from 'react';
 import { Nav, NavItem } from 'react-bootstrap';
-import PublicActions from '../components/actions/PublicActions';
 
 const NavFooter = () => {
   return (

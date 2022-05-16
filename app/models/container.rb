@@ -105,7 +105,7 @@ class Container < ApplicationRecord
 
   def check_doi
     # unassoicate doi if type has changed
-    if (d = self.doi) && self.container_type == 'analysis'
+    if (d = self.doi) && self.container_type == 'analysis' && self.publication&.state != 'completed'
       if self.extended_metadata['kind']&.delete(' ') != d.analysis_type
         unassociate_doi(d)
       end

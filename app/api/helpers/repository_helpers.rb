@@ -130,14 +130,9 @@ module RepositoryHelpers
         next if info.empty?
         ana_infos[pp.element_id] = info['comment']
       end
-      # em_sql = <<~SQL
-      #   inner join collections_samples cs on collections.id = cs.collection_id and cs.sample_id = #{s.id}
-      # SQL
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
-
       tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label,
         sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info)
-
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?

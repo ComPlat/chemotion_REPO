@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { Table, Col, Row, Navbar, DropdownButton, MenuItem, Label, ButtonGroup, Button, ButtonToolbar, Modal, Panel, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Table, Col, Row, Navbar, MenuItem, ButtonGroup, Button, ButtonToolbar, Modal, Panel } from 'react-bootstrap';
 import Select from 'react-select';
-import { findIndex, filter } from 'lodash';
+import { filter } from 'lodash';
 import RepoEmbargoDetails from './RepoEmbargoDetails';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
@@ -9,7 +9,6 @@ import { ElAspect } from './RepoCommon';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
-import { label } from 'react-dom-factories';
 
 const renderMenuItems = (bundles) => {
   if (bundles.length < 1) return <div />;
@@ -176,8 +175,6 @@ export default class RepoEmbargo extends Component {
   renderSearch(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
-    const customClass = '.btn-unified';
-
     const options = [];
 
     bundles.forEach((col) => {
@@ -206,7 +203,7 @@ export default class RepoEmbargo extends Component {
           disabled={selectEmbargo === null || elements.length === 0}
           onClick={() => this.handleInfoShow()}
         >
-          <i className="fa fa-users" aria-hidden="true" />&nbsp;Info
+          <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
         </Button>
       </ButtonGroup>
       </div>
@@ -222,8 +219,6 @@ export default class RepoEmbargo extends Component {
   rendeActionBtn(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
-    const customClass = '.btn-unified';
-
     const actionButtons = (!selectEmbargo || !current_user || (current_user.id !== selectEmbargo.published_by)) ? <span /> :
       (
         <span>
@@ -326,7 +321,7 @@ export default class RepoEmbargo extends Component {
       elements, bundles, currentElement, currentUser, showConfirmModal, showInfoModal, selectEmbargo, showMetadataModal
     } = this.state;
     const id = (selectEmbargo && selectEmbargo.element_id) || 0;
-    const la =  selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
+    const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
     const owner = (selectEmbargo && selectEmbargo.published_by) || 0;
 

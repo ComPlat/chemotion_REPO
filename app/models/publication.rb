@@ -533,7 +533,7 @@ class Publication < ActiveRecord::Base
     return unless valid_transition(STATE_COMPLETED)
     pd = {}
     time = DateTime.now
-    if element_type != 'Container'
+    if element_type != 'Container' && element_type != 'Collection'
       creator_ids = taggable_data['author_ids']
       su_id = User.chemotion_user.id
 
