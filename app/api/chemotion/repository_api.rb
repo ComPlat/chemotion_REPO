@@ -354,9 +354,9 @@ module Chemotion
             pub_scope = pub_scope.where(published_by: params[:search_value])
           when 'Embargo'
             embargo_search = <<~SQL
-            (element_type = 'Reaction' and element_id in (select reaction_id from collections_reactions cr where cr.collection_id = ?))
+            (element_type = 'Reaction' and element_id in (select reaction_id from collections_reactions cr where cr.deleted_at is null and cr.collection_id = ?))
             or
-            (element_type = 'Sample' and element_id in (select sample_id from collections_samples cs where cs.collection_id = ?))
+            (element_type = 'Sample' and element_id in (select sample_id from collections_samples cs where cs.deleted_at is null and cs.collection_id = ?))
             SQL
             embargo_search = ActiveRecord::Base.send(:sanitize_sql_array, [embargo_search, params[:search_value], params[:search_value]])
             pub_scope = pub_scope.where(embargo_search)
