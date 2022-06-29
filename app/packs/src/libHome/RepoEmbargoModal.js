@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Label, Modal, ButtonToolbar } from 'react-bootstrap';
+import { Button, Label, Modal, ButtonToolbar, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import Utils from '../components/utils/Functions';
 import {
   AffiliationList,
@@ -11,17 +11,17 @@ import {
 import { AffiliationMap } from './RepoReviewCommon';
 
 const Doi = (props) => {
-  const {
-    type, id, doi
-  } = props;
-
+  const { type, id, doi } = props;
   const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
   const data = (
     <span>
-      <Button key={`${type}-jumbtn-${id}`} bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doi}`; }}>
-        {doi}
-      </Button>
+      <Button key={`${type}-jumbtn-${id}`} bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doi}`; }}>{doi}</Button>
       <DownloadMetadataBtn type={type} id={id} />
+      <OverlayTrigger placement="bottom" overlay={<Tooltip id="tip_clipboard">copy to clipboard</Tooltip>}>
+        <Button onClick={() => { navigator.clipboard.writeText(`https://dx.doi.org/${doi}`); }} bsSize="xsmall" >
+          <i className="fa fa-clipboard" aria-hidden="true" />
+        </Button>
+      </OverlayTrigger>
     </span>
   );
   return (
@@ -63,19 +63,10 @@ MetadataModal.propTypes = {
 };
 
 const ElementDoi = (edois, isPublished) => {
-  if (edois == null || typeof edois === 'undefined' || edois.length === 0) {
-    return (<div />);
-  }
-  const dois = edois.map(edoi => {
-    return (<div><Doi type={edoi.element_type} id={edoi.element_id} doi={edoi.doi || ''} isPublished={isPublished} /></div>)
-  });
-
-  return (
-    <div>
-      {dois}
-    </div>
-  )
-}
+  if (edois == null || typeof edois === 'undefined' || edois.length === 0) { return (<div />); }
+  const dois = edois.map(edoi => (<div key={`${edoi.element_type}_${edoi.element_id}`}><Doi type={edoi.element_type} id={edoi.element_id} doi={edoi.doi || ''} isPublished={isPublished} /></div>));
+  return (<div>{dois}</div>);
+};
 
 const InfoModal = ({ showModal, selectEmbargo, onCloseFn }) => {
   const tag = (selectEmbargo && selectEmbargo.taggable_data) || {};
