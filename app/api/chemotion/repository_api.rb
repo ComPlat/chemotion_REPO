@@ -430,7 +430,7 @@ module Chemotion
           end
         end
         post do
-          embargo_collection = fetch_embargo_collection(@p_embargo.to_i. current_user) if @p_embargo.to_i >= 0
+          embargo_collection = fetch_embargo_collection(@p_embargo.to_i, current_user) if @p_embargo.to_i >= 0
           case @p_element['type'].classify
           when 'Sample'
             CollectionsSample
@@ -1229,7 +1229,7 @@ module Chemotion
             end.create_in_collection(@element['id'], [@new_embargo_collection.id])
 
             { col_id: @embargo_collection.id,
-              new_embargo: @new_embargo_collection,
+              new_embargo: @new_embargo_collection.publication,
               is_new_embargo: params[:new_embargo]&.to_i == 0,
               message: "#{@element['type']} [#{@element['title']}] has been moved from Embargo Bundle [#{@embargo_collection.label}] to Embargo Bundle [#{@new_embargo_collection.label}]" }
           rescue StandardError => e
