@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import SVG from 'react-inlinesvg';
 import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Select from 'react-select';
+import { filter } from 'lodash';
 import RepoReviewDetails from './RepoReviewDetails';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
@@ -371,9 +372,19 @@ export default class RepoReview extends Component {
   }
 
   renderEmabrgoModal() {
-    const { showEmbargoModal, bundles, selectedElement } = this.state;
-    const defaultBundles = [{ value: '0', name: 'new', label: '--Create a new Embargo Bundle--' }];
-    const allBundles = defaultBundles.concat(bundles);
+    const { showEmbargoModal, bundles, selectedElement, selectedEmbargo } = this.state;
+
+    const options = [
+      { value: '0', name: 'new', label: '--Create a new Embargo Bundle--' },
+    ];
+
+    bundles.forEach((col) => {
+      const tag = col.taggable_data || {};
+      options.push({ value: col.element_id, name: tag.label, label: tag.label });
+    });
+
+    const allBundles = filter(options, b => b.value !== (selectedEmbargo == null ? '' : selectedEmbargo.element_id));
+
     const element = selectedElement || {};
     return (
       <Modal backdrop="static" show={showEmbargoModal}>
