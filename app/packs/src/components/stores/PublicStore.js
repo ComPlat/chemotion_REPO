@@ -341,7 +341,7 @@ class PublicStore {
     const bundles = [];
     if (cols && cols.length > 0) {
       cols.forEach((col) => {
-        bundles.push({ value: col.id, name: col.label, label: col.label });
+        bundles.push(col);
       });
     }
     this.setState({ bundles, current_user });
@@ -373,7 +373,7 @@ class PublicStore {
   handleEmbargoMove(results) {
     const { col_id, is_new_embargo, new_embargo, message } = results.result;
     if (is_new_embargo === true) {
-      this.bundles.push({value: new_embargo.id, name: new_embargo.label, label: new_embargo.label });
+      this.bundles.push(new_embargo);
     }
     alert(message);
     PublicActions.getEmbargoElements(col_id);
