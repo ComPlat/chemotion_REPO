@@ -93,6 +93,7 @@ module Chemotion
           new_sample.collections << Collection.element_to_review_collection
           new_sample.collections << @embargo_collection unless @embargo_collection.nil?
           new_sample.save!
+          new_sample.save_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
           unless @literals.nil?
             lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
             duplicate_literals(new_sample, lits)
@@ -158,6 +159,7 @@ module Chemotion
           dest = File.join(dir, new_rsf)
 
           new_reaction.save!
+          new_reaction.save_segments(segments: reaction.segments, current_user_id: current_user.id)
           unless @literals.nil?
             lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id }
             duplicate_literals(new_reaction, lits)
