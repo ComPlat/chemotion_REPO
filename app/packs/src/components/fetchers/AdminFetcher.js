@@ -360,6 +360,10 @@ export default class AdminFetcher {
     return this.genericKlass(params, 'update_segment_klass');
   }
 
+  static deleteSegmentKlass(id) {
+    return this.exec(`/api/v1/admin/delete_segment_klass/${id}`, 'DELETE');
+  }
+
   static deActiveSegmentKlass(params) {
     return this.genericKlass(params, 'de_active_segment_klass');
   }
