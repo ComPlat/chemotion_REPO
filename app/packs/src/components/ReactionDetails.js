@@ -24,6 +24,7 @@ import Utils from './utils/Functions';
 import PrintCodeButton from './common/PrintCodeButton';
 import XTabs from './extra/ReactionDetailsXTabs';
 import UIStore from './stores/UIStore';
+import UserStore from './stores/UserStore';
 import UIActions from './actions/UIActions';
 import { setReactionByType } from './ReactionDetailsShare';
 import { sampleShowOrNew } from './routesUtils';
@@ -628,21 +629,36 @@ export default class ReactionDetails extends Component {
     }
 
     addSegmentTabs(reaction, this.handleSegmentsChange, tabContentsMap);
-
+    const stb = [];
     const tabContents = [];
     visible.forEach((value) => {
       const tabContent = tabContentsMap[value];
       if (tabContent) { tabContents.push(tabContent); }
+      stb.push(value);
+    });
+
+    let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
+    segmentKlasses =
+      segmentKlasses.filter(s => s.element_klass && s.element_klass.name === reaction.type);
+    segmentKlasses.forEach((klass) => {
+      const visIdx = visible.indexOf(klass.label);
+      const idx = findIndex(reaction.segments, o => o.segment_klass_id === klass.id);
+      if (visIdx < 0 && idx > -1) {
+        const tabContent = tabContentsMap[klass.label];
+        if (tabContent) { tabContents.push(tabContent); }
+        stb.push(klass.label);
+      }
     });
 
     const { showPublishReactionModal } = this.state;
-    const submitLabel = (reaction && reaction.isNew) ? "Create" : "Save";
+    const submitLabel = (reaction && reaction.isNew) ? 'Create' : 'Save';
     const exportButton = (reaction && reaction.isNew) ? null : <ExportSamplesBtn type="reaction" id={reaction.id} />;
 
-    const activeTab = (this.state.activeTab !== 0 && this.state.activeTab) || visible[0];
+    const activeTab = (this.state.activeTab !== 0 && stb.indexOf(this.state.activeTab) > -1 &&
+      this.state.activeTab) || visible[0];
     const panelStylePre = reaction.isPendingToSave ? 'info' : 'primary';
     const publication = reaction.tag && reaction.tag.taggable_data &&
-      reaction.tag.taggable_data.publication
+      reaction.tag.taggable_data.publication;
     const panelStyle = publication ? 'success' : panelStylePre;
 
     const validateObjs = reaction.validates && reaction.validates.filter(v => v.value === false);
