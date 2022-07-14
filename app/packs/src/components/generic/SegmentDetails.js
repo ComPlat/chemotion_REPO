@@ -26,10 +26,11 @@ const addSegmentTabs = (element, onChange, contentMap) => {
     const idx = findIndex(element.segments, o => o.segment_klass_id === klass.id);
     let segment = {};
     if (idx > -1) {
-      segment = new Segment(element.segments[idx]); // element.segments[idx];
+      segment = new Segment(element.segments[idx]);
     } else {
       segment = Segment.buildEmpty(cloneDeep(klass));
     }
+    segment.can_update = !!element.can_update;
     const title = (<OverlayTrigger placement="bottom" delayShow={1000} overlay={ttl}><div>{klass.label}</div></OverlayTrigger>);
     contentMap[klass.label] = (
       <Tab eventKey={klass.label} key={`${element.type}_${element.id}_${klass.id}`} title={title} >
@@ -271,7 +272,10 @@ class SegmentDetails extends Component {
       segment.properties.select_options || {},
       this.handleInputChange,
       this.handleSubChange,
-      this.handleUnitClick
+      this.handleUnitClick,
+      [],
+      0,
+      segment.can_update
     );
     return (<div style={{ margin: '5px' }}>{layersLayout}</div>);
   }

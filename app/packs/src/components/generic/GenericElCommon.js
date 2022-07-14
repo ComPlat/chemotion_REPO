@@ -146,7 +146,7 @@ class GenPropertiesLayer extends Component {
 
   views() {
     const {
-      layer, selectOptions, id, layers
+      layer, selectOptions, id, layers, canUpdate
     } = this.props;
     const { cols, fields, key } = layer;
     const perRow = cols || 1;
@@ -187,7 +187,7 @@ class GenPropertiesLayer extends Component {
               onChange={event => this.handleChange(event, f.field, key, f.type)}
               onSubChange={this.handleSubChange}
               isEditable
-              readOnly={false}
+              readOnly={!canUpdate || false}
               isRequired={f.required || false}
               placeholder={f.placeholder || ''}
               option_layers={f.option_layers}
@@ -242,13 +242,12 @@ GenPropertiesLayer.propTypes = {
   onChange: PropTypes.func.isRequired,
   onSubChange: PropTypes.func.isRequired,
   onClick: PropTypes.func,
-  layers: PropTypes.object.isRequired
+  layers: PropTypes.object.isRequired,
+  canUpdate: PropTypes.object
 };
 
 GenPropertiesLayer.defaultProps = {
-  id: 0,
-  selectOptions: {},
-  onClick: () => {}
+  id: 0, selectOptions: {}, onClick: () => {}, canUpdate: true
 };
 
 class GenPropertiesLayerSearchCriteria extends Component {
@@ -338,7 +337,7 @@ GenPropertiesLayerSearchCriteria.defaultProps = {
   selectOptions: {}
 };
 
-const LayersLayout = (layers, options, funcChange, funcSubChange = () => {}, funcClick = () => {}, layout = [], id = 0) => {
+const LayersLayout = (layers, options, funcChange, funcSubChange = () => {}, funcClick = () => {}, layout = [], id = 0, canUpdate = false) => {
   const sortedLayers = sortBy(layers, l => l.position) || [];
   sortedLayers.forEach((layer) => {
     if (typeof layer.cond_fields === 'undefined' || layer.cond_fields == null || layer.cond_fields.length === 0) {
@@ -352,6 +351,7 @@ const LayersLayout = (layers, options, funcChange, funcSubChange = () => {}, fun
           selectOptions={options}
           onClick={funcClick}
           layers={layers}
+          canUpdate={canUpdate}
         />
       );
       layout.push(ig);
@@ -382,6 +382,7 @@ const LayersLayout = (layers, options, funcChange, funcSubChange = () => {}, fun
             selectOptions={options}
             onClick={funcClick}
             layers={layers}
+            canUpdate={canUpdate}
           />
         );
         layout.push(igs);
