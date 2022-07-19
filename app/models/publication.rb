@@ -21,6 +21,7 @@
 #  published_at          :datetime
 #  review                :jsonb
 #  accepted_at           :datetime
+#  oai_metadata_xml      :text
 #
 # Indexes
 #
@@ -399,7 +400,6 @@ class Publication < ActiveRecord::Base
     parent_element = parent&.element
     literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
     metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi)
-
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -414,7 +414,13 @@ class Publication < ActiveRecord::Base
 
   def persit_datacite_metadata_xml!
     mt = datacite_metadata_xml
-    self.update!(metadata_xml: mt)
+    self.update!(metadata_xml: mt, oai_metadata_xml: mt)
+    mt
+  end
+
+  def persit_oai_metadata_xml!
+    mt = datacite_metadata_xml
+    self.update!(oai_metadata_xml: mt)
     mt
   end
 
