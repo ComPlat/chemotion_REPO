@@ -730,3 +730,13 @@ $bs-successcolor: #5cb85c;
     border-color: white !important;
   }
 }
+
+.date_info {
+  display: inline-flex;
+  flex-direction: column;
+  margin-right: 8px;
+  .updated {
+    font-size: 0.6em;
+    text-align: right;
+  }
+}
