@@ -2292,9 +2292,11 @@ const DateInfo = (props) => {
     return (<span><b>Published on </b> <i>{formattedTime}</i></span>);
   }
 
-  time = new Date(pubData && pubData.updated_at);
+  time = new Date(pubData && pubData.created_at);
   formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
-  return (<span><b>Submitted on </b> <i>{formattedTime}</i></span>);
+  const uTime = new Date(pubData && pubData.updated_at);
+  const formattedUTime = `${uTime.getDate()}-${uTime.getMonth() + 1}-${uTime.getFullYear()} ${uTime.getHours()}:${uTime.getMinutes()} `;
+  return (<div className="date_info"><div><b>Submitted on </b> <i>{formattedTime}</i></div><div className="updated">Updated on {formattedUTime}</div></div>);
 };
 
 DateInfo.propTypes = {

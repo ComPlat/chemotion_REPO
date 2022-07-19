@@ -390,7 +390,7 @@ module Chemotion
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
           elements.push(
             id: e.element_id, svg: svg_file, type: element_type, title: title,
-            published_by: u&.name, submitter_id: u&.id, submit_at: e.updated_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
+            published_by: u&.name, submitter_id: u&.id, submit_at: e.created_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
           )
         end
         { elements: elements }
@@ -1102,7 +1102,7 @@ module Chemotion
             scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
             elements.push(
               id: e.element_id, svg: svg_file, type: element_type, title: title,
-              published_by: u&.name, submit_at: e.updated_at, state: e.state, scheme_only: scheme_only
+              published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only
             )
           end
           { elements: elements, embargo_id: params[:collection_id], current_user: { id: current_user.id, type: current_user.type } }
