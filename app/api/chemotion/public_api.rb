@@ -629,10 +629,19 @@ module Chemotion
         end
       end
 
+
       resource :col_list do
         helpers RepositoryHelpers
-        get do
+        after_validation do
           @embargo_collection = Collection.find(params[:collection_id])
+          pub = @embargo_collection.publication
+          error!('401 Unauthorized', 401) if pub.nil?
+
+          if pub.state != 'completed'
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
+          end
+        end
+        get do
           anasql = <<~SQL
             publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
           SQL
@@ -652,7 +661,7 @@ module Chemotion
             scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
             elements.push(
               id: e.element_id, pub_id: e.id, svg: svg_file, type: element_type, title: title, published_at: e.published_at&.strftime('%d-%m-%Y'),
-              published_by: u&.name, submit_at: e.updated_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
+              published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
           { elements: elements, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
@@ -665,8 +674,17 @@ module Chemotion
           requires :collection_id, type: Integer, desc: "collection id"
           requires :el_id, type: Integer, desc: "element id"
         end
-        get do
+        after_validation do
           @embargo_collection = Collection.find(params[:collection_id])
+          pub = @embargo_collection.publication
+          error!('401 Unauthorized', 401) if pub.nil?
+
+          if pub.state != 'completed'
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
+          end
+
+        end
+        get do
           if params[:el_type] == 'Reaction'
             return get_pub_reaction(params[:el_id])
           elsif params[:el_type] == 'Sample'
