@@ -288,6 +288,10 @@ class PublicStore {
   handleUnitsSystem(result) {
     this.setState({ unitsSystem: result });
   }
+
+  handleUnitsSystem(result) {
+    this.setState({ unitsSystem: result });
+  }
 }
 
 export default alt.createStore(PublicStore, 'PublicStore');

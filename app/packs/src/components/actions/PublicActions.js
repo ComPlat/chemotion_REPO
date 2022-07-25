@@ -340,6 +340,34 @@ class PublicActions {
         }).catch((errorMessage) => { console.log(errorMessage); });
     };
   }
+
+  fetchUnitsSystem() {
+    return (dispatch) => { fetch('/units_system/units_system.json', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { 'cache-control': 'no-cache' }
+      }).then(response => response.json()).then(json => dispatch(json)).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    }
+  }
+
+  fetchBasedOnSearchSelectionAndCollection(params) {
+    let uid;
+    NotificationActions.add({
+      title: "Searching ...",
+      level: "info",
+      position: "tc",
+      onAdd: function(notificationObject) { uid = notificationObject.uid; }
+    });
+    return (dispatch) => {
+      SearchFetcher.fetchBasedOnSearchSelectionAndCollection(params)
+        .then((result) => {
+          dispatch(result);
+          NotificationActions.removeByUid(uid);
+        }).catch((errorMessage) => { console.log(errorMessage); });
+    };
+  }
 }
 
 export default alt.createActions(PublicActions)

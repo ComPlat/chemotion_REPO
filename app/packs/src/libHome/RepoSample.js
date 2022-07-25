@@ -49,6 +49,7 @@ export default class RepoSample extends Component {
     this.handleAnalysesLink = this.handleAnalysesLink.bind(this);
     this.handleMaterialLink = this.handleMaterialLink.bind(this);
     this.toggleSA = this.toggleSA.bind(this);
+    this.toggleSG = this.toggleSG.bind(this);
     this.renderAnalyses = this.renderAnalyses.bind(this);
   }
 
@@ -71,6 +72,10 @@ export default class RepoSample extends Component {
   toggleSA() {
     const { expandSA } = this.state;
     this.setState({ expandSA: !expandSA });
+  }
+
+  toggleSG(sg) {
+    this.setState({ expandSG: sg.uuid });
   }
 
   updateRepoXvial(elementId) {
