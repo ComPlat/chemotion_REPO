@@ -243,7 +243,7 @@ GenPropertiesLayer.propTypes = {
   onSubChange: PropTypes.func.isRequired,
   onClick: PropTypes.func,
   layers: PropTypes.object.isRequired,
-  canUpdate: PropTypes.object
+  canUpdate: PropTypes.bool
 };
 
 GenPropertiesLayer.defaultProps = {
@@ -398,5 +398,5 @@ export {
   GenProperties,
   UploadInputChange,
   GenPropertiesLayer,
-  GenPropertiesLayerSearchCriteria,
+  GenPropertiesLayerSearchCriteria
 };

@@ -145,7 +145,7 @@ const GenPropertiesText = (opt) => {
         className={className}
         readOnly={opt.readOnly}
         required={opt.isRequired}
-        placeholder={opt.placeholder}
+        placeholder={opt.readOnly ? '' : opt.placeholder}
       />
     </FormGroup>
   );

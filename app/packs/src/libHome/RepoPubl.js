@@ -113,6 +113,7 @@ export default class RepoPubl extends Component {
     PublicActions.selectPublicCollection.defer();
     PublicStore.listen(this.onChange);
     PublicActions.getReactions.defer();
+    PublicActions.fetchUnitsSystem.defer();
   }
 
   componentWillUnmount() {

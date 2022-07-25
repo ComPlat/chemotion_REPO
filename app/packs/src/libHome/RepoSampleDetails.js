@@ -126,7 +126,8 @@ export default class RepoSampleDetails extends Component {
         showed_name: s.showed_name,
         molecule_iupac: molecule.iupac_name || [],
         molecule_id: molecule.id,
-        analyses: s.analyses || element.analyses || []
+        analyses: s.analyses || element.analyses || [],
+        segments: s.segments || []
       };
 
       return (

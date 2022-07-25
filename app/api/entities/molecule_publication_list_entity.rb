@@ -4,6 +4,7 @@
 module Entities
   class MoleculePublicationListEntity < Grape::Entity
     expose :id, :tag, :iupac_name, :sum_formular, :cano_smiles, :inchikey, :inchistring , :molecule_svg_file, :sample_svg_file, :sid
+    # expose :segments, using: Entities::SegmentEntity
 
     expose :embargo do |obj|
       obj[:embargo] || ''

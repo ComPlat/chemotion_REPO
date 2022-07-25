@@ -75,8 +75,8 @@ const FastInput = (props) => {
       delayShow={500}
       overlay={<Tooltip id="_fast_create_btn">Fast create by CAS RN (with dashes) or SMILES</Tooltip>}
     >
-      <FormGroup bsSize="xsmall" className="fast-input">
-        <InputGroup bsSize="xsmall">
+      <FormGroup className="fast-input">
+        <InputGroup bsSize="small">
           <SplitButton
             id="_fast_create_btn_split"
             pullRight

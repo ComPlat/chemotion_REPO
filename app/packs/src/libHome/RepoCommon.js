@@ -52,6 +52,7 @@ import { previewContainerImage } from '../components/utils/imageHelper';
 import RepoXvialButton from '../components/common/RepoXvialButton';
 import RepoPreviewImage from '../components/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
+import RepoSegment from './RepoSegment';
 
 const CollectionDesc = (props) => {
   let { label } = props;
@@ -1018,6 +1019,7 @@ const RenderAnalysisHeader = (props) => {
         <Col sm={12} md={12} lg={12}>
           <h5><b>Reference{references.length > 1 ? 's' : null}: </b></h5>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
+          <RepoSegment segments={element.segments} />
         </Col>
       </Row>
     </div>
@@ -1033,11 +1035,12 @@ const ToggleIndicator = ({ onClick, name, indicatorStyle }) => (
       color: 'white',
       fontSize: 'smaller',
       fontWeight: 'bold',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      borderRadius: 'unset'
     }}
     onClick={onClick}
   >
-    {name} &nbsp;<i className={`glyphicon ${indicatorStyle}`} />
+    {name} &nbsp;<i className={`fa fa-caret-${indicatorStyle}`} aria-hidden="true" />
   </span>
 );
 
@@ -1058,7 +1061,7 @@ const ReactionTable = ({
 }) => {
   let schemes = [];
   let sumSolvents = 0.0;
-  const showIndicator = (show) ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
+  const showIndicator = (show) ? 'down' : 'right';
 
   const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
     reaction.publication.taggable_data.scheme_only === true) || false;
@@ -1187,7 +1190,7 @@ const ReactionTable = ({
 const ReactionRinChiKey = ({
   reaction, toggle, show, bodyAttrs
 }) => {
-  const showIndicatorRinchi = (show) ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
+  const showIndicatorRinchi = (show) ? 'down' : 'right';
   return (
     <span>
       <ToggleIndicator onClick={toggle} name="RInChiKey Table" indicatorStyle={showIndicatorRinchi} />
@@ -1220,7 +1223,7 @@ const ReactionRinChiKey = ({
 const ReactionProperties = ({
   reaction, toggle, show, bodyAttrs
 }) => {
-  const showIndicatorProp = (show) ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
+  const showIndicatorProp = (show) ? 'down' : 'right';
   return (
     <span>
       <ToggleIndicator onClick={toggle} name="Properties" indicatorStyle={showIndicatorProp} />
@@ -1248,7 +1251,7 @@ const ReactionProperties = ({
 const ReactionTlc = ({
   reaction, toggle, show, bodyAttrs
 }) => {
-  const showIndicatorTlc = (show) ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
+  const showIndicatorTlc = (show) ? 'down' : 'right';
   return (
     <span>
       <ToggleIndicator onClick={toggle} name="TLC-Control" indicatorStyle={showIndicatorTlc} />
