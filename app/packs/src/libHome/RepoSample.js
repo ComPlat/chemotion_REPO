@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Jumbotron, Panel } from 'react-bootstrap';
+import { Button, Jumbotron, Panel, Tabs, Tab } from 'react-bootstrap';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AffiliationList,
@@ -26,6 +26,7 @@ import RepoPublicComment from '../components/common/RepoPublicComment';
 import RepoXvialButton from '../components/common/RepoXvialButton';
 import PublicActions from '../components/actions/PublicActions';
 import Sample from '../components/models/Sample';
+import RepoSegment from './RepoSegment';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -40,9 +41,10 @@ export default class RepoSample extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      expandSA: true,
+      expandSA: true, expandSG: ''
     };
     this.toggleSA = this.toggleSA.bind(this);
+    this.toggleSG = this.toggleSG.bind(this);
     this.renderAnalyses = this.renderAnalyses.bind(this);
   }
 
@@ -53,6 +55,10 @@ export default class RepoSample extends Component {
   toggleSA() {
     const { expandSA } = this.state;
     this.setState({ expandSA: !expandSA });
+  }
+
+  toggleSG(sg) {
+    this.setState({ expandSG: sg.uuid });
   }
 
   updateRepoXvial(elementId) {
@@ -94,7 +100,7 @@ export default class RepoSample extends Component {
       canComment, handleCommentBtn, isLogin, isReviewer, element
     } = this.props;
     const { xvialCom } = element;
-    const { expandSA } = this.state;
+    const { expandSA, expandSG } = this.state;
 
     const affiliationMap = AffiliationMap(sample.affiliation_ids);
     const references = sample.literatures ? sample.literatures.map(lit => (
@@ -169,7 +175,8 @@ export default class RepoSample extends Component {
           <b>Reference{references.length > 1 ? 's' : null}: </b>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
         </h5>
-        <ToggleIndicator onClick={this.toggleSA} name="Analyses" indicatorStyle={expandSA ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right'} />
+        <RepoSegment segments={sample.segments} />
+        <ToggleIndicator onClick={this.toggleSA} name="Analyses" indicatorStyle={expandSA ? 'down' : 'right'} />
         <span className="label" style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}>
           {AnalysesTypeJoinLabel(ArrayUtils.sortArrByIndex(analyses), 'Sample')}
         </span>

@@ -43,6 +43,7 @@ import RepoReviewModal from '../components/common/RepoReviewModal';
 import RepoUserComment from '../components/common/RepoUserComment';
 import RepoPublicComment from '../components/common/RepoPublicComment';
 import Sample from '../components/models/Sample';
+import RepoSegment from './RepoSegment';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
@@ -310,7 +311,7 @@ export default class RepoReactionDetails extends Component {
     if (typeof (container) === 'undefined' || !container) return <span />;
 
     const analyses = ArrayUtils.sortArrByIndex(head(filter(container.children, o => o.container_type === 'analyses')).children);
-    const show = this.state.showRA[idx];
+    const show = this.state.showRA[idx] || true;
     if (typeof (analyses) === 'undefined' || !analyses || analyses.length === 0) {
       return <div />;
     }
@@ -355,6 +356,7 @@ export default class RepoReactionDetails extends Component {
         >
           Analyses &nbsp;
           <i className={`glyphicon ${show}`} />
+          <i className={`fa fa-caret-${show ? 'down' : 'right'}`} />
         </span>
         <span className="label" style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}>
           {AnalysesTypeJoinLabel(analyses, type)}
@@ -455,7 +457,6 @@ export default class RepoReactionDetails extends Component {
       );
     }
 
-
     return (
       <div style={{ border: 'none' }}>
         <div >
@@ -503,6 +504,7 @@ export default class RepoReactionDetails extends Component {
             <h5>
               {this.reactionInfo(reaction)}
             </h5>
+            <RepoSegment segments={reaction.segments} />
             {schemeOnly ? '' : this.renderAnalysisView(reaction.container, 'Reaction', null, -1, idyLogin, idyReview)}
             {schemeOnly ? '' : this.renderProductAnalysisView(reaction.products, idyLogin, idyReview, literatures)}
           </Jumbotron>
