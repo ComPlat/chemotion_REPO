@@ -1,7 +1,7 @@
 import Aviator from 'aviator';
 import alt from '../alt';
 import PublicActions from '../actions/PublicActions';
-import SearchActions from '../actions/ElementActions';
+import ElementActions from '../actions/ElementActions';
 import UIActions from '../actions/UIActions';
 
 class PublicStore {
@@ -41,7 +41,7 @@ class PublicStore {
       handleDisplayMolecule: PublicActions.displayMolecule,
       handleDisplayReaction: PublicActions.displayReaction,
       handleDisplayCollection: PublicActions.displayCollection,
-      handleReceiveSearchresult: SearchActions.fetchBasedOnSearchSelectionAndCollection,
+      handleReceiveSearchresult: PublicActions.fetchBasedOnSearchSelectionAndCollection,
       handleClearSearchSelection: [UIActions.selectCollection, UIActions.selectSyncCollection],
       handleClose: PublicActions.close,
       handleArticles: PublicActions.articles,
@@ -64,6 +64,7 @@ class PublicStore {
       handleEmbargoAssign: PublicActions.assignEmbargo,
       handleRefreshPubElements: PublicActions.refreshPubElements,
       handleRefreshEmbargoBundles: PublicActions.getEmbargoBundle,
+      handleUnitsSystem: PublicActions.fetchUnitsSystem,
     });
   }
 
@@ -392,6 +393,10 @@ class PublicStore {
         this.searchValue, this.page, this.perPage
       );
     }
+  }
+
+  handleUnitsSystem(result) {
+    this.setState({ unitsSystem: result });
   }
 }
 
