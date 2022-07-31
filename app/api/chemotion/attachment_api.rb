@@ -166,9 +166,9 @@ module Chemotion
 
             if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
               element = Segment.find(@attachment.attachable_id)&.element
-              can_dwnld = element.is_a?(User) && (element == current_user) ||
-                          ElementPolicy.new(current_user, element).read? &&
-                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+              can_dwnld = @attachment.created_for == current_user.id ||
+                          (ElementPolicy.new(current_user, element).read? &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
             end
           end
           error!('401 Unauthorized', 401) unless can_dwnld

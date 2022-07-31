@@ -4,7 +4,11 @@
 module Entities
   # Segment entity
   class SegmentEntity < Grape::Entity
-    expose :id, :segment_klass_id, :element_type, :element_id, :properties, :uuid, :klass_uuid
+    expose :id, :segment_klass_id, :element_type, :element_id, :properties, :uuid, :klass_uuid, :klass_label
+
+    def klass_label
+      object.segment_klass.label
+    end
 
     def properties
       return unless object.respond_to? :properties

@@ -89,6 +89,7 @@ export default class RepoReview extends Component {
     PublicStore.listen(this.onChange);
     PublicActions.getElements.defer();
     PublicActions.getEmbargoBundle();
+    PublicActions.fetchUnitsSystem.defer();
   }
 
   componentWillUnmount() {

@@ -547,6 +547,7 @@ module Chemotion
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
+          entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
           {
             reaction: entities,
             isSubmitter: publication.published_by == current_user.id,
@@ -571,6 +572,8 @@ module Chemotion
         end
         get do
           sample = Sample.where(id: params[:id]).includes(:molecule,:tag).last
+          review_sample = {**sample.serializable_hash.deep_symbolize_keys}
+          review_sample[:segments] = sample.segments.present? ? Entities::SegmentEntity.represent(sample.segments) : []
           molecule = Molecule.find(sample.molecule_id) unless sample.nil?
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
@@ -580,7 +583,7 @@ module Chemotion
 
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
-            sample: sample,
+            sample: review_sample,
             publication: publication,
             literatures: literatures,
             analyses: containers,
