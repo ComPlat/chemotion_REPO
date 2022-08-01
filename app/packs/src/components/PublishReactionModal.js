@@ -71,6 +71,7 @@ export default class PublishReactionModal extends Component {
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noSolvent: false,
+      noAmountYield: false,
       schemeDesc: true,
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
     };
@@ -79,7 +80,6 @@ export default class PublishReactionModal extends Component {
     this.handlePublishReaction = this.handlePublishReaction.bind(this);
     this.handleReserveDois = this.handleReserveDois.bind(this);
     this.handleSelectUser = this.handleSelectUser.bind(this);
-    this.promptTextCreator = this.promptTextCreator.bind(this);
     this.loadUserByName = this.loadUserByName.bind(this);
     this.handleAnalysesChecked = this.handleAnalysesChecked.bind(this);
     this.toggleScheme = this.toggleScheme.bind(this);
@@ -93,6 +93,7 @@ export default class PublishReactionModal extends Component {
     this.handleEmbargoChange = this.handleEmbargoChange.bind(this);
     this.handleLicenseChange = this.handleLicenseChange.bind(this);
     this.handleNoSolventCheck = this.handleNoSolventCheck.bind(this);
+    this.handleNoAmountYieldCheck = this.handleNoAmountYieldCheck.bind(this);
     this.handleCC0ConsentChange = this.handleCC0ConsentChange.bind(this);
     this.handlePublishTypeChange = this.handlePublishTypeChange.bind(this);
     this.handleYieldChange = this.handleYieldChange.bind(this);
@@ -228,6 +229,10 @@ export default class PublishReactionModal extends Component {
     this.setState({ noSolvent: !this.state.noSolvent });
   }
 
+  handleNoAmountYieldCheck() {
+    this.setState({ noAmountYield: !this.state.noAmountYield });
+  }
+
   loadBundles() {
     RepositoryFetcher.fetchEmbargoCollections().then((result) => {
       const cols = result.repository || [];
@@ -246,11 +251,7 @@ export default class PublishReactionModal extends Component {
 
   loadMyCollaborations() {
     UsersFetcher.fetchMyCollaborations()
-    .then((result) => {
-      this.setState({
-        collaborations: result.authors
-      });
-    });
+      .then((result) => { this.setState({ collaborations: result.authors }); });
   }
 
   contributor() {
@@ -259,7 +260,7 @@ export default class PublishReactionModal extends Component {
     const aff = currentUser && currentUser.current_affiliations && Object.keys(currentUser.current_affiliations).map(k => (
       <div>  -{currentUser.current_affiliations[k]}</div>
     ));
-    return (<div><h5><b>Contributor:</b></h5>{orcid}{currentUser.name} <br/> {aff} </div>)
+    return (<div><h5><b>Contributor:</b></h5>{orcid}{currentUser.name} <br /> {aff} </div>);
   }
 
   loadUserByName(input) {
@@ -279,10 +280,6 @@ export default class PublishReactionModal extends Component {
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
-  }
-
-  promptTextCreator(label) {
-    return ("Share with \"" + label + "\"");
   }
 
   handleAnalysesChecked(analysis, elementType) {
@@ -338,7 +335,9 @@ export default class PublishReactionModal extends Component {
   }
 
   handlePublishReaction() {
-    const { selectedLicense, cc0Consent, publishType, selectedUsers} = this.state;
+    const {
+      selectedLicense, cc0Consent, publishType, selectedUsers
+    } = this.state;
     const authorCount = selectedUsers && selectedUsers.length;
 
     if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
@@ -419,7 +418,7 @@ export default class PublishReactionModal extends Component {
       const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
         <div>  -{af.department}, {af.organization}, {af.country}</div>
       ));
-      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>)
+      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>);
     });
 
     return (
@@ -575,14 +574,16 @@ export default class PublishReactionModal extends Component {
 
       (reaction.starting_materials || []).forEach((st) => {
         if (!st.amount || !st.amount.value) {
-          validates.push({ name: 'starting_materials-amount', value: false, message: `${st.molecule_iupac_name}: amount is 0` });
+          validates.push({ name: 'starting_materials-amount', value: false, message: `[Starting material] ${st.molecule_iupac_name}: amount is 0` });
         }
       });
-      (reaction.products || []).forEach((prod) => {
-        if (!prod.amount || !prod.amount.value) {
-          validates.push({ name: 'product-amount', value: false, message: `${prod.molecule_iupac_name}: amount is 0` });
-        }
-      });
+      if (!this.state.noAmountYield) {
+        (reaction.products || []).forEach((prod) => {
+          if (!prod.amount || !prod.amount.value) {
+            validates.push({ name: 'product-amount', value: false, message: `[Product] ${prod.molecule_iupac_name}: amount is 0` });
+          }
+        });
+      }
     } else {
       const hasDuration =
         !!(reaction.duration && reaction.duration !== '' && Number(reaction.duration.split(' ')[0]) > 0);
@@ -590,7 +591,7 @@ export default class PublishReactionModal extends Component {
       const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
       validates.push({ name: 'temperature', value: hasTemperature, message: hasTemperature ? '' : 'Temperature is missing' });
     }
-    validates = validates.concat(validateYield(reaction));
+    validates = this.state.noAmountYield ? validates : validates.concat(validateYield(reaction));
     return validates;
   }
 
@@ -771,6 +772,13 @@ export default class PublishReactionModal extends Component {
               >
                 <span>This reaction has no solvents</span>
               </Checkbox>
+              <Checkbox
+                onChange={() => { this.handleNoAmountYieldCheck(); }}
+                checked={this.state.noAmountYield}
+                className={`display-${isFullyPublish}`}
+              >
+                <span>Skip amount and yield validation (the product has no amount and yield)</span>
+              </Checkbox>
               <PanelGroup accordion id={`panelgroup_${reaction.id}`} defaultActiveKey={0}>
                 <Panel
                   eventKey="2"
@@ -792,7 +800,11 @@ export default class PublishReactionModal extends Component {
                       </Row>
                       <Row>
                         <Col md={12}>
-                          <PanelGroup accordion id={`panelgroup_ds_${reaction.id}`} defaultActiveKey={0}>
+                          <PanelGroup
+                            accordion
+                            id={`panelgroup_ds_${reaction.id}`}
+                            defaultActiveKey={0}
+                          >
                             {flatten(analysesView)}
                           </PanelGroup>
                         </Col>
