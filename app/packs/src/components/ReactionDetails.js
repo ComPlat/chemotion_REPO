@@ -296,7 +296,6 @@ export default class ReactionDetails extends Component {
         validates.push({ name: 'analyses', value: false, message: 'Analyses data is missing.' });
       }
     }
-    validates = validates.concat(validateYield(reaction));
     if (validates.length > 0) {
       reaction.validates = validates;
       this.setState({ reaction });
