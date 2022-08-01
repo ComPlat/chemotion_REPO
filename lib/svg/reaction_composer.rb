@@ -528,7 +528,7 @@ module SVG
           x_shift = group_width + 10 - vb[0]
           y_shift = (y_center - vb[3] / 2).round
           yield_svg = ''
-          yield_svg += compose_yield_svg(yield_amount, (vb[2] / 2).round, ((@max_height_for_products + vb[3]) / 2).round) if yield_amount
+          yield_svg += compose_yield_svg(yield_amount, (vb[2] / 2).round, ((@max_height_for_products + vb[3]) / 2).round) if yield_amount && yield_amount > 0
           group_width += vb[2] + 10
           svg['width'] = "#{vb[2]}px;"
           svg['height'] = "#{vb[3]}px;"

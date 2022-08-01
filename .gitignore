@@ -120,6 +120,9 @@
 !/public/json/pictograms.json
 
 
+/public/jsmol/*
+!/public/jsmol/.keep
+
 /public/zip/*
 !/public/zip/.keep
 

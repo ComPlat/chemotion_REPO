@@ -28,4 +28,24 @@ module ApplicationHelper
     @markdown ||= Redcarpet::Markdown.new(renderer, extensions)
     @markdown.render(text).html_safe
   end
+
+  def encode_json(json)
+    cipher = OpenSSL::Cipher.new('rc4')
+    cipher.encrypt
+    key = cipher.random_key
+    iv = cipher.random_iv
+    encrypted = cipher.update(json.to_json) + cipher.final
+    encoded = Base64.encode64(encrypted)
+    [encoded, key.unpack("H*"), iv.unpack("H*")]
+  end
+
+  def decode_json(json, key, iv)
+    data = Base64.decode64(json)
+    cipher = OpenSSL::Cipher.new('rc4')
+    cipher.decrypt
+    cipher.key = key.pack("H*")
+    cipher.iv = iv.pack("H*")
+    data = cipher.update(data) + cipher.final
+    JSON.parse(data)
+  end
 end

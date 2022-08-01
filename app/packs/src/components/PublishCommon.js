@@ -39,7 +39,7 @@ const validateYield = (reaction) => {
   const products = reaction.products || [];
   products.forEach((product) => {
     const val = ((product.equivalent || 0) * 100).toFixed(0);
-    if (val === '0') result.push({ name: 'product-yield', value: false, message: `${product.molecule_iupac_name}: yield is 0` });
+    if (val === '0') result.push({ name: 'product-yield', value: false, message: `[Product] ${product.molecule_iupac_name}: yield is 0` });
   });
   if (result.length !== 0 && result.length === products.length) return result;
   return [];
