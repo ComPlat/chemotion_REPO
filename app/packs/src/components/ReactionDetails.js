@@ -189,9 +189,6 @@ export default class ReactionDetails extends Component {
         validates.push({ name: 'product', value: false, message: 'Product is missing' });
       }
       products.forEach((pt) => {
-        if (!pt.amount || !pt.amount.value) {
-          validates.push({ name: 'product-amount', value: false, message: `${pt.molecule_iupac_name}: amount is 0` });
-        }
         if (pt.analysisArray().length > 0) {
           hasAnalyses = true;
         }
@@ -204,7 +201,6 @@ export default class ReactionDetails extends Component {
         validates.push({ name: 'analyses', value: false, message: 'Analyses data is missing.' });
       }
     }
-    validates = validates.concat(validateYield(reaction));
     if (validates.length > 0) {
       reaction.validates = validates;
       this.setState({ reaction });
