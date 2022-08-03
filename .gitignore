@@ -111,6 +111,9 @@
 /public/json/*
 !/public/json/schema.json
 
+/public/jsmol/*
+!/public/jsmol/.keep
+
 /public/zip/*
 !/public/zip/.keep
 
