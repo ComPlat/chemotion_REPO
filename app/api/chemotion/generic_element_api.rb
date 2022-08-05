@@ -189,11 +189,11 @@ module Chemotion
         post do
           attach_ary = []
           att_ary = create_uploads('Element', params[:att_id], params[:elfiles], params[:elInfo], current_user.id) if params[:elfiles].present? && params[:elInfo].present?
-          (attach_ary << att_ary).flatten! unless att_ary&.empty?
+          (attach_ary << att_ary).flatten! unless att_ary.blank?
           att_ary = create_uploads('Segment', params[:att_id], params[:sefiles], params[:seInfo], current_user.id) if params[:sefiles].present? && params[:seInfo].present?
-          (attach_ary << att_ary).flatten! unless att_ary&.empty?
+          (attach_ary << att_ary).flatten! unless att_ary.blank?
           att_ary = create_attachments(params[:attfiles], params[:delfiles], params[:att_type], params[:att_id], current_user.id) if params[:attfiles].present? || params[:delfiles].present?
-          (attach_ary << att_ary).flatten! unless att_ary&.empty?
+          (attach_ary << att_ary).flatten! unless att_ary.blank?
           TransferThumbnailToPublicJob.set(queue: "transfer_thumbnail_to_public_#{current_user.id}").perform_now(attach_ary) unless attach_ary.empty?
           TransferFileFromTmpJob.set(queue: "transfer_file_from_tmp_#{current_user.id}").perform_now(attach_ary) unless attach_ary.empty?
           true
