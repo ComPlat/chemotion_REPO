@@ -47,6 +47,7 @@ import RepositoryActions from './actions/RepositoryActions';
 import PublishReactionModal from './PublishReactionModal';
 import {
   PublishedTag,
+  OrigElnTag,
   LabelPublication,
   PublishBtnReaction,
   ReviewPublishBtn,
@@ -512,6 +513,7 @@ export default class ReactionDetails extends Component {
         />
         <ReviewPublishBtn element={reaction} showComment={this.handleCommentScreen} validation={this.handleValidation} />
         <div style={{ display: "inline-block", marginLeft: "10px" }}>
+          <OrigElnTag element={reaction} />
           <PublishedTag element={reaction} />
           <LabelPublication element={reaction} />
         </div>

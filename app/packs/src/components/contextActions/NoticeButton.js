@@ -60,7 +60,6 @@ const handleNotification = (nots, act, needCallback = true) => {
               const params = { ids: [] };
               params.ids[0] = n.id;
               MessagesFetcher.acknowledgedMessage(params);
-              // .then((result) => { console.log(JSON.stringify(result)); });
             }
           },
         },
