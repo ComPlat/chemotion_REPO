@@ -69,18 +69,6 @@ module Chemotion
         end
       end
 
-      namespace :search do
-        params do
-          requires :inchikey, type: String, desc: 'inchikey'
-        end
-        post do
-          molecule = Molecule.joins("inner join samples on molecules.id = samples.molecule_id and samples.deleted_at is null")
-                             .joins("inner join publications on samples.id = publications.element_id and  publications.state like '%completed%' and publications.element_type = 'Sample'")
-                             .find_by(inchikey: params[:inchikey])
-          { molecule_id: molecule&.id }
-        end
-      end
-
       namespace :article_init do
         get do
           { is_article_editor: current_user&.is_article_editor || false }

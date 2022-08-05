@@ -4,13 +4,15 @@ require 'json'
 
 module Import
   class ImportCollections
-    def initialize(att, current_user_id)
+    def initialize(att, current_user_id, gt = false, col_id = nil, origin = nil)
       @att = att
       @current_user_id = current_user_id
-
+      @gt = gt
+      @origin = origin
       @data = nil
       @instances = {}
       @attachments = []
+      @col_id = col_id
       @col_all = Collection.get_all_collection_for_user(current_user_id)
       @images = {}
       @svg_files = []
@@ -57,16 +59,18 @@ module Import
 
     def import
       ActiveRecord::Base.transaction do
-        import_collections
+        gate_collection if @gt == true
+        import_collections if @gt == false
         import_samples
         import_residues
         import_reactions
         import_reactions_samples
-        import_wellplates
-        import_wells
-        import_screens
-        import_research_plans
+        import_wellplates if @gt == false
+        import_wells if @gt == false
+        import_screens if @gt == false
+        import_research_plans if @gt == false
         import_containers
+        import_segments
         import_attachments
         import_literals
       end
@@ -125,6 +129,15 @@ module Import
       update_instances!(@uuid, collection)
     end
 
+    def gate_collection
+      collection = Collection.find(@col_id)
+      @uuid = nil
+      @data.fetch('Collection', {}).each do |uuid, fields|
+        @uuid = uuid
+      end
+      update_instances!(@uuid, collection)
+    end
+
     def fetch_bound(value)
       bounds = value.to_s.split(/\.{2,3}/)
       lower = BigDecimal(bounds[0])
@@ -166,7 +179,6 @@ module Import
           'location',
           'is_top_secret',
           'external_label',
-          'short_label',
           'real_amount_value',
           'real_amount_unit',
           'imported_readout',
@@ -192,6 +204,7 @@ module Import
           molecule_id: molecule&.id
         ))
 
+
         solvent_value = fields.slice('solvent')['solvent']
         if solvent_value.is_a? String
           solvent = Chemotion::SampleConst.solvents_smiles_options.find { |s| s[:label].include?(solvent_value) }
@@ -202,6 +215,19 @@ module Import
         s_svg_file = @svg_files.select { |s| s[:sample_svg_file] == fields.fetch('sample_svg_file') }.first
         @svg_files.push(sample_svg_file: fields.fetch('sample_svg_file'), svg_file: sample.sample_svg_file) if s_svg_file.nil?
         sample.sample_svg_file = s_svg_file[:svg_file] unless s_svg_file.nil?
+
+        # keep orig eln info
+        if @gt == true
+          et = sample.tag
+          eln_info = {
+            id: fields["id"],
+            short_label: fields["short_label"],
+            origin: @origin
+          }
+          et.update!(
+            taggable_data: (et.taggable_data || {}).merge(eln_info: eln_info)
+          )
+        end
 
         # add sample to the @instances map
         update_instances!(uuid, sample)
@@ -255,6 +281,19 @@ module Import
             'Collection', 'CollectionsReaction', 'reaction_id', 'collection_id', uuid
           )
         ))
+        # keep orig eln info
+        if @gt == true
+          et = reaction.tag
+          eln_info = {
+            id: fields["id"],
+            short_label: fields["short_label"],
+            origin: @origin
+          }
+          et.update!(
+            taggable_data: (et.taggable_data || {}).merge(eln_info: eln_info)
+          )
+
+        end
 
         # add reaction to the @instances map
         update_instances!(uuid, reaction)
@@ -291,6 +330,12 @@ module Import
             reaction: @instances.fetch('Reaction').fetch(fields.fetch('reaction_id')),
             sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'))
           ))
+
+          if reactions_sample.type == 'ReactionsProductSample'
+            onm = reactions_sample.reaction.tag&.taggable_data&.dig('eln_info', 'short_label')
+            nnm = reactions_sample.reaction.short_label
+            reactions_sample.sample.update!(name:reactions_sample.sample.name.sub!(onm, nnm)) if onm.present? && nnm.present?
+          end
 
           # add reactions_sample to the @instances map
           update_instances!(uuid, reactions_sample)
@@ -394,65 +439,212 @@ module Import
     end
 
     def import_containers
-      @data.fetch('Container', {}).each do |uuid, fields|
-        case fields.fetch('container_type')
-        when 'root', nil
-          # the root container was created when the containable was imported
-          containable_type = fields.fetch('containable_type')
-          containable_uuid = fields.fetch('containable_id')
-          containable = @instances.fetch(containable_type).fetch(containable_uuid)
-          container = containable.container
-        when 'analyses'
-          # get the analyses container from its parent (root) container
-          parent = @instances.fetch('Container').fetch(fields.fetch('parent_id'))
-          container = parent.children.where("container_type = 'analyses'").first
-        else
-          # get the parent container
-          parent = @instances.fetch('Container').fetch(fields.fetch('parent_id'))
+      begin
+        @data.fetch('Container', {}).each do |uuid, fields|
+          case fields.fetch('container_type')
+          when 'root', nil
+            # the root container was created when the containable was imported
+            containable_type = fields.fetch('containable_type')
+            containable_uuid = fields.fetch('containable_id')
+            containable = @instances.fetch(containable_type).fetch(containable_uuid)
+            container = containable.container
+          when 'analyses'
+            # get the analyses container from its parent (root) container
+            parent = @instances.fetch('Container').fetch(fields.fetch('parent_id'))
+            container = parent.children.where("container_type = 'analyses'").first
+          else
+            # get the parent container
+            parent = @instances.fetch('Container').fetch(fields.fetch('parent_id'))
 
-          # create the container
-          container = parent.children.create!(fields.slice(
-                                                'containable_type',
-                                                'name',
-                                                'container_type',
-                                                'description',
-                                                'extended_metadata',
-                                                'created_at',
-                                                'updated_at'
-                                              ))
+            # create the container
+            container = parent.children.create!(fields.slice(
+                                                  'containable_type',
+                                                  'name',
+                                                  'container_type',
+                                                  'description',
+                                                  'extended_metadata',
+                                                  'created_at',
+                                                  'updated_at'
+                                                ))
+          end
+
+          # in any case, add container to the @instances map
+          update_instances!(uuid, container)
         end
-
-        # in any case, add container to the @instances map
-        update_instances!(uuid, container)
+      rescue StandardError => err
+        Rails.logger.debug(err.backtrace)
+        raise
       end
     end
 
     def import_attachments
-      primary_store = Rails.configuration.storage.primary_store
-      @data.fetch('Attachment', {}).each do |uuid, fields|
-        # get the attachable for this attachment
-        attachable_type = fields.fetch('attachable_type')
-        attachable_uuid = fields.fetch('attachable_id')
-        attachable = @instances.fetch(attachable_type).fetch(attachable_uuid)
+      begin
+        primary_store = Rails.configuration.storage.primary_store
+        @data.fetch('Attachment', {}).each do |uuid, fields|
+          # get the attachable for this attachment
+          attachable_type = fields.fetch('attachable_type')
+          attachable_uuid = fields.fetch('attachable_id')
 
-        attachment = Attachment.where(id: @attachments, filename: fields.fetch('identifier')).first
+          if attachable_type == 'SegmentProps'
+            attachable = @instances.fetch('Segment').fetch(attachable_uuid)
+            attachment = Attachment.where(id: @attachments, filename: fields.fetch('identifier')).first
 
-        attachment.update!(
-          attachable: attachable,
-          transferred: true,
-          aasm_state: fields.fetch('aasm_state'),
-          filename: fields.fetch('filename'),
-          content_type: fields.fetch('content_type'),
-          storage: primary_store
-          # checksum: fields.fetch('checksum'),
-          # created_at: fields.fetch('created_at'),
-          # updated_at: fields.fetch('updated_at')
-        )
-        # TODO: if attachment.checksum != fields.fetch('checksum')
+            attachment.update!(
+              attachable_id: attachable.id,
+              attachable_type: 'SegmentProps',
+              transferred: true,
+              aasm_state: fields.fetch('aasm_state'),
+              filename: fields.fetch('filename'),
+              content_type: fields.fetch('content_type'),
+              storage: primary_store
+              # checksum: fields.fetch('checksum'),
+              # created_at: fields.fetch('created_at'),
+              # updated_at: fields.fetch('updated_at')
+            )
 
-        # add attachment to the @instances map
-        update_instances!(uuid, attachment)
-        attachment.regenerate_thumbnail
+            properties = attachable.properties
+            properties['layers'].keys.each do |key|
+              layer = properties['layers'][key]
+              field_uploads = layer['fields'].select { |ss| ss['type'] == 'upload' }
+              field_uploads&.each do |upload|
+                idx = properties['layers'][key]['fields'].index(upload)
+                files = upload["value"] && upload["value"]["files"]
+                files&.each_with_index do |fi, fdx|
+                  if properties['layers'][key]['fields'][idx]['value']['files'][fdx]['uid'] == fields.fetch('identifier')
+                    properties['layers'][key]['fields'][idx]['value']['files'][fdx]['aid'] = attachment.id
+                    properties['layers'][key]['fields'][idx]['value']['files'][fdx]['uid'] = attachment.identifier
+                  end
+                end
+              end
+            end
+            attachable.update!(properties: properties)
+
+          else
+            attachable = @instances.fetch(attachable_type).fetch(attachable_uuid)
+            attachment = Attachment.where(id: @attachments, filename: fields.fetch('identifier')).first
+
+            attachment.update!(
+              attachable: attachable,
+              transferred: true,
+              aasm_state: fields.fetch('aasm_state'),
+              filename: fields.fetch('filename'),
+              content_type: fields.fetch('content_type'),
+              storage: primary_store
+              # checksum: fields.fetch('checksum'),
+              # created_at: fields.fetch('created_at'),
+              # updated_at: fields.fetch('updated_at')
+            )
+          end
+
+          # TODO: if attachment.checksum != fields.fetch('checksum')
+
+          # add attachment to the @instances map
+          update_instances!(uuid, attachment)
+          attachment.regenerate_thumbnail
+
+        end
+      rescue StandardError => err
+        Rails.logger.debug(err.backtrace)
+        raise
+      end
+    end
+
+    def import_segments
+      begin
+        @data.fetch('Segment', {}).each do |uuid, fields|
+          klass_id = fields["segment_klass_id"]
+          sk_obj = @data.fetch('SegmentKlass', {})[klass_id]
+          sk_id = sk_obj["identifier"]
+          ek_obj = @data.fetch('ElementKlass').fetch(sk_obj["element_klass_id"])
+          element_klass = ElementKlass.find_by(name: ek_obj['name']) if ek_obj.present?
+          next if element_klass.nil? || ek_obj.nil? || ek_obj['is_generic'] == true
+          element_uuid = fields.fetch('element_id')
+          element_type = fields.fetch('element_type')
+          element = @instances.fetch(element_type).fetch(element_uuid)
+          segment_klass = SegmentKlass.find_by(identifier: sk_id)
+          next if @gt == true && segment_klass.nil?
+
+          segment_klass = SegmentKlass.create!(sk_obj.slice(
+              'label',
+              'desc',
+              'properties_template',
+              'is_active',
+              'place',
+              'properties_release',
+              'uuid',
+              'identifier',
+              'sync_time'
+            ).merge(
+              element_klass: element_klass,
+              created_by: @current_user_id,
+              released_at: DateTime.now
+            )
+          ) if segment_klass.nil?
+          segment = Segment.create!(
+            fields.slice(
+              'properties',
+              'created_at',
+              'updated_at'
+            ).merge(
+              created_by: @current_user_id,
+              element: element,
+              segment_klass: segment_klass,
+              uuid: SecureRandom.uuid,
+              klass_uuid: segment_klass.uuid
+            )
+          )
+          properties = segment.properties
+          properties['layers'].keys.each do |key|
+            layer = properties['layers'][key]
+            field_molecules = layer['fields'].select { |ss| ss['type'] == 'drag_molecule' }
+            field_molecules.each do |field|
+              idx = properties['layers'][key]['fields'].index(field)
+              id = field["value"] && field["value"]["el_id"] unless idx.nil?
+              mol = Molecule.find_or_create_by_molfile(@data.fetch('Molecule')[id]['molfile']) unless id.nil?
+              unless mol.nil?
+                properties['layers'][key]['fields'][idx]['value']['el_id'] = mol.id
+                properties['layers'][key]['fields'][idx]['value']['el_tip'] = "#{mol.inchikey}@@#{mol.cano_smiles}"
+                properties['layers'][key]['fields'][idx]['value']['el_label'] = mol.iupac_name
+              end
+            end
+
+            field_tables = layer['fields'].select { |ss| ss['type'] == 'table' }
+            field_tables&.each do |field|
+              tidx = layer['fields'].index(field)
+              next unless field['sub_values'].present? && field['sub_fields'].present?
+
+              field_table_molecules = field['sub_fields'].select { |ss| ss['type'] == 'drag_molecule' }
+              if field_table_molecules.present?
+                col_ids = field_table_molecules.map { |x| x.values[0] }
+                col_ids.each do |col_id|
+                  field['sub_values'].each_with_index do |sub_value, vdx|
+                    next unless sub_value[col_id].present? && sub_value[col_id]['value'].present? && sub_value[col_id]['value']['el_id'].present?
+
+                    svalue = sub_value[col_id]['value']
+                    next unless svalue['el_id'].present? && svalue['el_inchikey'].present?
+
+                    tmol = Molecule.find_or_create_by_molfile(@data.fetch('Molecule')[svalue['el_id']]['molfile']) unless svalue['el_id'].nil?
+                    unless tmol.nil?
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_id'] = tmol.id
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_tip'] = "#{tmol.inchikey}@@#{tmol.cano_smiles}"
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_label'] = tmol.cano_smiles
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_smiles'] = tmol.cano_smiles
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_iupac'] = tmol.iupac_name
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_inchikey'] = tmol.inchikey
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_svg'] = File.join('/images', 'molecules', tmol.molecule_svg_file)
+                      properties['layers'][key]['fields'][tidx]['sub_values'][vdx][col_id]['value']['el_molecular_weight'] = tmol.molecular_weight
+                    end
+                  end
+                end
+              end
+            end
+          end
+          segment.update!(properties: properties)
+          update_instances!(uuid, segment)
+        end
+      rescue StandardError => error
+        Rails.logger.error(error.backtrace)
+        raise
       end
     end
 

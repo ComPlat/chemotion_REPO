@@ -71,19 +71,6 @@ class UIStore {
       matrices: {}
     };
 
-    // console.log(this.state.klasses);
-    // // eslint-disable-next-line no-unused-expressions
-    // this.state.klasses && this.state.klasses.forEach((klass) => {
-    //   this.state[`${klass}`] = {
-    //     checkedAll: false,
-    //     checkedIds: List(),
-    //     uncheckedIds: List(),
-    //     currentId: null,
-    //     page: 1,
-    //     activeTab: 0,
-    //   };
-    // });
-
     this.bindListeners({
       handleInitialize: UIActions.initialize,
       handleSelectTab: UIActions.selectTab,
