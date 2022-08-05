@@ -81,6 +81,7 @@ import PublishSampleModal from './PublishSampleModal';
 import RepoXvialButton from './common/RepoXvialButton';
 import {
   PublishedTag,
+  OrigElnTag,
   LabelPublication,
   PublishBtn,
   ReviewPublishBtn,
@@ -639,6 +640,7 @@ export default class SampleDetails extends React.Component {
           <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
           <PubchemLabels element={sample} />
           <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} xvialCom={{ xvialCom: false }} />
+          <OrigElnTag element={sample} />
           <PublishedTag element={sample} />
           <LabelPublication element={sample} />
           {this.extraLabels().map((Lab, i) => <Lab key={i} element={sample} />)}

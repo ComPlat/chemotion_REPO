@@ -181,6 +181,30 @@ const ReviewPublishBtn = ({ element, showComment, validation }) => {
   )
 };
 
+const OrigElnTag = ({ element }) => {
+  const tag = (element && element.tag) || {};
+  const tagData = (tag && tag.taggable_data) || {};
+  const elnInfo = (tagData && tagData.eln_info) || {};
+  if (Object.keys(elnInfo).length === 0) return <div />;
+
+  const tip = `go to original ELN: ${elnInfo.short_label}`;
+
+  return (
+    <OverlayTrigger
+      placement="bottom"
+      overlay={<Tooltip id="data public">{tip}</Tooltip>}
+    >
+      <Button
+        bsSize="xsmall"
+        style={labelStyle}
+        href={`${elnInfo.origin}mydb/collection/all/${element.type}/${elnInfo.id}`}
+        target="_blank"
+      >
+        <i className="fa fa-link" aria-hidden="true" />
+      </Button>
+    </OverlayTrigger>
+  );
+};
 
 const PublishedTag = ({ element }) => {
   const tag = (element && element.tag) || {};
@@ -318,6 +342,7 @@ ChemotionTag.defaultProps = {
 
 export {
   LabelPublication,
+  OrigElnTag,
   PublishedTag,
   ChemotionTag,
   PublishBtn,

@@ -237,7 +237,6 @@ module Import
           'is_top_secret',
           'dry_solvent',
           'external_label',
-          'short_label',
           'real_amount_value',
           'real_amount_unit',
           'imported_readout',
@@ -262,6 +261,7 @@ module Import
           boiling_point: fetch_bound(fields.fetch('boiling_point')),
           molecule_id: molecule&.id,
         ))
+
 
         solvent_value = fields.slice('solvent')['solvent']
         if solvent_value.is_a? String
@@ -346,6 +346,19 @@ module Import
             'Collection', 'CollectionsReaction', 'reaction_id', 'collection_id', uuid
           ),
         ))
+        # keep orig eln info
+        if @gt == true
+          et = reaction.tag
+          eln_info = {
+            id: fields["id"],
+            short_label: fields["short_label"],
+            origin: @origin
+          }
+          et.update!(
+            taggable_data: (et.taggable_data || {}).merge(eln_info: eln_info)
+          )
+
+        end
 
         # add reaction to the @instances map
         update_instances!(uuid, reaction)
@@ -382,6 +395,12 @@ module Import
             reaction: @instances.fetch('Reaction').fetch(fields.fetch('reaction_id')),
             sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id')),
           ))
+
+          if reactions_sample.type == 'ReactionsProductSample'
+            onm = reactions_sample.reaction.tag&.taggable_data&.dig('eln_info', 'short_label')
+            nnm = reactions_sample.reaction.short_label
+            reactions_sample.sample.update!(name:reactions_sample.sample.name.sub!(onm, nnm)) if onm.present? && nnm.present?
+          end
 
           # add reactions_sample to the @instances map
           update_instances!(uuid, reactions_sample)
