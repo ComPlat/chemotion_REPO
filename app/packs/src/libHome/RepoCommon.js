@@ -873,7 +873,7 @@ class ClipboardCopyBtn extends Component {
     return (
       <OverlayTrigger
         placement="bottom"
-        overlay={<Tooltip id="copy_clipboard">copy to clipboard</Tooltip>}
+        overlay={<Tooltip id="copy_clipboard">{this.props.tooltip || 'copy to clipboard'}</Tooltip>}
       >
         <Button className="clipboardBtn" data-clipboard-text={this.props.text || ' '} bsSize="xsmall" >
           <i className="fa fa-clipboard" />

@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Jumbotron, Panel, Tabs, Tab } from 'react-bootstrap';
+import { Button, Jumbotron, Panel } from 'react-bootstrap';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AffiliationList,
@@ -10,6 +10,7 @@ import {
   ChemotionId,
   CommentBtn,
   ContributorInfo,
+  ClipboardCopyBtn,
   DateInfo,
   Doi,
   IconLicense,
@@ -133,6 +134,7 @@ export default class RepoSample extends Component {
           <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${sample.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
             <i className="fa fa-database" />&nbsp;&nbsp;{sample.embargo}
           </Button>
+          <ClipboardCopyBtn text={sample.embargo} />
         </span>
       );
     }

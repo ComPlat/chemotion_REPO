@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {
   Panel, PanelGroup, Modal, Table,
   ListGroupItem, ListGroup, Button, Checkbox,
-  Popover, OverlayTrigger, Tooltip
+  OverlayTrigger, Tooltip
 } from 'react-bootstrap';
 import Select from 'react-select';
 import Immutable from 'immutable';
@@ -15,7 +15,7 @@ import UserStore from './stores/UserStore';
 import UsersFetcher from './fetchers/UsersFetcher';
 import RepositoryActions from './actions/RepositoryActions';
 import { groupByCitation, Citation } from '../components/LiteratureCommon';
-import { MoleculeInfo, EmbargoCom, DownloadDOICsv, isNmrPass, isDatasetPass, OrcidIcon } from '../libHome/RepoCommon';
+import { MoleculeInfo, EmbargoCom, isNmrPass, isDatasetPass, OrcidIcon } from '../libHome/RepoCommon';
 import LoadingActions from './actions/LoadingActions';
 import SamplesFetcher from './fetchers/SamplesFetcher';
 import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
@@ -41,7 +41,8 @@ export default class PublishSampleModal extends Component {
       selectedEmbargo: '-1',
       selectedLicense: 'CC BY-SA',
       cc0Consent: { consent1: false, consent2: false },
-      bundles: []
+      bundles: [],
+      noEmbargo: false
     };
     this.onUserChange = this.onUserChange.bind(this);
     this.handleSampleChanged = this.handleSampleChanged.bind(this);
@@ -157,9 +158,9 @@ export default class PublishSampleModal extends Component {
 
   // molecule-submissions mandatory check (https://git.scc.kit.edu/ComPlat/chemotion_REPO/issues/236)
   validateSubmission() {
-    const { sample } = this.state;
+    const { sample, selectedEmbargo, noEmbargo } = this.state;
+    if (selectedEmbargo === '-1' && !noEmbargo) return false;
     const analyses = sample.analysisArray();
-
     if (!this.validateAnalyses()) {
       return false;
     }
@@ -410,6 +411,10 @@ export default class PublishSampleModal extends Component {
     this.setState({ cc0Consent });
   }
 
+  handleNoEmbargoCheck() {
+    this.setState({ noEmbargo: !this.state.noEmbargo });
+  }
+
   render() {
     const { show, onHide, sample } = this.props;
     const { bundles } = this.state;
@@ -426,8 +431,20 @@ export default class PublishSampleModal extends Component {
     const { molecule } = sample;
 
     const {
-      selectedEmbargo, selectedLicense, cc0Consent
+      selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
     } = this.state;
+
+    const awareEmbargo = selectedEmbargo === '-1' ? (
+      <Checkbox
+        onChange={() => { this.handleNoEmbargoCheck(); }}
+        checked={noEmbargo}
+      >
+        <span>
+          I know that the data that is submitted without the selection of an embargo
+          bundle will be published immediately after a successful review.
+        </span>
+      </Checkbox>
+    ) : <div />;
 
     if (show) {
       const opts = [];
@@ -458,6 +475,7 @@ export default class PublishSampleModal extends Component {
                   <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} />
                 </Panel.Body>
               </Panel>
+              {awareEmbargo}
               <PanelGroup accordion id="publish-sample-config">
                 <Panel
                   eventKey="2"
