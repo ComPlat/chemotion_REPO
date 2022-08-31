@@ -740,3 +740,10 @@ $bs-successcolor: #5cb85c;
     text-align: right;
   }
 }
+
+.repo-quill-viewer {
+  .ql-editor {
+    cursor: inherit;
+    padding: unset;
+  }
+}
