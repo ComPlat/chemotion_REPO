@@ -72,6 +72,7 @@ export default class PublishReactionModal extends Component {
       bundles: [],
       noSolvent: false,
       noAmountYield: false,
+      noEmbargo: false,
       schemeDesc: true,
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
     };
@@ -227,6 +228,10 @@ export default class PublishReactionModal extends Component {
 
   handleNoSolventCheck() {
     this.setState({ noSolvent: !this.state.noSolvent });
+  }
+
+  handleNoEmbargoCheck() {
+    this.setState({ noEmbargo: !this.state.noEmbargo });
   }
 
   handleNoAmountYieldCheck() {
@@ -553,9 +558,10 @@ export default class PublishReactionModal extends Component {
   }
 
   validatePub(isFullyPublish = true) {
-    const { reaction } = this.state;
+    const { reaction, noEmbargo, selectedEmbargo } = this.state;
     let validates = [];
     if (isFullyPublish) {
+      validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
       validates.push({ name: 'reaction type', value: !!(reaction.rxno && reaction.rxno.length > 0), message: reaction.rxno ? '' : 'Reaction type is missing' });
       const hasDuration =
         !!(reaction.duration && reaction.duration !== '' && Number(reaction.duration.split(' ')[0]) > 0);
@@ -685,7 +691,7 @@ export default class PublishReactionModal extends Component {
       });
 
       const {
-        selectedEmbargo, selectedLicense, cc0Consent
+        selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
       } = this.state;
 
       const publishTypeAs = {
@@ -699,6 +705,19 @@ export default class PublishReactionModal extends Component {
         const tag = col.taggable_data || {};
         opts.push({ value: col.element_id, name: tag.label, label: tag.label });
       });
+
+      const awareEmbargo = selectedEmbargo === '-1' ? (
+        <Checkbox
+          onChange={() => { this.handleNoEmbargoCheck(); }}
+          checked={noEmbargo}
+          className={`display-${isFullyPublish}`}
+        >
+          <span>
+            I know that the data that is submitted without the selection of an embargo
+            bundle will be published immediately after a successful review.
+          </span>
+        </Checkbox>
+      ) : <div />;
 
       return (
         <div>
@@ -779,6 +798,7 @@ export default class PublishReactionModal extends Component {
               >
                 <span>Skip amount and yield validation (the product has no amount and yield)</span>
               </Checkbox>
+              {awareEmbargo}
               <PanelGroup accordion id={`panelgroup_${reaction.id}`} defaultActiveKey={0}>
                 <Panel
                   eventKey="2"
