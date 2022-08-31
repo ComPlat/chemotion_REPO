@@ -29,7 +29,8 @@ const routes = {
   '/publications': {
     target: {
       show: function(e) {
-        PublicActions.openRepositoryPage("publications")
+        PublicActions.getReactions.defer();
+        PublicActions.openRepositoryPage("publications=reaction")
       },
     },
     '/': 'show'

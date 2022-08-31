@@ -874,7 +874,7 @@ class ClipboardCopyBtn extends Component {
     return (
       <OverlayTrigger
         placement="bottom"
-        overlay={<Tooltip id="copy_clipboard">copy to clipboard</Tooltip>}
+        overlay={<Tooltip id="copy_clipboard">{this.props.tooltip || 'copy to clipboard'}</Tooltip>}
       >
         <Button className="clipboardBtn" data-clipboard-text={this.props.text || ' '} bsSize="xsmall" >
           <i className="fa fa-clipboard" />
@@ -2261,7 +2261,7 @@ const Doi = (props) => {
   } else {
     data = (
       <span>
-        {doi.full_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${doi.full_doi}`} />
+        {doi?.full_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${doi?.full_doi}`} />
       </span>
     );
   }

@@ -18,6 +18,7 @@ import {
   ClosePanel,
   CommentBtn,
   ContributorInfo,
+  ClipboardCopyBtn,
   DateInfo,
   Doi,
   ReactionTable,
@@ -446,6 +447,7 @@ export default class RepoReactionDetails extends Component {
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
     let embargo = (<span />);
+    const colDoiPrefix = isPublished ? taggData.doi?.split('/')[0] : doi?.full_doi?.split('/')[0];
     if (reaction.embargo) {
       embargo = (
         <span>
@@ -453,6 +455,7 @@ export default class RepoReactionDetails extends Component {
           <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${reaction.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
             <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
           </Button>
+          <ClipboardCopyBtn text={`https://dx.doi.org/${colDoiPrefix}/collection/${reaction.embargo}`} tooltip="retrieve and copy collection DOI" />
         </span>
       );
     }
