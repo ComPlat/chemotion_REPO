@@ -10,6 +10,7 @@ import {
   ChemotionId,
   CommentBtn,
   ContributorInfo,
+  ClipboardCopyBtn,
   DateInfo,
   Doi,
   IconLicense,
@@ -126,7 +127,7 @@ export default class RepoSample extends Component {
           <span className="repo-pub-title"><DateInfo pubData={pubData} tagData={tagData} isPublished={isPublished} /></span>&nbsp;
           <SidToPubChem sid={sample.sid} />&nbsp;
           <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={sample.id} data={sample.xvial} saveCallback={() => this.updateRepoXvial(sample.molecule_id)} xvialCom={xvialCom} />
-          {IconLicense((isPublished ? sample.doi : sample.doi.full_doi), sample.license, (sample.author_ids.length > 1))}
+          {IconLicense((isPublished ? sample.doi : sample.doi?.full_doi), sample.license, (sample.author_ids.length > 1))}
           <RepoPublicComment isReviewer={isReviewer} id={sample.id} type="Sample" title={sample.showed_name} userInfo={userInfo} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
           <RepoUserComment isLogin={isLogin} id={sample.id} type="Sample" title={sample.showed_name} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
           {ElStateLabel(sample.embargo)}

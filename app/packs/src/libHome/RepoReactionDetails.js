@@ -17,6 +17,7 @@ import {
   ClosePanel,
   CommentBtn,
   ContributorInfo,
+  ClipboardCopyBtn,
   DateInfo,
   Doi,
   ReactionTable,

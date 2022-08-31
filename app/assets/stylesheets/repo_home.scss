@@ -616,7 +616,7 @@ $bs-successcolor: #5cb85c;
         font-size: 1.8vmax;
       }
       .list {
-        font-size: 1vmax;
+        font-size: larger;
       }
     }
     .row .even {
@@ -676,7 +676,7 @@ $bs-successcolor: #5cb85c;
         font-size: 5vmin;
       }
       .tit {
-        font-size: 1.8vmin;
+        font-size: large;
       }
       .i-ext {
         font-size: 4vmin;
@@ -685,7 +685,6 @@ $bs-successcolor: #5cb85c;
     }
     .dtl .rr {
       text-align: left;
-      font-size: 1.5vmin;
       .tit {
         font-size: 14px;
         font-weight: 400;
@@ -694,7 +693,7 @@ $bs-successcolor: #5cb85c;
         }
       }
       .cnt {
-        font-size: 3vmin;
+        font-size: xx-large;
         font-weight: bolder;
       }
       .italic-desc {
