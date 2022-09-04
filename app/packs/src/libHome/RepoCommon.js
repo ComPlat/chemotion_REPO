@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/no-multi-comp */
 import React, { Component } from 'react';
 import SVG from 'react-inlinesvg';
@@ -1744,9 +1745,11 @@ class RenderPublishAnalysesPanel extends Component {
             {crdLink}
           </div>
           <div className="desc small-p expand-p">
-            <ClipboardCopyLink text={contentToText(content)}>
-              <QuillViewer value={content} />
-            </ClipboardCopyLink>
+            <OverlayTrigger placement="bottom" overlay={<Tooltip id="_tip_dataset_quill_viewer">copy to clipboard</Tooltip>}>
+              <div className="repo-quill-viewer" tabIndex={0} role="button" onClick={() => { navigator.clipboard.writeText(contentToText(content)); }}>
+                <QuillViewer value={content} />
+              </div>
+            </OverlayTrigger>
           </div>
         </div>
       </div>
