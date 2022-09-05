@@ -447,7 +447,7 @@ export default class RepoReactionDetails extends Component {
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
     let embargo = (<span />);
-    const colDoiPrefix = isPublished ? taggData.doi?.split('/')[0] : doi?.split('/')[0];
+    const colDoiPrefix = isPublished ? taggData.doi?.split('/')[0] : doi?.full_doi?.split('/')[0];
     if (reaction.embargo) {
       embargo = (
         <span>
