@@ -374,19 +374,36 @@ class Sample < ApplicationRecord
     return unless svg.present?
 
     svg_file_name = "#{SecureRandom.hex(64)}.svg"
-    if svg =~ /TMPFILE[0-9a-f]{64}.svg/
-      svg_path = Rails.public_path.join('images', 'samples', svg.to_s).to_s
-      FileUtils.mv(svg_path, svg_path.gsub(/(TMPFILE\S+)/, svg_file_name))
 
-      self.sample_svg_file = svg_file_name
-    elsif svg.start_with?('<?xml')
-      svg_path = Rails.public_path.join('images', 'samples', svg_file_name)
-      svg_file = File.new(svg_path, 'w+')
-      svg_file.write(svg)
-      svg_file.close
+    if svg =~ /\ATMPFILE[0-9a-f]{64}.svg\z/
+      src = full_svg_path(svg.to_s)
+      return unless File.exist?(src)
 
+      svg = File.read(src)
+      FileUtils.remove(src)
+    end
+    if svg.start_with?(/\s*\<\?xml/, /\s*\<svg/)
+      File.write(full_svg_path(svg_file_name), svg)
       self.sample_svg_file = svg_file_name
     end
+    unless sample_svg_file =~ /\A[0-9a-f]{128}.svg\z/
+      self.sample_svg_file = nil
+    end
+
+#    svg_file_name = "#{SecureRandom.hex(64)}.svg"
+#    if svg =~ /TMPFILE[0-9a-f]{64}.svg/
+#      svg_path = Rails.public_path.join('images', 'samples', svg.to_s).to_s
+#      FileUtils.mv(svg_path, svg_path.gsub(/(TMPFILE\S+)/, svg_file_name))
+#
+#      self.sample_svg_file = svg_file_name
+#    elsif svg.start_with?('<?xml')
+#      svg_path = Rails.public_path.join('images', 'samples', svg_file_name)
+#      svg_file = File.new(svg_path, 'w+')
+#      svg_file.write(svg)
+#      svg_file.close
+#
+#      self.sample_svg_file = svg_file_name
+#    end
   end
 
   def init_elemental_compositions
