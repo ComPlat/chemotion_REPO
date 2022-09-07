@@ -369,6 +369,10 @@ class Sample < ApplicationRecord
     self.residues[0] && self.residues[0].custom_info['loading'].to_f
   end
 
+  def full_svg_path(svg_file_name = sample_svg_file)
+    Rails.public_path.join('images', 'samples', svg_file_name)
+  end
+
   def attach_svg
     svg = self.sample_svg_file
     return unless svg.present?

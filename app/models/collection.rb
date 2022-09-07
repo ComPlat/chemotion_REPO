@@ -100,6 +100,14 @@ class Collection < ApplicationRecord
     ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
   end
 
+  def self.embargo_accepted_collection
+    find_by(
+      user_id: User.chemotion_user.id,
+      label: 'Embargo Accepted',
+      is_synchronized: true
+    )
+  end
+
   def self.element_to_review_collection
     where(
       user_id: User.chemotion_user.id,
