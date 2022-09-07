@@ -50,7 +50,7 @@ module Publishing
           type = analysis.extended_metadata['kind'].delete(' ')
           if (doi&.inchikey != ik) || (type != doi&.analysis_type)
             doi.update!(doiable: nil)
-            doi d = analysis.doi= Doi.create_for_analysis!(analysis)
+            doi = Doi.create_for_analysis!(analysis)
           end
         else
           doi = Doi.create_for_analysis!(analysis)

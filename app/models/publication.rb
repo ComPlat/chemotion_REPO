@@ -139,11 +139,12 @@ class Publication < ActiveRecord::Base
       CollectionsSample
     when 'Reaction'
       CollectionsReaction
-    end.remove_in_collection(
+    end.move_to_collection(
       element.id,
       element.collections.where(
         id: [pub_user.pending_collection.id, pub_user.reviewing_collection.id]
-      ).pluck(:id) + Collection.element_to_review_collection.pluck(:id)
+      ).pluck(:id) + Collection.element_to_review_collection.pluck(:id),
+      [Collection.embargo_accepted_collection&.id]
     )
   end
 
@@ -575,6 +576,7 @@ class Publication < ActiveRecord::Base
       collections_klass = "Collections#{element_type}".constantize
       collections_klass.remove_in_collection([element_id], pending_collection_ids)
       collections_klass.remove_in_collection([element_id], Collection.element_to_review_collection.pluck(:id))
+      collections_klass.remove_in_collection([element_id], [Collection.embargo_accepted_collection&.id])
       collections_klass.create_in_collection([element_id], published_collection_ids)
 
       element.update_publication_tag(published_at: time)
