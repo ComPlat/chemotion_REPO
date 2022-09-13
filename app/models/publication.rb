@@ -421,14 +421,14 @@ class Publication < ActiveRecord::Base
 
   def persit_oai_metadata_xml!
     mt = datacite_metadata_xml
-    self.update!(oai_metadata_xml: mt)
+    self.update_columns(oai_metadata_xml: mt)
     mt
   end
 
   def transition_from_start_to_metadata_uploading!
     return unless valid_transition(STATE_DC_METADATA_UPLOADING)
     mt = datacite_metadata_xml
-    self.update!(metadata_xml: mt, state: STATE_DC_METADATA_UPLOADING)
+    self.update!(metadata_xml: mt, oai_metadata_xml: mt, state: STATE_DC_METADATA_UPLOADING)
   end
 
   def transition_from_metadata_uploading_to_uploaded!
