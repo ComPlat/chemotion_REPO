@@ -234,14 +234,6 @@ export default class AuthorModal extends Component {
       return false;
     }
 
-    const orcidRegex = /^([0-9]{4})?(-)?([0-9]{4})?(-)?([0-9]{4})?(-)?([0-9]{4})$/;
-
-    const isValid = orcidRegex.test(fields.orcid.trim());
-    if (!isValid) {
-      alert('Not a valid ORCID');
-      return false;
-    }
-
     UsersFetcher.fetchandAddCollaboratorByOrcid(fields.orcid)
       .then((result) => {
         if (result.error) {
