@@ -2261,7 +2261,7 @@ const Doi = (props) => {
   } else {
     data = (
       <span>
-        {doi.full_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${doi.full_doi}`} />
+        {doi?.full_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${doi?.full_doi}`} />
       </span>
     );
   }
