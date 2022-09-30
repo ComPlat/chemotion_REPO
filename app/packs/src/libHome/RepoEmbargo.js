@@ -193,7 +193,7 @@ export default class RepoEmbargo extends Component {
       <ButtonGroup>
         <Button
           id="all-info-button"
-          disabled={selectEmbargo === null || elements.length === 0}
+          disabled={selectEmbargo === null || elements?.length === 0}
           onClick={() => this.handleMetadataShow()}
         >
           <i className="fa fa-file-code-o" aria-hidden="true" />&nbsp;Metadata
