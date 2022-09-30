@@ -200,7 +200,7 @@ export default class RepoEmbargo extends Component {
         </Button>
         <Button
           id="all-info-button"
-          disabled={selectEmbargo === null || elements.length === 0}
+          disabled={selectEmbargo === null || elements?.length === 0}
           onClick={() => this.handleInfoShow()}
         >
           <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
