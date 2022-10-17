@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Label, Col, Row, Carousel, Thumbnail } from 'react-bootstrap';
+import { Button, Label, Col, Row, Carousel, Thumbnail, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import SVG from 'react-inlinesvg';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
@@ -187,14 +187,26 @@ const StaticsBoard = (params) => {
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <i className="icon-sample" />
+              <OverlayTrigger placement="top" overlay={<Tooltip id="id_icon_tip">Check list</Tooltip>}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage('publications=sample'); PublicActions.getMolecules(); }}>
+                  <i className="icon-sample" />
+                </Button>
+              </OverlayTrigger>
               <div className="tit">Samples</div>
             </Row>
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
               <div className="tit">published</div>
-              <div className="cnt">{stsSample.e_cnt}</div>
+              <div className="cnt">{stsSample.e_cnt}{' '}
+                <Button
+                  style={{ backgroundColor: "#e2e2e2", padding: "2px 2px", borderRadius: "4px", fontSize: "small", fontweight: "bold" }}
+                  bsStyle="link"
+                  onClick={() => { PublicActions.openRepositoryPage('publications=sample'); PublicActions.getMolecules(); }}
+                >
+                  <i className="fa fa-hand-o-right" aria-hidden="true" /> List
+                </Button>
+              </div>
               <div className="italic-desc">{stsSampleReview.e_cnt} under review</div>
               <div className="italic-desc">{stsSampleEmbargo.e_cnt} under embargo</div>
             </Row>
@@ -203,14 +215,27 @@ const StaticsBoard = (params) => {
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <i className="icon-reaction" />
+              <OverlayTrigger placement="top" overlay={<Tooltip id="id_icon_tip">Check list</Tooltip>}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage('publications=reaction'); PublicActions.getReactions(); }}>
+                  <i className="icon-reaction" />
+                </Button>
+              </OverlayTrigger>
               <div className="tit">Reactions</div>
             </Row>
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
               <div className="tit">published</div>
-              <div className="cnt">{stsReaction.e_cnt}</div>
+              <div className="cnt">
+                {stsReaction.e_cnt}{' '}
+                <Button
+                  style={{ backgroundColor: "#e2e2e2", padding: "2px 2px", borderRadius: "4px", fontSize: "small", fontweight: "bold" }}
+                  bsStyle="link"
+                  onClick={() => { PublicActions.openRepositoryPage('publications=reaction'); PublicActions.getReactions(); }}
+                >
+                  <i className="fa fa-hand-o-right" aria-hidden="true" /> List
+                </Button>
+              </div>
               <div className="italic-desc">{stsReactionReview.e_cnt} under review</div>
               <div className="italic-desc">{stsReactionEmbargo.e_cnt} under embargo</div>
             </Row>
