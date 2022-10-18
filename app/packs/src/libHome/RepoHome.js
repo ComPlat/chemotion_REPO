@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Label, Col, Row, Carousel, Thumbnail } from 'react-bootstrap';
+import { Button, Label, Col, Row, Carousel, Thumbnail, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import SVG from 'react-inlinesvg';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
@@ -181,19 +181,30 @@ const StaticsBoard = (params) => {
     const stsAnalysisSort = stsAnalysis.sort((a, b) => a.e_cnt - b.e_cnt).reverse();
     const stsAnalysisCnt = stsAnalysisSort
       .map(e => Number(e.e_cnt)).reduce((accumulator, currentValue) => accumulator + currentValue);
-
+    const tooltipView = <Tooltip id="id_icon_tip">Click to view publications</Tooltip>;
+    const pubPage = { sample: 'publications=sample', reaction: 'publications=reaction' };
     return (
       <Row className="repo-statistic">
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <i className="icon-sample" />
+              <OverlayTrigger placement="top" overlay={tooltipView}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                  <i className="icon-sample" />
+                </Button>
+              </OverlayTrigger>
               <div className="tit">Samples</div>
             </Row>
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">published</div>
+              <div className="tit">
+                <OverlayTrigger placement="top" overlay={tooltipView}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                    published
+                  </Button>
+                </OverlayTrigger>
+              </div>
               <div className="cnt">{stsSample.e_cnt}</div>
               <div className="italic-desc">{stsSampleReview.e_cnt} under review</div>
               <div className="italic-desc">{stsSampleEmbargo.e_cnt} under embargo</div>
@@ -203,13 +214,23 @@ const StaticsBoard = (params) => {
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <i className="icon-reaction" />
+              <OverlayTrigger placement="top" overlay={tooltipView}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
+                  <i className="icon-reaction" />
+                </Button>
+              </OverlayTrigger>
               <div className="tit">Reactions</div>
             </Row>
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">published</div>
+              <div className="tit">
+                <OverlayTrigger placement="top" overlay={tooltipView}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
+                    published
+                  </Button>
+                </OverlayTrigger>
+              </div>
               <div className="cnt">{stsReaction.e_cnt}</div>
               <div className="italic-desc">{stsReactionReview.e_cnt} under review</div>
               <div className="italic-desc">{stsReactionEmbargo.e_cnt} under embargo</div>

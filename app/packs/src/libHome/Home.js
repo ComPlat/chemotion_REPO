@@ -56,7 +56,7 @@ class Home extends Component {
 
   onChange(publicState) {
     if (this.state.guestPage !== publicState.guestPage) {
-      this.setState(prevState => ({ ...prevState, guestPage: publicState.guestPage }));
+      this.setState(prevState => ({ ...prevState, guestPage: publicState.guestPage, listType: publicState.listType }));
     }
   }
 
@@ -79,7 +79,7 @@ class Home extends Component {
       case 'contact':
         return <RepoContact />;
       case 'publications':
-        return <RepoPubl />;
+        return <RepoPubl listType={this.state.listType || ''} />;
       case 'review':
         return <RepoReview />;
       case 'collection':

@@ -72,7 +72,6 @@ const TabTip = props => (
 export default class RepoPubl extends Component {
   constructor(props) {
     super(props);
-
     this.state = {
       // ...PublicStore.getState(),
       page: 1,
@@ -85,7 +84,7 @@ export default class RepoPubl extends Component {
       queryMolfile: null,
       searchType: 'similar',
       tanimotoThreshold: 0.7,
-      listType: 'reaction',
+      listType: props.listType || 'reaction',
       advFlag: false,
       advType: 'Authors',
       advValue: [],
@@ -112,7 +111,7 @@ export default class RepoPubl extends Component {
   componentDidMount() {
     PublicActions.selectPublicCollection.defer();
     PublicStore.listen(this.onChange);
-    PublicActions.getReactions.defer();
+    // PublicActions.getReactions.defer();
     PublicActions.fetchUnitsSystem.defer();
   }
 
@@ -615,7 +614,6 @@ export default class RepoPubl extends Component {
     const {
       molecules, listType, reactions, currentElement, showSearch, advFlag, advType, advValue
     } = this.state;
-
     const isPubElement = !!(((currentElement && this.state.currentElement.publication &&
       this.state.currentElement.publication.published_at) || (
       this.state.currentElement && this.state.currentElement.published_samples

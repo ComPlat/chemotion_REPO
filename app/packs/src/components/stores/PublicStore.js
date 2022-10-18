@@ -94,7 +94,7 @@ class PublicStore {
       molecules, page, pages, perPage
     } = results;
     this.setState({
-      molecules, page, pages, perPage
+      molecules, page, pages, perPage, listType: 'sample', guestPage: 'publications'
     });
   }
 
@@ -102,8 +102,9 @@ class PublicStore {
     const {
       reactions, page, pages, perPage
     } = results;
+    const listType = reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction';
     this.setState({
-      reactions, page, pages, perPage
+      reactions, page, pages, perPage, listType, guestPage: 'publications'
     });
   }
 
@@ -152,7 +153,8 @@ class PublicStore {
   }
 
   handleOpenRepositoryPage(page) {
-    this.setState({ guestPage: page, currentElement: null });
+    const pageType = page.split('=');
+    this.setState({ guestPage: pageType[0], currentElement: null, listType: pageType[1] });
   }
 
   handleDisplayDataset(result) {
