@@ -155,7 +155,6 @@ class PublicStore {
   handleOpenRepositoryPage(page) {
     const pageType = page.split('=');
     this.setState({ guestPage: pageType[0], currentElement: null, listType: pageType[1] });
-    // this.setState({ guestPage: page, currentElement: null });
   }
 
   handleDisplayDataset(result) {

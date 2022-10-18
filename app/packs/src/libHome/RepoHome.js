@@ -181,14 +181,15 @@ const StaticsBoard = (params) => {
     const stsAnalysisSort = stsAnalysis.sort((a, b) => a.e_cnt - b.e_cnt).reverse();
     const stsAnalysisCnt = stsAnalysisSort
       .map(e => Number(e.e_cnt)).reduce((accumulator, currentValue) => accumulator + currentValue);
-
+    const tooltipView = <Tooltip id="id_icon_tip">Click to view publications</Tooltip>;
+    const pubPage = { sample: 'publications=sample', reaction: 'publications=reaction' };
     return (
       <Row className="repo-statistic">
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <OverlayTrigger placement="top" overlay={<Tooltip id="id_icon_tip">Check list</Tooltip>}>
-                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage('publications=sample'); PublicActions.getMolecules(); }}>
+              <OverlayTrigger placement="top" overlay={tooltipView}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
                   <i className="icon-sample" />
                 </Button>
               </OverlayTrigger>
@@ -197,16 +198,14 @@ const StaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">published</div>
-              <div className="cnt">{stsSample.e_cnt}{' '}
-                <Button
-                  style={{ backgroundColor: "#e2e2e2", padding: "2px 2px", borderRadius: "4px", fontSize: "small", fontweight: "bold" }}
-                  bsStyle="link"
-                  onClick={() => { PublicActions.openRepositoryPage('publications=sample'); PublicActions.getMolecules(); }}
-                >
-                  <i className="fa fa-hand-o-right" aria-hidden="true" /> List
-                </Button>
+              <div className="tit">
+                <OverlayTrigger placement="top" overlay={tooltipView}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                    published
+                  </Button>
+                </OverlayTrigger>
               </div>
+              <div className="cnt">{stsSample.e_cnt}</div>
               <div className="italic-desc">{stsSampleReview.e_cnt} under review</div>
               <div className="italic-desc">{stsSampleEmbargo.e_cnt} under embargo</div>
             </Row>
@@ -215,8 +214,8 @@ const StaticsBoard = (params) => {
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
-              <OverlayTrigger placement="top" overlay={<Tooltip id="id_icon_tip">Check list</Tooltip>}>
-                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage('publications=reaction'); PublicActions.getReactions(); }}>
+              <OverlayTrigger placement="top" overlay={tooltipView}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
                   <i className="icon-reaction" />
                 </Button>
               </OverlayTrigger>
@@ -225,17 +224,14 @@ const StaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">published</div>
-              <div className="cnt">
-                {stsReaction.e_cnt}{' '}
-                <Button
-                  style={{ backgroundColor: "#e2e2e2", padding: "2px 2px", borderRadius: "4px", fontSize: "small", fontweight: "bold" }}
-                  bsStyle="link"
-                  onClick={() => { PublicActions.openRepositoryPage('publications=reaction'); PublicActions.getReactions(); }}
-                >
-                  <i className="fa fa-hand-o-right" aria-hidden="true" /> List
-                </Button>
+              <div className="tit">
+                <OverlayTrigger placement="top" overlay={tooltipView}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
+                    published
+                  </Button>
+                </OverlayTrigger>
               </div>
+              <div className="cnt">{stsReaction.e_cnt}</div>
               <div className="italic-desc">{stsReactionReview.e_cnt} under review</div>
               <div className="italic-desc">{stsReactionEmbargo.e_cnt} under embargo</div>
             </Row>
