@@ -123,18 +123,23 @@ $bs-successcolor: #5cb85c;
   background-color: #f5f5f5;
   // border: 1px solid #e3e3e3;
   border-radius: 6px;
-   height: 50vh;//auto; //calc(80vh - 190px);
+  height: 40vh;//auto; //calc(80vh - 190px);
   // overflow-x: auto;
-  padding: 20px;
+  padding: 10px 0px;
 
 }
 
 .card-well-competition {
   @extend .card-well;
-  padding: 20px 15px;
+  // padding: 20px 15px;
   display: flex;
+  margin: 70px 10px 10px 0px;
+  // border: thin solid $statisticcolor;
+  border: 1px solid #e7e7e7;
+  border-radius: 0px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
   .carl-spt{
-    background-color: white;
+    // background-color: white;
     flex: 1;
     display: flex;
     .carousel-inner .active.left { top: 0%; }
@@ -203,6 +208,7 @@ $bs-successcolor: #5cb85c;
 
   .carousel-control.left, .carousel-control.right {
     background-image: none !important;
+    color: #e7e7e7;
   }
 
   .italic-desc {
@@ -216,13 +222,35 @@ $bs-successcolor: #5cb85c;
 }
 
 .icon-chemotion {
-  margin: 30px;
-  width: 90%;
+  // margin: 30px;
+  width: 100%;
 }
 
 .visibility-impact {
   left: 30px;
   width: 300px !important;
+}
+
+.icon-molecule-archive {
+  margin: 10px;
+  // width: 40%;
+  background-color: rgb(12, 61, 118);
+}
+
+.icon-molecule-archive2 {
+  // margin: 10px;
+  width: 3vw;
+  height: auto;
+  //
+  // fill in div
+  // min-width: 100%;
+  // min-height: 100%;
+  // width: auto;
+  // height: auto;
+  // fix size
+  // width: 90px;
+  // height: 90px;
+  background-color: rgb(12, 61, 118);
 }
 
 .chem-finder {
@@ -427,8 +455,71 @@ $bs-successcolor: #5cb85c;
   border-radius: 6px;
 }
 
+.repo-welcome {
+  max-width: 2000px;
+  margin: auto !important;
+  > div:not(:last-child) {
+    background-color: $topbgcolor;
+    > h2 { text-align: center; }
+  }
+}
+
+.repo-molecule-archive {
+  @extend .card-well;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+  border-radius: 0px;
+  > div {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+  }
+  > div:nth-child(2) {
+    background-color: white;
+    padding: 10px;
+    border: 1px solid $statisticcolor;
+    border-bottom-width: 6px;
+  }
+  > div:not(:last-child) {
+    // flex-wrap: wrap;
+    flex: 1;
+    justify-content: center;
+    div {
+      width: 100%;
+      .rl {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+      .rr {
+        button {
+          padding: unset;
+        }
+        .cnt {
+          font-size: 2.5rem;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+  > div:last-child {
+    flex: 2;
+    div:first-child {
+      display: flex;
+      justify-content: center;
+    }
+    div:last-child {
+      font-size: 1.5rem;
+      display: block;
+    }
+  }
+}
+
 .repo-intro {
   display: flex;
+  align-items: center;
+  justify-content: center;
   .container {
     display: flex;
     flex-direction: column;
@@ -447,14 +538,39 @@ $bs-successcolor: #5cb85c;
     .row .even {
       flex: 1;
     }
+    .row .even .row {
+      // border: 1px solid lightgrey;
+      border: 1px solid #e7e7e7;
+      // box-shadow: 10px 5px 5px grey;
+      background-color: #e7e7e7;
+      h2 {
+        font-weight: bolder;
+        text-align: center;
+      }
+      .info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        .cnt {
+          font-size: 180%;
+        }
+      }
+    }
   }
 }
 
 .repo-statistic {
   @extend .card-well;
-  display: flex;
-  flex-direction: column;
+  // display: flex;
+  // flex-direction: column;
   padding-bottom: 10px;
+  > div {
+    flex: 1;
+    h3 {
+      text-align: center;
+    }
+  }
   .elem-info {
     border-bottom-width: 6px;
     padding: unset;
@@ -463,13 +579,15 @@ $bs-successcolor: #5cb85c;
     display: flex;
     align-items: center;
     flex: 1;
+    border-radius: 0px;
     .dtl {
       background-color: unset;
       color: unset;
       border: none;
       text-align: center;
-      padding-left: unset;
-      padding-right: unset;
+      // padding-left: unset;
+      // padding-right: unset;
+      padding: 0px;
     }
     .dtl .rl {
       line-height: normal;
@@ -503,6 +621,7 @@ $bs-successcolor: #5cb85c;
       }
       .italic-desc {
         font-style: italic;
+        font-size: 90%;
       }
     }
   }
@@ -664,13 +783,46 @@ $bs-successcolor: #5cb85c;
   }
 }
 
-.home_reaction {
+@mixin home-list-layout {
   background-color: white;
-  border-radius: 8px;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-  // box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   margin-top: 15px;
   padding: 5px;
+}
+
+.home_reaction {
+  @include home-list-layout;
+  border-radius: 8px;
+}
+
+.home_archive {
+  @include home-list-layout;
+  display: inline-flex;
+  width: 100%;
+  .svg_border {
+    border-right: 1px lightgrey solid;
+  }
+  .content {
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    .info {
+      max-height: 100%;
+      height: 100%;
+      .border {
+        display: flex;
+        padding: 0px 15px 5px 15px;
+        .dl {
+          font-weight: bold;
+          width: 20%;
+          padding-right: 4px;
+        }
+        .dr {
+          width: 80%;
+        }
+      }
+    }
+  }
 }
 
 .home_wrapper {
@@ -725,6 +877,12 @@ $bs-successcolor: #5cb85c;
   height: 90px;
   width: 90px;
 }
+
+.archive_svg_molecule > svg {
+  height: 140px;
+  width: 140px;
+}
+
 .panel-cite {
   border-color: white !important;
   .panel-heading {

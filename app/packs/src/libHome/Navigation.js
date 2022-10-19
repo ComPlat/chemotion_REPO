@@ -98,7 +98,10 @@ export default class Navigation extends React.Component {
               </NavItem>
               : null }
             <NavItem eventKey={2} onClick={() => Aviator.navigate('/home/publications')} className="white-nav-item" >
-              Publications
+              Data publications
+            </NavItem>
+            <NavItem eventKey={7} onClick={() => Aviator.navigate('/home/moleculeArchive')} className="white-nav-item" >
+              Molecule Archive
             </NavItem>
             { currentUser ?
               <NavItem eventKey={3} onClick={() => Aviator.navigate('/home/review')} className="white-nav-item" >
