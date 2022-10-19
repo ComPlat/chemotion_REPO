@@ -1,9 +1,16 @@
 import React, { Component } from 'react';
 import { Button, Label, Col, Row, Carousel, Thumbnail, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import SVG from 'react-inlinesvg';
+import CountUp from 'react-countup';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
 import { HomeFeature } from './RepoCommon';
+import RepoCardMoleculeArchive from './RepoCardMoleculeArchive';
+import RepoCardIntro from './RepoCardIntro';
+import RepoCardStaticsBoard from './RepoCardStaticsBoard';
+import RepoCardIntro1 from './RepoCardIntro1';
+import RepoCardStaticsBoard1 from './RepoCardStaticsBoard1';
+import RepoCardMoleculeArchive1 from './RepoCardMoleculeArchive1';
 import RepoNavListTypes from './RepoNavListTypes';
 
 const PartnersInfo = (info) => {
@@ -133,25 +140,40 @@ const CardIntro = () => (
   <div className="container">
     <Row>
       <Col md={6} sm={12} className="even">
-        <img
-          className="icon-chemotion"
-          src="/images/repo/chemotion_full.svg"
-          key="chemotion_full"
-          alt="icon"
-        />
+        {/* <Row> */}
+          {/* <Col md={12} sm={12}> */}
+            <img
+              className="icon-chemotion"
+              src="/images/repo/Chemotion-V1.png"
+              key="chemotion_full"
+              alt="Chemotion Repository"
+            />
+          {/* </Col> */}
+        {/* <Row>
+          <Col md={8} sm={12}>
+            <div className="info">
+              <div className="cnt"><CountUp end={1680} /></div>
+              <div>Published compounds</div>
+            </div>
+          </Col>
+          <Col md={4} sm={12}>
+            <img
+              className="icon-molecule-archive"
+              src="/images/molecule-archive-logo-weiss.svg"
+              key="chemotion_full"
+              alt="Molecule Archive"
+            />
+          </Col>
+        </Row> */}
       </Col>
       <Col md={6} sm={12} className="even">
         <div className="heading">
           Repository for molecules, reactions and research data
         </div>
-      </Col>
-    </Row>
-    <Row>
-      <Col md={12} sm={12}>
-        <div className="heading">Visibility and Impact</div>
+        {/* <div className="heading">Visibility and Impact</div> */}
         <ul className="list">
           <li>
-            Publish your structures, attach your characterization data, and make them citable via DOI
+            Publish your <b>structures</b> and <b>reactions</b>, attach your characterization data, and make them citable via <b>DOI</b>
           </li>
           <li>
             Automated registration at various scientific data providers
@@ -159,9 +181,13 @@ const CardIntro = () => (
           <li>
             Long-term archival - from scientists for scientists
           </li>
-          <li>
+          {/* <li>
             <h4 style={{ display: 'inline' }}><Label style={{ backgroundColor: '#ff5555', textShadow: '2px 2px #555' }}>NEW</Label></h4>
             <i>&nbsp;Now, publish your Reactions</i>
+          </li> */}
+          <li>
+            <h4 style={{ display: 'inline' }}><Label style={{ backgroundColor: '#ff5555', textShadow: '2px 2px #555' }}>NEW</Label></h4>
+            <i>&nbsp;Find chemical compounds from <b>Molecular Archive</b></i>
           </li>
         </ul>
       </Col>
@@ -209,7 +235,9 @@ const StaticsBoard = (params) => {
                   </Button>
                 </OverlayTrigger>
               </div>
-              <div className="cnt">{stsSample.e_cnt}</div>
+              <div className="cnt">
+                <CountUp end={stsSample.e_cnt} />
+              </div>
               <div className="italic-desc">{stsSampleReview.e_cnt} under review</div>
               <div className="italic-desc">{stsSampleEmbargo.e_cnt} under embargo</div>
             </Row>
@@ -235,7 +263,9 @@ const StaticsBoard = (params) => {
                   </Button>
                 </OverlayTrigger>
               </div>
-              <div className="cnt">{stsReaction.e_cnt}</div>
+              <div className="cnt">
+                <CountUp end={stsReaction.e_cnt} />
+              </div>
               <div className="italic-desc">{stsReactionReview.e_cnt} under review</div>
               <div className="italic-desc">{stsReactionEmbargo.e_cnt} under embargo</div>
             </Row>
@@ -250,7 +280,7 @@ const StaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="cnt">{stsAnalysisCnt}&nbsp;<span className="tit">published</span></div>
+              <div className="cnt"><CountUp end={stsAnalysisCnt} />&nbsp;<span className="tit">published</span></div>
               <div style={{ display: 'flex' }}>
                 <div>Top 3:&nbsp;&nbsp;</div>
                 <div className="italic-desc">
@@ -261,6 +291,26 @@ const StaticsBoard = (params) => {
                   {stsAnalysisSort[2].e_cnt}&nbsp;{stsAnalysisSort[2].ex_type}
                 </div>
               </div>
+            </Row>
+          </Col>
+        </Col>
+        <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
+          <Col lg={12} md={12} sm={12} className="panel-heading dtl">
+            <Row className="rl">
+              <img
+                className="icon-molecule-archive2"
+                src="/images/molecule-archive-logo-weiss.svg"
+                key="chemotion_full"
+                alt="Molecule Archive"
+              />
+            </Row>
+          </Col>
+          <Col lg={12} md={12} sm={12} className="panel-heading dtl">
+            <Row className="rr">
+              <div className="cnt">
+                <CountUp end={1680} />
+              </div>
+              <div className="italic-desc">Published compounds</div>
             </Row>
           </Col>
         </Col>
@@ -353,19 +403,36 @@ class RepoHome extends Component {
     };
 
     return (
-      <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-        <Col md={12}>
-          <Row className="repo-top-row">
+      <Row className="repo-welcome">
+        <Col md={12} sm={12}>
+          <h2>Repository for samples, reactions and related research data</h2>
+        </Col>
+        <Col md={12} sm={12}>
+          {/* <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}> */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' }}>
             <Col md={3} sm={12}>
-              <CardLatestPublish lastPublished={this.state.lastPublished} />
+              <RepoCardMoleculeArchive1 />
+            </Col>
+            <Col md={6} sm={12}>
+              <RepoCardIntro1 lastPublished={this.state.lastPublished} />
+            </Col>
+            <Col md={3} sm={12}>
+              <RepoCardStaticsBoard1 publishedStatics={this.state.publishedStatics} />
+            </Col>
+          </div>
+        </Col>
+        <Col md={12} sm={12}>
+          {/* <Row className="repo-top">
+            <Col md={3} sm={12}>
+              <RepoCardMoleculeArchive />
             </Col>
             <Col md={6} sm={12} className="repo-intro">
-              <CardIntro />
+              <RepoCardIntro lastPublished={this.state.lastPublished} />
             </Col>
             <Col md={3} sm={12}>
-              <StaticsBoard publishedStatics={this.state.publishedStatics} />
+              <RepoCardStaticsBoard publishedStatics={this.state.publishedStatics} />
             </Col>
-          </Row>
+          </Row> */}
           <Row>
             <Col md={2} sm={12}>&nbsp;</Col>
             <Col md={8} sm={12}>
