@@ -18,7 +18,20 @@ import StructureEditorModal from '../components/structure_editor/StructureEditor
 import LoadingActions from '../components/actions/LoadingActions';
 import RepoReactionList from './RepoReactionList';
 import RepoMoleculeList from './RepoMoleculeList';
+import RepoMoleculeArchive from './RepoMoleculeArchive';
 import RepoNavListTypes from './RepoNavListTypes';
+
+const renderMoleculeArchive =
+  (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
+    <RepoMoleculeArchive
+      molecule={molecule}
+      currentElement={currentElement}
+      isPubElement={isPubElement}
+      advFlag={advFlag}
+      advValue={advValue}
+      advType={advType}
+    />
+  );
 
 const renderMolecule = (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
   <RepoMoleculeList
@@ -52,6 +65,10 @@ const hints = {
   scheme: {
     title: 'Scheme-only reactions',
     content: 'Scheme-only reactions contain the schematic representation of the reaction and its reagents, reactants and products including the most relevant reaction conditions. Scheme-only entries are generated if analytical data are missing.'
+  },
+  moleculeArchive: {
+    title: 'Physcial samples',
+    content: 'A physical sample was registered to the Molecule Archive of the Compound Platform and can be requested from there.'
   }
 };
 
@@ -177,6 +194,7 @@ export default class RepoPubl extends Component {
         case RepoNavListTypes.REACTION:
           PublicActions.getSearchReactions(params);
           break;
+        case RepoNavListTypes.MOLECULE_ARCHIVE:
         case RepoNavListTypes.SAMPLE:
           PublicActions.getSearchMolecules(params);
           break;
@@ -193,6 +211,7 @@ export default class RepoPubl extends Component {
         params = { ...params, schemeOnly: false };
         PublicActions.getReactions(params);
         break;
+      case RepoNavListTypes.MOLECULE_ARCHIVE:
       case RepoNavListTypes.SAMPLE:
         PublicActions.getMolecules(params);
         break;
@@ -382,6 +401,17 @@ export default class RepoPubl extends Component {
 
   renderSwitch() {
     const { listType } = this.state;
+    if (listType === RepoNavListTypes.MOLECULE_ARCHIVE) {
+      return (
+        <Tabs
+          activeKey={listType}
+          onSelect={this.changeSort}
+          id="element-list-type"
+        >
+          <Tab eventKey={RepoNavListTypes.MOLECULE_ARCHIVE} title={<TabTip tab="moleculeArchive" />} />
+        </Tabs>
+      );
+    }
     return (
       <Tabs
         activeKey={listType}
@@ -625,6 +655,8 @@ export default class RepoPubl extends Component {
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
     const elementList = () => {
       switch (listType) {
+        case RepoNavListTypes.MOLECULE_ARCHIVE:
+          return (molecules || []).map(m => renderMoleculeArchive(m, currentElement, isPubElement, advFlag, advType, advValue));
         case RepoNavListTypes.REACTION:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
         case RepoNavListTypes.SAMPLE:

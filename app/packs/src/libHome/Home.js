@@ -62,6 +62,8 @@ class Home extends Component {
 
   renderGuestPage() {
     switch (this.state.guestPage) {
+      case 'moleculeArchive':
+        return <RepoPubl listType="moleculeArchive" />;
       case 'newseditor':
         return <RepoNewsEditor />;
       case 'newsreader':
