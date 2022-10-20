@@ -102,7 +102,7 @@ class PublicStore {
     const {
       reactions, page, pages, perPage
     } = results;
-    const listType = reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction';
+    const listType = (reactions && reactions[0] && reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction') || 'reaction';
     this.setState({
       reactions, page, pages, perPage, listType, guestPage: 'publications'
     });
@@ -278,22 +278,17 @@ class PublicStore {
   }
 
   handelUpdateComment(result) {
-    this.setState({ historyInfo: result.history });
+    this.setState({ review: result.review });
   }
 
   handelReviewPublish(results) {
-    const his = results.history;
-
-    this.setState({
-      historyInfo: his,
-    });
-
+    // const { history, checklist, reviewComments } = results.review;
+    this.setState({ review: results.review });
     PublicActions.getElements(this.selectType || 'All', this.selectState || 'pending', this.searchType || 'All', this.searchValue || '', this.page, this.perPage);
   }
 
   handleDisplayReviewReaction(result) {
     const publication = (result.element && result.element.reaction && result.element.reaction.publication) || {};
-
     if (result.element && result.element.reviewLevel === 0) {
       Aviator.navigate('/home');
     } else {
@@ -302,7 +297,7 @@ class PublicStore {
         elementType: 'reaction',
         queryId: result.id,
         currentElement: result.element,
-        historyInfo: (publication && publication.review && publication.review.history) || [],
+        review: publication?.review || {},
         reviewLevel: result.element.reviewLevel,
         isSubmitter: (result.element && result.element.isSubmitter) || false
       });
@@ -321,7 +316,7 @@ class PublicStore {
         elementType: 'sample',
         queryId: result.id,
         currentElement: result.element,
-        historyInfo: (publication && publication.review && publication.review.history) || [],
+        review: publication?.review || {},
         isSubmitter: (result.element && result.element.isSubmitter) || false,
         reviewLevel: result.element && result.element.reviewLevel,
       });
@@ -362,7 +357,7 @@ class PublicStore {
         elementType,
         queryId: result.id,
         currentElement: result.element,
-        historyInfo: (publication && publication.review && publication.review.history) || [],
+        review: publication?.review || {},
         reviewLevel: result.element.reviewLevel
       });
       Aviator.navigate(`/embargo/${elementType}/${result.id}`, { silent: true });

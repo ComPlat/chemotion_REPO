@@ -40,7 +40,7 @@ export default class PublicFetcher {
   }
 
   static fetchAdvancedValues(advType, name) {
-    return fetch(`/api/v1/public/find_adv_valuess.json?name=${name}&adv_type=${advType}`, {
+    return fetch(`/api/v1/public/find_adv_values.json?name=${name}&adv_type=${advType}`, {
       credentials: 'same-origin'
     }).then(response => response.json())
       .then(json => json)

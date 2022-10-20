@@ -24,6 +24,7 @@ export default class RepoSampleDetails extends Component {
     };
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
     this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
@@ -32,10 +33,14 @@ export default class RepoSampleDetails extends Component {
     this.setState({ showReviewModal, btnAction });
   }
 
-  handleSubmitReview(elementId, comment, action) {
+  handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
-    PublicActions.reviewPublish(elementId, 'sample', comment, action);
+    PublicActions.reviewPublish(elementId, 'sample', comment, action, checklist, reviewComments);
     this.setState({ showReviewModal: false });
+  }
+
+  handleReviewUpdate(review) {
+    this.props.onReviewUpdate(review);
   }
 
   handleCommentBtn(show, field, orgInfo) {
@@ -65,11 +70,12 @@ export default class RepoSampleDetails extends Component {
       canComment,
       reviewLevel,
       isSubmitter,
-      history,
+      review,
       canClose,
-      buttons
+      buttons,
     } = this.props;
 
+    const history = review?.history || [];
     if (typeof (element) === 'undefined' || !element) {
       return <div />;
     }
@@ -173,8 +179,9 @@ export default class RepoSampleDetails extends Component {
                   elementType="Sample"
                   field={this.state.commentField}
                   orgInfo={this.state.originInfo}
+                  isSubmitter={isSubmitter}
                   reviewLevel={reviewLevel}
-                  history={history}
+                  review={review || {}}
                   onUpdate={this.handleSubmitComment}
                   onHide={() => this.setState({ showCommentModal: false })}
                 />
@@ -182,9 +189,11 @@ export default class RepoSampleDetails extends Component {
                   show={this.state.showReviewModal}
                   elementId={sample.id}
                   action={this.state.btnAction}
+                  isSubmitter={isSubmitter}
                   reviewLevel={reviewLevel}
-                  history={history}
+                  review={review || {}}
                   onSubmit={this.handleSubmitReview}
+                  onUpdate={this.handleReviewUpdate}
                   onHide={() => this.setState({ showReviewModal: false })}
                 />
               </div> : ''
@@ -202,9 +211,10 @@ RepoSampleDetails.propTypes = {
   canComment: PropTypes.bool,
   reviewLevel: PropTypes.number,
   isSubmitter: PropTypes.bool,
-  history: PropTypes.array,
+  review: PropTypes.object,
   canClose: PropTypes.bool,
   buttons: PropTypes.arrayOf(PropTypes.string),
+  onReviewUpdate: PropTypes.func,
 };
 
 RepoSampleDetails.defaultProps = {
@@ -212,7 +222,8 @@ RepoSampleDetails.defaultProps = {
   canComment: false,
   reviewLevel: 0,
   isSubmitter: false,
-  history: [],
+  review: {},
   canClose: true,
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
+  onReviewUpdate: () => {},
 };
