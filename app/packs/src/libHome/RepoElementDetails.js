@@ -39,7 +39,7 @@ export default class RepoElementDetails extends Component {
           element={currentElement}
           reviewLevel={this.state.reviewLevel}
           isSubmitter={this.state.isSubmitter}
-          history={this.state.historyInfo ? this.state.historyInfo : []}
+          review={this.state.review || {}}
         />);
       case 'reaction': return (
         <RepoReactionDetails
@@ -47,7 +47,7 @@ export default class RepoElementDetails extends Component {
           reaction={currentElement}
           reviewLevel={this.state.reviewLevel}
           isSubmitter={this.state.isSubmitter}
-          history={this.state.historyInfo ? this.state.historyInfo : []}
+          review={this.state.review || {}}
         />);
       default: return <span />;
     }

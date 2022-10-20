@@ -15,6 +15,7 @@ export default class SampleDetailsRepoComment extends Component {
       isSubmitter: false,
     };
     this.onStoreChange = this.onStoreChange.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
@@ -30,7 +31,7 @@ export default class SampleDetailsRepoComment extends Component {
           const publication = data.publication || {};
           this.setState({
             element: data,
-            historyInfo: (publication.review && publication.review.history) || [],
+            review: publication?.review || {},
             reviewLevel: data.reviewLevel,
             isSubmitter: data.isSubmitter || false
           });
@@ -49,6 +50,10 @@ export default class SampleDetailsRepoComment extends Component {
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
+  handleReviewUpdate(review) {
+    this.setState({ review });
+  }
+
   render() {
     const { element } = this.state;
     return element && element.sample && element.publication ?
@@ -58,7 +63,8 @@ export default class SampleDetailsRepoComment extends Component {
           canComment
           reviewLevel={this.state.reviewLevel}
           isSubmitter={this.state.isSubmitter}
-          history={this.state.historyInfo ? this.state.historyInfo : {}}
+          onReviewUpdate={this.handleReviewUpdate}
+          review={this.state.review || {}}
           canClose={false}
           buttons={['Comments']}
         />) : <div>No Publication found</div>;

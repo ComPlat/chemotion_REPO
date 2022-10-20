@@ -8,12 +8,13 @@ export default class RepoReviewDetails extends Component {
     super(props);
     this.state = {
       element: props.element,
-      history: [],
+      review: {},
       reviewLevel: 0,
       isSubmitter: false
     };
 
     this.onStoreChange = this.onStoreChange.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
@@ -26,6 +27,10 @@ export default class RepoReviewDetails extends Component {
 
   onStoreChange(state) {
     this.setState(prevState => ({ ...prevState, ...state }));
+  }
+
+  handleReviewUpdate(review) {
+    this.setState({ review });
   }
 
   switchTypeRender() {
@@ -42,7 +47,8 @@ export default class RepoReviewDetails extends Component {
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
             isReview={true}
-            history={this.state.historyInfo ? this.state.historyInfo : []}
+            onReviewUpdate={this.handleReviewUpdate}
+            review={this.state.review}
           />);
       case 'sample':
         return (
@@ -51,7 +57,8 @@ export default class RepoReviewDetails extends Component {
             canComment
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
-            history={this.state.historyInfo ? this.state.historyInfo : []}
+            onReviewUpdate={this.handleReviewUpdate}
+            review={this.state.review}
           />);
       default: return <span />;
     }

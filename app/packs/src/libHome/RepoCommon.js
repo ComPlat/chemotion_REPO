@@ -2213,9 +2213,10 @@ const CommentBtn = (props) => {
   const {
     canComment,
     reviewLevel,
+    isSubmitter,
     onShow,
     field,
-    history,
+    review,
     orgInfo
   } = props;
 
@@ -2224,7 +2225,8 @@ const CommentBtn = (props) => {
     <span>
       <RepoCommentBtn
         field={field}
-        history={history}
+        review={review}
+        isSubmitter={isSubmitter}
         orgInfo={orgInfo}
         reviewLevel={reviewLevel}
         onShow={() => onShow(true, field, orgInfo)}
@@ -2235,12 +2237,18 @@ const CommentBtn = (props) => {
 
 CommentBtn.propTypes = {
   canComment: PropTypes.bool.isRequired,
-  history: PropTypes.array.isRequired,
+  review: PropTypes.object.isRequired,
+  isSubmitter: PropTypes.bool,
   reviewLevel: PropTypes.number.isRequired,
   onShow: PropTypes.func.isRequired,
   field: PropTypes.string.isRequired,
   orgInfo: PropTypes.string.isRequired
 };
+
+CommentBtn.defaultProps = {
+  isSubmitter: false
+};
+
 
 const Doi = (props) => {
   const {
