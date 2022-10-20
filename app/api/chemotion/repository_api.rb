@@ -543,6 +543,7 @@ module Chemotion
           end
           schemeList = get_reaction_table(params[:id])
           publication = Publication.find_by(element_id: params[:id], element_type: 'Reaction')
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id)
           published_user = User.find(publication.published_by) unless publication.nil?
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
@@ -577,6 +578,7 @@ module Chemotion
           molecule = Molecule.find(sample.molecule_id) unless sample.nil?
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id)
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
           # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
@@ -700,7 +702,7 @@ module Chemotion
       namespace :reviewing do
         helpers do
           # TODO: mv to model
-          def save_comments(root, comment, action, his = true)
+          def save_comments(root, comment, checklist, reviewComments, action, his = true)
             review = root.review || {}
             review_history = review['history'] || []
             current = review_history.last
@@ -721,6 +723,14 @@ module Chemotion
               review['history'] = review_history
             end
 
+            if checklist&.length.positive?
+              revst = review['checklist'] || {}
+              checklist.each { |k, v|
+                revst[k] = v['status'] == true ? { status: v['status'], user: current_user.name, updated_at: Time.now.strftime('%d-%m-%Y %H:%M:%S') } : { status: false } unless revst[k] && revst[k]['status'] == v['status']
+              }
+              review['checklist'] = revst
+            end
+            review['reviewComments'] = reviewComments if reviewComments.present?
             root.update!(review: review)
           end
 
@@ -746,6 +756,7 @@ module Chemotion
           requires :type, type: String, desc: 'Type', values: %w[sample reaction]
           optional :comments, type: Hash
           optional :comment, type: String
+          optional :checklist, type: Hash
         end
 
         after_validation do
@@ -757,19 +768,21 @@ module Chemotion
         end
 
         post :comments do
-          save_comments(@root_publication, params[:comment], nil, false)
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], nil, false)
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, history: @root_publication.review && @root_publication.review['history'] }
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review }
         end
 
         post :comment do
           save_comment(@root_publication, params[:comments]) unless params[:comments].nil?
-          @root_publication.review
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { review: his || @root_publication.review }
         end
 
         post :reviewed do
-          save_comments(@root_publication, params[:comment], 'review')
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'review')
           # element_submit(@root_publication)
           @root_publication.update_state(Publication::STATE_REVIEWED)
           @root_publication.process_element(Publication::STATE_REVIEWED)
@@ -777,23 +790,24 @@ module Chemotion
           # @root_publication.element
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, history: @root_publication.review && @root_publication.review['history'] }
+          { "#{params[:type]}": element, review: @root_publication.review }
         end
 
         post :submit do
-          save_comments(@root_publication, params[:comment], 'revision')
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'revision')
           element_submit(@root_publication)
           @root_publication.update_state(Publication::STATE_PENDING)
           @root_publication.process_element(Publication::STATE_PENDING)
           @root_publication.inform_users(Publication::STATE_PENDING)
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, history: @root_publication.review && @root_publication.review['history'] }
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review }
 
         end
 
         post :accepted do
-          save_comments(@root_publication, params[:comment], 'accepted', false)
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'accepted', false)
           element_submit(@root_publication)
           public_literature(@root_publication)
           # element_accepted(@root_publication)
@@ -804,17 +818,18 @@ module Chemotion
 
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, history: @root_publication.review && @root_publication.review['history'], message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off' }
+          { "#{params[:type]}": element, review: @root_publication.review, message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off' }
 
         end
         post :declined do
-          save_comments(@root_publication, params[:comment], 'declined', false)
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'declined', false)
           @root_publication.update_state('declined')
           @root_publication.process_element('declined')
           @root_publication.inform_users(Publication::STATE_DECLINED, current_user.id)
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, history: @root_publication.review && @root_publication.review['history'] }
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review }
         end
       end
 

@@ -115,7 +115,7 @@ module Chemotion
         end
       end
 
-      namespace :find_adv_valuess do
+      namespace :find_adv_values do
         helpers do
           def query_authors(name)
             result = User.where(type: %w(Person Group Collaborator)).where(
@@ -138,10 +138,10 @@ module Chemotion
               <<~SQL
               term_id as key, label, label as name
               SQL
-            ).uniq
+            ).distinct
           end
           def query_embargo(name)
-            Collection.all_embargos(current_user.id).where("LOWER(label) ILIKE '#{ActiveRecord::Base.send(:sanitize_sql_like, params[:name])}%'").limit(10)
+            Collection.all_embargos(current_user&.id).where("LOWER(label) ILIKE '#{ActiveRecord::Base.send(:sanitize_sql_like, params[:name])}%'").limit(10)
             .select(
               <<~SQL
               id as key, label, label as name
@@ -517,12 +517,11 @@ module Chemotion
           else
             adv_search = ' '
           end
-
           com_config = Rails.configuration.compound_opendata
           embargo_sql = <<~SQL
             reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
-            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
             select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
           SQL
@@ -666,7 +665,7 @@ module Chemotion
           error!('401 Unauthorized', 401) if pub.nil?
 
           if pub.state != 'completed'
-            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id || current_user.type == 'Anonymous')
           end
         end
         get do

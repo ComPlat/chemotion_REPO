@@ -306,10 +306,10 @@ class PublicActions {
     }
   }
 
-  reviewPublish(id, type, comment, action) {
-    return (dispatch) => { RepositoryFetcher.repoReviewPublish(id, type, comment, action)
+  reviewPublish(id, type, comment, action, checklist, reviewComments) {
+    return (dispatch) => { RepositoryFetcher.repoReviewPublish(id, type, comment, action, checklist, reviewComments)
       .then((result) => {
-        dispatch({ id :id, element: result[`${type}`], type: type, history: result.history, comment: comment, action: action })
+        dispatch({ id :id, element: result[`${type}`], type: type, review: result.review, comment: comment, action: action })
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};

@@ -67,13 +67,11 @@ RepoReactionSchemeInfo.propTypes = {
   onToggle: PropTypes.func.isRequired,
   reviewLevel: PropTypes.number,
   propInfo: PropTypes.string,
-  history: PropTypes.array,
   onComment: PropTypes.func,
   canComment: PropTypes.bool,
 };
 
 RepoReactionSchemeInfo.defaultProps = {
-  history: [],
   reviewLevel: 0,
   propInfo: '',
   onComment: () => {},

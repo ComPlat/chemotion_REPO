@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button, ButtonToolbar, FormControl, OverlayTrigger, Table, Tooltip } from 'react-bootstrap';
+import { Modal, Button, ButtonToolbar, FormControl, OverlayTrigger, Table, Tooltip, Checkbox, Row, Col } from 'react-bootstrap';
 import uuid from 'uuid';
 import { isEmpty } from 'lodash';
 import RepoReviewHisColumns from './RepoReviewHisColumns';
@@ -23,13 +23,57 @@ export default class RepoReviewModal extends React.Component {
     }
   }
 
+  handleToggleReviewStatus(e, col) {
+    const { review } = this.props;
+    const checklist = review.checklist || {};
+    if (typeof (checklist[col]) === 'undefined') checklist[col] = {};
+    checklist[col].status = e.target.checked;
+    review.checklist = checklist;
+    this.props.onUpdate(review);
+  }
+
+
+  renderReviewNotes() {
+    const { review, reviewLevel } = this.props;
+    const checklist = review?.checklist || {};
+    const reviewComments = review?.reviewComments || '';
+    if (reviewLevel !== 3) return (<div />);
+
+    let dtbl = '', ddes = '', dafm = '', dact = '', dohd = '';
+    if (checklist?.tbl?.status === true && checklist?.tbl?.user) dtbl = ` - by ${checklist?.tbl?.user} on ${checklist?.tbl?.updated_at} `;
+    if (checklist?.des?.status === true && checklist?.des?.user) ddes = ` - by ${checklist?.des?.user} on ${checklist?.des?.updated_at} `;
+    if (checklist?.afm?.status === true && checklist?.afm?.user) dafm = ` - by ${checklist?.afm?.user} on ${checklist?.afm?.updated_at} `;
+    if (checklist?.act?.status === true && checklist?.act?.user) dact = ` - by ${checklist?.act?.user} on ${checklist?.act?.updated_at} `;
+    if (checklist?.ohd?.status === true && checklist?.ohd?.user) dohd = ` - by ${checklist?.ohd?.user} on ${checklist?.ohd?.updated_at} `;
+
+    return (
+      <div style={{ padding: '10px 0px' }}>
+        <Col lg={4} md={4} sm={12} style={{ padding: '0px' }}>
+          <b>Review Status Information (reviewer only)</b>
+          <Checkbox checked={checklist?.tbl?.status} onChange={e => this.handleToggleReviewStatus(e, 'tbl')}>table values {dtbl}</Checkbox>
+          <Checkbox checked={checklist?.des?.status} onChange={e => this.handleToggleReviewStatus(e, 'des')}>description {ddes}</Checkbox>
+          <Checkbox checked={checklist?.afm?.status} onChange={e => this.handleToggleReviewStatus(e, 'afm')}>analysis format {dafm}</Checkbox>
+          <Checkbox checked={checklist?.act?.status} onChange={e => this.handleToggleReviewStatus(e, 'act')}>analysis content {dact}</Checkbox>
+          <Checkbox checked={checklist?.ohd?.status} onChange={e => this.handleToggleReviewStatus(e, 'ohd')}>on hold {dohd}</Checkbox>
+        </Col>
+        <Col lg={8} md={8} sm={12} style={{ padding: '0px' }}>
+          <b>Reviewer notes (reviewer only)</b>
+          <FormControl
+            componentClass="textarea"
+            style={{ height: '120px', overflow: 'auto', whiteSpace: 'pre' }}
+            defaultValue={reviewComments || ''}
+            inputRef={(m) => { this.privateReviewInput = m; }}
+          />
+        </Col>
+      </div>);
+  }
+
   renderComments() {
     const { idxDetail } = this.state;
-    const { reviewLevel, history } = this.props;
+    const { reviewLevel, review } = this.props;
+    const history = review?.history || [];
 
     const curObj = (history && history.length > 0 && history.slice(-1).pop()) || {};
-
-    //const isEditable = ((reviewLevel === 3 && curObj.state === 'pending') || (reviewLevel === 2 && curObj.state === 'reviewed')) || false;
 
     let historyTbl = null;
 
@@ -56,6 +100,7 @@ export default class RepoReviewModal extends React.Component {
       ));
     }
 
+
     return (
       <div>
         <div >
@@ -81,17 +126,18 @@ export default class RepoReviewModal extends React.Component {
           defaultValue={curObj.comment || ''}
           inputRef={(m) => { this.summaryInput = m; }}
         />
+        {this.renderReviewNotes()}
       </div>
     );
   }
 
   render() {
     const {
-      show, elementId, action, onSubmit, onHide, reviewLevel, history
+      show, elementId, action, onSubmit, onHide, reviewLevel, review, isSubmitter
     } = this.props;
-
-    const currComment = (history && history.length > 0 && history.slice(-1).pop()) || {}
-    const isEditable = ((reviewLevel === 3 && currComment.state === 'pending') || (reviewLevel === 2 && currComment.state === 'reviewed')) || false;
+    const history = review?.history || [];
+    const currComment = (history.length > 0 && history.slice(-1).pop()) || {};
+    const isEditable = ((reviewLevel === 3 && currComment.state === 'pending') || (isSubmitter === true && currComment.state === 'reviewed')) || false;
 
     let title = action;
     if (reviewLevel === 2 && action === 'Decline') {
@@ -133,8 +179,10 @@ export default class RepoReviewModal extends React.Component {
                   onClick={() =>
                     onSubmit(
                       elementId,
-                      this.summaryInput.value,
-                      action
+                      this.summaryInput?.value,
+                      action,
+                      this.props.review?.checklist || {},
+                      this.privateReviewInput?.value,
                     )
                   }
                 > {title}
@@ -153,14 +201,17 @@ RepoReviewModal.propTypes = {
   elementId: PropTypes.number.isRequired,
   action: PropTypes.string.isRequired,
   show: PropTypes.bool.isRequired,
-  history: PropTypes.array,
+  review: PropTypes.object,
+  isSubmitter: PropTypes.bool,
   reviewLevel: PropTypes.number,
   onSubmit: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
   onHide: PropTypes.func.isRequired
 };
 
 RepoReviewModal.defaultProps = {
   show: false,
+  isSubmitter: false,
   reviewLevel: 0,
-  history: []
+  review: {}
 };
