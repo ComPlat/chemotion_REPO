@@ -5,16 +5,16 @@ import { CommentComponent } from '../../libHome/RepoReviewCommon';
 
 const RepoCommentBtn = (props) => {
   const {
-    field, orgInfo, onShow, reviewLevel, history
+    field, orgInfo, onShow, reviewLevel, review, isSubmitter
   } = props;
 
+  const history = review?.history || [];
   const current = (history && history.slice(-1).pop()) || {};
-//  const comment = (current && current.comments && current.comments[`${field}`] && current.comments[`${field}`].comment) || '';
 
   const hasComment = (current.comments && field in current.comments) || false;
   const comment = CommentComponent(field, history) || '';
 
-  const isEditable = ((reviewLevel === 3 && current.state === 'pending') || (reviewLevel === 2 && current.state === 'reviewed')) || false;
+  const isEditable = ((reviewLevel === 3 && current.state === 'pending') || (isSubmitter === true && current.state === 'reviewed')) || false;
 
   if (isEditable === false) {
     return <span>{comment}</span>;
@@ -36,9 +36,10 @@ const RepoCommentBtn = (props) => {
 
 RepoCommentBtn.propTypes = {
   onShow: PropTypes.func.isRequired,
-  history: PropTypes.array,
+  review: PropTypes.object,
   comments: PropTypes.object,
   field: PropTypes.string,
+  isSubmitter: PropTypes.bool,
   orgInfo: PropTypes.string,
   state: PropTypes.string,
   reviewLevel: PropTypes.number,
@@ -46,8 +47,9 @@ RepoCommentBtn.propTypes = {
 };
 
 RepoCommentBtn.defaultProps = {
-  history: [],
+  review: {},
   comments: null,
+  isSubmitter: false,
   field: '',
   orgInfo: '',
   state: '',

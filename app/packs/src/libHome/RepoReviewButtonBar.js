@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 import RepoMetadataModal from '../components/common/RepoMetadataModal';
 import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 
-const showButton = (btn, func, reviewLevel, pubState) => {
+const showButton = (btn, func, reviewLevel, pubState, isSubmitter) => {
   let title = btn;
   let btnBsStyle = '';
   let btnIcon = '';
@@ -44,7 +44,7 @@ const showButton = (btn, func, reviewLevel, pubState) => {
     default:
       break;
   }
-  return ((reviewLevel === 3 && pubState === 'pending' && btn !== 'Submit') || (reviewLevel === 2 && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline'))) ? (
+  return ((reviewLevel === 3 && pubState === 'pending' && btn !== 'Submit') || (isSubmitter === true && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline'))) ? (
     <OverlayTrigger
       key={`ot_${title}`}
       placement="top"
@@ -88,7 +88,7 @@ const RepoReviewButtonBar = props =>
       }
       {
         props.buttons.filter(b => b !== 'Comments').map(b =>
-          showButton(b, props.buttonFunc, props.reviewLevel, props.currComment.state))
+          showButton(b, props.buttonFunc, props.reviewLevel, props.currComment.state, props.isSubmitter))
       }
       <RepoMetadataModal
         elementId={props.element.id}

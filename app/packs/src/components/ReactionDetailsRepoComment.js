@@ -13,6 +13,7 @@ export default class ReactionDetailsRepoComment extends Component {
       reviewLevel: 0,
     };
     this.onStoreChange = this.onStoreChange.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
@@ -21,21 +22,19 @@ export default class ReactionDetailsRepoComment extends Component {
     RepositoryFetcher.fetchReaction(this.props.reactionId, false)
       .then((data) => {
         LoadingActions.stop();
-        // refer to PublicStore.handleDisplayReviewReaction
         if (data.reaction && data.reaction.reviewLevel === 0) {
           //console.log(data);
         } else {
-          let history = [];
-
+          let review = {};
           if (data.reaction && data.reaction.publication) {
             const { publication } = data.reaction;
-            history = (publication.review && publication.review.history) || [];
+            review = publication.review || {};
           }
           this.setState({
             reaction: data.reaction,
             reviewLevel: data.reviewLevel,
             isSubmitter: data.isSubmitter || false,
-            historyInfo: history,
+            review,
           });
         }
       }).catch((errorMessage) => {
@@ -52,6 +51,10 @@ export default class ReactionDetailsRepoComment extends Component {
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
+  handleReviewUpdate(review) {
+    this.setState({ review });
+  }
+
   render() {
     const { reaction } = this.state;
     return reaction && reaction.publication ?
@@ -61,7 +64,8 @@ export default class ReactionDetailsRepoComment extends Component {
           canComment
           reviewLevel={this.state.reviewLevel}
           isSubmitter={this.state.isSubmitter}
-          history={this.state.historyInfo ? this.state.historyInfo : []}
+          onReviewUpdate={this.handleReviewUpdate}
+          review={this.state.review || {}}
           canClose={false}
           buttons={['Comments']}
         />) : <div>No Publication found</div>;

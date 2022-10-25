@@ -8,10 +8,11 @@ export default class RepoCommentModal extends React.Component {
   render() {
     const {
       elementId, elementType, show, onHide, onUpdate, field, orgInfo,
-      history, textAreaAttrs, reviewLevel
+      review, textAreaAttrs, reviewLevel, isSubmitter
     } = this.props;
 
-    const current = (history && history.length > 0 && history.slice(-1).pop()) || {};
+    const history = review?.history || [];
+    const current = (history.length > 0 && history.slice(-1).pop()) || {};
     const comment = (current && current.comments && current.comments[`${field}`] && current.comments[`${field}`].comment) || '';
 
     const defaultAttrs = {
@@ -20,7 +21,7 @@ export default class RepoCommentModal extends React.Component {
       }
     };
 
-    const isEditable = ((reviewLevel === 3 && current.state === 'pending') || (reviewLevel === 2 && current.state === 'reviewed')) || false;
+    const isEditable = ((reviewLevel === 3 && current.state === 'pending') || (isSubmitter === true && current.state === 'reviewed')) || false;
     if (show) {
       return (
         <div>
@@ -75,8 +76,9 @@ RepoCommentModal.propTypes = {
   elementId: PropTypes.number.isRequired,
   elementType: PropTypes.string.isRequired,
   show: PropTypes.bool,
+  isSubmitter: PropTypes.bool,
   field: PropTypes.string,
-  history: PropTypes.array,
+  review: PropTypes.object,
   orgInfo: PropTypes.string,
   reviewLevel: PropTypes.number,
   onUpdate: PropTypes.func.isRequired,
@@ -85,8 +87,9 @@ RepoCommentModal.propTypes = {
 
 RepoCommentModal.defaultProps = {
   show: false,
-  history: [],
+  review: {},
   reviewLevel: 0,
+  isSubmitter: false,
   field: '',
   orgInfo: '',
 };

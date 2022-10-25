@@ -333,7 +333,7 @@ export default class RepositoryFetcher {
         console.log(errorMessage);
       });
   }
-  static repoReviewPublish(id, type, comment, action) {
+  static repoReviewPublish(id, type, comment, action, checklist = {}, reviewComments) {
     let api = '';
     if (action === 'Comments') {
       api = '/api/v1/repository/reviewing/comments';
@@ -357,7 +357,7 @@ export default class RepositoryFetcher {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        id, type, comment
+        id, type, comment, checklist, reviewComments
       })
     }).then(response => response.json())
       .catch((errorMessage) => {

@@ -72,6 +72,7 @@ export default class RepoReactionDetails extends Component {
     this.handleToggle = this.handleToggle.bind(this);
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
     this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
@@ -131,10 +132,14 @@ export default class RepoReactionDetails extends Component {
     this.setState({ showReviewModal, btnAction });
   }
 
-  handleSubmitReview(elementId, comments, comment, action) {
+  handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
-    PublicActions.reviewPublish(elementId, 'reaction', comments, comment, action);
+    PublicActions.reviewPublish(elementId, 'reaction', comment, action, checklist, reviewComments);
     this.setState({ showReviewModal: false });
+  }
+
+  handleReviewUpdate(review) {
+    this.props.onReviewUpdate(review);
   }
 
   handleCommentBtn(show, field, orgInfo) {
@@ -170,7 +175,7 @@ export default class RepoReactionDetails extends Component {
     const {
       canComment,
       reviewLevel,
-      history
+      review
     } = this.props;
 
     const svgPath = `/images/reactions/${reaction.reaction_svg_file}`;
@@ -217,7 +222,6 @@ export default class RepoReactionDetails extends Component {
             bodyAttrs={bodyAttrs}
             onToggle={this.handleToggle}
             reviewLevel={reviewLevel}
-            history={history}
             onComment={this.handleCommentBtn}
             propInfo={properties}
             canComment={canComment}
@@ -393,7 +397,7 @@ export default class RepoReactionDetails extends Component {
       canComment,
       reviewLevel,
       isSubmitter,
-      history,
+      review,
       canClose,
     } = this.props;
     let { buttons } = this.props;
@@ -459,7 +463,6 @@ export default class RepoReactionDetails extends Component {
         </span>
       );
     }
-
     return (
       <div style={{ border: 'none' }}>
         <div >
@@ -474,7 +477,7 @@ export default class RepoReactionDetails extends Component {
                   isSubmitter={isSubmitter}
                   taggData={taggData}
                   schemeOnly={schemeOnly}
-                  currComment={(history && history.length > 0 && history.slice(-1).pop()) || {}}
+                  currComment={(review?.history && review?.history.length > 0 && review?.history.slice(-1).pop()) || {}}
                 /> : ''
             }
             {canClose ? <ClosePanel element={reaction} /> : ''}
@@ -521,7 +524,8 @@ export default class RepoReactionDetails extends Component {
                 elementType="reaction"
                 field={this.state.commentField}
                 orgInfo={this.state.originInfo}
-                history={this.props.history}
+                review={this.props.review}
+                isSubmitter={isSubmitter}
                 reviewLevel={reviewLevel}
                 onUpdate={this.handleSubmitComment}
                 onHide={() => this.setState({ showCommentModal: false })}
@@ -531,8 +535,10 @@ export default class RepoReactionDetails extends Component {
                 elementId={reaction.id}
                 action={this.state.btnAction}
                 reviewLevel={reviewLevel}
-                history={history}
+                isSubmitter={isSubmitter}
+                review={this.props.review}
                 onSubmit={this.handleSubmitReview}
+                onUpdate={this.handleReviewUpdate}
                 onHide={() => this.setState({ showReviewModal: false })}
               />
             </div>
@@ -549,9 +555,10 @@ RepoReactionDetails.propTypes = {
   reviewLevel: PropTypes.number,
   isSubmitter: PropTypes.bool,
   isReview: PropTypes.bool,
-  history: PropTypes.array,
+  review: PropTypes.object,
   canClose: PropTypes.bool,
   buttons: PropTypes.arrayOf(PropTypes.string),
+  onReviewUpdate: PropTypes.func,
 };
 
 RepoReactionDetails.defaultProps = {
@@ -560,7 +567,8 @@ RepoReactionDetails.defaultProps = {
   isSubmitter: false,
   reviewLevel: 0,
   isReview: false,
-  history: [],
+  review: {},
   canClose: true,
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
+  onReviewUpdate: () => {},
 };
