@@ -1,11 +1,11 @@
-import alt from '../alt'
-import PublicFetcher from '../fetchers/PublicFetcher'
+import alt from '../alt';
+import PublicFetcher from '../fetchers/PublicFetcher';
 import NotificationActions from './NotificationActions';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 import SearchFetcher from '../fetchers/SearchFetcher';
+import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 class PublicActions {
-
   refreshPubElements(type) {
     return type;
   }
@@ -113,10 +113,10 @@ class PublicActions {
     }
   }
 
-  displayMolecule(id, anchor = '', advFlag = false, advType = '', advVal = '') {
+  displayMolecule(id, anchor = '', advFlag = false, advType = '', advVal = '', listType = RepoNavListTypes.SAMPLE) {
     return (dispatch) => { PublicFetcher.fetchMolecule(id, advFlag, advType, advVal)
       .then((result) => {
-        dispatch({moleculeData: result, id: id, anchor: anchor})
+        dispatch({moleculeData: result, id: id, anchor: anchor, listType})
       }).catch((errorMessage) => {
         console.log(errorMessage)
       })

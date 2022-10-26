@@ -18,6 +18,7 @@ import StructureEditorModal from '../components/structure_editor/StructureEditor
 import LoadingActions from '../components/actions/LoadingActions';
 import RepoReactionList from './RepoReactionList';
 import RepoMoleculeList from './RepoMoleculeList';
+import RepoNavListTypes from './RepoNavListTypes';
 
 const renderMolecule = (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
   <RepoMoleculeList
@@ -84,7 +85,7 @@ export default class RepoPubl extends Component {
       queryMolfile: null,
       searchType: 'similar',
       tanimotoThreshold: 0.7,
-      listType: props.listType || 'reaction',
+      listType: props.listType || RepoNavListTypes.REACTION,
       advFlag: false,
       advType: 'Authors',
       advValue: [],
@@ -157,7 +158,7 @@ export default class RepoPubl extends Component {
       advFlag, advType, advValue,
       isSearch,
       selectType, selection,
-      page, perPage,
+      page, perPage, listType
     } = this.state;
     let params = {
       advFlag,
@@ -167,18 +168,19 @@ export default class RepoPubl extends Component {
       page,
       perPage,
       selection,
+      listType,
       ...ps
     };
     LoadingActions.start();
     if (isSearch) {
-      switch (this.state.listType) {
-        case 'reaction':
+      switch (listType) {
+        case RepoNavListTypes.REACTION:
           PublicActions.getSearchReactions(params);
           break;
-        case 'sample':
+        case RepoNavListTypes.SAMPLE:
           PublicActions.getSearchMolecules(params);
           break;
-        case 'scheme':
+        case RepoNavListTypes.SCHEME:
           params = { ...params, collectionId: 'schemeOnly' };
           PublicActions.getSearchReactions(params);
           break;
@@ -186,15 +188,15 @@ export default class RepoPubl extends Component {
       }
       return;
     }
-    switch (this.state.listType) {
-      case 'reaction':
+    switch (listType) {
+      case RepoNavListTypes.REACTION:
         params = { ...params, schemeOnly: false };
         PublicActions.getReactions(params);
         break;
-      case 'sample':
+      case RepoNavListTypes.SAMPLE:
         PublicActions.getMolecules(params);
         break;
-      case 'scheme':
+      case RepoNavListTypes.SCHEME:
         params = { ...params, schemeOnly: true };
         PublicActions.getReactions(params);
         break;
@@ -386,9 +388,9 @@ export default class RepoPubl extends Component {
         onSelect={this.changeSort}
         id="element-list-type"
       >
-        <Tab eventKey="reaction" title={<TabTip tab="reaction" />} />
-        <Tab eventKey="sample" title={<TabTip tab="sample" />} />
-        <Tab eventKey="scheme" title={<TabTip tab="scheme" />} />
+        <Tab eventKey={RepoNavListTypes.REACTION} title={<TabTip tab={RepoNavListTypes.REACTION} />} />
+        <Tab eventKey={RepoNavListTypes.SAMPLE} title={<TabTip tab={RepoNavListTypes.SAMPLE} />} />
+        <Tab eventKey={RepoNavListTypes.SCHEME} title={<TabTip tab={RepoNavListTypes.SCHEME} />} />
       </Tabs>
     );
   }
@@ -623,11 +625,11 @@ export default class RepoPubl extends Component {
     const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
     const elementList = () => {
       switch (listType) {
-        case 'reaction':
+        case RepoNavListTypes.REACTION:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));
-        case 'sample':
+        case RepoNavListTypes.SAMPLE:
           return (molecules || []).map(m => renderMolecule(m, currentElement, isPubElement, advFlag, advType, advValue));
-        case 'scheme':
+        case RepoNavListTypes.SCHEME:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement, true));
         default:
           return (reactions || []).map(r => renderReaction(r, currentElement, isPubElement));

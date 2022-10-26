@@ -1,5 +1,6 @@
-import PublicActions from '../components/actions/PublicActions'
-import PublicFetcher from '../components/fetchers/PublicFetcher'
+import PublicActions from '../components/actions/PublicActions';
+import PublicFetcher from '../components/fetchers/PublicFetcher';
+import RepoNavListTypes from './RepoNavListTypes';
 
 const routes = {
   '/': 'root',
@@ -30,7 +31,7 @@ const routes = {
     target: {
       show: function(e) {
         PublicActions.getReactions.defer();
-        PublicActions.openRepositoryPage("publications=reaction")
+        PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.REACTION}`)
       },
     },
     '/': 'show'
