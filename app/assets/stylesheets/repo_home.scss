@@ -493,6 +493,9 @@ $bs-successcolor: #5cb85c;
         color: $statisticcolor;
         font-size: initial;
         font-weight: initial;
+        button {
+          padding: unset;
+        }
       }
       .cnt {
         font-size: 3vmin;

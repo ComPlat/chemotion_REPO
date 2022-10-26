@@ -17,7 +17,8 @@ export default class PublicFetcher {
         molecules: json.molecules.map(m => new Molecule(m)),
         page: parseInt(response.headers.get('X-Page')),
         pages: parseInt(response.headers.get('X-Total-Pages')),
-        perPage: parseInt(response.headers.get('X-Per-Page'))
+        perPage: parseInt(response.headers.get('X-Per-Page')),
+        listType: params.listType
       }))).catch((errorMessage) => { console.log(errorMessage); });
   }
 
