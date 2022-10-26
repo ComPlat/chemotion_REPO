@@ -4,6 +4,7 @@ import SVG from 'react-inlinesvg';
 import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
 import { HomeFeature } from './RepoCommon';
+import RepoNavListTypes from './RepoNavListTypes';
 
 const PartnersInfo = (info) => {
   const { header, img, content } = info;
@@ -182,14 +183,17 @@ const StaticsBoard = (params) => {
     const stsAnalysisCnt = stsAnalysisSort
       .map(e => Number(e.e_cnt)).reduce((accumulator, currentValue) => accumulator + currentValue);
     const tooltipView = <Tooltip id="id_icon_tip">Click to view publications</Tooltip>;
-    const pubPage = { sample: 'publications=sample', reaction: 'publications=reaction' };
+    const pubPage = {
+      sample: `publications=${RepoNavListTypes.SAMPLE}`,
+      reaction: `publications=${RepoNavListTypes.REACTION}`
+    };
     return (
       <Row className="repo-statistic">
         <Col lg={12} md={12} sm={12} className="panel panel-info elem-info">
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
               <OverlayTrigger placement="top" overlay={tooltipView}>
-                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules({ listType: RepoNavListTypes.SAMPLE }); }}>
                   <i className="icon-sample" />
                 </Button>
               </OverlayTrigger>
@@ -200,7 +204,7 @@ const StaticsBoard = (params) => {
             <Row className="rr">
               <div className="tit">
                 <OverlayTrigger placement="top" overlay={tooltipView}>
-                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules({ listType: RepoNavListTypes.SAMPLE }); }}>
                     published
                   </Button>
                 </OverlayTrigger>

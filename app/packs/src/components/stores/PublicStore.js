@@ -3,6 +3,7 @@ import alt from '../alt';
 import PublicActions from '../actions/PublicActions';
 import ElementActions from '../actions/ElementActions';
 import UIActions from '../actions/UIActions';
+import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 class PublicStore {
   constructor() {
@@ -91,10 +92,10 @@ class PublicStore {
 
   handleGetMolecules(results) {
     const {
-      molecules, page, pages, perPage
+      molecules, page, pages, perPage, listType
     } = results;
     this.setState({
-      molecules, page, pages, perPage, listType: 'sample', guestPage: 'publications'
+      molecules, page, pages, perPage, listType, guestPage: 'publications'
     });
   }
 
@@ -168,23 +169,31 @@ class PublicStore {
   }
 
   handleDisplayMolecule(moleculeList) {
+    let cb = () => PublicActions.getMolecules({ listType: moleculeList.listType });
+    if (this.molecules.length > 0) cb = () => {};
     this.setState({
       guestPage: 'publications',
       elementType: 'molecule',
       queryId: moleculeList.id,
-      currentElement: moleculeList.moleculeData
-    });
+      currentElement: moleculeList.moleculeData,
+      listType: moleculeList.listType
+    }, cb());
     const suf = (moleculeList.anchor && moleculeList.anchor !== 'undefined') ? `#${moleculeList.anchor}` : '';
     Aviator.navigate(`/publications/molecules/${moleculeList.id}${suf}`, { silent: true });
   }
 
   handleDisplayReaction(reactionList) {
+    const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
+      RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
+    let cb = () => PublicActions.getReactions();
+    if (this.reactions.length > 0) cb = () => {};
     this.setState({
       guestPage: 'publications',
       elementType: 'reaction',
       queryId: reactionList.id,
-      currentElement: reactionList.reactionData
-    });
+      currentElement: reactionList.reactionData,
+      listType
+    }, cb());
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
 
