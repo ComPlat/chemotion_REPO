@@ -8,6 +8,7 @@ import {
 } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import { head, filter } from 'lodash';
+import { RepoCommentModal } from 'repo-review-ui';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AuthorList,
@@ -35,12 +36,11 @@ import {
 } from './RepoCommon';
 import LoadingActions from '../components/actions/LoadingActions';
 import PublicActions from '../components/actions/PublicActions';
+import ReviewActions from '../components/actions/ReviewActions';
 import QuillViewer from '../components/QuillViewer';
 import { Citation, literatureContent, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoReactionSchemeInfo from './RepoReactionSchemeInfo';
 import RepoReviewButtonBar from './RepoReviewButtonBar';
-import RepoCommentModal from '../components/common/RepoCommentModal';
-import RepoReviewModal from '../components/common/RepoReviewModal';
 import RepoUserComment from '../components/common/RepoUserComment';
 import RepoPublicComment from '../components/common/RepoPublicComment';
 import Sample from '../components/models/Sample';
@@ -56,8 +56,8 @@ export default class RepoReactionDetails extends Component {
       showTlc: true,
       showSA: true,
       showRA: {},
-      showReviewModal: false,
-      btnAction: '',
+      // showReviewModal: false,
+      // btnAction: '',
       showCommentModal: false,
       commentField: '',
       originInfo: ''
@@ -72,7 +72,6 @@ export default class RepoReactionDetails extends Component {
     this.handleToggle = this.handleToggle.bind(this);
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
-    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
     this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
@@ -129,17 +128,13 @@ export default class RepoReactionDetails extends Component {
   }
 
   handleReviewBtn(showReviewModal, btnAction) {
-    this.setState({ showReviewModal, btnAction });
+    ReviewActions.handleReviewModal(showReviewModal, btnAction);
   }
 
   handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
-    PublicActions.reviewPublish(elementId, 'reaction', comment, action, checklist, reviewComments);
-    this.setState({ showReviewModal: false });
-  }
-
-  handleReviewUpdate(review) {
-    this.props.onReviewUpdate(review);
+    ReviewActions.reviewPublish(elementId, 'reaction', comment, action, checklist, reviewComments);
+    // this.setState({ showReviewModal: false });
   }
 
   handleCommentBtn(show, field, orgInfo) {
@@ -159,7 +154,7 @@ export default class RepoReactionDetails extends Component {
     cinfo[field].comment = comment;
     cinfo[field].origInfo = origInfo;
 
-    PublicActions.updateComment(elementId, elementType, cinfo);
+    ReviewActions.updateComment(elementId, elementType, cinfo);
     this.setState({ showCommentModal: false });
   }
 
@@ -530,17 +525,6 @@ export default class RepoReactionDetails extends Component {
                 onUpdate={this.handleSubmitComment}
                 onHide={() => this.setState({ showCommentModal: false })}
               />
-              <RepoReviewModal
-                show={this.state.showReviewModal}
-                elementId={reaction.id}
-                action={this.state.btnAction}
-                reviewLevel={reviewLevel}
-                isSubmitter={isSubmitter}
-                review={this.props.review}
-                onSubmit={this.handleSubmitReview}
-                onUpdate={this.handleReviewUpdate}
-                onHide={() => this.setState({ showReviewModal: false })}
-              />
             </div>
           ) : ''
         }
@@ -553,6 +537,7 @@ RepoReactionDetails.propTypes = {
   isPublished: PropTypes.bool,
   canComment: PropTypes.bool,
   reviewLevel: PropTypes.number,
+  btnAction: PropTypes.string,
   isSubmitter: PropTypes.bool,
   isReview: PropTypes.bool,
   review: PropTypes.object,
@@ -565,6 +550,7 @@ RepoReactionDetails.defaultProps = {
   isPublished: false,
   canComment: false,
   isSubmitter: false,
+  btnAction: '',
   reviewLevel: 0,
   isReview: false,
   review: {},

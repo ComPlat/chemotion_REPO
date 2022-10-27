@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import PublicStore from '../components/stores/PublicStore';
+import EmbargoStore from '../components/stores/EmbargoStore';
 import RepoReactionDetails from './RepoReactionDetails';
 import RepoSampleDetails from './RepoSampleDetails';
 
@@ -13,11 +13,11 @@ export default class RepoCollectionDetails extends Component {
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onStoreChange);
+    EmbargoStore.listen(this.onStoreChange);
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onStoreChange);
+    EmbargoStore.unlisten(this.onStoreChange);
   }
 
   onStoreChange(state) {
@@ -25,16 +25,16 @@ export default class RepoCollectionDetails extends Component {
   }
 
   switchTypeRender() {
-    const { currentElement } = this.state;
+    const { element } = this.state;
 
-    if (typeof (currentElement) === 'undefined' || !currentElement) {
+    if (typeof (element) === 'undefined' || !element) {
       return <span />;
     }
-    const elementType = currentElement && currentElement.elementType;
+    const elementType = element && element.elementType;
 
     switch (elementType) {
-      case 'reaction': return <RepoReactionDetails isPublished reaction={currentElement} />;
-      case 'molecule': return <RepoSampleDetails isPublished element={currentElement} />;
+      case 'reaction': return <RepoReactionDetails isPublished reaction={element} />;
+      case 'molecule': return <RepoSampleDetails isPublished element={element} />;
       default: return <span />;
     }
   }
