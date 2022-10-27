@@ -77,7 +77,8 @@ export default class PublicFetcher {
         molecules: json.publicMolecules.molecules.map(m => new Molecule(m)),
         page: json.publicMolecules.page,
         totalElements: json.publicMolecules.totalElements,
-        perPage: json.publicMolecules.perPage
+        perPage: json.publicMolecules.perPage,
+        listType: params.listType
       })).catch((errorMessage) => { console.log(errorMessage); });
   }
 
@@ -110,7 +111,8 @@ export default class PublicFetcher {
         reactions: json.publicReactions.reactions.map(r => new Reaction(r)),
         page: json.publicReactions.page,
         totalElements: json.publicReactions.totalElements,
-        perPage: json.publicReactions.perPage
+        perPage: json.publicReactions.perPage,
+        listType: params.listType
       })).catch((errorMessage) => { console.log(errorMessage); });
   }
 

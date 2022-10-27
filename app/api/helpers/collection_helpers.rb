@@ -111,7 +111,7 @@ module CollectionHelpers
     end
     @c = Collection.find_by(id: @c_id)
     cu_id = current_user&.id
-    @is_owned = cu_id && ((@c.user_id == cu_id && !@c.is_shared) || @c.shared_by_id == cu_id)
+    @is_owned = cu_id && ((@c&.user_id == cu_id && !@c&.is_shared) || @c&.shared_by_id == cu_id)
 
     @dl ||= {
       permission_level: 10,
