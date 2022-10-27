@@ -15,6 +15,14 @@ import UIStore from 'src/stores/alt/stores/UIStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import Calendar from 'src/components/calendar/Calendar';
 import SampleTaskInbox from 'src/components/sampleTaskInbox/SampleTaskInbox';
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
+import Aviator from 'aviator';
+import { RepoReviewModal } from 'repo-review-ui';
+import alt from './alt';
+import initRoutes from './routes';
+import ReviewActions from './actions/ReviewActions';
+import ReviewStore from './stores/ReviewStore';
 
 class App extends Component {
   constructor(_props) {
@@ -30,10 +38,15 @@ class App extends Component {
     this.handleUiStoreChange = this.handleUiStoreChange.bind(this);
     this.documentKeyDown = this.documentKeyDown.bind(this);
     this.toggleCollectionTree = this.toggleCollectionTree.bind(this);
+    this.handleReviewStoreChange = this.handleReviewStoreChange.bind(this);
+    this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
+
   }
 
   componentDidMount() {
-    UIStore.listen(this.handleUiStoreChange);
+    UIStore.listen(this.handleReviewStoreChange);
+    ReviewStore.listen(this.handleReviewStoreChange);
     UserActions.fetchOlsRxno();
     UserActions.fetchOlsChmo();
     UserActions.fetchProfile();
@@ -66,6 +79,24 @@ class App extends Component {
       this.state.propGenericWorkflow !== state.propGenericWorkflow) {
       this.setState({ showGenericWorkflow: state.showGenericWorkflow, propGenericWorkflow: state.propGenericWorkflow });
     }
+  }
+  handleReviewStoreChange(state) {
+    this.setState(prevState => ({ ...prevState, ...state }));
+  }
+
+  handleSubmitReview(elementId, elementType, comment, btnAction, checklist, reviewComments){
+    // LoadingActions.start();
+    ReviewActions.reviewPublish(elementId, elementType, comment, btnAction, checklist, reviewComments);
+    this.setState({ showReviewModal: false });
+  }
+
+  handleReviewUpdate(e, col, rr) {
+    const { review } = this.state;
+    const checklist = rr.checklist || {};
+    if (typeof (checklist[col]) === 'undefined') checklist[col] = {};
+    checklist[col].status = e.target.checked;
+    review.checklist = checklist;
+    ReviewActions.updateReview(review);
   }
 
   documentKeyDown(event) {
@@ -125,6 +156,27 @@ class App extends Component {
     );
   }
 
+  renderReviewModal() {
+    const { showReviewModal, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
+    const rrr = {};
+    console.log(this.state);
+    rrr.reviewLevel = reviewLevel;
+    rrr.isSubmitter = isSubmitter;
+    rrr.review = review;
+    rrr.btnAction = btnAction;
+    rrr.elementType = elementType;
+    rrr.elementId = elementType === 'sample' ? currentElement?.sample?.id : currentElement?.reaction?.id;
+    console.log(rrr);
+    return (
+      <RepoReviewModal
+        show={showReviewModal}
+        data={rrr}
+        onSubmit={this.handleSubmitReview}
+        onUpdate={this.handleReviewUpdate}
+        onHide={() => this.setState({ showReviewModal: false })}
+      />
+    );
+  }
   render() {
     const { showCollectionTree, showGenericWorkflow, propGenericWorkflow } = this.state;
     return (
@@ -149,6 +201,7 @@ class App extends Component {
         />
         <InboxModal showCollectionTree={showCollectionTree} />
         <Calendar />
+        {this.renderReviewModal()}
       </Grid>
     );
   }

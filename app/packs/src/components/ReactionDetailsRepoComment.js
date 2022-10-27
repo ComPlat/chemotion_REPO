@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import RepositoryFetcher from './fetchers/RepositoryFetcher';
 import LoadingActions from './actions/LoadingActions';
-import PublicStore from '../components/stores/PublicStore';
+import ReviewStore from '../components/stores/ReviewStore';
+import ReviewActions from '../components/actions/ReviewActions';
 import RepoReactionDetails from '../libHome/RepoReactionDetails';
 
 export default class ReactionDetailsRepoComment extends Component {
@@ -10,44 +11,23 @@ export default class ReactionDetailsRepoComment extends Component {
     super(props);
     this.state = {
       reaction: null,
-      reviewLevel: 0,
+      reviewLevel: 0
     };
     this.onStoreChange = this.onStoreChange.bind(this);
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onStoreChange);
-    LoadingActions.start();
-    RepositoryFetcher.fetchReaction(this.props.reactionId, false)
-      .then((data) => {
-        LoadingActions.stop();
-        if (data.reaction && data.reaction.reviewLevel === 0) {
-          //console.log(data);
-        } else {
-          let review = {};
-          if (data.reaction && data.reaction.publication) {
-            const { publication } = data.reaction;
-            review = publication.review || {};
-          }
-          this.setState({
-            reaction: data.reaction,
-            reviewLevel: data.reviewLevel,
-            isSubmitter: data.isSubmitter || false,
-            review,
-          });
-        }
-      }).catch((errorMessage) => {
-        console.log(`ReactionDetailsRepoComment_${errorMessage}`);
-        LoadingActions.stop();
-      });
+    ReviewStore.listen(this.onStoreChange);
+    ReviewActions.displayReviewReaction(this.props.reactionId);
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onStoreChange);
+    ReviewStore.unlisten(this.onStoreChange);
   }
 
   onStoreChange(state) {
+    console.log(state);
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, Label, Modal, ButtonToolbar, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { AffiliationMap } from 'repo-review-ui';
 import Utils from '../components/utils/Functions';
 import {
   AffiliationList,
@@ -8,7 +9,6 @@ import {
   ContributorInfo,
   DownloadMetadataBtn
 } from './RepoCommon';
-import { AffiliationMap } from './RepoReviewCommon';
 
 const Doi = (props) => {
   const { type, id, doi } = props;

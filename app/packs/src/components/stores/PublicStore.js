@@ -16,7 +16,6 @@ class PublicStore {
     this.selectState;
     this.searchType;
     this.searchValue;
-    this.selectEmbargoId;
     this.publishedStatics = [];
     this.lastPublished;
     this.lastPublishedSample;
@@ -28,6 +27,8 @@ class PublicStore {
     this.howto = {};
     this.howtos = [];
     this.bundles = [];
+    this.showReviewModal = false;
+    this.reviewData = {};
 
     this.bindListeners({
       handleGetMolecules: PublicActions.getMolecules,
@@ -41,7 +42,6 @@ class PublicStore {
       handleDisplayDataset: PublicActions.displayDataset,
       handleDisplayMolecule: PublicActions.displayMolecule,
       handleDisplayReaction: PublicActions.displayReaction,
-      handleDisplayCollection: PublicActions.displayCollection,
       handleReceiveSearchresult: PublicActions.fetchBasedOnSearchSelectionAndCollection,
       handleClearSearchSelection: [UIActions.selectCollection, UIActions.selectSyncCollection],
       handleClose: PublicActions.close,
@@ -52,20 +52,9 @@ class PublicStore {
       handleEditHowTo: PublicActions.editHowTo,
       handleDisplayHowTo: PublicActions.displayHowTo,
       handleGetElements: PublicActions.getElements,
-      handleGetEmbargoElements: PublicActions.getEmbargoElements,
-      handleGetEmbargoElement: PublicActions.getEmbargoElement,
-      handleDisplayReviewReaction: PublicActions.displayReviewReaction,
-      handleDisplayReviewSample: PublicActions.displayReviewSample,
-      handelReviewPublish: PublicActions.reviewPublish,
-      handelUpdateComment: PublicActions.updateComment,
-      handleFetchBundles: PublicActions.fetchEmbargoBundle,
-      handleDisplayEmbargoElement: PublicActions.displayReviewEmbargo,
-      handleEmbargoRelease: [PublicActions.releaseEmbargo, PublicActions.deleteEmbargo],
-      handleEmbargoMove: PublicActions.moveEmbargo,
-      handleEmbargoAssign: PublicActions.assignEmbargo,
       handleRefreshPubElements: PublicActions.refreshPubElements,
-      handleRefreshEmbargoBundles: PublicActions.getEmbargoBundle,
-      handleUnitsSystem: PublicActions.fetchUnitsSystem,
+      handleDisplayCollection: PublicActions.displayCollection,
+
     });
   }
 
@@ -197,15 +186,7 @@ class PublicStore {
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
 
-  handleDisplayCollection(collectionList) {
-    this.setState({
-      guestPage: 'collection',
-      elementType: 'collection',
-      queryId: collectionList.id,
-      selectEmbargo: collectionList.colData && collectionList.colData.col
-    });
-    Aviator.navigate(`/publications/collections/${collectionList.id}`, { silent: true });
-  }
+
 
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });
@@ -263,6 +244,19 @@ class PublicStore {
     });
   }
 
+
+  handleDisplayCollection(collectionList) {
+    // console.log(collectionList.colData && collectionList.colData.col);
+    this.setState({
+      guestPage: 'collection',
+      elementType: 'collection',
+      queryId: collectionList.id,
+      selectEmbargo: collectionList.colData && collectionList.colData.col
+    });
+    Aviator.navigate(`/publications/collections/${collectionList.id}`, { silent: true });
+  }
+
+
   handleGetElements(results) {
     const {
       elements, page, perPage, pages, selectType, selectState, searchType, searchValue
@@ -272,134 +266,6 @@ class PublicStore {
     });
   }
 
-  handleGetEmbargoElements(results) {
-    const { elements, current_user, embargo_id } = results;
-    this.setState({
-      selectEmbargoId: embargo_id,
-      elements,
-      currentElement: null,
-      currentUser: current_user
-    });
-  }
-
-  handleGetEmbargoElement(results) {
-    this.setState({ currentElement: results })
-  }
-
-  handelUpdateComment(result) {
-    this.setState({ review: result.review });
-  }
-
-  handelReviewPublish(results) {
-    // const { history, checklist, reviewComments } = results.review;
-    this.setState({ review: results.review });
-    PublicActions.getElements(this.selectType || 'All', this.selectState || 'pending', this.searchType || 'All', this.searchValue || '', this.page, this.perPage);
-  }
-
-  handleDisplayReviewReaction(result) {
-    const publication = (result.element && result.element.reaction && result.element.reaction.publication) || {};
-    if (result.element && result.element.reviewLevel === 0) {
-      Aviator.navigate('/home');
-    } else {
-      this.setState({
-        guestPage: 'review',
-        elementType: 'reaction',
-        queryId: result.id,
-        currentElement: result.element,
-        review: publication?.review || {},
-        reviewLevel: result.element.reviewLevel,
-        isSubmitter: (result.element && result.element.isSubmitter) || false
-      });
-      Aviator.navigate(`/review/review_reaction/${result.id}`, { silent: true });
-    }
-  }
-
-  handleDisplayReviewSample(result) {
-    const publication = (result.element && result.element.publication) || {};
-
-    if (result.element && result.element.reviewLevel === 0) {
-      Aviator.navigate('/home');
-    } else {
-      this.setState({
-        guestPage: 'review',
-        elementType: 'sample',
-        queryId: result.id,
-        currentElement: result.element,
-        review: publication?.review || {},
-        isSubmitter: (result.element && result.element.isSubmitter) || false,
-        reviewLevel: result.element && result.element.reviewLevel,
-      });
-      Aviator.navigate(`/review/review_sample/${result.id}`, { silent: true });
-    }
-  }
-
-  handleFetchBundles(result) {
-    const bundles = result.repository || [];
-    // eslint-disable-next-line camelcase
-    const { current_user } = result;
-    this.setState({
-      bundles, current_user, elements: [], currentElement: null
-    });
-  }
-
-  handleRefreshEmbargoBundles(result) {
-    const cols = result.repository;
-    const { current_user } = result;
-    const bundles = [];
-    if (cols && cols.length > 0) {
-      cols.forEach((col) => {
-        bundles.push(col);
-      });
-    }
-    this.setState({ bundles, current_user });
-  }
-
-  handleDisplayEmbargoElement(result) {
-    const publication = (result.element && result.element.publication) || {};
-
-    if (result.element && result.element.reviewLevel === 0) {
-      Aviator.navigate('/home/');
-    } else {
-      const elementType = (result.element.sample ? 'sample' : 'reaction');
-      this.setState({
-        guestPage: 'embargo',
-        elementType,
-        queryId: result.id,
-        currentElement: result.element,
-        review: publication?.review || {},
-        reviewLevel: result.element.reviewLevel
-      });
-      Aviator.navigate(`/embargo/${elementType}/${result.id}`, { silent: true });
-    }
-  }
-
-  handleEmbargoRelease(result) {
-    PublicActions.fetchEmbargoBundle();
-  }
-
-  handleEmbargoMove(results) {
-    const { col_id, is_new_embargo, new_embargo, message } = results.result;
-    if (is_new_embargo === true) {
-      this.bundles.push(new_embargo);
-    }
-    alert(message);
-    PublicActions.getEmbargoElements(col_id);
-  }
-
-  handleEmbargoAssign(result) {
-    if (result.error) {
-      alert(result.error);
-    } else {
-      alert(result.message);
-      // refresh embargo list
-      PublicActions.getEmbargoBundle();
-      // refresh element list
-      PublicActions.getElements(
-        this.selectType, this.selectState, this.searchType,
-        this.searchValue, this.page, this.perPage
-      );
-    }
-  }
 
   handleUnitsSystem(result) {
     this.setState({ unitsSystem: result });

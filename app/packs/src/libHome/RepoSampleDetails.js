@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 import { Panel } from 'react-bootstrap';
 import PropTypes from 'prop-types';
+import { RepoCommentModal } from 'repo-review-ui';
 import {
   ClosePanel,
   MoleculeInfo,
 } from './RepoCommon';
 import LoadingActions from '../components/actions/LoadingActions';
-import PublicActions from '../components/actions/PublicActions';
+import ReviewActions from '../components/actions/ReviewActions';
 import RepoReviewButtonBar from './RepoReviewButtonBar';
-import RepoCommentModal from '../components/common/RepoCommentModal';
-import RepoReviewModal from '../components/common/RepoReviewModal';
 import RepoSample from './RepoSample';
 
 export default class RepoSampleDetails extends Component {
@@ -17,30 +16,24 @@ export default class RepoSampleDetails extends Component {
     super(props);
     this.state = {
       showReviewModal: false,
-      btnAction: '',
       showCommentModal: false,
       commentField: '',
       originInfo: '',
     };
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
-    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
     this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
 
   handleReviewBtn(showReviewModal, btnAction) {
-    this.setState({ showReviewModal, btnAction });
+    ReviewActions.handleReviewModal(showReviewModal, btnAction);
   }
 
   handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
-    PublicActions.reviewPublish(elementId, 'sample', comment, action, checklist, reviewComments);
-    this.setState({ showReviewModal: false });
-  }
-
-  handleReviewUpdate(review) {
-    this.props.onReviewUpdate(review);
+    ReviewActions.reviewPublish(elementId, 'sample', comment, action, checklist, reviewComments);
+    // this.setState({ showReviewModal: false });
   }
 
   handleCommentBtn(show, field, orgInfo) {
@@ -59,7 +52,7 @@ export default class RepoSampleDetails extends Component {
     }
     cinfo[field].comment = comment;
     cinfo[field].origInfo = origInfo;
-    PublicActions.updateComment(elementId, elementType, cinfo);
+    ReviewActions.updateComment(elementId, elementType, cinfo);
     this.setState({ showCommentModal: false });
   }
 
@@ -185,17 +178,6 @@ export default class RepoSampleDetails extends Component {
                   onUpdate={this.handleSubmitComment}
                   onHide={() => this.setState({ showCommentModal: false })}
                 />
-                <RepoReviewModal
-                  show={this.state.showReviewModal}
-                  elementId={sample.id}
-                  action={this.state.btnAction}
-                  isSubmitter={isSubmitter}
-                  reviewLevel={reviewLevel}
-                  review={review || {}}
-                  onSubmit={this.handleSubmitReview}
-                  onUpdate={this.handleReviewUpdate}
-                  onHide={() => this.setState({ showReviewModal: false })}
-                />
               </div> : ''
           }
 
@@ -210,6 +192,7 @@ RepoSampleDetails.propTypes = {
   isPublished: PropTypes.bool,
   canComment: PropTypes.bool,
   reviewLevel: PropTypes.number,
+  btnAction: PropTypes.string,
   isSubmitter: PropTypes.bool,
   review: PropTypes.object,
   canClose: PropTypes.bool,
@@ -220,6 +203,7 @@ RepoSampleDetails.propTypes = {
 RepoSampleDetails.defaultProps = {
   isPublished: false,
   canComment: false,
+  btnAction: '',
   reviewLevel: 0,
   isSubmitter: false,
   review: {},
