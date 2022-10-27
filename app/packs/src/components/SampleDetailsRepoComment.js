@@ -2,8 +2,9 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import RepositoryFetcher from './fetchers/RepositoryFetcher';
 import LoadingActions from './actions/LoadingActions';
-import PublicStore from '../components/stores/PublicStore';
+import ReviewStore from '../components/stores/ReviewStore';
 import RepoSampleDetails from '../libHome/RepoSampleDetails';
+import ReviewActions from './actions/ReviewActions';
 
 export default class SampleDetailsRepoComment extends Component {
   constructor(props) {
@@ -19,31 +20,13 @@ export default class SampleDetailsRepoComment extends Component {
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onStoreChange);
+    ReviewStore.listen(this.onStoreChange);
     LoadingActions.start();
-    RepositoryFetcher.fetchSample(this.props.sampleId, false)
-      .then((data) => {
-        LoadingActions.stop();
-        // refer to PublicStore.handleDisplayReviewSample
-        if (data.sample && data.reviewLevel === 0) {
-          console.log(data);
-        } else {
-          const publication = data.publication || {};
-          this.setState({
-            element: data,
-            review: publication?.review || {},
-            reviewLevel: data.reviewLevel,
-            isSubmitter: data.isSubmitter || false
-          });
-        }
-      }).catch((errorMessage) => {
-        console.log(`SampleDetailsRepoComment_${errorMessage}`);
-        LoadingActions.stop();
-      });
+    ReviewActions.fetchSample(this.props.sampleId);
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onStoreChange);
+    ReviewStore.unlisten(this.onStoreChange);
   }
 
   onStoreChange(state) {

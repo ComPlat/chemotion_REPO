@@ -1,6 +1,9 @@
 import PublicActions from '../components/actions/PublicActions';
 import PublicFetcher from '../components/fetchers/PublicFetcher';
 import RepoNavListTypes from './RepoNavListTypes';
+import ReviewActions from '../components/actions/ReviewActions';
+import EmbargoActions from '../components/actions/EmbargoActions';
+
 
 const routes = {
   '/': 'root',
@@ -185,7 +188,7 @@ const routes = {
   '/review_reaction': {
     target: {
       show: function(e) {
-        PublicActions.displayReviewReaction(e.params.reactionId)
+        ReviewActions.displayReviewReaction(e.params.reactionId)
       },
     },
     '/:reactionId': 'show'
@@ -194,7 +197,7 @@ const routes = {
   '/review_sample': {
     target: {
       show: function(e) {
-        PublicActions.displayReviewSample(e.params.sampleId)
+        ReviewActions.displayReviewSample(e.params.sampleId)
       },
     },
     '/:sampleId': 'show'
@@ -206,7 +209,7 @@ const routes = {
         PublicActions.openRepositoryPage("embargo");
       },
       show: function (e) {
-        PublicActions.displayReviewEmbargo(e.params.elementType, e.params.elementId)
+        EmbargoActions.displayReviewEmbargo(e.params.elementType, e.params.elementId)
       },
     },
     '/': 'list',

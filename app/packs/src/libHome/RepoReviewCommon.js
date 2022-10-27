@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Alert } from 'react-bootstrap';
 import { startsWith } from 'lodash';
 import moment from 'moment';
-import RepoReviewTimeFormat from '../components/common/RepoReviewTimeFormat';
+import { RepoReviewTimeFormat } from 'repo-review-ui';
 
 const AffiliationMap = (affiliationIds) => {
   const aId = [].concat.apply([], affiliationIds);

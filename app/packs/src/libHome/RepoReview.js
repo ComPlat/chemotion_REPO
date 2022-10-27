@@ -3,12 +3,18 @@ import SVG from 'react-inlinesvg';
 import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Select from 'react-select';
 import { filter } from 'lodash';
+import { RepoReviewModal } from 'repo-review-ui';
 import RepoReviewDetails from './RepoReviewDetails';
-import PublicActions from '../components/actions/PublicActions';
-import PublicStore from '../components/stores/PublicStore';
+import ReviewActions from '../components/actions/ReviewActions';
+import EmbargoActions from '../components/actions/EmbargoActions';
+import ReviewStore from '../components/stores/ReviewStore';
+import EmbargoStore from '../components/stores/EmbargoStore';
 import UserStore from '../components/stores/UserStore';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
-import { SvgPath, ElStateLabel, ElSubmitTime, SchemeWord } from './RepoCommon';
+import LoadingActions from '../components/actions/LoadingActions';
+
+import { SvgPath, ElStateLabel, ElSubmitTime, SchemeWord, ChecklistPanel } from './RepoCommon';
+// import RepoReviewModal from '../components/common/RepoReviewModal';
 
 const renderElement = (e, currentElement, embargoBtn) => {
   if (e.type === 'Reaction') {
@@ -18,7 +24,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
       <tr
         key={e.id}
         className={listClass}
-        onClick={() => PublicActions.displayReviewReaction(e.id)}
+        onClick={() => ReviewActions.displayReviewReaction(e.id)}
       >
         <td style={{ position: 'relative' }} >
           <span className="review_element_label">
@@ -29,6 +35,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
           &nbsp;{embargoBtn}
           <div>
             <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
+            <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} />
           </div>
         </td>
       </tr>
@@ -39,7 +46,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
     <tr
       key={e.id}
       className={listClass}
-      onClick={() => PublicActions.displayReviewSample(e.id)}
+      onClick={() => ReviewActions.displayReviewSample(e.id)}
     >
       <td style={{ position: 'relative' }}>
         <span className="review_element_label">
@@ -50,6 +57,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
         &nbsp;{embargoBtn}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
+          <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} />
         </div>
       </td>
     </tr>
@@ -66,12 +74,15 @@ export default class RepoReview extends Component {
       perPage: 10,
       elements: [],
       currentElement: null,
+      showReviewModal: false,
+      reviewData: {},
       selectType: 'All',
       searchType: 'All',
       searchValue: '',
       listTypeOptions: [],
       selectState: defaultState,
       bundles: [],
+      btnAction: '',
       showEmbargoModal: false,
       selectedElement: null,
       selectedEmbargo: null
@@ -83,21 +94,40 @@ export default class RepoReview extends Component {
     this.handleSearchNameInput = this.handleSearchNameInput.bind(this);
     this.onEmbargoBtnClick = this.onEmbargoBtnClick.bind(this);
     this.onEmbargoBtnSave = this.onEmbargoBtnSave.bind(this);
+    this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onChange);
-    PublicActions.getElements.defer();
-    PublicActions.getEmbargoBundle();
-    PublicActions.fetchUnitsSystem.defer();
+    ReviewStore.listen(this.onChange);
+    EmbargoStore.listen(this.onChange);
+    ReviewActions.getElements.defer();
+    EmbargoActions.getEmbargoBundle();
+    ReviewActions.fetchUnitsSystem.defer();
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onChange);
+    ReviewStore.unlisten(this.onChange);
+    EmbargoStore.unlisten(this.onChange);
   }
 
   onChange(state) {
     this.setState(prevState => ({ ...prevState, ...state }));
+  }
+
+  handleSubmitReview(elementId, elementType, comment, btnAction, checklist, reviewComments){
+    LoadingActions.start();
+    ReviewActions.reviewPublish(elementId, elementType, comment, btnAction, checklist, reviewComments);
+    this.props.onHide(false);
+  }
+
+  handleReviewUpdate(e, col, rr) {
+    const { review } = this.state;
+    const checklist = rr.checklist || {};
+    if (typeof (checklist[col]) === 'undefined') checklist[col] = {};
+    checklist[col].status = e.target.checked;
+    review.checklist = checklist;
+    ReviewActions.updateReview(review);
   }
 
   onPerPageChange(e) {
@@ -106,7 +136,7 @@ export default class RepoReview extends Component {
     } = this.state;
     const perPage = e.target.value;
     this.setState({ perPage });
-    PublicActions.getElements(selectType, selectState, searchType, searchValue, page, perPage);
+    ReviewActions.getElements(selectType, selectState, searchType, searchValue, page, perPage);
   }
 
   onPaginationSelect(eventKey) {
@@ -114,7 +144,7 @@ export default class RepoReview extends Component {
       pages, perPage, selectType, selectState, searchType, searchValue
     } = this.state;
     if (eventKey > 0 && eventKey <= pages) {
-      PublicActions.getElements(
+      ReviewActions.getElements(
         selectType, selectState, searchType, searchValue,
         eventKey, perPage
       );
@@ -133,7 +163,7 @@ export default class RepoReview extends Component {
     if (selectedEmbargo === null) {
       return alert('Please select an embargo first!');
     }
-    PublicActions.assignEmbargo(selectedEmbargo.value, selectedElement);
+    EmbargoActions.assignEmbargo(selectedEmbargo.value, selectedElement);
     this.onEmbargoBtnClick(e, element);
     return true;
   }
@@ -196,12 +226,12 @@ export default class RepoReview extends Component {
         const options = res && res.result && res.result
           .map(u => ({ value: u.key, name: u.name, label: u.label }));
         this.setState({ listTypeOptions: options });
-        PublicActions.getElements(selectType, selectState, val, '', 1, perPage);
+        ReviewActions.getElements(selectType, selectState, val, '', 1, perPage);
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
     } else {
-      PublicActions.getElements(selectType, selectState, val, '', 1, perPage);
+      ReviewActions.getElements(selectType, selectState, val, '', 1, perPage);
     }
   }
 
@@ -218,7 +248,7 @@ export default class RepoReview extends Component {
     } = this.state;
     if (val) {
       this.setState({ page: 1, searchValue: val });
-      PublicActions.getElements(selectType, selectState, searchType, val, 1, perPage);
+      ReviewActions.getElements(selectType, selectState, searchType, val, 1, perPage);
     }
   }
 
@@ -226,10 +256,10 @@ export default class RepoReview extends Component {
     const { perPage, searchType, searchValue } = this.state;
     if (t === 'type') {
       this.setState({ selectType: event });
-      PublicActions.getElements(event, this.state.selectState, searchType, searchValue, 1, perPage);
+      ReviewActions.getElements(event, this.state.selectState, searchType, searchValue, 1, perPage);
     } else if (t === 'state') {
       this.setState({ selectState: event });
-      PublicActions.getElements(this.state.selectType, event, searchType, searchValue, 1, perPage);
+      ReviewActions.getElements(this.state.selectType, event, searchType, searchValue, 1, perPage);
     }
   }
 
@@ -239,7 +269,7 @@ export default class RepoReview extends Component {
     } = this.state;
     switch (event.keyCode) {
       case 13: // Enter
-        PublicActions.getElements(selectType, selectState, searchType, searchValue, 1, perPage);
+        ReviewActions.getElements(selectType, selectState, searchType, searchValue, 1, perPage);
         event.preventDefault();
         break;
       default:
@@ -393,7 +423,7 @@ export default class RepoReview extends Component {
         <Modal.Body>
           <Panel bsStyle="success">
             <Panel.Heading>
-              <Panel.Title>Move {element.type} [{element.title}] to :</Panel.Title>
+              <Panel.Title>Movee {element.type} [{element.title}] to :</Panel.Title>
             </Panel.Heading>
             <Panel.Body>
               <Select
@@ -414,6 +444,39 @@ export default class RepoReview extends Component {
     );
   }
 
+
+  renderReviewModal() {
+    const { showReviewModal, reviewData, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
+    const rrr = {};
+    rrr['reviewLevel'] = reviewLevel;
+    rrr['isSubmitter'] = isSubmitter;
+    rrr['review'] = review;
+    rrr['btnAction'] = btnAction;
+    rrr['elementType'] = elementType;
+    if (elementType === 'sample') {
+      rrr['elementId'] = currentElement?.sample?.id;
+    } else {
+      rrr['elementId'] = currentElement?.reaction?.id;
+    }
+
+    return (
+      <RepoReviewModal
+        show={showReviewModal}
+        data={rrr}
+        onSubmit={this.handleSubmitReview}
+        onUpdate={this.handleReviewUpdate}
+        // elementId={sample.id}
+        // action={this.state.btnAction}
+        // isSubmitter={isSubmitter}
+        // reviewLevel={reviewLevel}
+        // review={review || {}}
+        // onSubmit={this.handleSubmitReview}
+        // onUpdate={this.handleReviewUpdate}
+        onHide={() => this.setState({ showReviewModal: false })}
+      />
+    );
+  }
+
   render() {
     const { elements, currentElement } = this.state;
     const { currentUser } = UserStore.getState();
@@ -428,33 +491,36 @@ export default class RepoReview extends Component {
       return null;
     };
     return (
-      <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-        <Col md={currentElement ? 4 : 12} >
-          <Navbar fluid className="navbar-custom" style={{ marginBottom: '5px' }}>
-            {this.renderSearch()}
-            <div style={{ clear: 'both' }} />
-          </Navbar>
-          <div>
-            <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
-              <Table striped className="review-entries">
-                <tbody striped="true" bordered="true" hover="true">
-                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => renderElement(r, currentElement, embargoBtn(r))) }
-                </tbody>
-              </Table>
+      <div>
+        <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
+          <Col md={currentElement ? 4 : 12} >
+            <Navbar fluid className="navbar-custom" style={{ marginBottom: '5px' }}>
+              {this.renderSearch()}
+              <div style={{ clear: 'both' }} />
+            </Navbar>
+            <div>
+              <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
+                <Table striped className="review-entries">
+                  <tbody striped="true" bordered="true" hover="true">
+                    {((typeof (elements) !== 'undefined' && elements) || []).map(r => renderElement(r, currentElement, embargoBtn(r))) }
+                  </tbody>
+                </Table>
+              </div>
+              <div className="list-container-bottom">
+                <Row>
+                  <Col sm={8}>{this.pagination()}</Col>
+                  <Col sm={4}>{this.perPageInput()}</Col>
+                </Row>
+              </div>
             </div>
-            <div className="list-container-bottom">
-              <Row>
-                <Col sm={8}>{this.pagination()}</Col>
-                <Col sm={4}>{this.perPageInput()}</Col>
-              </Row>
-            </div>
-          </div>
-        </Col>
-        <Col className="review-element" md={currentElement ? 8 : 0}>
-          <RepoReviewDetails />
-          {this.renderEmabrgoModal()}
-        </Col>
-      </Row>
+          </Col>
+          <Col className="review-element" md={currentElement ? 8 : 0}>
+            <RepoReviewDetails />
+            {this.renderEmabrgoModal()}
+          </Col>
+        </Row>
+        {this.renderReviewModal()}
+      </div>
     );
   }
 }

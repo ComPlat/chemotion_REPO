@@ -386,10 +386,10 @@ module Chemotion
 
           svg_file = e.element.sample_svg_file if element_type == 'Sample'
           title = e.element.short_label if element_type == 'Sample'
-
+          checklist = e.review['checklist'] if User.reviewer_ids.include?(current_user&.id)
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
           elements.push(
-            id: e.element_id, svg: svg_file, type: element_type, title: title,
+            id: e.element_id, svg: svg_file, type: element_type, title: title, checklist: checklist || {}, isReviewer: User.reviewer_ids.include?(current_user&.id) || false,
             published_by: u&.name, submitter_id: u&.id, submit_at: e.created_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
           )
         end

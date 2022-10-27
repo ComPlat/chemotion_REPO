@@ -2,6 +2,7 @@ import alt from '../alt';
 import PublicFetcher from '../fetchers/PublicFetcher';
 import NotificationActions from './NotificationActions';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
+import EmbargoFetcher from '../fetchers/EmbargoFetcher';
 import SearchFetcher from '../fetchers/SearchFetcher';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
@@ -12,6 +13,16 @@ class PublicActions {
 
   close(deleteEl) {
     return { deleteEl }
+  }
+
+  displayCollection(id) {
+    return (dispatch) => { EmbargoFetcher.fetchEmbargo(id)
+      .then((result) => {
+        dispatch({colData: result, id: id})
+      }).catch((errorMessage) => {
+        console.log(errorMessage)
+      })
+    }
   }
 
   getMolecules(pageParams={}) {
@@ -133,25 +144,6 @@ class PublicActions {
     }
   }
 
-  displayCollection(id) {
-    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
-      .then((result) => {
-        dispatch({colData: result, id: id})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  displayEmbargo(id) {
-    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
-      .then((result) => {
-        dispatch({colData: result, id: id})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
   articles() {
     return (dispatch) => {
       fetch('/newsroom/index.json',
@@ -286,145 +278,6 @@ class PublicActions {
     }
   }
 
-  displayReviewReaction(id) {
-    return (dispatch) => { RepositoryFetcher.fetchReaction(id, false)
-      .then((result) => {
-        dispatch({id, element: result})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  displayReviewSample(id) {
-    return (dispatch) => { RepositoryFetcher.fetchSample(id, false)
-      .then((result) => {
-        dispatch({id, element: result})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  reviewPublish(id, type, comment, action, checklist, reviewComments) {
-    return (dispatch) => { RepositoryFetcher.repoReviewPublish(id, type, comment, action, checklist, reviewComments)
-      .then((result) => {
-        dispatch({ id :id, element: result[`${type}`], type: type, review: result.review, comment: comment, action: action })
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
-      });};
-  }
-
-  displayReviewEmbargo(type, id) {
-    return (dispatch) => {
-      RepositoryFetcher.fetchEmbargoElement(type, id)
-      .then((result) => {
-        dispatch({ id, element: result })
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  generateEmbargoAccount(id) {
-    return (dispatch) => {
-      RepositoryFetcher.generateEmbargoAccount(id)
-        .then((result) => {
-          dispatch({ id, result })
-        }).catch((errorMessage) => {
-          console.log(errorMessage)
-        })
-    }
-  }
-
-  fetchEmbargoBundle() {
-    return (dispatch) => {
-      RepositoryFetcher.fetchEmbargoCollections()
-      .then((result) => {
-        dispatch(result)
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      });
-    }
-  }
-
-  releaseEmbargo(id) {
-    return (dispatch) => {
-      RepositoryFetcher.releaseEmbargo(id)
-        .then((result) => {
-          dispatch({ id, result })
-        }).catch((errorMessage) => {
-          console.log(errorMessage)
-        })
-    }
-  }
-
-  deleteEmbargo(id) {
-    return (dispatch) => {
-      RepositoryFetcher.deleteEmbargo(id)
-        .then((result) => {
-          dispatch({ id, result })
-        }).catch((errorMessage) => {
-          console.log(errorMessage)
-        })
-    }
-  }
-
-  moveEmbargo(id, newEmbargo, element) {
-    return (dispatch) => {
-      RepositoryFetcher.moveEmbargo(id, newEmbargo, element)
-        .then((result) => {
-          dispatch({ id, result })
-        }).catch((errorMessage) => {
-          console.log(errorMessage)
-        })
-    }
-  }
-
-  assignEmbargo(newEmbargo, element) {
-    return (dispatch) => {
-      RepositoryFetcher.assignEmbargo(newEmbargo, element)
-        .then((result) => {
-          dispatch(result)
-        }).catch((errorMessage) => {
-          console.log(errorMessage)
-        })
-    }
-  }
-
-  getEmbargoElements(id) {
-    return (dispatch) => {
-      PublicFetcher.fetchEmbargoElements(id)
-      .then((result) => {
-        dispatch(result)
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  getEmbargoElement(cid, el) {
-    return (dispatch) => {
-      PublicFetcher.fetchEmbargoElement(cid, el)
-      .then((result) => {
-        dispatch(result)
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  getEmbargoBundle() {
-    return (dispatch) => {
-      RepositoryFetcher.fetchEmbargoCollections()
-      .then((result) => {
-        dispatch(result)
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      });
-    }
-  }
-
   publishedStatics() {
     return (dispatch) => {
       PublicFetcher.publishedStatics()
@@ -436,16 +289,10 @@ class PublicActions {
     }
   }
 
-  updateComment(id, type, comments) {
-    return (dispatch) => {
-      RepositoryFetcher.updateComment(id, type, comments)
-        .then((result) => {
-          dispatch(result);
-        }).catch((errorMessage) => {
-          console.log(errorMessage);
-        });
-    };
+  handleReviewModal(show) {
+    return show;
   }
+
 
   fetchUnitsSystem() {
     return (dispatch) => { fetch('/units_system/units_system.json', {
