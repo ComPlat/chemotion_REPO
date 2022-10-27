@@ -111,27 +111,27 @@ class PublicStore {
 
   handleSearchMolecules(results) {
     const {
-      molecules, page, perPage, totalElements
+      molecules, page, perPage, totalElements, listType
     } = results;
     let { pages } = results;
     if (totalElements && perPage) {
       pages = Math.ceil(totalElements / perPage);
     }
     this.setState({
-      molecules, page, pages, perPage
+      molecules, page, pages, perPage, listType
     });
   }
 
   handleSearchReactions(results) {
     const {
-      reactions, page, perPage, totalElements
+      reactions, page, perPage, totalElements, listType
     } = results;
     let { pages } = results;
     if (totalElements && perPage) {
       pages = Math.ceil(totalElements / perPage);
     }
     this.setState({
-      reactions, page, pages, perPage
+      reactions, page, pages, perPage, listType
     });
   }
 
