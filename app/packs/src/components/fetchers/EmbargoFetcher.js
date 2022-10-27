@@ -36,7 +36,6 @@ export default class EmbargoFetcher {
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
-
   static moveEmbargo(id, newEmbargo, element) {
     const api = '/api/v1/repository/embargo/move';
     return fetch(api, {
@@ -50,7 +49,6 @@ export default class EmbargoFetcher {
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
-
   static refreshEmbargo(emb) {
     const api = '/api/v1/repository/embargo/refresh';
     return fetch(api, {

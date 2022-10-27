@@ -144,25 +144,6 @@ class PublicActions {
     }
   }
 
-  displayCollection(id) {
-    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
-      .then((result) => {
-        dispatch({colData: result, id: id})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
-
-  displayEmbargo(id) {
-    return (dispatch) => { PublicFetcher.fetchEmbargo(id)
-      .then((result) => {
-        dispatch({colData: result, id: id})
-      }).catch((errorMessage) => {
-        console.log(errorMessage)
-      })
-    }
-  }
   articles() {
     return (dispatch) => {
       fetch('/newsroom/index.json',
@@ -340,6 +321,7 @@ class PublicActions {
         }).catch((errorMessage) => { console.log(errorMessage); });
     };
   }
+
 
   fetchUnitsSystem() {
     return (dispatch) => { fetch('/units_system/units_system.json', {

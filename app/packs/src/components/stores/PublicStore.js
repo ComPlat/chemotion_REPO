@@ -197,15 +197,7 @@ class PublicStore {
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
 
-  handleDisplayCollection(collectionList) {
-    this.setState({
-      guestPage: 'collection',
-      elementType: 'collection',
-      queryId: collectionList.id,
-      selectEmbargo: collectionList.colData && collectionList.colData.col
-    });
-    Aviator.navigate(`/publications/collections/${collectionList.id}`, { silent: true });
-  }
+
 
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });
