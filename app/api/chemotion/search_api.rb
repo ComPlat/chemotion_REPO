@@ -226,10 +226,10 @@ module Chemotion
       end
 
       def serialization_by_elements_and_page(elements, page = 1, molecule_sort = false)
-        samples = elements.fetch(:samples, [])
-        reactions = elements.fetch(:reactions, [])
-        wellplates = elements.fetch(:wellplates, [])
-        screens = elements.fetch(:screens, [])
+        samples = elements.fetch(:samples, [0])
+        reactions = elements.fetch(:reactions, [0])
+        wellplates = elements.fetch(:wellplates, [0])
+        screens = elements.fetch(:screens, [0])
 
         if params[:is_public]
           com_config = Rails.configuration.compound_opendata
