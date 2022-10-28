@@ -359,20 +359,22 @@ module Chemotion
       end
 
       resource :molecules do
-        desc "Return PUBLIC serialized molecules"
+        desc 'Return PUBLIC serialized molecules'
         params do
-          optional :page, type: Integer, desc: "page"
-          optional :pages, type: Integer, desc: "pages"
-          optional :per_page, type: Integer, desc: "per page"
+          optional :page, type: Integer, desc: 'page'
+          optional :pages, type: Integer, desc: 'pages'
+          optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'advanced search?'
           optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
+          optional :req_xvial, type: Boolean, default: false, desc: 'xvial is required or not'
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
         get '/' do
           public_collection_id = Collection.public_collection_id
           params[:adv_val]
           adv_search = ' '
+          req_xvial = params[:req_xvial]
           if params[:adv_flag] == true && params[:adv_type].present? && params[:adv_val].present?
             case params[:adv_type]
             when 'Authors'
@@ -404,10 +406,11 @@ module Chemotion
                 SELECT samples.id FROM samples
                 INNER JOIN collections_samples cs on cs.collection_id = #{public_collection_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
                 #{adv_search}
+                #{add_xvial_sql(req_xvial)}
               )) s where rownum = 1
             ) s on s.molecule_id = molecules.id
           SQL
-
+# byebug
           embargo_sql = <<~SQL
             molecules.*, sample_svg_file, sid,
             (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
@@ -425,11 +428,11 @@ module Chemotion
           sids = entities.map { |e| e[:sid] }
 
           com_config = Rails.configuration.compound_opendata
-
+# byebug
           xvial_count_sql = <<~SQL
-            inner join element_tags e on e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+            inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
           SQL
-          x_cnt_ids = Sample.joins(xvial_count_sql).where(id: sids).distinct.pluck(:id) || []
+          x_cnt_ids = req_xvial ? sids.uniq : (Sample.joins(xvial_count_sql).where(id: sids).distinct.pluck(:id) || [])
 
           xvial_com_sql = <<~SQL
             inner join molecules m on m.id = samples.molecule_id

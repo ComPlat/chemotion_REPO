@@ -2,6 +2,7 @@ import 'whatwg-fetch';
 import _ from 'lodash';
 import Molecule from '../models/Molecule';
 import Reaction from '../models/Reaction';
+import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 export default class PublicFetcher {
   static fetchPublicMolecules(params = {}) {
@@ -10,7 +11,8 @@ export default class PublicFetcher {
     const advFlag = params.advFlag || false;
     const paramAdvType = params.advType ? `&adv_type=${params.advType}` : '';
     const paramAdvValue = params.advValue ? params.advValue.map(x => `&adv_val[]=${x.value}`).join('') : '';
-    const api = `/api/v1/public/molecules.json?page=${page}&per_page=${perPage}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}`;
+    const listType = params.listType || RepoNavListTypes.SAMPLE;
+    const api = `/api/v1/public/molecules.json?page=${page}&per_page=${perPage}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}&req_xvial=${listType === RepoNavListTypes.MOLECULE_ARCHIVE}`;
 
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json().then(json => ({
@@ -18,7 +20,7 @@ export default class PublicFetcher {
         page: parseInt(response.headers.get('X-Page')),
         pages: parseInt(response.headers.get('X-Total-Pages')),
         perPage: parseInt(response.headers.get('X-Per-Page')),
-        listType: params.listType
+        listType
       }))).catch((errorMessage) => { console.log(errorMessage); });
   }
 
