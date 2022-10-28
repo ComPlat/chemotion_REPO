@@ -17,4 +17,12 @@ module CompoundHelpers
       hasSample: false
     }
   end
+
+  def add_xvial_sql(req_xvial = false)
+    xvial_count_sql = <<~SQL
+      inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+    SQL
+    xvial_count_sql = '' unless req_xvial
+    xvial_count_sql
+  end
 end
