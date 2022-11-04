@@ -441,11 +441,11 @@ module Chemotion
                 SELECT samples.id FROM samples
                 INNER JOIN collections_samples cs on cs.collection_id = #{public_collection_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
                 #{adv_search}
-                #{add_xvial_sql(req_xvial)}
+                #{join_xvial_sql(req_xvial)}
               )) s where rownum = 1
             ) s on s.molecule_id = molecules.id
           SQL
-# byebug
+
           embargo_sql = <<~SQL
             molecules.*, sample_svg_file, sid,
             (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
@@ -463,21 +463,17 @@ module Chemotion
           sids = entities.map { |e| e[:sid] }
 
           com_config = Rails.configuration.compound_opendata
-# byebug
           xvial_count_sql = <<~SQL
             inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
           SQL
           x_cnt_ids = req_xvial ? sids.uniq : (Sample.joins(xvial_count_sql).where(id: sids).distinct.pluck(:id) || [])
-
-          xvial_com_sql = <<~SQL
-            inner join molecules m on m.id = samples.molecule_id
-            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
-          SQL
+          xvial_com_sql = get_xvial_sql(req_xvial)
           x_com_ids = Sample.joins(xvial_com_sql).where(id: sids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
 
           entities = entities.each do |obj|
             obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:sid])
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
+            obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], req_xvial)
           end
           entities
         end
@@ -740,11 +736,11 @@ module Chemotion
 
       resource :molecule do
         helpers RepositoryHelpers
-        desc "Return serialized molecule with list of PUBLISHED dataset"
+        desc 'Return serialized molecule with list of PUBLISHED dataset'
         params do
-          requires :id, type: Integer, desc: "Molecule id"
-          optional :adv_flag, type: Boolean, desc: "advanced search flag"
-          optional :adv_type, type: String, desc: "advanced search type", allow_blank: true, values: %w[Authors Ontologies Embargo]
+          requires :id, type: Integer, desc: 'Molecule id'
+          optional :adv_flag, type: Boolean, desc: 'advanced search flag'
+          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
         end
         get do

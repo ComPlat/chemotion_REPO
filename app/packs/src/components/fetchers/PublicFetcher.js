@@ -6,6 +6,7 @@ import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 export default class PublicFetcher {
   static fetchPublicMolecules(params = {}) {
+    console.log(params);
     const page = params.page || 1;
     const perPage = params.perPage || 10;
     const advFlag = params.advFlag || false;

@@ -63,8 +63,9 @@ export default class RepoSample extends Component {
   }
 
   updateRepoXvial(elementId) {
-    PublicActions.displayMolecule(elementId);
-    PublicActions.refreshPubElements('Molecules');
+    const { listType } = this.props;
+    PublicActions.displayMolecule(elementId, '', false, '', '', listType);
+    PublicActions.refreshPubElements(`Molecules=${listType}`);
   }
 
   renderAnalyses(analyses) {

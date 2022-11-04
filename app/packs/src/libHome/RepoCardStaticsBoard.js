@@ -1,10 +1,8 @@
-import React, { Component } from 'react';
-import { Button, Label, Col, Row, Carousel, Thumbnail, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import SVG from 'react-inlinesvg';
+import React from 'react';
+import { Button, Col, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CountUp from 'react-countup';
 import PublicActions from '../components/actions/PublicActions';
-import PublicStore from '../components/stores/PublicStore';
-import { HomeFeature } from './RepoCommon';
+import RepoNavListTypes from './RepoNavListTypes';
 
 const RepoCardStaticsBoard = (params) => {
   const { publishedStatics } = params;
@@ -20,7 +18,10 @@ const RepoCardStaticsBoard = (params) => {
     const stsAnalysisCnt = stsAnalysisSort
       .map(e => Number(e.e_cnt)).reduce((accumulator, currentValue) => accumulator + currentValue);
     const tooltipView = <Tooltip id="id_icon_tip">Click to view publications</Tooltip>;
-    const pubPage = { sample: 'publications=sample', reaction: 'publications=reaction' };
+    const pubPage = {
+      sample: `publications=${RepoNavListTypes.SAMPLE}`,
+      reaction: `publications=${RepoNavListTypes.REACTION}`
+    };
     return (
       <Row className="repo-statistic">
         <Col lg={12} md={12} sm={12}>
@@ -30,7 +31,7 @@ const RepoCardStaticsBoard = (params) => {
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rl">
               <OverlayTrigger placement="top" overlay={tooltipView}>
-                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                <Button className="animation-ring" bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules({ listType: 'sample' }); }}>
                   <i className="icon-sample" />
                 </Button>
               </OverlayTrigger>
@@ -39,15 +40,13 @@ const RepoCardStaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">
+              <div className="cnt">
+                <CountUp end={stsSample.e_cnt} />{' '}
                 <OverlayTrigger placement="top" overlay={tooltipView}>
-                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules(); }}>
+                  <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules({ listType: 'sample' }); }}>
                     published
                   </Button>
                 </OverlayTrigger>
-              </div>
-              <div className="cnt">
-                <CountUp end={stsSample.e_cnt} />
               </div>
               <div className="italic-desc">{stsSampleReview.e_cnt} under review</div>
               <div className="italic-desc">{stsSampleEmbargo.e_cnt} under embargo</div>
@@ -67,15 +66,13 @@ const RepoCardStaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="tit">
+              <div className="cnt">
+                <CountUp end={stsReaction.e_cnt} />{' '}
                 <OverlayTrigger placement="top" overlay={tooltipView}>
                   <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
                     published
                   </Button>
                 </OverlayTrigger>
-              </div>
-              <div className="cnt">
-                <CountUp end={stsReaction.e_cnt} />
               </div>
               <div className="italic-desc">{stsReactionReview.e_cnt} under review</div>
               <div className="italic-desc">{stsReactionEmbargo.e_cnt} under embargo</div>

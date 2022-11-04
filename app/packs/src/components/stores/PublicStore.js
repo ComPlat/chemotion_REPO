@@ -59,7 +59,8 @@ class PublicStore {
   }
 
   handleRefreshPubElements(type) {
-    PublicActions[`get${type}`]({ page: this.page, perPage: this.perPage });
+    const pageType = type.split('=');
+    PublicActions[`get${pageType[0]}`]({ page: this.page, perPage: this.perPage, listType: pageType[1] });
   }
 
   handleClose({ deleteEl }) {
