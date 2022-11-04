@@ -7,7 +7,6 @@ import SVG from 'react-inlinesvg';
 import PublicActions from '../components/actions/PublicActions';
 import Formula from '../components/common/Formula';
 import PubchemLabels from '../components/PubchemLabels';
-import { xvialTag, svgTag } from './RepoPubCommon';
 import RepoNavListTypes from './RepoNavListTypes';
 
 const pubchemTag = (molecule) => {
@@ -30,10 +29,7 @@ const infoTag = (molecule) => {
         </div>
       </OverlayTrigger>
       <div className="home_wrapper_item">
-        <div>Provided by</div><div className="item_xvial">{molecule.author_name}</div>
-      </div>
-      <div className="home_wrapper_item">
-        <div>Published on</div><div className="item_xvial">{molecule.published_at}</div>
+        <div>Embargo</div><div className="item_xvial">{molecule.embargo}</div>
       </div>
       <div className="home_wrapper_item">
         <div>Analyses</div><div className="item_xvial">{molecule.ana_cnt || 0}</div>
@@ -51,7 +47,6 @@ const RepoMoleculeArchive = (props) => {
     ? `/images/samples/${molecule.sample_svg_file}`
     : `/images/molecules/${molecule.molecule_svg_file}`;
   const pubchemInfo = pubchemTag(molecule);
-
   return (
     <Col xs={12} sm={12} md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, '', advFlag, advType, advValue, RepoNavListTypes.MOLECULE_ARCHIVE)}>
       <div className={`home_archive ${listClass}`}>
@@ -72,12 +67,12 @@ const RepoMoleculeArchive = (props) => {
               </div>
             </div>
             <div className="border">
-              <div className="dl">Affiliation</div>
-              <div className="dr">Institute of Nanotechnology (INT), Karlsruhe Institute of Technology, Germany </div>
+              <div className="dl">Provided by</div>
+              <div className="dr">{molecule.xvial_archive[0]?.provided_by}</div>
             </div>
             <div className="border">
               <div className="dl">Group</div>
-              <div className="dr"> </div>
+              <div className="dr">{molecule.xvial_archive[0]?.group}</div>
             </div>
           </div>
           <div>

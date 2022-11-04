@@ -26,8 +26,7 @@ export default class RepoElementDetails extends Component {
   }
 
   switchTypeRender() {
-    const { currentElement, elementType } = this.state;
-
+    const { currentElement, elementType, listType } = this.state;
     if (typeof (currentElement) === 'undefined' || !currentElement) {
       return <span />;
     }
@@ -40,6 +39,7 @@ export default class RepoElementDetails extends Component {
           reviewLevel={this.state.reviewLevel}
           isSubmitter={this.state.isSubmitter}
           review={this.state.review || {}}
+          listType={listType}
         />);
       case 'reaction': return (
         <RepoReactionDetails

@@ -14,12 +14,12 @@ const registedCompoundTooltip = (
   </div>
 );
 
-const listCom = (xvialCom) => {
+const listCom = (xvialCom, data = '') => {
   if (typeof xvialCom === 'undefined') return <br />;
   if (!xvialCom.allowed) return <br />;
   const listComData = xvialCom.hasData ? (
     xvialCom.data.map(x => (
-      <tr key={uuid.v4()}>
+      <tr key={uuid.v4()} style={x.x_data.xid === data && data !== '' ? { color: '#337ab7' } : { color: 'black' }}>
         <td>{x.x_data.xid}</td>
         <td>{x.x_data.provided_by}</td>
         <td>{x.x_created_at}</td>
@@ -118,7 +118,7 @@ export default class RepoXvialButton extends React.Component {
         <Modal.Header closeButton><Modal.Title>Compound X-vial number</Modal.Title></Modal.Header>
         <Modal.Body>
           <FormControl type="text" defaultValue={data} inputRef={(m) => { this.xInput = m; }} />
-          {listCom(xvialCom)}
+          {listCom(xvialCom, data)}
           <Button bsStyle="warning" onClick={() => this.closeModal()}>Close</Button>&nbsp;
           <Button bsStyle="primary" onClick={() => this.save()}>Save</Button>
         </Modal.Body>

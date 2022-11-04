@@ -1,9 +1,10 @@
-import React, { Component } from 'react';
-import { Button, Label, Col, Row, Carousel, Thumbnail, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import React from 'react';
+import { Carousel } from 'react-bootstrap';
 import SVG from 'react-inlinesvg';
 import PublicActions from '../components/actions/PublicActions';
 
-const timeInterval = (date) => {
+const timeInterval = (_date) => {
+  let date = _date;
   if (!date) { return null; }
   switch (typeof date) {
     case 'number':
@@ -17,8 +18,8 @@ const timeInterval = (date) => {
     default:
       date = +new Date();
   }
-  let seconds = Math.floor((new Date() - date) / 1000);
-  let intrvlTypes = [
+  const seconds = Math.floor((new Date() - date) / 1000);
+  const intrvlTypes = [
     [31536000, 'year', 'a'],
     [2592000, 'month', 'a'],
     [604800, 'week', 'a'],
@@ -26,12 +27,12 @@ const timeInterval = (date) => {
     [3600, 'hour', 'an'],
     [60, 'minute', 'a'],
     [1, 'second', 'a'],
-  ]
-  let intrvlCount = 0
-  let intrvlType = intrvlTypes.find((e) => {
-    intrvlCount = Math.floor(seconds / e[0])
-    return intrvlCount >= 1
-  })
+  ];
+  let intrvlCount = 0;
+  const intrvlType = intrvlTypes.find((e) => {
+    intrvlCount = Math.floor(seconds / e[0]);
+    return intrvlCount >= 1;
+  });
   return `${intrvlCount === 1 ? intrvlType[2] : intrvlCount} ${intrvlType[1]}${intrvlCount > 1 ? 's' : ''} ago`;
 };
 
@@ -47,7 +48,7 @@ const RepoCardLatestPublish = ({ lastPublished }) => {
       : '/images/no_image_180.svg';
     const pubTagReaction = reaction.tag || {};
     return (
-      <div className="card-well-competition">
+      <div className="card-well-competition card-latest">
         <Carousel className="carl-spt" indicators={false} interval={6000}>
           <Carousel.Item className="carl-spt-item">
             <div className="img">
