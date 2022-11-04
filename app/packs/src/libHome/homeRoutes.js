@@ -3,7 +3,7 @@ import PublicFetcher from '../components/fetchers/PublicFetcher';
 import RepoNavListTypes from './RepoNavListTypes';
 import ReviewActions from '../components/actions/ReviewActions';
 import EmbargoActions from '../components/actions/EmbargoActions';
-
+import LoadingActions from '../components/actions/LoadingActions';
 
 const routes = {
   '/': 'root',
@@ -33,6 +33,7 @@ const routes = {
   '/publications': {
     target: {
       show: function(e) {
+        LoadingActions.start();
         PublicActions.getReactions.defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.REACTION}`)
       },
@@ -42,7 +43,8 @@ const routes = {
   '/moleculeArchive': {
     target: {
       show: function(e) {
-        PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE });
+        LoadingActions.start();
+        PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE }).defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.MOLECULE_ARCHIVE}`)
       },
     },
