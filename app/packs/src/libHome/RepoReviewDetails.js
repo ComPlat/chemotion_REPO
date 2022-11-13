@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import PublicStore from '../components/stores/PublicStore';
+import ReviewStore from '../components/stores/ReviewStore';
 import RepoReactionDetails from './RepoReactionDetails';
 import RepoSampleDetails from './RepoSampleDetails';
 
@@ -9,29 +9,26 @@ export default class RepoReviewDetails extends Component {
     this.state = {
       element: props.element,
       review: {},
+      btnAction: '',
       reviewLevel: 0,
       isSubmitter: false
     };
 
     this.onStoreChange = this.onStoreChange.bind(this);
-    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onStoreChange);
+    ReviewStore.listen(this.onStoreChange);
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onStoreChange);
+    ReviewStore.unlisten(this.onStoreChange);
   }
 
   onStoreChange(state) {
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
-  handleReviewUpdate(review) {
-    this.setState({ review });
-  }
 
   switchTypeRender() {
     const { currentElement, elementType } = this.state;
@@ -46,8 +43,8 @@ export default class RepoReviewDetails extends Component {
             canComment
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
+            btnAction={this.state.btnAction}
             isReview={true}
-            onReviewUpdate={this.handleReviewUpdate}
             review={this.state.review}
           />);
       case 'sample':
@@ -55,9 +52,9 @@ export default class RepoReviewDetails extends Component {
           <RepoSampleDetails
             element={currentElement}
             canComment
+            btnAction={this.state.btnAction}
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
-            onReviewUpdate={this.handleReviewUpdate}
             review={this.state.review}
           />);
       default: return <span />;

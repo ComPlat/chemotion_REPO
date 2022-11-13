@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Jumbotron, Panel } from 'react-bootstrap';
+import { AffiliationMap } from 'repo-review-ui';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AffiliationList,
@@ -20,7 +21,6 @@ import {
   ToggleIndicator,
   ElStateLabel
 } from './RepoCommon';
-import { AffiliationMap } from './RepoReviewCommon';
 import { Citation, literatureContent, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoUserComment from '../components/common/RepoUserComment';
 import RepoPublicComment from '../components/common/RepoPublicComment';

@@ -6,6 +6,7 @@ import InboxActions from '../actions/InboxActions';
 import PredictionActions from '../actions/PredictionActions';
 import RepositoryActions from '../actions/RepositoryActions';
 import PublicActions from '../actions/PublicActions';
+import ReviewActions from '../actions/ReviewActions';
 
 class LoadingStore {
   constructor() {
@@ -36,8 +37,10 @@ class LoadingStore {
           InboxActions.fetchInbox,
           PredictionActions.infer,
           RepositoryActions.reviewPublish,
-          PublicActions.updateComment,
-          PublicActions.reviewPublish,
+          ReviewActions.updateComment,
+          ReviewActions.reviewPublish,
+          ReviewActions.fetchSample,
+          ReviewActions.displayReviewReaction,
           PublicActions.getSearchReactions,
           PublicActions.getSearchMolecules,
           PublicActions.getReactions,

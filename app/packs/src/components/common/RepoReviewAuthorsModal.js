@@ -9,7 +9,7 @@ import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 import UsersFetcher from '../fetchers/UsersFetcher';
 import SelectionField from '../common/SelectionField';
 import PublicFetcher from '../fetchers/PublicFetcher';
-import PublicActions from '../actions/PublicActions';
+import ReviewActions from '../actions/ReviewActions';
 import DeleteConfirmBtn from '../common/DeleteConfirmBtn';
 
 const addAffTooltip = <Tooltip id="addAff_tooltip">Add affiliation for this Publication</Tooltip>;
@@ -249,9 +249,9 @@ export default class RepoReviewAuthorsModal extends React.Component {
           alert(result.error);
         } else {
           if (element.elementType === 'Reaction') {
-            PublicActions.displayReviewReaction(element.id);
+            ReviewActions.displayReviewReaction(element.id);
           } else {
-            PublicActions.displayReviewSample(element.id);
+            ReviewActions.displayReviewSample(element.id);
           }
 
           this.setState({ taggData: null, modalShow: false });

@@ -19,7 +19,7 @@ import { MoleculeInfo, EmbargoCom, isNmrPass, isDatasetPass, OrcidIcon } from '.
 import LoadingActions from './actions/LoadingActions';
 import SamplesFetcher from './fetchers/SamplesFetcher';
 import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
-import RepositoryFetcher from './fetchers/RepositoryFetcher';
+import EmbargoFetcher from './fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from './CitationType';
 
 export default class PublishSampleModal extends Component {
@@ -93,7 +93,7 @@ export default class PublishSampleModal extends Component {
   }
 
   loadBundles() {
-    RepositoryFetcher.fetchEmbargoCollections().then((result) => {
+    EmbargoFetcher.fetchEmbargoCollections().then((result) => {
       const cols = result.repository || [];
       this.setState({ bundles: cols });
     });

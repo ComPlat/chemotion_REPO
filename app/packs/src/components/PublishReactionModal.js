@@ -25,7 +25,7 @@ import { ReactionInfo, ReactionSchemeOnlyInfo, AnalysisHeaderSample, PublishAnal
 import LoadingActions from './actions/LoadingActions';
 import { groupByCitation, Citation } from '../components/LiteratureCommon';
 import LiteraturesFetcher from '../components/fetchers/LiteraturesFetcher';
-import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
+import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 import { contentToText } from './utils/quillFormat';
 import { CitationTypeMap, CitationTypeEOL } from './CitationType';
 
@@ -239,7 +239,7 @@ export default class PublishReactionModal extends Component {
   }
 
   loadBundles() {
-    RepositoryFetcher.fetchEmbargoCollections().then((result) => {
+    EmbargoFetcher.fetchEmbargoCollections().then((result) => {
       const cols = result.repository || [];
       this.setState({ bundles: cols });
     });

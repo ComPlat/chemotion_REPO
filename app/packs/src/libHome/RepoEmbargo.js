@@ -3,12 +3,13 @@ import { Table, Col, Row, Navbar, MenuItem, ButtonGroup, Button, ButtonToolbar, 
 import Select from 'react-select';
 import { filter } from 'lodash';
 import RepoEmbargoDetails from './RepoEmbargoDetails';
-import PublicActions from '../components/actions/PublicActions';
 import PublicStore from '../components/stores/PublicStore';
+import EmbargoActions from '../components/actions/EmbargoActions';
+import EmbargoStore from '../components/stores/EmbargoStore';
 import { ElAspect } from './RepoCommon';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
-import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
+import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 
 const renderMenuItems = (bundles) => {
   if (bundles.length < 1) return <div />;
@@ -54,11 +55,13 @@ export default class RepoEmbargo extends Component {
 
   componentDidMount() {
     PublicStore.listen(this.onChange);
+    EmbargoStore.listen(this.onChange);
     this.loadBundles();
   }
 
   componentWillUnmount() {
     PublicStore.unlisten(this.onChange);
+    EmbargoStore.unlisten(this.onChange);
   }
 
   onChange(state) {
@@ -68,7 +71,7 @@ export default class RepoEmbargo extends Component {
       if (typeof (vaildSelect) === 'undefined') {
         this.setState({ selectEmbargo: null });
       } else {
-        RepositoryFetcher.refreshEmbargo(this.state.selectEmbargo || {})
+        EmbargoFetcher.refreshEmbargo(this.state.selectEmbargo || {})
           .then((result) => {
             if (!result.error) this.setState({ selectEmbargo: result });
           }).catch((errorMessage) => {
@@ -120,7 +123,7 @@ export default class RepoEmbargo extends Component {
     const { bundles } = this.state;
     const selectEmbargo = bundles.find(b => b.element_id === eventKey.value);
     this.setState({ selectEmbargo });
-    PublicActions.getEmbargoElements(eventKey.value);
+    EmbargoActions.getEmbargoElements(eventKey.value);
   }
 
   handleEmbargoAccount() {
@@ -131,7 +134,7 @@ export default class RepoEmbargo extends Component {
     } else if (current_user.id !== selectEmbargo.published_by) {
       alert('only the submitter can generate a temporary account!');
     } else {
-      PublicActions.generateEmbargoAccount(selectEmbargo.element_id);
+      EmbargoActions.generateEmbargoAccount(selectEmbargo.element_id);
       alert(`A temporary account for [${selectEmbargo.taggable_data && selectEmbargo.taggable_data.label}] has been created. The details have been sent to you by e-mail.`);
     }
   }
@@ -143,7 +146,7 @@ export default class RepoEmbargo extends Component {
     } else if (current_user.id !== selectEmbargo.published_by) {
       alert('only the submitter can perform the release!');
     } else {
-      PublicActions.releaseEmbargo(selectEmbargo.element_id);
+      EmbargoActions.releaseEmbargo(selectEmbargo.element_id);
       alert(`The embargo on [${selectEmbargo.taggable_data && selectEmbargo.taggable_data.label}] has been released!`);
     }
   }
@@ -156,7 +159,7 @@ export default class RepoEmbargo extends Component {
       } else if (current_user.id !== selectEmbargo.published_by) {
         alert('only the submitter can delete the release!');
       } else {
-        PublicActions.deleteEmbargo(selectEmbargo.element_id);
+        EmbargoActions.deleteEmbargo(selectEmbargo.element_id);
       }
     }
     this.setState({ showConfirmModal: false });
@@ -164,57 +167,14 @@ export default class RepoEmbargo extends Component {
 
   handleMoveEmbargo() {
     const { selectEmbargo, moveElement, newEmbargo } = this.state;
-    PublicActions.moveEmbargo(selectEmbargo.element_id, newEmbargo, moveElement);
+    EmbargoActions.moveEmbargo(selectEmbargo.element_id, newEmbargo, moveElement);
     this.setState({ showMoveModal: false });
   }
 
   loadBundles() {
-    PublicActions.fetchEmbargoBundle();
+    EmbargoActions.fetchEmbargoBundle();
   }
 
-  renderSearch(bundles) {
-    const { selectEmbargo, elements, current_user } = this.state;
-    const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
-    const options = [];
-
-    bundles.forEach((col) => {
-      const tag = col.taggable_data || {};
-      options.push({ value: col.element_id, name: tag.label, label: tag.label });
-    });
-
-    const filterDropdown = (
-      <div className="home-adv-search">
-        <Select
-          value={selectEmbargo && selectEmbargo.element_id}
-          onChange={e => this.handleElementSelection(e)}
-          options={options}
-          style={{ width: '180px' }}
-        />
-      <ButtonGroup>
-        <Button
-          id="all-info-button"
-          disabled={selectEmbargo === null || elements?.length === 0}
-          onClick={() => this.handleMetadataShow()}
-        >
-          <i className="fa fa-file-code-o" aria-hidden="true" />&nbsp;Metadata
-        </Button>
-        <Button
-          id="all-info-button"
-          disabled={selectEmbargo === null || elements?.length === 0}
-          onClick={() => this.handleInfoShow()}
-        >
-          <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
-        </Button>
-      </ButtonGroup>
-      </div>
-    );
-
-    return (
-      <div style={{ paddingLeft: '15px', marginTop: '8px', marginBottom: '8px' }}>
-        {filterDropdown}
-      </div>
-    );
-  }
 
   rendeActionBtn(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
@@ -263,6 +223,50 @@ export default class RepoEmbargo extends Component {
     );
   }
 
+  renderSearch(bundles) {
+    const { selectEmbargo, elements, current_user } = this.state;
+    const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
+    const options = [];
+
+    bundles?.forEach((col) => {
+      const tag = col.taggable_data || {};
+      options.push({ value: col.element_id, name: tag.label, label: tag.label });
+    });
+
+    const filterDropdown = (
+      <div className="home-adv-search">
+        <Select
+          value={selectEmbargo && selectEmbargo.element_id}
+          onChange={e => this.handleElementSelection(e)}
+          options={options}
+          style={{ width: '180px' }}
+        />
+        <ButtonGroup>
+          <Button
+            id="all-info-button"
+            disabled={selectEmbargo === null || elements?.length === 0}
+            onClick={() => this.handleMetadataShow()}
+          >
+            <i className="fa fa-file-code-o" aria-hidden="true" />&nbsp;Metadata
+          </Button>
+          <Button
+            id="all-info-button"
+            disabled={selectEmbargo === null || elements?.length === 0}
+            onClick={() => this.handleInfoShow()}
+          >
+            <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
+          </Button>
+        </ButtonGroup>
+      </div>
+    );
+
+    return (
+      <div style={{ paddingLeft: '15px', marginTop: '8px', marginBottom: '8px' }}>
+        {filterDropdown}
+      </div>
+    );
+  }
+
 
   // render modal
   renderMoveModal() {
@@ -271,7 +275,7 @@ export default class RepoEmbargo extends Component {
       { value: '0', name: 'new', label: '--Create a new Embargo Bundle--' },
     ];
 
-    bundles.forEach((col) => {
+    bundles?.forEach((col) => {
       const tag = col.taggable_data || {};
       options.push({ value: col.element_id, name: tag.label, label: tag.label });
     });
@@ -336,7 +340,7 @@ export default class RepoEmbargo extends Component {
             <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
               <Table striped className="review-entries">
                 <tbody striped="true" bordered="true" hover="true">
-                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, PublicActions.displayReviewEmbargo, currentUser, owner, currentElement, this.handleMoveShow)) }
+                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, EmbargoActions.displayReviewEmbargo, currentUser, owner, currentElement, this.handleMoveShow)) }
                 </tbody>
               </Table>
             </div>

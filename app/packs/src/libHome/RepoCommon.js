@@ -26,6 +26,7 @@ import moment from 'moment';
 import Select from 'react-select';
 import uuid from 'uuid';
 import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
+import { RepoCommentBtn } from 'repo-review-ui';
 import ContainerComponent from './ContainerComponent';
 import Formula from '../components/common/Formula';
 import HelpInfo from '../components/common/HelpInfo';
@@ -46,7 +47,6 @@ import DropdownButtonSelection from '../components/common/DropdownButtonSelectio
 import InputButtonField from '../components/common/InputButtonField';
 import RepoReactionSchemeInfo from './RepoReactionSchemeInfo';
 import PublicActions from '../components/actions/PublicActions';
-import RepoCommentBtn from '../components/common/RepoCommentBtn';
 import RepoUserComment from '../components/common/RepoUserComment';
 import RepoPublicComment from '../components/common/RepoPublicComment';
 import { previewContainerImage } from '../components/utils/imageHelper';
@@ -652,6 +652,39 @@ IconToMyDB.defaultProps = {
   tooltipTitle: 'Link to My DB',
   isLogin: false,
   isPublished: true,
+};
+
+
+const ChecklistPanel = ({
+  checklist, isReviewer
+}) => {
+  const dtbl = checklist?.tbl?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'blue' }} />) : (<i className="fa fa-square-o" style={{ color: 'blue' }} />);
+  const ddes = checklist?.des?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'orange' }} />) : (<i className="fa fa-square-o" style={{ color: 'orange' }} />);
+  const dafm = checklist?.afm?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'green' }} />) : (<i className="fa fa-square-o" style={{ color: 'green' }} />);
+  const dact = checklist?.act?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'purple' }} />) : (<i className="fa fa-square-o" style={{ color: 'purple' }} />);
+  const dohd = checklist?.ohd?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'red' }} />) : (<i className="fa fa-square-o" style={{ color: 'red' }} />);
+  if (isReviewer === true) {
+    return (
+      <div>
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">table values</Tooltip>}>{dtbl}</OverlayTrigger>&nbsp;
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">description</Tooltip>}>{ddes}</OverlayTrigger>&nbsp;
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">analysis format</Tooltip>}>{dafm}</OverlayTrigger>&nbsp;
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">analysis content</Tooltip>}>{dact}</OverlayTrigger>&nbsp;
+        <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">on hold</Tooltip>}>{dohd}</OverlayTrigger>&nbsp;
+      </div>
+    );
+  }
+  return (<div />);
+};
+
+ChecklistPanel.propTypes = {
+  checklist: PropTypes.object,
+  isReviewer: PropTypes.bool,
+};
+
+ChecklistPanel.defaultProps = {
+  checklist: {},
+  isReviewer: false
 };
 
 const SidToPubChem = ({ sid }) => {
@@ -2348,6 +2381,7 @@ export {
   EmbargoCom,
   IconLicense,
   IconToMyDB,
+  ChecklistPanel,
   isNmrPass,
   isDatasetPass,
   HomeFeature,

@@ -4,7 +4,7 @@ import { Col, Grid, Row } from 'react-bootstrap';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import Aviator from 'aviator';
-
+import { RepoReviewModal } from 'repo-review-ui';
 import alt from './alt';
 import Navigation from './Navigation';
 import CollectionTree from './CollectionTree';
@@ -15,8 +15,10 @@ import Notifications from './Notifications';
 import LoadingModal from './common/LoadingModal';
 import UIActions from './actions/UIActions';
 import UserActions from './actions/UserActions';
+import ReviewActions from './actions/ReviewActions';
 import KeyboardActions from './actions/KeyboardActions';
 import UIStore from './stores/UIStore';
+import ReviewStore from './stores/ReviewStore';
 import InboxModal from './inbox/InboxModal';
 import ProgressModal from './common/ProgressModal';
 
@@ -32,10 +34,15 @@ class App extends Component {
     this.handleUiStoreChange = this.handleUiStoreChange.bind(this);
     this.documentKeyDown = this.documentKeyDown.bind(this);
     this.toggleCollectionTree = this.toggleCollectionTree.bind(this);
+    this.handleReviewStoreChange = this.handleReviewStoreChange.bind(this);
+    this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
+
   }
 
   componentDidMount() {
-    UIStore.listen(this.handleUiStoreChange);
+    UIStore.listen(this.handleReviewStoreChange);
+    ReviewStore.listen(this.handleReviewStoreChange);
     UserActions.fetchOlsRxno();
     UserActions.fetchOlsChmo();
     UserActions.fetchProfile();
@@ -61,6 +68,24 @@ class App extends Component {
     if (this.state.klasses !== state.klasses) {
       this.setState({ klasses: state.klasses });
     }
+  }
+  handleReviewStoreChange(state) {
+    this.setState(prevState => ({ ...prevState, ...state }));
+  }
+
+  handleSubmitReview(elementId, elementType, comment, btnAction, checklist, reviewComments){
+    // LoadingActions.start();
+    ReviewActions.reviewPublish(elementId, elementType, comment, btnAction, checklist, reviewComments);
+    this.setState({ showReviewModal: false });
+  }
+
+  handleReviewUpdate(e, col, rr) {
+    const { review } = this.state;
+    const checklist = rr.checklist || {};
+    if (typeof (checklist[col]) === 'undefined') checklist[col] = {};
+    checklist[col].status = e.target.checked;
+    review.checklist = checklist;
+    ReviewActions.updateReview(review);
   }
 
   documentKeyDown(event) {
@@ -102,6 +127,27 @@ class App extends Component {
     );
   }
 
+  renderReviewModal() {
+    const { showReviewModal, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
+    const rrr = {};
+    console.log(this.state);
+    rrr.reviewLevel = reviewLevel;
+    rrr.isSubmitter = isSubmitter;
+    rrr.review = review;
+    rrr.btnAction = btnAction;
+    rrr.elementType = elementType;
+    rrr.elementId = elementType === 'sample' ? currentElement?.sample?.id : currentElement?.reaction?.id;
+    console.log(rrr);
+    return (
+      <RepoReviewModal
+        show={showReviewModal}
+        data={rrr}
+        onSubmit={this.handleSubmitReview}
+        onUpdate={this.handleReviewUpdate}
+        onHide={() => this.setState({ showReviewModal: false })}
+      />
+    );
+  }
   render() {
     const { showCollectionTree } = this.state;
     return (
@@ -119,6 +165,7 @@ class App extends Component {
           <ProgressModal />
         </Row>
         <InboxModal showCollectionTree={showCollectionTree} />
+        {this.renderReviewModal()}
       </Grid>
     );
   }

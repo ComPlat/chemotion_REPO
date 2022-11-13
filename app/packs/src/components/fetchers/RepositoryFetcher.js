@@ -10,82 +10,6 @@ const AnalysisIdstoPublish = element => (
 );
 
 export default class RepositoryFetcher {
-  static generateEmbargoAccount(id) {
-    const api = '/api/v1/repository/embargo/account';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ collection_id: id })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
-  static releaseEmbargo(id) {
-    const api = '/api/v1/repository/embargo/release';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ collection_id: id })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
-  static deleteEmbargo(id) {
-    const api = '/api/v1/repository/embargo/delete';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ collection_id: id })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
-  static moveEmbargo(id, newEmbargo, element) {
-    const api = '/api/v1/repository/embargo/move';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ collection_id: id, new_embargo: newEmbargo.value, element })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
-  static refreshEmbargo(emb) {
-    const api = '/api/v1/repository/embargo/refresh';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ id: emb.id, collection_id: emb.element_id })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
-
-  static assignEmbargo(embargoVal, element) {
-    const api = '/api/v1/repository/assign_embargo';
-    return fetch(api, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ new_embargo: embargoVal, element })
-    }).then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
 
   static reviewPublish(element) {
     const { id, type } = element;
@@ -251,19 +175,7 @@ export default class RepositoryFetcher {
     });
   }
 
-  static fetchEmbargoCollections() {
-    const api = '/api/v1/repository/embargo_list.json';
-    return fetch(api, { credentials: 'same-origin' })
-      .then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
 
-  static fetchEmbargoElements(id) {
-    const api = `/api/v1/repository/embargo/list.json?collection_id=${id}`;
-    return fetch(api, { credentials: 'same-origin' })
-      .then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
 
   static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
     const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';
@@ -283,12 +195,6 @@ export default class RepositoryFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
-  static fetchEmbargoElement(type, id) {
-    const api = `/api/v1/repository/${type}.json?id=${id}&is_public=false`;
-    return fetch(api, { credentials: 'same-origin' })
-      .then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
-  }
 
   static fetchReaction(id, isPublic) {
     const api = `/api/v1/repository/reaction.json?id=${id}&is_public=${isPublic}`;
@@ -319,20 +225,6 @@ export default class RepositoryFetcher {
       });
   }
 
-  static updateComment(id, type, comments) {
-    return fetch('/api/v1/repository/reviewing/comment', {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ id, type, comments })
-    }).then(response => response.json())
-      .catch((errorMessage) => {
-        console.log(errorMessage);
-      });
-  }
   static repoReviewPublish(id, type, comment, action, checklist = {}, reviewComments) {
     let api = '';
     if (action === 'Comments') {
@@ -417,7 +309,6 @@ export default class RepositoryFetcher {
         console.log(errorMessage);
       });
   }
-
 
   static updateComment(id, type, comments) {
     return fetch('/api/v1/repository/reviewing/comment', {

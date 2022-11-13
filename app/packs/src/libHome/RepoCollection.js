@@ -3,10 +3,11 @@ import { Table, Col, Row, Navbar, ButtonGroup, Button, ButtonToolbar, OverlayTri
 import SVG from 'react-inlinesvg';
 import uuid from 'uuid';
 import RepoCollectionDetails from './RepoCollectionDetails';
-import PublicActions from '../components/actions/PublicActions';
+import EmbargoActions from '../components/actions/EmbargoActions';
+import EmbargoStore from '../components/stores/EmbargoStore';
 import PublicStore from '../components/stores/PublicStore';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
-import PublicFetcher from '../components/fetchers/PublicFetcher';
+import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 
 const SvgPath = (svg, type) => {
   if (svg && svg !== '***') {
@@ -44,18 +45,18 @@ const infoTag = (el, la) => {
   );
 };
 
-const Elist = (cid, la, el, selectEmbargo = null, user = null, currentElement = null) => {
+const Elist = (cid, la, el, selectEmbargo = null, user = null, element = null) => {
   if (!el) {
     return '';
   }
   let listClass;
   if (el.type === 'Reaction') {
-    listClass = (currentElement !== null && currentElement.publication && currentElement.publication.element_id === el.id) ? 'list_focus_on' : 'list_focus_off';
+    listClass = (element !== null && element.publication && element.publication.element_id === el.id) ? 'list_focus_on' : 'list_focus_off';
   } else {
-    listClass = (currentElement !== null && currentElement.published_samples && currentElement.published_samples[0] && currentElement.published_samples[0].id === el.id) ? 'list_focus_on' : 'list_focus_off';
+    listClass = (element !== null && element.published_samples && element.published_samples[0] && element.published_samples[0].id === el.id) ? 'list_focus_on' : 'list_focus_off';
   }
   return (
-    <Col md={currentElement ? 12 : 6} key={`list-embargo-${el.id}`} onClick={() => PublicActions.getEmbargoElement(cid, el)}>
+    <Col md={element ? 12 : 6} key={`list-embargo-${el.id}`} onClick={() => EmbargoActions.getEmbargoElement(cid, el)}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${el.id}`}>
           <Col md={12}>
@@ -75,7 +76,7 @@ export default class RepoCollection extends Component {
     this.state = {
       elements: [],
       current_user: {},
-      currentElement: null,
+      element: null,
       selectEmbargo: null,
       showInfoModal: false,
       showMetadataModal: false,
@@ -88,31 +89,29 @@ export default class RepoCollection extends Component {
   }
 
   componentDidMount() {
+    EmbargoStore.listen(this.onChange);
     PublicStore.listen(this.onChange);
   }
 
   componentWillUnmount() {
+    EmbargoStore.unlisten(this.onChange);
     PublicStore.unlisten(this.onChange);
   }
 
   onChange(state) {
+    if (state.elements && state.elements != this.state.elements) {
+      this.setState({ elements: state.elements });
+    }
     // this.setState(prevState => ({ ...prevState, ...state }));
     if (state.selectEmbargo && state.selectEmbargo != this.state.selectEmbargo) {
       this.setState({ selectEmbargo: state.selectEmbargo });
-
-      PublicFetcher.fetchEmbargoElements(state.selectEmbargo.element_id)
-        .then((result) => {
-          this.setState({ elements: result.elements });
-        }).catch((errorMessage) => {
-          console.log(errorMessage);
-        });
+      EmbargoActions.getEmbargoElements(state.selectEmbargo.element_id);
     }
 
-    if (state.currentElement !== this.state.currentElement) {
-      this.setState({ currentElement: state.currentElement });
+    if (state.element !== this.state.element) {
+      this.setState({ element: state.element });
     }
   }
-
 
   handleInfoShow() {
     this.setState({ showInfoModal: true });
@@ -174,14 +173,14 @@ export default class RepoCollection extends Component {
 
   render() {
     const {
-      elements, currentElement, currentUser, showInfoModal, selectEmbargo, showMetadataModal
+      elements, element, currentUser, showInfoModal, selectEmbargo, showMetadataModal
     } = this.state;
     const id = (selectEmbargo && selectEmbargo.element_id) || 0;
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
     return (
       <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-        <Col md={currentElement ? 4 : 12} >
+        <Col md={element ? 4 : 12} >
           <Navbar fluid className="navbar-custom" style={{ marginBottom: '5px' }}>
             {this.renderSearch()}
             <div style={{ clear: 'both' }} />
@@ -189,16 +188,16 @@ export default class RepoCollection extends Component {
           <div className="public-list" style={{ backgroundColor: '#efefef' }}>
             <Table className="sample-entries">
               <tbody>
-                {((typeof (elements) !== 'undefined' && elements) || []).map(r => Elist(id, la, r, selectEmbargo, currentUser, currentElement)) }
+                {((typeof (elements) !== 'undefined' && elements) || []).map(r => Elist(id, la, r, selectEmbargo, currentUser, element)) }
               </tbody>
             </Table>
           </div>
         </Col>
         <Col
-          md={currentElement ? 8 : 0}
+          md={element ? 8 : 0}
         >
           <div className="public-element">
-            <RepoCollectionDetails currentElement={currentElement} />
+            <RepoCollectionDetails element={element} />
           </div>
           <InfoModal
             key="info-modal"
