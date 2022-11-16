@@ -46,13 +46,10 @@ module CompoundHelpers
     com_config = Rails.configuration.compound_opendata
     return [] unless com_config.present? && inchikey.present?
 
-    # data = CompoundOpenData.where('x_inchikey = ?', inchikey).order(x_created_at: :desc).pluck :x_data
-
     xvial_com_sql = <<~SQL
       inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = #{sid}
     SQL
 
-    # data = CompoundOpenData.joins(xvial_com_sql).order(x_created_at: :desc).pluck :x_data
     data = CompoundOpenData.where("compound_open_data.x_data ->> 'xid' = e.taggable_data -> 'xvial' ->> 'num'").joins(xvial_com_sql).order(x_created_at: :desc).pluck :x_data
 
     x_data = data.map do |obj|

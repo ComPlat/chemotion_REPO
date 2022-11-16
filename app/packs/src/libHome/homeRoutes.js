@@ -44,7 +44,7 @@ const routes = {
     target: {
       show: function(e) {
         LoadingActions.start();
-        PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE }).defer();
+        PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE }); // .defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.MOLECULE_ARCHIVE}`)
       },
     },

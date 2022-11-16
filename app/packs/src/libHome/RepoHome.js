@@ -152,7 +152,7 @@ class RepoHome extends Component {
         <Col md={12} sm={12}>
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
             <Col md={3} sm={12}>
-              <RepoCardMoleculeArchive />
+              <RepoCardMoleculeArchive publishedStatics={this.state.publishedStatics} />
             </Col>
             <Col md={6} sm={12}>
               <RepoCardIntro lastPublished={this.state.lastPublished} />
