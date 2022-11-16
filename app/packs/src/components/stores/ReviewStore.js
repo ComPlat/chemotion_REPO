@@ -1,6 +1,7 @@
 import Aviator from 'aviator';
 import alt from '../alt';
 import ReviewActions from '../actions/ReviewActions';
+import PublicActions from '../actions/PublicActions';
 import ElementActions from '../actions/ElementActions';
 import UIActions from '../actions/UIActions';
 
@@ -27,6 +28,13 @@ class ReviewStore {
       handleUnitsSystem: ReviewActions.fetchUnitsSystem,
       handleReviewUpdate: ReviewActions.updateReview,
       handleFetchSample: ReviewActions.fetchSample,
+      handleClose: PublicActions.close,
+    });
+  }
+
+  handleClose({ deleteEl }) {
+    this.setState({
+      currentElement: null
     });
   }
 
