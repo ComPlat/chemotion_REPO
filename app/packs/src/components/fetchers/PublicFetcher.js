@@ -6,7 +6,6 @@ import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 export default class PublicFetcher {
   static fetchPublicMolecules(params = {}) {
-    console.log(params);
     const page = params.page || 1;
     const perPage = params.perPage || 10;
     const advFlag = params.advFlag || false;
@@ -14,7 +13,6 @@ export default class PublicFetcher {
     const paramAdvValue = params.advValue ? params.advValue.map(x => `&adv_val[]=${x.value}`).join('') : '';
     const listType = params.listType || RepoNavListTypes.SAMPLE;
     const api = `/api/v1/public/molecules.json?page=${page}&per_page=${perPage}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}&req_xvial=${listType === RepoNavListTypes.MOLECULE_ARCHIVE}`;
-
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json().then(json => ({
         molecules: json.molecules.map(m => new Molecule(m)),

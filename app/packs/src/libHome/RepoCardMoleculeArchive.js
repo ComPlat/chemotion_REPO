@@ -3,7 +3,12 @@ import { Button, Col, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CountUp from 'react-countup';
 // import Aviator from 'aviator';
 
-const RepoCardMoleculeArchive = () => {
+const RepoCardMoleculeArchive = (params) => {
+  const { publishedStatics } = params;
+  let count = 0;
+  if (publishedStatics && publishedStatics.length !== 0) {
+    count = publishedStatics.find(p => (p.el_type === 'sample' && p.ex_type === 'xvial'))?.e_cnt || 0;
+  }
   const tooltipView = <Tooltip id="id_icon_tip">Click to view chemical compounds</Tooltip>;
   return (
     <Row className="repo-statistic">
@@ -24,7 +29,7 @@ const RepoCardMoleculeArchive = () => {
         <Col lg={12} md={12} sm={12} className="panel-heading dtl">
           <div className="rr">
             <div className="cnt">
-              <CountUp end={1680} />
+              <CountUp end={count} />
             </div>
             <div className="italic-desc">Compounds</div>
           </div>

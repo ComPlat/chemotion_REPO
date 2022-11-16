@@ -723,7 +723,7 @@ module Chemotion
               review['history'] = review_history
             end
 
-            if checklist&.length.positive?
+            if checklist&.length&.positive?
               revst = review['checklist'] || {}
               checklist.each { |k, v|
                 revst[k] = v['status'] == true ? { status: v['status'], user: current_user.name, updated_at: Time.now.strftime('%d-%m-%Y %H:%M:%S') } : { status: false } unless revst[k] && revst[k]['status'] == v['status']
