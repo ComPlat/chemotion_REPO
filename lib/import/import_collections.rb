@@ -143,25 +143,34 @@ module Import
     end
 
     def import_collections
-      @data.fetch('Collection', {}).each do |uuid, fields|
-        # create the collection
-        collection = Collection.create!(fields.slice(
-          'label',
-          'sample_detail_level',
-          'reaction_detail_level',
-          'wellplate_detail_level',
-          'screen_detail_level',
-          'researchplan_detail_level',
-          'created_at',
-          'updated_at',
-        ).merge(
-          user_id: @current_user_id,
-          parent: fetch_ancestry('Collection', fields.fetch('ancestry')),
-        ))
+      # collection = Collection.find(@col_id)
+      collection = Collection.find_or_create_by(user_id: @current_user_id, label: 'Imported Data', is_locked: true, position: 3)
 
-        # add collection to @instances map
-        update_instances!(uuid, collection)
+      @uuid = nil
+
+      @data.fetch('Collection', {}).each do |uuid, fields|
+        @uuid = uuid
       end
+
+      # @data.fetch('Collection', {}).each do |uuid, fields|
+      #   # create the collection
+      #   collection = Collection.create!(fields.slice(
+      #     'label',
+      #     'sample_detail_level',
+      #     'reaction_detail_level',
+      #     'wellplate_detail_level',
+      #     'screen_detail_level',
+      #     'researchplan_detail_level',
+      #     'created_at',
+      #     'updated_at'
+      #   ).merge(
+      #     user_id: @current_user_id,
+      #     parent: fetch_ancestry('Collection', fields.fetch('ancestry'))
+      #   ))
+        # add collection to @instances map
+      # update_instances!(uuid, collection)
+      # end
+      update_instances!(@uuid, collection)
     end
 
     def gate_collection
