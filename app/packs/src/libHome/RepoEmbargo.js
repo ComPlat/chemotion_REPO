@@ -9,6 +9,7 @@ import EmbargoStore from '../components/stores/EmbargoStore';
 import { ElAspect } from './RepoCommon';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
+import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 
 const renderMenuItems = (bundles) => {
@@ -35,6 +36,7 @@ export default class RepoEmbargo extends Component {
       showConfirmModal: false,
       showMoveModal: false,
       showInfoModal: false,
+      showAuthorModal: false,
       showMetadataModal: false,
     };
     this.onChange = this.onChange.bind(this);
@@ -47,6 +49,8 @@ export default class RepoEmbargo extends Component {
     this.handleMoveClose = this.handleMoveClose.bind(this);
     this.handleInfoShow = this.handleInfoShow.bind(this);
     this.handleInfoClose = this.handleInfoClose.bind(this);
+    this.handleAuthorShow = this.handleAuthorShow.bind(this);
+    this.handleAuthorClose = this.handleAuthorClose.bind(this);
     this.handleMetadataShow = this.handleMetadataShow.bind(this);
     this.handleMetadataClose = this.handleMetadataClose.bind(this);
     this.loadBundles = this.loadBundles.bind(this);
@@ -67,7 +71,7 @@ export default class RepoEmbargo extends Component {
   onChange(state) {
     this.setState(prevState => ({ ...prevState, ...state }));
     if (this.state.selectEmbargo !== null) {
-      const vaildSelect = state.bundles.find(b => b.element_id === this.state.selectEmbargo.element_id);
+      const vaildSelect = this.state.bundles.find(b => b.element_id === this.state.selectEmbargo.element_id);
       if (typeof (vaildSelect) === 'undefined') {
         this.setState({ selectEmbargo: null });
       } else {
@@ -103,6 +107,14 @@ export default class RepoEmbargo extends Component {
 
   handleInfoClose() {
     this.setState({ showInfoModal: false });
+  }
+
+  handleAuthorShow() {
+    this.setState({ showAuthorModal: true });
+  }
+
+  handleAuthorClose() {
+    this.setState({ showAuthorModal: false });
   }
 
   handleMetadataShow() {
@@ -256,6 +268,13 @@ export default class RepoEmbargo extends Component {
           >
             <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
           </Button>
+          <RepoReviewAuthorsModal
+            element={selectEmbargo}
+            disabled={selectEmbargo === null || elements?.length === 0}
+            schemeOnly={false}
+            taggData={selectEmbargo?.taggable_data}
+          />
+
         </ButtonGroup>
       </div>
     );
@@ -359,6 +378,7 @@ export default class RepoEmbargo extends Component {
         >
           <RepoEmbargoDetails />
           { this.renderMoveModal() }
+
           <InfoModal
             showModal={showInfoModal}
             selectEmbargo={selectEmbargo}

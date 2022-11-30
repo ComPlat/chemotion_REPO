@@ -93,7 +93,7 @@ export default class PublishSampleModal extends Component {
   }
 
   loadBundles() {
-    EmbargoFetcher.fetchEmbargoCollections().then((result) => {
+    EmbargoFetcher.fetchEmbargoCollections(true).then((result) => {
       const cols = result.repository || [];
       this.setState({ bundles: cols });
     });

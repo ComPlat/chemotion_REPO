@@ -397,8 +397,12 @@ module Chemotion
       end
 
       desc 'Get embargo list'
-      get 'embargo_list' do
-        if User.reviewer_ids.include?(current_user.id)
+      post 'embargo_list' do
+        params do
+          optional :is_submit, type: Boolean, default: false, desc: 'Publication submission'
+        end
+
+        if User.reviewer_ids.include?(current_user.id) && params[:is_submit] == false
           es = Publication.where(element_type: 'Collection', state: 'pending').order("taggable_data->>'label' ASC")
         else
           if (current_user.type == 'Anonymous')
@@ -972,23 +976,24 @@ module Chemotion
         end
 
         post do
+
           pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType])
           declared_params = declared(params, include_missing: false)
 
-          et = ElementTag.find_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
+          et = ElementTag.find_or_create_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
           tagg_data = declared_params[:taggData] || {}
 
           tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
           tagg_data['affiliation_ids'] = tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq
           tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].include?(k.to_i) }
 
-          pub_taggable_data = pub.taggable_data
+          pub_taggable_data = pub.taggable_data || {}
           pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
           pub.update(taggable_data: pub_taggable_data)
 
-          et_taggable_data = et.taggable_data
-          pub_tag = et_taggable_data['publication']
-          pub_tag.deep_merge(tagg_data || {})
+          et_taggable_data = et.taggable_data || {}
+          pub_tag = et_taggable_data['publication'] || {}
+          pub_tag = pub_tag.deep_merge(tagg_data || {})
           et_taggable_data['publication'] = pub_tag
           et.update(taggable_data: et_taggable_data)
         end

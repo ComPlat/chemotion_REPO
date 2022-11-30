@@ -107,7 +107,6 @@ class EmbargoStore {
   }
 
   handleGetEmbargoElements(results) {
-    console.log(results);
     const { elements, current_user, embargo_id } = results;
     this.setState({
       selectEmbargoId: embargo_id,

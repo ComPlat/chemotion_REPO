@@ -243,17 +243,16 @@ export default class RepoReviewAuthorsModal extends React.Component {
       return true;
     }
 
-    RepositoryFetcher.saveRepoAuthors({ taggData, elementId: element.id, elementType: element.elementType })
+    RepositoryFetcher.saveRepoAuthors({ taggData, elementId: element.element_id || element.id, elementType: element.element_type || element.elementType })
       .then((result) => {
         if (result.error) {
           alert(result.error);
         } else {
           if (element.elementType === 'Reaction') {
             ReviewActions.displayReviewReaction(element.id);
-          } else {
+          } else if (element.elementType === 'Sample') {
             ReviewActions.displayReviewSample(element.id);
           }
-
           this.setState({ taggData: null, modalShow: false });
         }
       });
@@ -332,7 +331,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
   contributor() {
     const taggData = this.state.taggData || this.props.taggData;
-    const contributors = taggData.contributors || {};
+    const contributors = taggData?.contributors || {};
 
     const orcid = contributors.ORCID == null ? '' : <OrcidIcon orcid={contributors.ORCID} />;
     const aff = contributors.affiliations && Object.keys(contributors.affiliations).map(k => (
@@ -349,9 +348,9 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
   selectUsers() {
     const { selectedAuthors, collaborations } = this.state;
-    const taggData = this.state.taggData || this.props.taggData;
-    const creators = taggData.creators || [];
-    const author_ids = taggData.author_ids || [];
+    const taggData = this.state.taggData || this.props.taggData || {};
+    const creators = taggData?.creators || [];
+    const author_ids = taggData?.author_ids || [];
 
     const affiliations = taggData.affiliations || [];
     let defaultSelectedAuthors = [];
@@ -414,9 +413,9 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
   render() {
     const { modalShow, countries, organizations, departments, fields } = this.state;
+    const { element, disabled } = this.props;
     const taggData = this.state.taggData || this.props.taggData;
-    const creators = taggData.creators || [];
-
+    const creators = taggData?.creators || [];
     if (this.props.schemeOnly === true) {
       return '';
     }
@@ -443,20 +442,14 @@ export default class RepoReviewAuthorsModal extends React.Component {
       </tbody>
     ));
 
+    let btn = (<Button style={{ marginLeft: '5px' }} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-users" />&nbsp;Publication Authors</Button>);
+    if (element?.element_type === 'Collection' || disabled === true) {
+      btn = (<Button disabled={disabled} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-plus" />&nbsp;Add Authors</Button>);
+    }
+
     return (
-      <div>
-        <OverlayTrigger
-          placement="top"
-          overlay={<Tooltip id="tt_metadata">Authors</Tooltip>}
-        >
-          <Button
-            onClick={() => this.setState({ modalShow: true })}
-            style={{ marginLeft: '5px' }}
-          >
-            <i className="fa fa-users" />&nbsp;
-            Publication Authors
-          </Button>
-        </OverlayTrigger>
+      <span>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Authors</Tooltip>}>{btn}</OverlayTrigger>
         <Modal
           show={modalShow}
           onHide={this.handleClose}
@@ -506,25 +499,22 @@ export default class RepoReviewAuthorsModal extends React.Component {
             </ButtonToolbar>
           </Modal.Body>
         </Modal>
-      </div>
+      </span>
     );
   }
 }
 
 RepoReviewAuthorsModal.propTypes = {
-  element: PropTypes.shape({
-    id: PropTypes.number,
-    elementType: PropTypes.string
-  }).isRequired,
+  element: PropTypes.object.isRequired,
   isSubmitter: PropTypes.bool,
+  disabled: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   taggData: PropTypes.object.isRequired,
 };
 
-
-
 RepoReviewAuthorsModal.defaultProps = {
   isSubmitter: false,
   schemeOnly: false,
+  disabled: false,
   taggData: {}
 };
