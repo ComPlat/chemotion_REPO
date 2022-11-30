@@ -204,6 +204,7 @@ export default class RepoCollection extends Component {
             showModal={showInfoModal}
             selectEmbargo={selectEmbargo}
             onCloseFn={this.handleInfoClose}
+            editable={true}
           />
           <MetadataModal
             key="metadata-modal"
