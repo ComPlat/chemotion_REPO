@@ -1079,6 +1079,7 @@ module Chemotion
         end
 
         post do
+
           pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType])
           declared_params = declared(params, include_missing: false)
 

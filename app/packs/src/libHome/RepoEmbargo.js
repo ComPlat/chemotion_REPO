@@ -365,6 +365,7 @@ export default class RepoEmbargo extends Component {
         <Col className="review-element" md={currentElement ? 8 : 0}>
           <RepoEmbargoDetails currentElement={currentElement} />
           { this.renderMoveModal() }
+
           <InfoModal
             showModal={showInfoModal}
             selectEmbargo={selectEmbargo}
