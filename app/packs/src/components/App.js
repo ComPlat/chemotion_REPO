@@ -130,14 +130,12 @@ class App extends Component {
   renderReviewModal() {
     const { showReviewModal, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
     const rrr = {};
-    console.log(this.state);
     rrr.reviewLevel = reviewLevel;
     rrr.isSubmitter = isSubmitter;
     rrr.review = review;
     rrr.btnAction = btnAction;
     rrr.elementType = elementType;
     rrr.elementId = elementType === 'sample' ? currentElement?.sample?.id : currentElement?.reaction?.id;
-    console.log(rrr);
     return (
       <RepoReviewModal
         show={showReviewModal}

@@ -26,7 +26,7 @@ class PublicStore {
     this.articles = [];
     this.howto = {};
     this.howtos = [];
-    this.bundles = [];
+    // this.bundles = [];
     this.showReviewModal = false;
     this.reviewData = {};
 
@@ -72,6 +72,7 @@ class PublicStore {
     } else if (this.guestPage === 'review') {
       Aviator.navigate('/review', { silent: true });
     } else {
+      console.log('else..........');
       Aviator.navigate('/publications', { silent: true });
     }
   }

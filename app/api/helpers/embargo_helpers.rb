@@ -20,7 +20,7 @@ module EmbargoHelpers
       dois = []
 
       (ps + pr)&.each do |pu|
-        if pu.taggable_data['scheme_only']  == true
+        if pu.taggable_data['scheme_only'] == true
         else
           eids.push(pu.id)
           dois.push({ id: pu.id, element_type: pu.element_type, element_id: pu.element_id, doi: pu.doi.full_doi }) if pu.doi.present?
@@ -31,6 +31,15 @@ module EmbargoHelpers
           contributors = ctag["contributors"]
         end
       end
+
+      et = ElementTag.find_or_create_by(taggable_id: col_id, taggable_type: 'Collection')
+      et_taggable_data = et.taggable_data || {}
+      if et_taggable_data['publication'].present?
+        creators << et_taggable_data['publication']["creators"] if et_taggable_data['publication']["creators"] .present?
+        author_ids << et_taggable_data['publication']["author_ids"] if et_taggable_data['publication']["author_ids"] .present?
+        affiliation_ids << et_taggable_data['publication']["affiliation_ids"] if et_taggable_data['publication']["affiliation_ids"] .present?
+      end
+
       affiliations = Affiliation.where(id: affiliation_ids.flatten)
       affiliations_output = {}
       affiliations.each do |aff|

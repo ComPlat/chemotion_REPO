@@ -117,9 +117,19 @@ export default class EmbargoFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
-  static fetchEmbargoCollections() {
+  static fetchEmbargoCollections(isSubmit = false) {
     const api = '/api/v1/repository/embargo_list.json';
-    return fetch(api, { credentials: 'same-origin' })
+    return fetch(api, {
+      method: 'post',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        is_submit: isSubmit
+      })
+    })
       .then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }

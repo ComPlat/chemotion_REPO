@@ -68,7 +68,7 @@ const ElementDoi = (edois, isPublished) => {
   return (<div>{dois}</div>);
 };
 
-const InfoModal = ({ showModal, selectEmbargo, onCloseFn }) => {
+const InfoModal = ({ showModal, selectEmbargo, onCloseFn, editable=false }) => {
   const tag = (selectEmbargo && selectEmbargo.taggable_data) || {};
   const affiliationMap = AffiliationMap(tag.affiliation_ids);
   const doi = tag.col_doi || '';
