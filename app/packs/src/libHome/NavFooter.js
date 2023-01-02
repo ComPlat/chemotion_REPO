@@ -14,7 +14,7 @@ const NavFooter = () => {
         About
       </NavItem>
       <NavItem eventKey="24" role="button" tabIndex={-1} onClick={() => Aviator.navigate('/home/directive')} >
-        Terms of service
+        Directive
       </NavItem>
     </Nav>
   );

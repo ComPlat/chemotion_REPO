@@ -18,7 +18,7 @@ const NavHead = () => {
           About
         </MenuItem>
         <MenuItem eventKey="24" href="/home/directive">
-          Terms of service
+          Directive
         </MenuItem>
       </NavDropdown>
     </Navbar.Brand>
