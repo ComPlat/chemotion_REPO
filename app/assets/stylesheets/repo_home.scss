@@ -602,9 +602,8 @@ $bs-successcolor: #5cb85c;
       text-align: left;
       font-size: 1.5vmin;
       .tit {
-        color: $statisticcolor;
-        font-size: initial;
-        font-weight: initial;
+        font-size: 14px;
+        font-weight: 400;
         button {
           padding: unset;
         }
