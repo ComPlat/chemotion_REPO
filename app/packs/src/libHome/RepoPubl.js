@@ -24,6 +24,7 @@ import RepoNavListTypes from './RepoNavListTypes';
 const renderMoleculeArchive =
   (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
     <RepoMoleculeArchive
+      key={molecule.id}
       molecule={molecule}
       currentElement={currentElement}
       isPubElement={isPubElement}

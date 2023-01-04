@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Col, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CountUp from 'react-countup';
-// import Aviator from 'aviator';
+import Aviator from 'aviator';
 
 const RepoCardMoleculeArchive = (params) => {
   const { publishedStatics } = params;
@@ -29,7 +29,12 @@ const RepoCardMoleculeArchive = (params) => {
         <Col lg={12} md={12} sm={12} className="panel-heading dtl">
           <div className="rr">
             <div className="cnt">
-              <CountUp end={count} />
+              <CountUp end={count} />{' '}
+              <OverlayTrigger placement="top" overlay={tooltipView}>
+                <Button bsStyle="link" onClick={() => Aviator.navigate('/home/moleculeArchive')}>
+                  published
+                </Button>
+              </OverlayTrigger>
             </div>
             <div className="italic-desc">Compounds</div>
           </div>
