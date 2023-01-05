@@ -133,28 +133,41 @@ const CardAbout = () =>
       <h3>Copyright Notices</h3>
       <div style={{ textAlign: 'justify' }}>
         <p>
-          During the submission process, the submitter of a publication can choose,
-          between several CC licenses, which license to apply to the submitted work.
-          As the result, the content of this repository database
-          (including the submitted publication files) can be partly licensed under:
+          Unless otherwise stated, <i>chemotion-repository</i> and/or its contributors own
+          the intellectual property rights in the website and material on the website.
+          Subject to the license below, all these intellectual property rights are reserved.
+          <br />
+          Each content contributed and published by a user can be made available under one of
+          the following licenses that the contributing user has chosen during the publication
+          process:
         </p>
         <ul>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
-              <img src="/images/creative_common/cc-by-sa.svg" alt="cc-by-sa-4" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Attribution-ShareAlike 4.0 International License (default),
+            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by-sa.svg" style={{ borderStyle: 'none' }} alt="CC BY SA" />{' '}
+              Creative Commons Attribution-ShareAlike 4.0 International License
+            </a>
           </li>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
-              <img src="/images/creative_common/cc-by.svg" alt="cc-by-4" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Attribution 4.0 International License, and
+            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by/4.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by.svg" style={{ borderStyle: 'none' }} alt="CC BY" />{' '}
+              Creative Commons Attribution 4.0
+            </a>
           </li>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/publicdomain/zero/1.0/">
-              <img src="/images/creative_common/cc-zero.svg" alt="cc-zero" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Universal License
+            <a rel="license noopener noreferrer external" target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/cc-zero.svg" style={{ borderStyle: 'none' }} alt="CC0" />{' '}
+              CC0 1.0 Universal
+            </a>
           </li>
         </ul>
+        <p>
+          The contributing user may select the type of license during the publication process or
+          choose not to apply any license.
+          Contributors should be aware that some research data is not suitable for a licensing
+          option as it may be in the public domain. Public domain data should be added without a
+          license if this is apparent.
+        </p>
         <p>
           The source code of the chemotion REPOSITORY web server and client is currently licensed under the <a rel="license" href="https://github.com/ComPlat/chemotion_REPO/blob/chemotion_REPO/LICENSE" > GNU Affero General Public License v3.0</a>.
           The code can be found on <a href="https://github.com/complat/chemotion_REPO" target="_blank" rel="noopener noreferrer">github</a>.
