@@ -38,4 +38,4 @@ export default class RepoDirective extends React.Component {
       </Row>
     );
   }
-};
+}
