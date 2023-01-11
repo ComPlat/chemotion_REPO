@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-prop-types */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/no-multi-comp */
 import React, { Component } from 'react';
@@ -1168,7 +1169,7 @@ const ReactionTable = ({
           let title = null;
           if (currentType !== sample.mat_group) {
             currentType = sample.mat_group;
-            title = (<tr><td colSpan="7"><b>{matType}</b></td></tr>);
+            title = (currentType === 'products') ? (<tr><td colSpan="6"><b>{matType}</b></td><td style={{ fontWeight: 'bold', textAlign: 'center' }}>Yield</td></tr>) : (<tr><td colSpan="7"><b>{matType}</b></td></tr>);
           }
           return (
             <tbody key={i}>
@@ -1177,7 +1178,7 @@ const ReactionTable = ({
                 <td style={{ width: '26%' }}>{label}</td>
                 <td style={{ width: '12%' }}>{isPublic ? sample.sum_formular : sample.molecule.sum_formular}</td>
                 <td style={{ width: '14%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' ' : isPublic ? sample.dmv: !sample.has_molarity && !sample.has_density ? '- / -' : sample.has_density ? + sample.density + ' / - ' : ' - / ' + sample.molarity_value + sample.molarity_unit}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1, 3)}</td>
+                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1000, 3)}</td>
                 <td style={{ width: '12%', textAlign: 'center' }}>{materialCalc(sample.amount_l, 1000, 3)}</td>
                 <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_mol, 1000, 3)}</td>
                 <td style={{ width: '12%', textAlign: 'center' }}>{equivYield(sample, sumSolvents, isPublic)}</td>
@@ -1195,10 +1196,10 @@ const ReactionTable = ({
           <th>IUPAC</th>
           <th>Formula</th>
           <th style={{ textAlign: 'center' }}>Density/Molarity</th>
-          <th style={{ textAlign: 'center' }}>Amount(g)</th>
-          <th style={{ textAlign: 'center' }}>Volume(ml)</th>
-          <th style={{ textAlign: 'center' }}>Amount(mmol)</th>
-          <th style={{ textAlign: 'center' }}>Equiv/Yield</th>
+          <th style={{ textAlign: 'center' }}>Amount [mg]</th>
+          <th style={{ textAlign: 'center' }}>Volume [mL]</th>
+          <th style={{ textAlign: 'center' }}>Amount [mmol]</th>
+          <th style={{ textAlign: 'center' }}>Equiv</th>
         </tr>
       </thead>
       {dataRows}
@@ -1252,7 +1253,7 @@ const ReactionRinChiKey = ({
       </Panel>
     </span>
   );
-}
+};
 
 const ReactionProperties = ({
   reaction, toggle, show, bodyAttrs
@@ -1280,7 +1281,7 @@ const ReactionProperties = ({
       </Panel>
     </span>
   );
-}
+};
 
 const ReactionTlc = ({
   reaction, toggle, show, bodyAttrs
@@ -1313,7 +1314,7 @@ const ReactionTlc = ({
       </Panel>
     </span>
   );
-}
+};
 
 const InputFieldYield = (props) => {
   return (
