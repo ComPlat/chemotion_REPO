@@ -49,35 +49,53 @@ const CardAbout = () =>
     <div>
       <p>This development is part of the work of the Stefan Bräse group at the KIT.</p>
       <br />
-      <h1>Brief project description</h1>
+      <h2>Project description and mission</h2>
       <div style={{ textAlign: 'justify' }}>
-        <p>This project aims for the development of a freely available
-          infrastructure for research data management through the development
-          of two independent IT systems namely an electronic laboratory notebook
-          (ELN) and a chemistry web repository. With the tools that will be
-          established by our project group it will be possible to integrate
-          modern web-techniques into the routine work of academic researchers,
-           thereby increasing the amount of available data and improving the
-           quality of the information obtained and published.
+        <p>
+          The repository Chemotion was developed as a freely available infrastructure for the
+          publication of research data in order to increase the amount of available data and
+          to improve the quality of the information obtained and published.
         </p>
-        <p>The aim of this project is to make a substantial contribution to
-          securing research results in a cost-effective and simple manner,
-          and to optimally network in particular chemists (initially with each
-            other and in a second step with other disciplines). The new model
-             provides a combination of recording and documentation as well as
-             publication and storage of data sets.
+        <p>
+          The aim of Chemotion repository is to make a substantial contribution to securing
+          research results in a cost-efficient and simple manner, to support scientists, in
+          particular chemists, in their efforts to generate FAIR data and to increase the
+          visibility of research data in the domain of chemistry.
         </p>
-        <p>The necessary IT structures for modern documentation of
-          research data are developed within the scope of this project,
-          will be summarized in an electronic laboratory notebook (ELN) and will
-           be provided and distributed as OPEN SOURCE. The ELN will be completed
-           by the establishment and hosting of the web-repository, for which a
-           direct connection to the ELN enables a fast and easy transfer of
-           selected research information.
+        <p>
+          Free access to and free use of scientific data is one principle of this project
+          allowing and promoting collaborative work and scientific exchange among scientists.
+          We think that openly available data is the prerequisite for better science in terms
+          of more efficient and sustainable work but also with respect to a faster progress of
+          science in general.
         </p>
-        <p>Free access and free use by academic researchers is
-          one principle of this project allowing and promoting collaborative
-          work and scientific exchange among scientists.
+        <p>
+          To date, a lot of research data in chemistry is not made available due to technical
+          limitations and missing infrastructure. Chemotion repository can be used to overcome
+          these limitations - providing an option for the chemistry community to collect and
+          share data on chemical reactions and analytical data of chemical compounds. The
+          repository can be used to build data collections as an alternative to commercial
+          databases.
+        </p>
+        <p>
+          The mission of Chemotion repository is supported by its host institution KIT and
+          the science data center MoMaF as well as the National Research Data Infrastructure
+          NFDI4Chem.
+        </p>
+      </div>
+      <br />
+      <h2>Chemotion repository and related projects</h2>
+      <div style={{ textAlign: 'justify' }}>
+        <p>
+          Chemotion repository is one of several projects that are built to support research
+          data management in chemistry.
+          It can be used as stand alone software for the publication of research data or it
+          can be used in combination with chemotion ELN (electronic lab notebook), an open source
+          software for the documentation of research data. Both system are being developed on the
+          same technological level which allows a combination of recording and documentation as
+          well as publication and storage of data sets. The ELN enables a fast and easy transfer
+          of selected research data to the repository as a requirement for efficient strategies
+          for the publication of research data.
         </p>
       </div>
       <br />
@@ -115,28 +133,41 @@ const CardAbout = () =>
       <h3>Copyright Notices</h3>
       <div style={{ textAlign: 'justify' }}>
         <p>
-          During the submission process, the submitter of a publication can choose,
-          between several CC licenses, which license to apply to the submitted work.
-          As the result, the content of this repository database
-          (including the submitted publication files) can be partly licensed under:
+          Unless otherwise stated, <i>chemotion-repository</i> and/or its contributors own
+          the intellectual property rights in the website and material on the website.
+          Subject to the license below, all these intellectual property rights are reserved.
+          <br />
+          Each content contributed and published by a user can be made available under one of
+          the following licenses that the contributing user has chosen during the publication
+          process:
         </p>
         <ul>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
-              <img src="/images/creative_common/cc-by-sa.svg" alt="cc-by-sa-4" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Attribution-ShareAlike 4.0 International License (default),
+            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by-sa.svg" style={{ borderStyle: 'none' }} alt="CC BY SA" />{' '}
+              Creative Commons Attribution-ShareAlike 4.0 International License
+            </a>
           </li>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
-              <img src="/images/creative_common/cc-by.svg" alt="cc-by-4" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Attribution 4.0 International License, and
+            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by/4.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by.svg" style={{ borderStyle: 'none' }} alt="CC BY" />{' '}
+              Creative Commons Attribution 4.0
+            </a>
           </li>
           <li>
-            <a rel="license noreferrer noopener" target="_blank" href="https://creativecommons.org/publicdomain/zero/1.0/">
-              <img src="/images/creative_common/cc-zero.svg" alt="cc-zero" style={{ borderWidth: 0, height: '31px', width: '88px' }} />
-            </a> Creative Commons Universal License
+            <a rel="license noopener noreferrer external" target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/" >
+              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/cc-zero.svg" style={{ borderStyle: 'none' }} alt="CC0" />{' '}
+              CC0 1.0 Universal
+            </a>
           </li>
         </ul>
+        <p>
+          The contributing user may select the type of license during the publication process or
+          choose not to apply any license.
+          Contributors should be aware that some research data is not suitable for a licensing
+          option as it may be in the public domain. Public domain data should be added without a
+          license if this is apparent.
+        </p>
         <p>
           The source code of the chemotion REPOSITORY web server and client is currently licensed under the <a rel="license" href="https://github.com/ComPlat/chemotion_REPO/blob/chemotion_REPO/LICENSE" > GNU Affero General Public License v3.0</a>.
           The code can be found on <a href="https://github.com/complat/chemotion_REPO" target="_blank" rel="noopener noreferrer">github</a>.
