@@ -331,6 +331,7 @@ module Chemotion
         samples_data = serialize_samples(samples, page, search_by_method, molecule_sort)
         serialized_samples = samples_data[:data]
         samples_size = samples_data[:size]
+        samples.delete(0)
 
         ids = Kaminari.paginate_array(reactions).page(page).per(page_size)
         serialized_reactions = Reaction.includes(
@@ -340,21 +341,25 @@ module Chemotion
         ).find(ids).map {|s|
           ReactionSerializer.new(s).serializable_hash.deep_symbolize_keys
         }
+        reactions.delete(0)
+
         ids = Kaminari.paginate_array(wellplates).page(page).per(page_size)
         klass = "WellplateListSerializer::Level#{@dl_wp || 0}".constantize
         serialized_wellplates = Wellplate.includes(
           collections: :sync_collections_users,
           wells: :sample
-        ).find(ids).map{ |s|
+        ).find_by(id: ids)&.map{ |s|
           klass.new(s,1).serializable_hash.deep_symbolize_keys
         }
+        wellplates.delete(0)
 
         ids = Kaminari.paginate_array(screens).page(page).per(page_size)
         serialized_screens = Screen.includes(
           collections: :sync_collections_users
-        ).find(ids).map{ |s|
+        ).find_by(id: ids)&.map{ |s|
           ScreenSerializer.new(s).serializable_hash.deep_symbolize_keys
         }
+        screens.delete(0)
 
         result = {
           samples: {
