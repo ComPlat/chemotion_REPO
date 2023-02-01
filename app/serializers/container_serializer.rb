@@ -58,6 +58,9 @@ class ContainerSerializer < ActiveModel::Serializer
     unless ext_mdata['content'].blank?
       ext_mdata['content'] = JSON.parse(container.extended_metadata['content'])
     end
+    unless ext_mdata['hyperlinks'].blank?
+      ext_mdata['hyperlinks'] = JSON.parse(container.extended_metadata['hyperlinks'])
+    end
     ext_mdata
   end
 
