@@ -671,7 +671,7 @@ export default class RepoPubl extends Component {
 
     return (
       <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-        <Col md={isPubElement === true ? 4 : 12} >
+        <Col md={isPubElement === true ? 4 : 12}>
           <Navbar fluid className="navbar-custom" style={{ marginBottom: '0px' }}>
             <Navbar.Form pullLeft>
               {this.renderSearch()}
@@ -698,10 +698,7 @@ export default class RepoPubl extends Component {
             </Row>
           </div>
         </Col>
-        <Col
-          md={isPubElement === true}
-          // style={this.state.currentElement ? {} : { display: 'none' }}
-        >
+        <Col md={isPubElement === true ? 8 : 0}>
           <div className="public-element">
             <RepoElementDetails />
           </div>
