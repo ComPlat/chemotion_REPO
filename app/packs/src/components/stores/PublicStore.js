@@ -72,7 +72,6 @@ class PublicStore {
     } else if (this.guestPage === 'review') {
       Aviator.navigate('/review', { silent: true });
     } else {
-      console.log('else..........');
       Aviator.navigate('/publications', { silent: true });
     }
   }
@@ -146,12 +145,14 @@ class PublicStore {
 
   handleOpenRepositoryPage(page) {
     const pageType = page.split('=');
-    this.setState({ guestPage: pageType[0], currentElement: null, listType: pageType[1] });
+    this.setState({
+      guestPage: pageType[0], currentElement: null, listType: pageType[1], elementType: null
+    });
   }
 
   handleDisplayDataset(result) {
     this.setState({
-      guestPage: 'publications',
+      guestPage: 'dataset',
       elementType: 'dataset',
       queryId: result.id,
       currentElement: result.dataset
