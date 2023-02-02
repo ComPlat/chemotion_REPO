@@ -553,6 +553,7 @@ module Chemotion
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
           entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
+          entities[:embargo] = find_embargo_collection(publication)
           {
             reaction: entities,
             isSubmitter: publication.published_by == current_user.id,
@@ -586,7 +587,7 @@ module Chemotion
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
           # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
-
+          review_sample[:embargo] = find_embargo_collection(publication)
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
             sample: review_sample,

@@ -8,7 +8,8 @@ export default class RepoElementDetails extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentElement: {}
+      currentElement: PublicStore.getState().currentElement,
+      elementType: PublicStore.getState().elementType
     };
     this.onStoreChange = this.onStoreChange.bind(this);
   }

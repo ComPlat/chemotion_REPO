@@ -3,9 +3,9 @@ import ReactDOM from 'react-dom';
 import { Grid, Row } from 'react-bootstrap';
 import Aviator from 'aviator';
 
-import WelcomeMessage from '../components/WelcomeMessage';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
+import WelcomeMessage from '../components/WelcomeMessage';
 
 import initPublicRoutes from './homeRoutes';
 
@@ -28,6 +28,7 @@ import RepoHowToReader from './RepoHowToReader';
 import RepoHowToEditor from './RepoHowToEditor';
 
 import PublicStore from '../components/stores/PublicStore';
+import ReviewStore from '../components/stores/ReviewStore';
 import RepoElementDetails from './RepoElementDetails';
 import NavFooter from './NavFooter';
 import LoadingModal from '../components/common/LoadingModal';
@@ -52,12 +53,16 @@ class Home extends Component {
 
   componentDidMount() {
     PublicStore.listen(this.onChange);
+    ReviewStore.listen(this.onChange);
+  }
+
+  componentWillUnmount() {
+    PublicStore.unlisten(this.onChange);
+    ReviewStore.unlisten(this.onChange);
   }
 
   onChange(publicState) {
-    if (this.state.guestPage !== publicState.guestPage) {
-      this.setState(prevState => ({ ...prevState, guestPage: publicState.guestPage, listType: publicState.listType }));
-    }
+    this.setState(prevState => ({ ...prevState, ...publicState }));
   }
 
   renderGuestPage() {
@@ -105,21 +110,13 @@ class Home extends Component {
   renderNavFooter() {
     switch (this.state.guestPage) {
       case 'publications':
-        return <span />;
       case 'review':
-        return <span />;
       case 'embargo':
-        return <span />;
       case 'newseditor':
-        return <span />;
       case 'newsreader':
-        return <span />;
       case 'newsroom':
-        return <span />;
       case 'howtoeditor':
-        return <span />;
       case 'howtoreader':
-        return <span />;
       case 'howto':
         return <span />;
       default:
@@ -154,7 +151,6 @@ class Home extends Component {
 }
 
 const HomeWithDnD = DragDropContext(HTML5Backend)(Home);
-// $(document).ready(function() {
 document.addEventListener('DOMContentLoaded', () => {
   const domElement = document.getElementById('Home');
   if (domElement) {
