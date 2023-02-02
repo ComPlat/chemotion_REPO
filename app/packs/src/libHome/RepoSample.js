@@ -128,6 +128,9 @@ export default class RepoSample extends Component {
     const userInfo = sample.pub_info || '';
     const analyses = (sample.analyses && sample.analyses.children && sample.analyses.children.length > 0 && sample.analyses.children[0].children) || [];
     let embargo = (<span />);
+    let colDoiPrefix = (sample?.doi || '');
+    colDoiPrefix = typeof colDoiPrefix === 'object' ? sample.doi?.full_doi : colDoiPrefix;
+    colDoiPrefix = colDoiPrefix.split('/')[0];
     if (sample.embargo) {
       embargo = (
         <span>
@@ -135,7 +138,7 @@ export default class RepoSample extends Component {
           <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${sample.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
             <i className="fa fa-database" />&nbsp;&nbsp;{sample.embargo}
           </Button>
-          <ClipboardCopyBtn text={sample.embargo} />
+          <ClipboardCopyBtn text={`https://dx.doi.org/${colDoiPrefix}/collection/${sample.embargo}`} tooltip="retrieve and copy collection DOI" />
         </span>
       );
     }
