@@ -28,7 +28,7 @@ import RepoHowToReader from './RepoHowToReader';
 import RepoHowToEditor from './RepoHowToEditor';
 
 import PublicStore from '../components/stores/PublicStore';
-import ReviewStore from '../components/stores/ReviewStore';
+import RStore from '../components/stores/RStore';
 import RepoElementDetails from './RepoElementDetails';
 import NavFooter from './NavFooter';
 import LoadingModal from '../components/common/LoadingModal';
@@ -53,16 +53,19 @@ class Home extends Component {
 
   componentDidMount() {
     PublicStore.listen(this.onChange);
-    ReviewStore.listen(this.onChange);
+    RStore.listen(this.onChange);
   }
 
   componentWillUnmount() {
     PublicStore.unlisten(this.onChange);
-    ReviewStore.unlisten(this.onChange);
+    RStore.unlisten(this.onChange);
   }
 
   onChange(publicState) {
-    this.setState(prevState => ({ ...prevState, ...publicState }));
+    if ((publicState.guestPage && publicState.guestPage !== this.state.guestPage)
+    || (publicState.listType && publicState.listType !== this.state.listType)) {
+      this.setState(prevState => ({ ...prevState, guestPage: publicState.guestPage, listType: publicState.listType }));
+    }
   }
 
   renderGuestPage() {
