@@ -8,6 +8,24 @@ export default class RepoCollectionDetails extends Component {
     this.state = {
       element: props.element
     };
+    this.loadSVG = this.loadSVG.bind(this);
+  }
+
+  componentDidMount() {
+    const { element } = this.state;
+    if (element) {
+      this.loadSVG(element);
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.props.element !== prevProps.element) {
+      this.loadSVG(this.props.element);
+    }
+  }
+
+  loadSVG(element) {
+    this.setState({ element });
   }
 
   switchTypeRender() {
