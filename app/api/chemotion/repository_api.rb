@@ -554,8 +554,8 @@ module Chemotion
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
           entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
           embargo = find_embargo_collection(publication)
-          entities[:embargo] = embargo.label
-          entities[:embargoId] = embargo.id
+          entities[:embargo] = embargo&.label
+          entities[:embargoId] = embargo&.id
           {
             reaction: entities,
             isSubmitter: publication.published_by == current_user.id,
