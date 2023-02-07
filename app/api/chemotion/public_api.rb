@@ -625,11 +625,11 @@ module Chemotion
         helpers RepositoryHelpers
         after_validation do
           @embargo_collection = Collection.find(params[:collection_id])
-          pub = @embargo_collection.publication
-          error!('401 Unauthorized', 401) if pub.nil?
+          @pub = @embargo_collection.publication
+          error!('401 Unauthorized', 401) if @pub.nil?
 
-          if pub.state != 'completed'
-            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id || current_user.type == 'Anonymous')
+          if @pub.state != 'completed'
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || @pub.published_by == current_user.id || current_user.type == 'Anonymous')
           end
         end
         get do
@@ -655,7 +655,7 @@ module Chemotion
               published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
-          { elements: elements, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
+          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
         end
       end
 

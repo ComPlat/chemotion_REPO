@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import EmbargoStore from '../components/stores/EmbargoStore';
 import RepoReactionDetails from './RepoReactionDetails';
 import RepoSampleDetails from './RepoSampleDetails';
 
@@ -9,24 +8,10 @@ export default class RepoCollectionDetails extends Component {
     this.state = {
       element: props.element
     };
-    this.onStoreChange = this.onStoreChange.bind(this);
-  }
-
-  componentDidMount() {
-    EmbargoStore.listen(this.onStoreChange);
-  }
-
-  componentWillUnmount() {
-    EmbargoStore.unlisten(this.onStoreChange);
-  }
-
-  onStoreChange(state) {
-    this.setState(prevState => ({ ...prevState, ...state }));
   }
 
   switchTypeRender() {
-    const { element } = this.state;
-
+    const { element } = this.props;
     if (typeof (element) === 'undefined' || !element) {
       return <span />;
     }

@@ -448,10 +448,11 @@ export default class RepoReactionDetails extends Component {
     let embargo = (<span />);
     const colDoiPrefix = isPublished ? taggData.doi?.split('/')[0] : doi?.full_doi?.split('/')[0];
     if (reaction.embargo) {
+      const embargoLink = isPublished ? `/inchikey/collection/${reaction.embargo}` : `/embargo/reaction/${reaction.id}`;
       embargo = (
         <span>
           <b>Access to the DOI and metadata for the whole data collection: </b> &nbsp;
-          <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${reaction.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
+          <Button key="embargo-link-btn" bsStyle="link" href={embargoLink} target="_blank" style={{ padding: '0px 0px' }}>
             <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
           </Button>
           <ClipboardCopyBtn text={`https://dx.doi.org/${colDoiPrefix}/collection/${reaction.embargo}`} tooltip="retrieve and copy collection DOI" />

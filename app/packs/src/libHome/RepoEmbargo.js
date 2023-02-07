@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
-import { Table, Col, Row, Navbar, MenuItem, ButtonGroup, Button, ButtonToolbar, Modal, Panel } from 'react-bootstrap';
+import { Table, Col, Row, Navbar, ButtonGroup, Button, ButtonToolbar, Modal, Panel } from 'react-bootstrap';
 import Select from 'react-select';
 import { filter } from 'lodash';
 import RepoEmbargoDetails from './RepoEmbargoDetails';
-import PublicStore from '../components/stores/PublicStore';
 import EmbargoActions from '../components/actions/EmbargoActions';
 import EmbargoStore from '../components/stores/EmbargoStore';
 import { ElAspect } from './RepoCommon';
@@ -11,16 +10,6 @@ import { ConfirmModal } from '../components/common/ConfirmModal';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
 import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
-
-const renderMenuItems = (bundles) => {
-  if (bundles.length < 1) return <div />;
-  const menu = bundles.map(bundle => (
-    <MenuItem key={bundle.element_id} eventKey={bundle.element_id}>
-      {bundle.taggable_data && bundle.taggable_data.label}
-    </MenuItem>
-  ));
-  return menu;
-};
 
 export default class RepoEmbargo extends Component {
   constructor(props) {
@@ -53,31 +42,43 @@ export default class RepoEmbargo extends Component {
     this.handleAuthorClose = this.handleAuthorClose.bind(this);
     this.handleMetadataShow = this.handleMetadataShow.bind(this);
     this.handleMetadataClose = this.handleMetadataClose.bind(this);
-    this.loadBundles = this.loadBundles.bind(this);
     this.handleEmbargoChange = this.handleEmbargoChange.bind(this);
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onChange);
     EmbargoStore.listen(this.onChange);
-    this.loadBundles();
+    EmbargoActions.fetchEmbargoBundle();
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onChange);
     EmbargoStore.unlisten(this.onChange);
   }
 
   onChange(state) {
-    this.setState(prevState => ({ ...prevState, ...state }));
-    if (this.state.selectEmbargo !== null) {
-      const vaildSelect = this.state.bundles.find(b => b.element_id === this.state.selectEmbargo.element_id);
-      if (typeof (vaildSelect) === 'undefined') {
-        this.setState({ selectEmbargo: null });
+    let { selectEmbargo, elements, current_user, currentElement, bundles } = this.state;
+    if (state.selectEmbargo && state.selectEmbargo?.id !== this.state.selectEmbargo?.id) {
+      ({ selectEmbargo } = state);
+    }
+    if (state.elements) { ({ elements } = state); }
+    if (state.current_user) { ({ current_user } = state); }
+    if (!state.currentElement && !this.state.currentElement) {
+      currentElement = null;
+    } else {
+      ({ currentElement } = state);
+    }
+    if (state.bundles) { ({ bundles } = state); }
+    if ((selectEmbargo?.id !== this.state.selectEmbargo?.id)
+      || (JSON.stringify(elements) !== JSON.stringify(this.state.elements))
+      || (current_user?.id !== this.state.current_user?.id)
+      || (currentElement !== this.state.currentElement)
+      || (bundles !== this.state.bundles)) {
+      const validSelect = bundles?.find(b => b.element_id === selectEmbargo?.element_id);
+      if (typeof (validSelect) === 'undefined') {
+        this.setState(prevState => ({ ...prevState, selectEmbargo: null, elements, current_user, currentElement, bundles }));
       } else {
-        EmbargoFetcher.refreshEmbargo(this.state.selectEmbargo || {})
+        EmbargoFetcher.refreshEmbargo(selectEmbargo || {})
           .then((result) => {
-            if (!result.error) this.setState({ selectEmbargo: result });
+            if (!result.error) this.setState(prevState => ({ ...prevState, selectEmbargo: result, elements, current_user, currentElement, bundles }), EmbargoActions.getEmbargoElements(selectEmbargo.element_id));
           }).catch((errorMessage) => {
             console.log(errorMessage);
           });
@@ -89,12 +90,8 @@ export default class RepoEmbargo extends Component {
     this.setState({ showConfirmModal: true });
   }
 
-
   handleMoveShow(element) {
-    this.setState({
-      showMoveModal: true,
-      moveElement: element
-    });
+    this.setState({ showMoveModal: true, moveElement: element });
   }
 
   handleMoveClose() {
@@ -132,10 +129,11 @@ export default class RepoEmbargo extends Component {
   }
 
   handleElementSelection(eventKey, event) {
-    const { bundles } = this.state;
-    const selectEmbargo = bundles.find(b => b.element_id === eventKey.value);
-    this.setState({ selectEmbargo });
-    EmbargoActions.getEmbargoElements(eventKey.value);
+    if (eventKey) {
+      const { bundles } = this.state;
+      const selectEmbargo = bundles.find(b => b.element_id === eventKey.value);
+      this.setState({ selectEmbargo }, EmbargoActions.getEmbargoElements(eventKey.value));
+    }
   }
 
   handleEmbargoAccount() {
@@ -182,11 +180,6 @@ export default class RepoEmbargo extends Component {
     EmbargoActions.moveEmbargo(selectEmbargo.element_id, newEmbargo, moveElement);
     this.setState({ showMoveModal: false });
   }
-
-  loadBundles() {
-    EmbargoActions.fetchEmbargoBundle();
-  }
-
 
   rendeActionBtn(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
@@ -239,7 +232,6 @@ export default class RepoEmbargo extends Component {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
     const options = [];
-
     bundles?.forEach((col) => {
       const tag = col.taggable_data || {};
       options.push({ value: col.element_id, name: tag.label, label: tag.label });
@@ -252,6 +244,7 @@ export default class RepoEmbargo extends Component {
           onChange={e => this.handleElementSelection(e)}
           options={options}
           style={{ width: '180px' }}
+          clearable={false}
         />
         <ButtonGroup>
           <Button
@@ -286,8 +279,6 @@ export default class RepoEmbargo extends Component {
     );
   }
 
-
-  // render modal
   renderMoveModal() {
     const { showMoveModal, selectEmbargo, moveElement, bundles } = this.state;
     const options = [
@@ -347,7 +338,6 @@ export default class RepoEmbargo extends Component {
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
     const owner = (selectEmbargo && selectEmbargo.published_by) || 0;
-
     return (
       <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
         <Col md={currentElement ? 4 : 12} >
@@ -372,11 +362,8 @@ export default class RepoEmbargo extends Component {
             onClick={this.handleEmbargoDelete}
           />
         </Col>
-        <Col
-          className="review-element"
-          md={currentElement ? 8 : 0}
-        >
-          <RepoEmbargoDetails />
+        <Col className="review-element" md={currentElement ? 8 : 0}>
+          <RepoEmbargoDetails currentElement={currentElement} />
           { this.renderMoveModal() }
 
           <InfoModal

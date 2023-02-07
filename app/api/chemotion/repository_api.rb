@@ -390,7 +390,7 @@ module Chemotion
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
           elements.push(
             id: e.element_id, svg: svg_file, type: element_type, title: title, checklist: checklist || {}, isReviewer: User.reviewer_ids.include?(current_user&.id) || false,
-            published_by: u&.name, submitter_id: u&.id, submit_at: e.created_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
+            published_by: u&.name, submitter_id: u&.id, submit_at: e.created_at, state: e.state, embargo: find_embargo_collection(e).label, scheme_only: scheme_only
           )
         end
         { elements: elements }
@@ -553,11 +553,14 @@ module Chemotion
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
           entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
-          entities[:embargo] = find_embargo_collection(publication)
+          embargo = find_embargo_collection(publication)
+          entities[:embargo] = embargo&.label
+          entities[:embargoId] = embargo&.id
           {
             reaction: entities,
             isSubmitter: publication.published_by == current_user.id,
             reviewLevel: repo_review_level(params[:id], 'Reaction'),
+            selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
             pub_name: published_user&.name || ''
           }
         end
@@ -587,13 +590,16 @@ module Chemotion
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
           # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
-          review_sample[:embargo] = find_embargo_collection(publication)
+          embargo = find_embargo_collection(publication)
+          review_sample[:embargo] = embargo&.label
+          review_sample[:embargoId] = embargo&.id
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
             sample: review_sample,
             publication: publication,
             literatures: literatures,
             analyses: containers,
+            selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
             doi: Entities::DoiEntity.represent(sample.doi, serializable: true),
             pub_name: published_user&.name,
             isSubmitter: publication.published_by == current_user.id,

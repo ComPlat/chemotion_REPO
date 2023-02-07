@@ -36,8 +36,6 @@ class EmbargoActions {
     }
   }
 
-
-
   moveEmbargo(id, newEmbargo, element) {
     return (dispatch) => {
       EmbargoFetcher.moveEmbargo(id, newEmbargo, element)

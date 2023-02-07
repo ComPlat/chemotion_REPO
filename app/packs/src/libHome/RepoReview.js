@@ -8,7 +8,6 @@ import RepoReviewDetails from './RepoReviewDetails';
 import ReviewActions from '../components/actions/ReviewActions';
 import EmbargoActions from '../components/actions/EmbargoActions';
 import ReviewStore from '../components/stores/ReviewStore';
-import EmbargoStore from '../components/stores/EmbargoStore';
 import UserStore from '../components/stores/UserStore';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
 import LoadingActions from '../components/actions/LoadingActions';
@@ -100,15 +99,13 @@ export default class RepoReview extends Component {
 
   componentDidMount() {
     ReviewStore.listen(this.onChange);
-    EmbargoStore.listen(this.onChange);
     ReviewActions.getElements.defer();
-    EmbargoActions.getEmbargoBundle();
+    EmbargoActions.getEmbargoBundle(); // added to ReviewStore
     ReviewActions.fetchUnitsSystem.defer();
   }
 
   componentWillUnmount() {
     ReviewStore.unlisten(this.onChange);
-    EmbargoStore.unlisten(this.onChange);
   }
 
   onChange(state) {

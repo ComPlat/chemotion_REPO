@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, ButtonToolbar, OverlayTrigger, Tooltip, InputGroup, Checkbox, Table } from 'react-bootstrap';
@@ -505,7 +506,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
 }
 
 RepoReviewAuthorsModal.propTypes = {
-  element: PropTypes.object.isRequired,
+  element: PropTypes.object,
   isSubmitter: PropTypes.bool,
   disabled: PropTypes.bool,
   schemeOnly: PropTypes.bool,
