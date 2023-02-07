@@ -11,16 +11,6 @@ import { MetadataModal, InfoModal } from './RepoEmbargoModal';
 import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 
-const renderMenuItems = (bundles) => {
-  if (bundles.length < 1) return <div />;
-  const menu = bundles.map(bundle => (
-    <MenuItem key={bundle.element_id} eventKey={bundle.element_id}>
-      {bundle.taggable_data && bundle.taggable_data.label}
-    </MenuItem>
-  ));
-  return menu;
-};
-
 export default class RepoEmbargo extends Component {
   constructor(props) {
     super(props);

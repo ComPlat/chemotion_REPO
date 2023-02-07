@@ -3,8 +3,6 @@ import { Table, Col, Row, Navbar, ButtonGroup, Button, ButtonToolbar, OverlayTri
 import SVG from 'react-inlinesvg';
 import uuid from 'uuid';
 import RepoCollectionDetails from './RepoCollectionDetails';
-import EmbargoActions from '../components/actions/EmbargoActions';
-import EmbargoStore from '../components/stores/EmbargoStore';
 import PublicStore from '../components/stores/PublicStore';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
@@ -45,18 +43,18 @@ const infoTag = (el, la) => {
   );
 };
 
-const Elist = (cid, la, el, selectEmbargo = null, user = null, element = null) => {
+const Elist = (cid, la, el, selectEmbargo = null, user = null, element = null, fetchEmbargoElement = () => {}) => {
   if (!el) {
     return '';
   }
   let listClass;
   if (el.type === 'Reaction') {
-    listClass = (element !== null && element.publication && element.publication.element_id === el.id) ? 'list_focus_on' : 'list_focus_off';
+    listClass = (element?.publication && element.publication.element_id === el.id) ? 'list_focus_on' : 'list_focus_off';
   } else {
-    listClass = (element !== null && element.published_samples && element.published_samples[0] && element.published_samples[0].id === el.id) ? 'list_focus_on' : 'list_focus_off';
+    listClass = (element?.published_samples && element.published_samples[0] && element.published_samples[0].sample_id === el.id) ? 'list_focus_on' : 'list_focus_off';
   }
   return (
-    <Col md={element ? 12 : 6} key={`list-embargo-${el.id}`} onClick={() => EmbargoActions.getEmbargoElement(cid, el)}>
+    <Col md={element ? 12 : 6} key={`list-embargo-${el.id}`} onClick={() => fetchEmbargoElement(cid, el)}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${el.id}`}>
           <Col md={12}>
@@ -67,7 +65,6 @@ const Elist = (cid, la, el, selectEmbargo = null, user = null, element = null) =
       </div>
     </Col>
   );
-
 };
 
 export default class RepoCollection extends Component {
@@ -75,7 +72,6 @@ export default class RepoCollection extends Component {
     super(props);
     this.state = {
       elements: [],
-      current_user: {},
       element: null,
       selectEmbargo: null,
       showInfoModal: false,
@@ -86,15 +82,15 @@ export default class RepoCollection extends Component {
     this.handleInfoClose = this.handleInfoClose.bind(this);
     this.handleMetadataShow = this.handleMetadataShow.bind(this);
     this.handleMetadataClose = this.handleMetadataClose.bind(this);
+    this.fetchEmbargoElement = this.fetchEmbargoElement.bind(this);
+    this.fetchEmbargoElements = this.fetchEmbargoElements.bind(this);
   }
 
   componentDidMount() {
-    EmbargoStore.listen(this.onChange);
     PublicStore.listen(this.onChange);
   }
 
   componentWillUnmount() {
-    EmbargoStore.unlisten(this.onChange);
     PublicStore.unlisten(this.onChange);
   }
 
@@ -102,15 +98,41 @@ export default class RepoCollection extends Component {
     if (state.elements && state.elements != this.state.elements) {
       this.setState({ elements: state.elements });
     }
-    // this.setState(prevState => ({ ...prevState, ...state }));
     if (state.selectEmbargo && state.selectEmbargo != this.state.selectEmbargo) {
       this.setState({ selectEmbargo: state.selectEmbargo });
-      EmbargoActions.getEmbargoElements(state.selectEmbargo.element_id);
+      this.fetchEmbargoElements(state.selectEmbargo.element_id);
     }
 
     if (state.element !== this.state.element) {
       this.setState({ element: state.element });
     }
+  }
+
+  fetchEmbargoElements(embargoId) {
+    EmbargoFetcher.fetchEmbargoElements(embargoId)
+      .then((result) => {
+        if (!result.error) {
+          const {
+            elements, current_user, embargo
+          } = result;
+          this.setState({
+            selectEmbargo: embargo,
+            elements,
+            currentUser: current_user
+          });
+        }
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+
+  fetchEmbargoElement(cid, el) {
+    EmbargoFetcher.fetchEmbargoElement(cid, el)
+      .then((result) => {
+        if (!result.error) { this.setState({ element: result }); }
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
   }
 
   handleInfoShow() {
@@ -188,14 +210,12 @@ export default class RepoCollection extends Component {
           <div className="public-list" style={{ backgroundColor: '#efefef' }}>
             <Table className="sample-entries">
               <tbody>
-                {((typeof (elements) !== 'undefined' && elements) || []).map(r => Elist(id, la, r, selectEmbargo, currentUser, element)) }
+                {((typeof (elements) !== 'undefined' && elements) || []).map(r => Elist(id, la, r, selectEmbargo, currentUser, element, this.fetchEmbargoElement)) }
               </tbody>
             </Table>
           </div>
         </Col>
-        <Col
-          md={element ? 8 : 0}
-        >
+        <Col md={element ? 8 : 0}>
           <div className="public-element">
             <RepoCollectionDetails element={element} />
           </div>
@@ -204,7 +224,7 @@ export default class RepoCollection extends Component {
             showModal={showInfoModal}
             selectEmbargo={selectEmbargo}
             onCloseFn={this.handleInfoClose}
-            editable={true}
+            editable
           />
           <MetadataModal
             key="metadata-modal"
