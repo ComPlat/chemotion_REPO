@@ -1,8 +1,7 @@
 import Aviator from 'aviator';
 import alt from '../alt';
 import EmbargoActions from '../actions/EmbargoActions';
-import ElementActions from '../actions/ElementActions';
-import UIActions from '../actions/UIActions';
+import PublicActions from '../actions/PublicActions';
 
 class EmbargoStore {
   constructor() {
@@ -15,28 +14,30 @@ class EmbargoStore {
     this.element = null;
     // this.elements = [];
 
-
     this.bindListeners({
       handleEmbargoMove: EmbargoActions.moveEmbargo,
       handleEmbargoAssign: EmbargoActions.assignEmbargo,
       handleEmbargoRelease: [EmbargoActions.releaseEmbargo, EmbargoActions.deleteEmbargo],
       handleFetchBundles: EmbargoActions.fetchEmbargoBundle,
-      handledisplayEmbargo: EmbargoActions.displayEmbargo,
-      handleRefreshEmbargoBundles: EmbargoActions.getEmbargoBundle,
       handleDisplayEmbargoElement: EmbargoActions.displayReviewEmbargo,
       handleGetEmbargoElements: EmbargoActions.getEmbargoElements,
       handleGetEmbargoElement: EmbargoActions.getEmbargoElement,
+      handleClose: PublicActions.close,
     });
+  }
+
+  handleClose({ deleteEl }) {
+    this.setState({ currentElement: null });
   }
 
   handleDisplayEmbargoElement(result) {
     const publication = result?.element?.publication || {};
-
     if (result?.element?.reviewLevel === 0) {
       Aviator.navigate('/home/');
     } else {
       const elementType = (result.element.sample ? 'sample' : 'reaction');
       this.setState({
+        selectEmbargo: result.element.selectEmbargo,
         guestPage: 'embargo',
         elementType,
         queryId: result.id,
@@ -46,10 +47,6 @@ class EmbargoStore {
       });
       Aviator.navigate(`/embargo/${elementType}/${result.id}`, { silent: true });
     }
-  }
-
-  handledisplayEmbargo(results) {
-    console.log(results);
   }
 
   handleGetEmbargoElement(results) {
@@ -102,14 +99,15 @@ class EmbargoStore {
     // eslint-disable-next-line camelcase
     const { current_user } = result;
     this.setState({
-      bundles, current_user, elements: [], element: null
+      guestPage: 'embargo', bundles, current_user, elements: [], element: null
     });
   }
 
   handleGetEmbargoElements(results) {
-    const { elements, current_user, embargo_id } = results;
+    const { elements, current_user, embargo_id, embargo } = results;
     this.setState({
       selectEmbargoId: embargo_id,
+      selectEmbargo: embargo,
       elements,
       element: null,
       currentUser: current_user

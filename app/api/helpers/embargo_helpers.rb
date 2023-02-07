@@ -89,7 +89,7 @@ module EmbargoHelpers
 
   def find_embargo_collection(root_publication)
     has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.find(root_publication.published_by).publication_embargo_collection.id }
-    has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first.label : ''
+    has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first : OpenStruct.new(label: '')
   end
 
   def create_embargo()

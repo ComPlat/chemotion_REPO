@@ -3,7 +3,6 @@ import { Table, Col, Row, Navbar, MenuItem, ButtonGroup, Button, ButtonToolbar, 
 import Select from 'react-select';
 import { filter } from 'lodash';
 import RepoEmbargoDetails from './RepoEmbargoDetails';
-import PublicStore from '../components/stores/PublicStore';
 import EmbargoActions from '../components/actions/EmbargoActions';
 import EmbargoStore from '../components/stores/EmbargoStore';
 import { ElAspect } from './RepoCommon';
@@ -53,31 +52,84 @@ export default class RepoEmbargo extends Component {
     this.handleAuthorClose = this.handleAuthorClose.bind(this);
     this.handleMetadataShow = this.handleMetadataShow.bind(this);
     this.handleMetadataClose = this.handleMetadataClose.bind(this);
-    this.loadBundles = this.loadBundles.bind(this);
     this.handleEmbargoChange = this.handleEmbargoChange.bind(this);
   }
 
   componentDidMount() {
-    PublicStore.listen(this.onChange);
     EmbargoStore.listen(this.onChange);
-    this.loadBundles();
+    EmbargoActions.fetchEmbargoBundle();
   }
 
   componentWillUnmount() {
-    PublicStore.unlisten(this.onChange);
     EmbargoStore.unlisten(this.onChange);
   }
 
   onChange(state) {
-    this.setState(prevState => ({ ...prevState, ...state }));
-    if (this.state.selectEmbargo !== null) {
-      const vaildSelect = this.state.bundles.find(b => b.element_id === this.state.selectEmbargo.element_id);
-      if (typeof (vaildSelect) === 'undefined') {
-        this.setState({ selectEmbargo: null });
+    let { selectEmbargo, elements, current_user, currentElement, bundles } = this.state;
+    // console.log(currentElement);
+    if (state.selectEmbargo && state.selectEmbargo?.id !== this.state.selectEmbargo?.id) {
+      ({ selectEmbargo } = state);
+    }
+    if (state.elements) { ({ elements } = state); }
+    if (state.current_user) { ({ current_user } = state); }
+    if (!state.currentElement && !this.state.currentElement) {
+      // console.log('111');
+      currentElement = null;
+    } else {
+      // console.log(JSON.stringify(state.currentElement));
+      ({ currentElement } = state);
+    }
+    if (state.bundles) { ({ bundles } = state); }
+    console.log('onChange====================');
+    // console.log(state.selectEmbargo);
+    // console.log(state.selectEmbargo?.id);
+    console.log('1');
+    console.log(selectEmbargo?.id !== this.state.selectEmbargo?.id);
+
+    console.log(selectEmbargo?.id);
+    console.log(state.selectEmbargo?.id);
+    console.log(this.state.selectEmbargo?.id);
+    // console.log((state.selectEmbargo && state.selectEmbargo?.id !== this.state.selectEmbargo?.id));
+    console.log('2');
+    console.log(state.elements?.length);
+    console.log(this.state.elements?.length);
+    // console.log((elements?.length !== this.state.elements?.length));
+    console.log(JSON.stringify(elements) !== JSON.stringify(this.state.elements));
+    console.log('3');
+    console.log((current_user?.id !== this.state.current_user?.id));
+    console.log('4');
+    console.log((currentElement !== this.state.currentElement));
+    // console.log(currentElement);
+    // console.log(state.currentElement);
+    // console.log(this.state.currentElement);
+    console.log('5');
+    // console.log(bundles);
+    // console.log(state.bundles);
+    // console.log(this.state.bundles);
+    console.log((bundles !== this.state.bundles));
+
+    // if (!currentElement) {
+    //   console.log('no currentElement');
+    //   this.setState(currentElement);
+    // } else
+    if ((selectEmbargo?.id !== this.state.selectEmbargo?.id)
+      || (JSON.stringify(elements) !== JSON.stringify(this.state.elements))
+      || (current_user?.id !== this.state.current_user?.id)
+      || (currentElement !== this.state.currentElement)
+      || (bundles !== this.state.bundles)) {
+      console.log('update state');
+      const validSelect = bundles?.find(b => b.element_id === selectEmbargo?.element_id);
+      // console.log(validSelect);
+      if (typeof (validSelect) === 'undefined') {
+        console.log('no selected embargo');
+        this.setState(prevState => ({ ...prevState, selectEmbargo: null, elements, current_user, currentElement, bundles }));
       } else {
-        EmbargoFetcher.refreshEmbargo(this.state.selectEmbargo || {})
+        EmbargoFetcher.refreshEmbargo(selectEmbargo || {})
           .then((result) => {
-            if (!result.error) this.setState({ selectEmbargo: result });
+            console.log('refreshEmbargo');
+            // console.log(JSON.stringify(currentElement))
+            console.log(result);
+            if (!result.error) this.setState(prevState => ({ ...prevState, selectEmbargo: result, elements, current_user, currentElement, bundles }), EmbargoActions.getEmbargoElements(selectEmbargo.element_id));
           }).catch((errorMessage) => {
             console.log(errorMessage);
           });
@@ -132,10 +184,11 @@ export default class RepoEmbargo extends Component {
   }
 
   handleElementSelection(eventKey, event) {
-    const { bundles } = this.state;
-    const selectEmbargo = bundles.find(b => b.element_id === eventKey.value);
-    this.setState({ selectEmbargo });
-    EmbargoActions.getEmbargoElements(eventKey.value);
+    if (eventKey) {
+      const { bundles } = this.state;
+      const selectEmbargo = bundles.find(b => b.element_id === eventKey.value);
+      this.setState({ selectEmbargo }, EmbargoActions.getEmbargoElements(eventKey.value));
+    }
   }
 
   handleEmbargoAccount() {
@@ -181,10 +234,6 @@ export default class RepoEmbargo extends Component {
     const { selectEmbargo, moveElement, newEmbargo } = this.state;
     EmbargoActions.moveEmbargo(selectEmbargo.element_id, newEmbargo, moveElement);
     this.setState({ showMoveModal: false });
-  }
-
-  loadBundles() {
-    EmbargoActions.fetchEmbargoBundle();
   }
 
 
@@ -239,7 +288,6 @@ export default class RepoEmbargo extends Component {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
     const options = [];
-
     bundles?.forEach((col) => {
       const tag = col.taggable_data || {};
       options.push({ value: col.element_id, name: tag.label, label: tag.label });
@@ -252,6 +300,7 @@ export default class RepoEmbargo extends Component {
           onChange={e => this.handleElementSelection(e)}
           options={options}
           style={{ width: '180px' }}
+          clearable={false}
         />
         <ButtonGroup>
           <Button
@@ -347,7 +396,6 @@ export default class RepoEmbargo extends Component {
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
     const owner = (selectEmbargo && selectEmbargo.published_by) || 0;
-
     return (
       <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
         <Col md={currentElement ? 4 : 12} >
@@ -376,7 +424,7 @@ export default class RepoEmbargo extends Component {
           className="review-element"
           md={currentElement ? 8 : 0}
         >
-          <RepoEmbargoDetails />
+          <RepoEmbargoDetails currentElement={currentElement} />
           { this.renderMoveModal() }
 
           <InfoModal
