@@ -132,10 +132,11 @@ export default class RepoSample extends Component {
     colDoiPrefix = typeof colDoiPrefix === 'object' ? sample.doi?.full_doi : colDoiPrefix;
     colDoiPrefix = colDoiPrefix.split('/')[0];
     if (sample.embargo) {
+      const embargoLink = isPublished ? `/inchikey/collection/${sample.embargo}` : `/embargo/sample/${sample.id}`;
       embargo = (
         <span>
           <b>Access to the DOI and metadata for the whole data collection: </b> &nbsp;
-          <Button key="embargo-link-btn" bsStyle="link" href={`/inchikey/collection/${sample.embargo}`} target="_blank" style={{ padding: '0px 0px' }}>
+          <Button key="embargo-link-btn" bsStyle="link" href={embargoLink} target="_blank" style={{ padding: '0px 0px' }}>
             <i className="fa fa-database" />&nbsp;&nbsp;{sample.embargo}
           </Button>
           <ClipboardCopyBtn text={`https://dx.doi.org/${colDoiPrefix}/collection/${sample.embargo}`} tooltip="retrieve and copy collection DOI" />

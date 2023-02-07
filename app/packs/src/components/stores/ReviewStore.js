@@ -2,8 +2,7 @@ import Aviator from 'aviator';
 import alt from '../alt';
 import ReviewActions from '../actions/ReviewActions';
 import PublicActions from '../actions/PublicActions';
-import ElementActions from '../actions/ElementActions';
-import UIActions from '../actions/UIActions';
+import EmbargoActions from '../actions/EmbargoActions';
 
 class ReviewStore {
   constructor() {
@@ -29,6 +28,8 @@ class ReviewStore {
       handleReviewUpdate: ReviewActions.updateReview,
       handleFetchSample: ReviewActions.fetchSample,
       handleClose: PublicActions.close,
+      handleRefreshEmbargoBundles: EmbargoActions.getEmbargoBundle,
+      handleEmbargoAssign: EmbargoActions.assignEmbargo,
     });
   }
 
@@ -36,6 +37,33 @@ class ReviewStore {
     this.setState({
       currentElement: null
     });
+  }
+
+  handleEmbargoAssign(result) {
+    if (result.error) {
+      alert(result.error);
+    } else {
+      alert(result.message);
+      // refresh embargo list
+      EmbargoActions.getEmbargoBundle();
+      // refresh element list
+      PublicActions.getElements(
+        this.selectType, this.selectState, this.searchType,
+        this.searchValue, this.page, this.perPage
+      );
+    }
+  }
+
+  handleRefreshEmbargoBundles(result) {
+    const cols = result.repository;
+    const { current_user } = result;
+    const bundles = [];
+    if (cols && cols.length > 0) {
+      cols.forEach((col) => {
+        bundles.push(col);
+      });
+    }
+    this.setState({ bundles, current_user });
   }
 
   handleUnitsSystem(result) {
