@@ -1,7 +1,6 @@
 import 'whatwg-fetch';
 
 export default class EmbargoFetcher {
-
   static fetchEmbargoElements(id) {
     const api = `/api/v1/public/col_list.json?collection_id=${id}`;
     return fetch(api, { credentials: 'same-origin' })
@@ -10,7 +9,8 @@ export default class EmbargoFetcher {
   }
 
   static fetchEmbargoElement(cid, el) {
-    const api = `/api/v1/public/col_element.json?collection_id=${cid}&el_type=${el.type}&el_id=${el.id}`;
+    const api =
+      `/api/v1/public/col_element.json?collection_id=${cid}&el_type=${el.type}&el_id=${el.id}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
@@ -22,7 +22,6 @@ export default class EmbargoFetcher {
       .then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
-
 
   static deleteEmbargo(id) {
     const api = '/api/v1/repository/embargo/delete';
@@ -37,6 +36,7 @@ export default class EmbargoFetcher {
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
+
   static moveEmbargo(id, newEmbargo, element) {
     const api = '/api/v1/repository/embargo/move';
     return fetch(api, {
@@ -50,6 +50,7 @@ export default class EmbargoFetcher {
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }
+
   static refreshEmbargo(emb) {
     const api = '/api/v1/repository/embargo/refresh';
     return fetch(api, {
@@ -80,10 +81,7 @@ export default class EmbargoFetcher {
     return fetch(api, {
       credentials: 'same-origin',
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection_id: id })
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
@@ -94,10 +92,7 @@ export default class EmbargoFetcher {
     return fetch(api, {
       credentials: 'same-origin',
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection_id: id })
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
@@ -122,10 +117,7 @@ export default class EmbargoFetcher {
     return fetch(api, {
       method: 'post',
       credentials: 'same-origin',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({
         is_submit: isSubmit
       })

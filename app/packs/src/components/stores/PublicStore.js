@@ -249,7 +249,6 @@ class PublicStore {
 
 
   handleDisplayCollection(collectionList) {
-    // console.log(collectionList.colData && collectionList.colData.col);
     this.setState({
       guestPage: 'collection',
       elementType: 'collection',

@@ -629,7 +629,7 @@ module Chemotion
           error!('401 Unauthorized', 401) if @pub.nil?
 
           if @pub.state != 'completed'
-            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id || current_user.type == 'Anonymous')
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || @pub.published_by == current_user.id || current_user.type == 'Anonymous')
           end
         end
         get do

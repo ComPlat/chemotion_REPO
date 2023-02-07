@@ -47,7 +47,7 @@ class ReviewStore {
       // refresh embargo list
       EmbargoActions.getEmbargoBundle();
       // refresh element list
-      PublicActions.getElements(
+      ReviewActions.getElements(
         this.selectType, this.selectState, this.searchType,
         this.searchValue, this.page, this.perPage
       );
