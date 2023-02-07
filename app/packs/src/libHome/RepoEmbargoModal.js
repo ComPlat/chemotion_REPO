@@ -77,34 +77,33 @@ const InfoModal = ({ showModal, selectEmbargo, onCloseFn, editable=false }) => {
   const author_ids = tag.author_ids || [];
   const id = (selectEmbargo && selectEmbargo.element_id) || 0;
   return (
-    <div>
-      <Modal
-        show={showModal}
-        onHide={onCloseFn}
-        dialogClassName="news-preview-dialog"
-      >
-        <Modal.Body style={{ overflow: 'auto' }}>
-          <div><h4><Label>{la}</Label></h4></div>
-          <div>
-            <ContributorInfo contributor={tag.contributors} />
-            <h5>
-              <b>Author{author_ids.length > 1 ? 's' : ''}: </b>
-              <AuthorList creators={tag.creators} affiliationMap={affiliationMap} />
-            </h5>
-            <AffiliationList
-              affiliations={tag.affiliations}
-              affiliationMap={affiliationMap}
-            />
-            <Doi type="collection" id={id} doi={doi} isPublished={isPublished} />
-            {ElementDoi(tag.element_dois, isPublished)}
-          </div>
-          <br />
-          <ButtonToolbar>
-            <Button bsStyle="warning" onClick={onCloseFn}> Close</Button>
-          </ButtonToolbar>
-        </Modal.Body>
-      </Modal>
-    </div>
+    <Modal show={showModal} onHide={onCloseFn} bsSize="large">
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <h4><Label>{la}</Label></h4>
+          <ContributorInfo contributor={tag.contributors} />
+          <h5>
+            <b>Author{author_ids.length > 1 ? 's' : ''}: </b>
+            <AuthorList creators={tag.creators} affiliationMap={affiliationMap} />
+          </h5>
+          <AffiliationList
+            affiliations={tag.affiliations}
+            affiliationMap={affiliationMap}
+          />
+          <Doi type="collection" id={id} doi={doi} isPublished={isPublished} />
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body style={{ height: '50vh', overflow: 'auto' }}>
+        <div>
+          {ElementDoi(tag.element_dois, isPublished)}
+        </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <ButtonToolbar>
+          <Button bsStyle="warning" onClick={onCloseFn}> Close</Button>
+        </ButtonToolbar>
+      </Modal.Footer>
+    </Modal>
   );
 };
 
