@@ -439,7 +439,7 @@ module Chemotion
             sync_col_ids.each do |sync_col_id|
               sync_col = SyncCollectionsUser.find_by(id: sync_col_id, user_id: current_user.id)
               col = Collection.find(sync_col.collection_id) if sync_col.present?
-              collection_ids << sync_col.collection_id if col.present? && col.parent.present? && ['My Published Elements', 'Embargoed Publications'].include?(col.parent&.label)
+              collection_ids << sync_col.collection_id if col.present? && col.parent.present? && ['My Published Elements', 'Published Elements', 'Embargoed Publications'].include?(col.parent&.label)
             end
           end
 
