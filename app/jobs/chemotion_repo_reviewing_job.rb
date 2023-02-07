@@ -84,6 +84,13 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
     else
       return
     end
+  rescue StandardError => e
+    Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name}  mail_users error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+    TXT
+
   end
 
   # NB: NOT USED?
