@@ -10,5 +10,6 @@ if File.exist? Rails.root.join('config', 'converter.yml')
     config.converter.secret_key = converter_config[:secret_key]
     config.converter.timeout = converter_config[:timeout]
     config.converter.ext = converter_config[:ext]
+    config.converter.jdx_format = converter_config[:jdx_format]
   end
 end

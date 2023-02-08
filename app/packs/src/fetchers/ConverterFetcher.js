@@ -1,5 +1,7 @@
 import 'whatwg-fetch';
 
+const converter_app_url = '/api/v1/converter';
+
 export default class ConverterFetcher {
   static deleteProfile(profile) {
     const requestOptions = { method: 'DELETE' };
