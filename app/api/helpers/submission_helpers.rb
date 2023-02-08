@@ -45,7 +45,7 @@ module SubmissionHelpers
     ap = Publication.create!(
       state: Publication::STATE_PENDING,
       element: sample,
-      doi: sample.doi,
+      doi: sample&.doi,
       published_by: root.published_by,
       parent: root,
       taggable_data: root.taggable_data
