@@ -1,7 +1,6 @@
 import Aviator from 'aviator';
 import alt from '../alt';
 import PublicActions from '../actions/PublicActions';
-import ElementActions from '../actions/ElementActions';
 import UIActions from '../actions/UIActions';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
@@ -161,8 +160,7 @@ class PublicStore {
   }
 
   handleDisplayMolecule(moleculeList) {
-    let cb = () => PublicActions.getMolecules({ listType: moleculeList.listType });
-    if (this.molecules.length > 0) cb = () => {};
+    const cb = () => PublicActions.getMolecules({ listType: moleculeList.listType });
     this.setState({
       guestPage: 'publications',
       elementType: 'molecule',
@@ -177,8 +175,7 @@ class PublicStore {
   handleDisplayReaction(reactionList) {
     const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
       RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
-    let cb = () => PublicActions.getReactions();
-    if (this.reactions.length > 0) cb = () => {};
+    const cb = () => PublicActions.getReactions();
     this.setState({
       guestPage: 'publications',
       elementType: 'reaction',
@@ -188,8 +185,6 @@ class PublicStore {
     }, cb());
     Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
   }
-
-
 
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });
