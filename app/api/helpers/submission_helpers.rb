@@ -14,9 +14,9 @@ module SubmissionHelpers
     coauthor_ids = []
     coauthors.each do |coa|
       val = coa.strip
-      p = User.where(type: %w[Person Collaborator]).where.not(confirmed_at: nil).where('id = ? or email = ?', val.to_i, val.to_s).first
-      error!('invalid co-author: ' + val.to_s, 404) if p.nil?
-      coauthor_ids << p.id
+      usr = User.where(type: %w[Person Collaborator]).where.not(confirmed_at: nil).where('id = ? or email = ?', val.to_i, val.to_s).first
+      error!('invalid co-author: ' + val.to_s, 404) if usr.nil?
+      coauthor_ids << usr.id
     end
     coauthor_ids
   end
@@ -42,7 +42,7 @@ module SubmissionHelpers
   end
 
   def accept_new_sample(root, sample)
-    ap = Publication.create!(
+    pub_s = Publication.create!(
       state: Publication::STATE_PENDING,
       element: sample,
       doi: sample&.doi,
@@ -50,8 +50,8 @@ module SubmissionHelpers
       parent: root,
       taggable_data: root.taggable_data
     )
-    sample.analyses.each do |a|
-      accept_new_analysis(ap, a)
+    sample.analyses.each do |sa|
+      accept_new_analysis(pub_s, sa)
     end
   end
 
@@ -107,17 +107,17 @@ module SubmissionHelpers
       end
 
     when 'Reaction'
-      root.element.products.each do |p|
-        Publication.find_by(element_type: 'Sample', element_id: p.id)&.destroy! if p.analyses&.length == 0
-        next if p.analyses&.length == 0
-        p.reserve_suffix
-        p.reserve_suffix_analyses(p.analyses)
-        prod_pub = Publication.find_by(element: p)
+      root.element.products.each do |pd|
+        Publication.find_by(element_type: 'Sample', element_id: pd.id)&.destroy! if pd.analyses&.length == 0
+        next if pd.analyses&.length == 0
+        pd.reserve_suffix
+        pd.reserve_suffix_analyses(pd.analyses)
+        prod_pub = Publication.find_by(element: pd)
         if prod_pub.nil?
-          accept_new_sample(root, p)
+          accept_new_sample(root, pd)
         else
-          p.analyses.each do |rpa|
-            accept_new_analysis(prod_pub,rpa, Publication.find_by(element: rpa).nil?)
+          pd.analyses.each do |rpa|
+            accept_new_analysis(prod_pub, rpa, Publication.find_by(element: rpa).nil?)
           end
         end
       end
