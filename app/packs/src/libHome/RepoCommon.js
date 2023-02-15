@@ -56,6 +56,8 @@ import RepoPreviewImage from '../components/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoSegment from './RepoSegment';
 
+const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
+
 const CollectionDesc = (props) => {
   let { label } = props;
   if (typeof label !== 'string') return null;
@@ -946,10 +948,12 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
         <br />
-        <h5><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h5>
-        <h5><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h5>
-        <h5><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h5>
-        <h5><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h5>
+        <span style={hideInfo(molecule)}>
+          <h5><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h5>
+          <h5><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h5>
+          <h5><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h5>
+          <h5><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h5>
+        </span>
         {
           hasXvial ?
             <div className="repo-registed-compound-desc">
@@ -1016,12 +1020,14 @@ const RenderAnalysisHeader = (props) => {
             <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
             <br /><br />
           </span>
-          {nameOrFormula}
-          {iupacUserDefined}
-          <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
-          <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
-          <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
-          <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
+          <span style={hideInfo(molecule)}>
+            {nameOrFormula}
+            {iupacUserDefined}
+            <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
+            <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
+            <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
+            <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
+          </span>
           <h6><b>Sample DOI: </b>
             {
               isPublic ?
