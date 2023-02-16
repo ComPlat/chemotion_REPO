@@ -40,6 +40,7 @@ export default class RepoEmbargoDetails extends Component {
             canComment
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
+            showComment={false}
             btnAction={this.state.btnAction}
             isReview={false}
             review={this.state.review}
@@ -52,6 +53,7 @@ export default class RepoEmbargoDetails extends Component {
             btnAction={this.state.btnAction}
             reviewLevel={this.state.reviewLevel}
             isSubmitter={this.state.isSubmitter}
+            showComment={false}
             review={this.state.review}
           />);
       default: return <span />;
