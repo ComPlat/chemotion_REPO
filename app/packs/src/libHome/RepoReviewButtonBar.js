@@ -83,11 +83,11 @@ const RepoReviewButtonBar = props =>
   (
     <ButtonToolbar>
       {
-        props.buttons.filter(b => b === 'Comments').map(b =>
+        props.showComment === true && props.buttons.filter(b => b === 'Comments').map(b =>
           showCommentButton(b, props.buttonFunc, (props.currComment)))
       }
       {
-        props.buttons.filter(b => b !== 'Comments').map(b =>
+        props.showComment === true && props.buttons.filter(b => b !== 'Comments').map(b =>
           showButton(b, props.buttonFunc, props.reviewLevel, props.currComment.state, props.isSubmitter))
       }
       <RepoMetadataModal
@@ -106,6 +106,7 @@ RepoReviewButtonBar.propTypes = {
   buttons: PropTypes.arrayOf(PropTypes.string),
   buttonFunc: PropTypes.func,
   reviewLevel: PropTypes.number,
+  showComment: PropTypes.bool,
   isSubmitter: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   currComment: PropTypes.object,
@@ -118,6 +119,7 @@ RepoReviewButtonBar.defaultProps = {
   buttonFunc: () => { },
   reviewLevel: 0,
   isSubmitter: false,
+  showComment: true,
   schemeOnly: false,
   currComment: {},
   taggData: {}

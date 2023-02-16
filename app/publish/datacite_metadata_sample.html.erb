@@ -18,7 +18,7 @@
     <% end %>
   </creators>
   <titles>
-    <title xml:lang="en-US"><%= element.molecule_name.name %></title>
+    <title xml:lang="en-US"><%= element.molecule_name&.name %></title>
     <title titleType="AlternativeTitle"><%= element.molecule.inchistring %></title>
   </titles>
   <publisher>chemotion.net</publisher>
