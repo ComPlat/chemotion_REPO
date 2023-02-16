@@ -66,12 +66,25 @@ module ReactionRinchi
     Rinchi.convert(rcts, prds, agts)
   end
 
-   def products_short_rinchikey
-     _, _, result, _ = products_rinchis
-     result
-   end
+  def no_structure_rinchis
+    prds = Rinchi::MolVect.new
+    mols_prds = []
+    mols_prds.push(no_structure)
+    mols_prds.each { |prd| prds.push(prd) }
+    Rinchi.convert(Rinchi::MolVect.new, prds, Rinchi::MolVect.new)
+  end
 
-   def products_short_rinchikey_trimmed
-     products_short_rinchikey.sub(/Short-RInChIKey=/, '')
-   end
+  def products_short_rinchikey
+    _, _, result, _ = products_rinchis
+    result
+  end
+
+  def products_short_rinchikey_trimmed
+    if products_short_rinchikey.blank?
+      _, _, result, _ = no_structure_rinchis
+      result&.sub(/Short-RInChIKey=/, '')
+    else
+      products_short_rinchikey.sub(/Short-RInChIKey=/, '')
+    end
+  end
 end

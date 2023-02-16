@@ -63,6 +63,7 @@ export default class RepoSampleDetails extends Component {
       canComment,
       reviewLevel,
       isSubmitter,
+      showComment,
       review,
       canClose,
       buttons,
@@ -153,6 +154,7 @@ export default class RepoSampleDetails extends Component {
                 buttonFunc={this.handleReviewBtn}
                 reviewLevel={reviewLevel}
                 isSubmitter={isSubmitter}
+                showComment={showComment}
                 currComment={(history && history.slice(-1).pop()) || {}}
                 buttons={buttons}
                 taggData={tagData}
@@ -194,6 +196,7 @@ RepoSampleDetails.propTypes = {
   reviewLevel: PropTypes.number,
   btnAction: PropTypes.string,
   isSubmitter: PropTypes.bool,
+  showComment: PropTypes.bool,
   review: PropTypes.object,
   canClose: PropTypes.bool,
   buttons: PropTypes.arrayOf(PropTypes.string),
@@ -206,6 +209,7 @@ RepoSampleDetails.defaultProps = {
   btnAction: '',
   reviewLevel: 0,
   isSubmitter: false,
+  showComment: true,
   review: {},
   canClose: true,
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
