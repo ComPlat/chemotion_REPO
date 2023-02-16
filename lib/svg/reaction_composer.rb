@@ -16,8 +16,9 @@ module SVG
     TIME_UNIT = {
       'se' => 'sec',
       'mi' => 'min',
-      'ho' => 'hr',
-      'hr' => 'hr',
+      'ho' => 'h',
+      'hr' => 'h',
+      'h' => 'h',
       'da' => 'd',
       'we' => 'w',
       'mo' => 'm',
