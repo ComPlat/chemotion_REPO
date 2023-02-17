@@ -707,10 +707,8 @@ export default class UserAuth extends Component {
             {/* <MenuItem onClick={this.handleShow}>My Groups</MenuItem> */}
             {/* <MenuItem onClick={this.handleSubscriptionShow}>My Subscriptions</MenuItem>
                 Disable for now as there is no subsciption channel yet (Paggy) */}
-            {converterBtn}
-            <MenuItem eventKey="7" href="/command_n_control">
-              My Devices
-            </MenuItem>
+            <MenuItem eventKey="12" href="/converter_admin" >Converter Profile</MenuItem>
+            {/* <MenuItem eventKey="7" href="/command_n_control" >My Devices</MenuItem> */}
             {this.state.currentUser.molecule_editor ? moderatorLink : null}
             <MenuItem eventKey="8" href="/generic_elements_admin">Generic Designer</MenuItem>
             {

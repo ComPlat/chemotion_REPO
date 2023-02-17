@@ -12,7 +12,13 @@ import NovncSettings from 'src/apps/admin/NovncSettings';
 import MatrixManagement from 'src/apps/admin/MatrixManagement';
 import TextTemplateContainer from 'src/apps/admin/textTemplates/TextTemplateContainer';
 import DelayedJobs from 'src/apps/admin/DelayedJobs';
-// import TemplateManagement from 'src/apps/admin/TemplateManagement';
+
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
+import GenericElementAdmin from './GenericElementAdmin';
+import SegmentElementAdmin from './SegmentElementAdmin';
+import DatasetElementAdmin from './DatasetElementAdmin';
+import TemplateManagement from './TemplateManagement';
 
 class AdminHome extends React.Component {
   constructor(props) {
