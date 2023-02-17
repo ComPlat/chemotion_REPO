@@ -299,6 +299,7 @@ module Chemotion
           optional :confirm_user, type: Boolean, desc: 'confirm account'
           optional :reconfirm_user, type: Boolean, desc: 'reconfirm account'
           optional :molecule_editor, type: Boolean, desc: 'enable or disable molecule moderation'
+          optional :converter_admin, type: Boolean, desc: 'enable or disable converter profile'
           optional :account_active, type: Boolean, desc: 'active or inactive this user'
         end
 
@@ -332,6 +333,16 @@ module Chemotion
               profile = user.profile
               pdata = profile.data || {}
               data = pdata.merge('is_templates_moderator' => params[:is_templates_moderator])
+              profile.update!(data: data)
+            end
+          end
+
+          unless params[:converter_admin].nil?
+            case params[:converter_admin]
+            when true, false
+              profile = user.profile
+              pdata = profile.data || {}
+              data = pdata.merge('converter_admin' => params[:converter_admin])
               profile.update!(data: data)
             end
           end

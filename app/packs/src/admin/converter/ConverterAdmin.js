@@ -1,16 +1,18 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 import { Modal, Button } from 'react-bootstrap';
 import { ProfileList, ProfileForm, FileUploadForm } from 'chemotion-converter-client';
 
 import ConverterApi from '../../components/fetchers/ConverterFetcher';
 import GenericDSsFetcher from '../../components/fetchers/GenericDSsFetcher';
 
-class AdminApp extends Component {
+class ConverterAdmin extends Component {
 
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       status: 'list',
+      client: null,
       selectedFile: null,
       profiles: [],
       options: [],
@@ -21,28 +23,28 @@ class AdminApp extends Component {
       isLoading: false,
       createdModal: false,
       deleteModal: false
-    }
+    };
 
-    this.showCreateView = this.showCreateView.bind(this)
-    this.showUpdateView = this.showUpdateView.bind(this)
-    this.showImportView = this.showImportView.bind(this)
+    this.showCreateView = this.showCreateView.bind(this);
+    this.showUpdateView = this.showUpdateView.bind(this);
+    this.showImportView = this.showImportView.bind(this);
 
-    this.showCreatedModal = this.showCreatedModal.bind(this)
-    this.hideCreatedModal = this.hideCreatedModal.bind(this)
+    this.showCreatedModal = this.showCreatedModal.bind(this);
+    this.hideCreatedModal = this.hideCreatedModal.bind(this);
 
-    this.showDeleteModal = this.showDeleteModal.bind(this)
-    this.hideDeleteModal = this.hideDeleteModal.bind(this)
+    this.showDeleteModal = this.showDeleteModal.bind(this);
+    this.hideDeleteModal = this.hideDeleteModal.bind(this);
 
-    this.updateProfile = this.updateProfile.bind(this)
-    this.storeProfile = this.storeProfile.bind(this)
-    this.deleteProfile = this.deleteProfile.bind(this)
-    this.downloadProfile = this.downloadProfile.bind(this)
+    this.updateProfile = this.updateProfile.bind(this);
+    this.storeProfile = this.storeProfile.bind(this);
+    this.deleteProfile = this.deleteProfile.bind(this);
+    this.downloadProfile = this.downloadProfile.bind(this);
 
-    this.updateFile = this.updateFile.bind(this)
-    this.uploadFile = this.uploadFile.bind(this)
-    this.importFile = this.importFile.bind(this)
+    this.updateFile = this.updateFile.bind(this);
+    this.uploadFile = this.uploadFile.bind(this);
+    this.importFile = this.importFile.bind(this);
 
-    this.dispatchView = this.dispatchView.bind(this)
+    this.dispatchView = this.dispatchView.bind(this);
   }
 
   componentDidMount() {
@@ -60,7 +62,7 @@ class AdminApp extends Component {
       });
 
       this.setState({
-        profiles: profiles?.profiles || [], datasets, options: options?.options || []
+        profiles: profiles?.profiles || [], datasets, options: options?.options || [], client: options?.client || null
       });
     });
   }
@@ -274,6 +276,7 @@ class AdminApp extends Component {
       return (
         <ProfileList
           profiles={this.state.profiles}
+          isAdmin={this.state.client !== null}
           updateProfile={this.showUpdateView}
           deleteProfile={this.showDeleteModal}
           downloadProfile={this.downloadProfile}
@@ -292,15 +295,15 @@ class AdminApp extends Component {
       )
     } else if (this.state.status == 'upload') {
       return (
-          <FileUploadForm
-            onFileChangeHandler={this.updateFile}
-            onSubmitFileHandler={this.uploadFile}
-            errorMessage={this.state.errorMessage}
-            error={this.state.error}
-            isLoading={this.state.isLoading}
-            disabled={this.state.selectedFile === null}
-          />
-        )
+        <FileUploadForm
+          onFileChangeHandler={this.updateFile}
+          onSubmitFileHandler={this.uploadFile}
+          errorMessage={this.state.errorMessage}
+          error={this.state.error}
+          isLoading={this.state.isLoading}
+          disabled={this.state.selectedFile === null}
+        />
+      );
     } else {
       return (
         <ProfileForm
@@ -346,7 +349,7 @@ class AdminApp extends Component {
           </nav>
 
           <div>
-            {this.state.status == "list" &&
+            {this.state.status == "list" && this.state.client !== null &&
               <div className="pull-right">
                 <button type="button" onClick={this.showImportView} className="btn btn-success mr-10">
                   Import profile
@@ -358,7 +361,7 @@ class AdminApp extends Component {
             }
 
             <h2>
-              {this.state.status == 'list' && 'Profiles List'}
+              {this.state.status == 'list' && 'Profiles List' }
               {['upload', 'create'].includes(this.state.status) && 'Create Profile'}
               {this.state.status == 'update' && 'Edit Profile'}
               {this.state.status == 'import' && 'Import Profile'}
@@ -395,4 +398,10 @@ class AdminApp extends Component {
 
 }
 
-export default AdminApp
+export default ConverterAdmin;
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const domElement = document.getElementById('ConverterAdmin');
+  if (domElement) ReactDOM.render(<ConverterAdmin />, domElement);
+});

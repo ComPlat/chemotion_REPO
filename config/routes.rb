@@ -48,6 +48,7 @@ Rails.application.routes.draw do
     get 'mydb', to: 'pages#mydb'
     get 'sfn_cb', to: 'pages#sfn_cb'
     get 'molecule_moderator', to: 'pages#molecule_moderator'
+    get 'converter_admin', to: 'pages#converter_admin'
     get 'home/review', to: 'pages#home'
     get 'home/review/*any', to: 'pages#home'
     get 'home/embargo', to: 'pages#home'
@@ -55,7 +56,7 @@ Rails.application.routes.draw do
     get 'pages/tokens', to: 'pages#tokens'
   end
 
-  get 'home/*any', to: 'pages#home'
+  # get 'home/*any', to: 'pages#home'
   get 'home', to: 'pages#home'
 
   # Standalone page for ChemScanner

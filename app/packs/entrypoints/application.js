@@ -17,3 +17,4 @@ var RepoNewsEditor = require('../src/libHome/RepoNewsEditor');
 var RepoNewsReader = require('../src/libHome/RepoNewsReader');
 var RepoHowToEditor = require('../src/libHome/RepoHowToEditor');
 var RepoHowToReader = require('../src/libHome/RepoHowToReader');
+var ConverterAdmin = require('../src/admin/converter/ConverterAdmin');
