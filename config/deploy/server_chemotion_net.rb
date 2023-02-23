@@ -20,6 +20,7 @@ set :linked_files, fetch(:linked_files, []).push(
   '.ruby-gemset',
   'config/compound_open_data.yml',
   'config/spectra.yml',
+  'config/converter.yml',
   'config/node_service.yml'
 )
 set :linked_dirs, fetch(:linked_dirs, []).push(
