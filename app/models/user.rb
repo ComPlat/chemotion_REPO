@@ -266,6 +266,7 @@ class User < ApplicationRecord
         data['chmo'] = result['ols_terms']
         data['is_templates_moderator'] = false
         data['molecule_editor'] = false
+        data['converter_admin'] = false
         data.merge!(layout: {
           'sample' => 1,
           'reaction' => 2,
@@ -406,6 +407,10 @@ class User < ApplicationRecord
 
   def molecule_editor
     profile&.data&.fetch('molecule_editor', false)
+  end
+
+  def converter_admin
+    profile&.data&.fetch('converter_admin', false)
   end
 
   def matrix_check_by_name(name)

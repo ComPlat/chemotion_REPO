@@ -7,7 +7,6 @@ module Chemotion
     resource :converter do
       resource :profiles do
         before do
-          error!(401) unless current_user.is_a?(Admin)
           @conf = Rails.configuration.try(:converter).try(:url)
           @profile = Rails.configuration.try(:converter).try(:profile)
           error!(406) unless @conf && @profile
@@ -38,7 +37,7 @@ module Chemotion
 
       resource :options do
         before do
-          error!(401) unless current_user.is_a?(Admin)
+          error!(401) unless current_user.profile&.data['converter_admin'] == true
           @conf = Rails.configuration.try(:converter).try(:url)
           @profile = Rails.configuration.try(:converter).try(:profile)
           error!(406) unless @conf && @profile
@@ -52,7 +51,7 @@ module Chemotion
 
       resource :tables do
         before do
-          error!(401) unless current_user.is_a?(Admin)
+          error!(401) unless current_user.profile&.data['converter_admin'] == true
           @conf = Rails.configuration.try(:converter).try(:url)
           @profile = Rails.configuration.try(:converter).try(:profile)
           error!(406) unless @conf && @profile
