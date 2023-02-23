@@ -56,7 +56,7 @@ Rails.application.routes.draw do
     get 'pages/tokens', to: 'pages#tokens'
   end
 
-  # get 'home/*any', to: 'pages#home'
+  get 'home/*any', to: 'pages#home'
   get 'home', to: 'pages#home'
 
   # Standalone page for ChemScanner
