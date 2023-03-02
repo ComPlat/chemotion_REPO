@@ -56,7 +56,7 @@ class ViewSpectra extends React.Component {
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
     this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
     this.updateROPredict = this.updateROPredict.bind(this);
-    this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
+    this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
   }
 
   componentDidMount() {
@@ -723,6 +723,12 @@ class ViewSpectra extends React.Component {
             maxTagCount={1}
             onChange={onSelectChange}
           />
+          <TreeSelect
+            treeData={options}
+            value={isShowMultiSelect ? arrSpcIdx : idx}
+            treeCheckable={isShowMultiSelect}
+            style={{ width: 500 }}
+            onChange={onSelectChange} />
         </div>
         <Button
           bsStyle="danger"
