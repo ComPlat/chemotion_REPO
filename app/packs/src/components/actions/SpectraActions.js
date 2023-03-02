@@ -37,9 +37,9 @@ class SpectraActions {
     };
   }
 
-  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr) {
+  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr, cyclicvolta, curveIdx=0) {
     return (dispatch) => {
-      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr)
+      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr, cyclicvolta, curveIdx)
         .then((fetchedFiles) => {
           dispatch({ fetchedFiles, spcInfo });
           cb();
@@ -78,8 +78,8 @@ class SpectraActions {
     };
   }
 
-  SelectIdx(spcIdx) {
-    return spcIdx;
+  SelectIdx(spcIdx, arrSpcIdx=[]) {
+    return { spcIdx, arrSpcIdx };
   }
 
   AddOthers(payload)  {
