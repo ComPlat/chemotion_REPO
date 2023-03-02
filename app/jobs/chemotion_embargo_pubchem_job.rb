@@ -48,20 +48,7 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
       --------------------------------------------------------------------
       TXT
       PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[send_pubchem]" + e.to_s).deliver_now
-      raise e
-    end
-
-    begin
-      remove_publish_pending
-      send_email
-    rescue StandardError => e
-      Delayed::Worker.logger.error <<~TXT
-        --------- ChemotionEmbargoPubchemJob remove_publish_pending or send_message error ------------
-        Error Message:  #{e}
-        ----------------------------------------------------------------------------------------------
-      TXT
-      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
-      raise e
+      # raise e
     end
 
     begin
@@ -81,6 +68,19 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
       --------------------------------------------------------------------
       TXT
       raise e
+    end
+
+    begin
+      remove_publish_pending
+      send_email
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+        --------- ChemotionEmbargoPubchemJob remove_publish_pending or send_message error ------------
+        Error Message:  #{e}
+        ----------------------------------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
+      # raise e
     end
 
   end
@@ -150,7 +150,7 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
     Message.create_msg_notification(
       channel_subject: Channel::PUBLICATION_REVIEW,
       message_from: @sync_emb_col.user_id,
-      data_args: {subject: "Congratulations! Embargo Collection #{@embargo_collection.label} released and published"}
+      data_args: { subject: "Congratulations! Embargo Collection #{@embargo_collection.label} released and published" }
     )
   end
 end
