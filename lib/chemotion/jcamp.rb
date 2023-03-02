@@ -59,6 +59,7 @@ module Chemotion
             data = entry.get_input_stream.read.force_encoding('UTF-8')
             if %w[png].include?(ext)
               tmp_img = generate_tmp_file(data, ext)
+              arr_img.push(tmp_img)
             elsif %w[dx jdx jcamp mzml raw cdf zip].include?(ext.downcase)
               tmp_jcamp = generate_tmp_file(data, ext)
               arr_jcamp.push(tmp_jcamp)

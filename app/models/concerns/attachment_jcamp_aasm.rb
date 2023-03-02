@@ -82,6 +82,10 @@ module AttachmentJcampAasm
         transitions from: %i[idle peaked edited non_jcamp queueing regenerating], to: :nmrium
       end
 
+      event :set_csv do
+        transitions from: %i[idle peaked non_jcamp], to: :csv
+      end
+
       event :set_failure do
         transitions from: %i[idle queueing regenerating failure nmrium], to: :failure
       end
