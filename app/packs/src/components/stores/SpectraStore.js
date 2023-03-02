@@ -14,6 +14,7 @@ class SpectraStore {
     this.spcMetas = [];
     this.spcInfos = [];
     this.spcIdx = 0;
+    this.arrSpcIdx = [];
     this.showModal = false;
     this.fetched = false;
     this.writing = false;
@@ -93,12 +94,15 @@ class SpectraStore {
     const fetchedIdx = fsm.idx;
     const prevIdx = spcInfo.idx;
     const fsi = Object.assign({}, spcInfo, { idx: fetchedIdx }); //  shortcut
-    const { spcInfos, spcMetas } = this;
+    const { spcInfos, spcMetas, arrSpcIdx } = this;
     const newSpcInfos = spcInfos.map(si => (
       si.idx === prevIdx ? fsi : si
     )).filter(r => r !== null);
     const newSpcMetas = spcMetas.map(sm => (
       sm.idx === prevIdx ? fsm : sm
+    )).filter(r => r !== null);
+    const newArrSpcIdx = arrSpcIdx.map(spci => (
+      spci === prevIdx ? fetchedIdx : spci
     )).filter(r => r !== null);
     this.setState({
       spcInfos: newSpcInfos,
@@ -106,6 +110,7 @@ class SpectraStore {
       fetched: true,
       spcIdx: fetchedIdx,
       others: [],
+      arrSpcIdx: newArrSpcIdx,
     });
   }
 
@@ -144,8 +149,9 @@ class SpectraStore {
     this.replacePredictions(targetPreds);
   }
 
-  handleSelectIdx(spcIdx) {
-    this.setState({ spcIdx, others: [] });
+  handleSelectIdx(payload) {
+    const { spcIdx, arrSpcIdx } = payload;
+    this.setState({ spcIdx, arrSpcIdx, others: [] });
   }
 
   replacePredictions(predictions) {

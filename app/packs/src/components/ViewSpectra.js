@@ -3,6 +3,7 @@ import { SpectraEditor, FN } from '@complat/react-spectra-editor';
 import { Modal, Well, Button } from 'react-bootstrap';
 import Select from 'react-select';
 import PropTypes from 'prop-types';
+import TreeSelect from 'antd/lib/tree-select';
 
 import LoadingActions from './actions/LoadingActions';
 import SpectraActions from './actions/SpectraActions';
@@ -49,7 +50,7 @@ class ViewSpectra extends React.Component {
     this.buildOthers = this.buildOthers.bind(this);
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
     this.updateROPredict = this.updateROPredict.bind(this);
-    this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
+    this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
   }
 
   componentDidMount() {
@@ -108,15 +109,75 @@ class ViewSpectra extends React.Component {
     }
   }
 
-  getContent() {
-    const { spcMetas, spcIdx } = this.state;
-    const sm = spcMetas.filter(x => x.idx === spcIdx)[0];
-    return sm || spcMetas[0] || { jcamp: null, predictions: null };
+  onDSSelectChange(e) {
+    const { value } = e;
+    const { spcInfos } = this.state;
+    const sis = spcInfos.filter(x => x.idDt === value);
+    const si = sis.length > 0 ? sis[0] : spcInfos[0];
+    SpectraActions.SelectIdx(si.idx, []);
   }
 
-  getSpcInfo() {
-    const { spcInfos, spcIdx } = this.state;
-    const sis = spcInfos.filter(x => x.idx === spcIdx);
+  getDSList() {
+    const { sample } = this.props;
+    const { spcInfos } = this.state;
+    const spcDts = spcInfos.map(e => e.idDt);
+    const dcs = sample.datasetContainers();
+    const dcss = dcs.filter(e => spcDts.includes(e.id));
+    return dcss;
+  }
+
+  isShowMultipleSelectFile(idx) {
+    const { spcMetas, arrSpcIdx } = this.state;
+    let spcs = false;
+    if (arrSpcIdx.length > 0) {
+      spcs = spcMetas.filter(x => arrSpcIdx.includes(x.idx));
+    }
+    else {
+      spcs = spcMetas.filter(x => x.idx === idx);
+    }
+
+    if (spcs && spcs.length > 0) {
+      const spc = spcs[0];
+      const { jcamp } = spc;
+      if (jcamp.layout === 'CYCLIC VOLTAMMETRY') {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  getContent() {
+    const { spcMetas, spcIdx, arrSpcIdx, spcInfos } = this.state;
+    if (arrSpcIdx.length > 0) {
+      const listMuliSpcs = [];
+      const listEntityFiles = [];
+      for (let i = 0; i < arrSpcIdx.length; i++) {
+        const idx = arrSpcIdx[i];
+        const spc = spcMetas.filter(x => x.idx === idx)[0];
+        if (spc) {
+          listMuliSpcs.push(spc);
+        }
+        const entity = spcInfos.filter(x => x.idx === idx)[0];
+        if (entity) {
+          listEntityFiles.push(entity);
+        }
+      }
+      return { listMuliSpcs: listMuliSpcs, listEntityFiles: listEntityFiles };
+    }
+    else {
+      const sm = spcMetas.filter(x => x.idx === spcIdx)[0];
+      return sm || spcMetas[0] || { jcamp: null, predictions: null };
+    }
+  }
+
+  getSpcInfo(curveIdx=0) {
+    const { spcInfos, spcIdx, arrSpcIdx } = this.state;
+    let selectedIdx = spcIdx;
+    if (arrSpcIdx.length > 0) {
+      selectedIdx = arrSpcIdx[curveIdx];
+    }
+    const sis = spcInfos.filter(x => x.idx === selectedIdx);
     const si = sis.length > 0 ? sis[0] : spcInfos[0];
     return si;
   }
@@ -239,7 +300,7 @@ class ViewSpectra extends React.Component {
 
   writeCommon({
     peaks, shift, scan, thres, analysis, layout, isAscend, decimal, body,
-    keepPred, isIntensity, multiplicity, integration,
+    keepPred, isIntensity, multiplicity, integration, cyclicvoltaSt, curveSt
   }, isMpy = false) {
     const { sample, handleSampleChanged } = this.props;
     const si = this.getSpcInfo();
@@ -276,7 +337,7 @@ class ViewSpectra extends React.Component {
 
     const cb = () => (
       this.saveOp({
-        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity,
+        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, cyclicvoltaSt, curveSt
       })
     );
     handleSampleChanged(sample, cb);
@@ -328,15 +389,17 @@ class ViewSpectra extends React.Component {
   // }
 
   saveOp({
-    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength,
+    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
   }) {
     const { handleSubmit, sample } = this.props;
-    const si = this.getSpcInfo();
+    const { curveIdx } = curveSt;
+    const si = this.getSpcInfo(curveIdx);
     if (!si) return;
     const fPeaks = FN.rmRef(peaks, shift);
     const peaksStr = FN.toPeakStr(fPeaks);
     const predict = JSON.stringify(rmRefreshed(analysis));
     const waveLengthStr = JSON.stringify(waveLength);
+    const cyclicvolta = JSON.stringify(cyclicvoltaSt);
 
     LoadingActions.start.defer();
     SpectraActions.SaveToFile.defer(
@@ -350,7 +413,9 @@ class ViewSpectra extends React.Component {
       predict,
       sample.can_update === true ? handleSubmit : this.updateROPredict,
       keepPred,
-      waveLengthStr
+      waveLengthStr,
+      cyclicvolta,
+      curveIdx
     );
   }
 
@@ -376,10 +441,10 @@ class ViewSpectra extends React.Component {
   }
 
   saveCloseOp({
-    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength
+    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
   }) {
     this.saveOp({
-      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength
+      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
     });
     this.closeOp();
   }
@@ -465,6 +530,12 @@ class ViewSpectra extends React.Component {
         { name: 'write multiplicity, save & close', value: this.writeCloseMpyOp },
       ];
     }
+    if (et.layout === 'CYCLIC VOLTAMMETRY') {
+      return [
+        { name: 'save', value: this.saveOp },
+        { name: 'save & close', value: this.saveCloseOp },
+      ];
+    }
     // { name: 'check & write', value: this.checkWriteOp },
     // const predictable = updatable && ['1H', '13C', 'IR'].indexOf(et.layout) >= 0;
     // if (predictable) {
@@ -540,14 +611,32 @@ class ViewSpectra extends React.Component {
     );
   }
 
-  renderSpectraEditor(jcamp, predictions) {
+  renderSpectraEditor(jcamp, predictions, listMuliSpcs, listEntityFiles) {
     const { sample } = this.props;
     const {
       entity, isExist,
     } = FN.buildData(jcamp);
 
+    let currEntity = entity;
+
+    let multiEntities = false;
+    let entityFileNames = false;
+    if (!isExist) {
+      if (!listMuliSpcs || listMuliSpcs.length === 0) return this.renderInvalid();
+      listMuliSpcs = listMuliSpcs.filter((x => x !== undefined));
+      listEntityFiles = listEntityFiles.filter((x => x !== undefined));
+      multiEntities = listMuliSpcs.map((spc) => {
+        const {
+          entity
+        } = FN.buildData(spc.jcamp);
+        currEntity = entity;
+        return entity;
+      });
+      entityFileNames = listEntityFiles.map(x => x.label);
+    }
+
     const others = this.buildOthers();
-    const operations = this.buildOpsByLayout(entity);
+    const operations = this.buildOpsByLayout(currEntity);
     const descriptions = this.getQDescVal();
     const forecast = {
       btnCb: this.predictOp,
@@ -560,10 +649,12 @@ class ViewSpectra extends React.Component {
     return (
       <Modal.Body>
         {
-          !isExist
+          !isExist && multiEntities.length == 0
             ? this.renderInvalid()
             : <SpectraEditor
-              entity={entity}
+              entity={currEntity}
+              multiEntities={multiEntities}
+              entityFileNames={entityFileNames}
               others={others}
               operations={operations}
               forecast={forecast}
@@ -578,12 +669,25 @@ class ViewSpectra extends React.Component {
   }
 
   renderTitle(idx) {
-    const { spcInfos } = this.state;
+    const { spcInfos, arrSpcIdx } = this.state;
     const si = this.getSpcInfo();
     if (!si) return null;
     const modalTitle = si ? `Spectra Editor - ${si.title}` : '';
     const options = spcInfos.map(x => ({ value: x.idx, label: x.label }));
-    const onSelectChange = e => SpectraActions.SelectIdx(e.value);
+
+    // const onSelectChange = e => SpectraActions.SelectIdx(e.value);
+    const isShowMultiSelect = this.isShowMultipleSelectFile(idx);
+    const onSelectChange = value => {
+      if (Array.isArray(value)) {
+        const reversedValue = value.reverse();
+        SpectraActions.SelectIdx(reversedValue[0], reversedValue);
+      }
+      else {
+        SpectraActions.SelectIdx(value, []);
+      }
+    }
+    const dses = this.getDSList();
+    const dsOptions = dses.map(x => ({ value: x.id, label: x.name }));
 
     return (
       <div className="spectra-editor-title">
@@ -592,12 +696,18 @@ class ViewSpectra extends React.Component {
         </span>
         <div style={{ display: 'inline-flex', margin: '0 0 0 100px' }} >
           <Select
-            options={options}
-            value={idx}
+            options={dsOptions}
+            value={si.idDt}
             clearable={false}
-            style={{ width: 500 }}
-            onChange={onSelectChange}
+            style={{ width: 200 }}
+            onChange={e => this.onDSSelectChange(e)}
           />
+          <TreeSelect
+            treeData={options}
+            value={isShowMultiSelect ? arrSpcIdx : idx}
+            treeCheckable={isShowMultiSelect}
+            style={{ width: 500 }}
+            onChange={onSelectChange} />
         </div>
         <Button
           bsStyle="danger"
@@ -629,8 +739,7 @@ class ViewSpectra extends React.Component {
 
   render() {
     const { showModal } = this.state;
-    
-    const { jcamp, predictions, idx } = this.getContent();
+    const { jcamp, predictions, idx, listMuliSpcs, listEntityFiles } = this.getContent();
     const dialogClassName = 'spectra-editor-dialog';
     // WORKAROUND: react-stickydiv duplicates elements.
     const specElements = Array.from(document.getElementsByClassName(dialogClassName));
@@ -651,9 +760,9 @@ class ViewSpectra extends React.Component {
             this.renderTitle(idx)
           }
           {
-            showModal && jcamp
-              ? this.renderSpectraEditor(jcamp, predictions)
-              : this.renderEmpty()
+            showModal && (jcamp || (listMuliSpcs && listMuliSpcs.length > 0))
+            ? this.renderSpectraEditor(jcamp, predictions, listMuliSpcs, listEntityFiles)
+            : this.renderEmpty()
           }
         </Modal>
       </div>
