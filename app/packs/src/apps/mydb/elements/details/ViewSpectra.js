@@ -4,6 +4,7 @@ import { SpectraEditor, FN } from '@complat/react-spectra-editor';
 import { Modal, Well, Button } from 'react-bootstrap';
 import Select from 'react-select';
 import PropTypes from 'prop-types';
+import TreeSelect from 'antd/lib/tree-select';
 
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
@@ -55,7 +56,7 @@ class ViewSpectra extends React.Component {
     this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
     this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
     this.updateROPredict = this.updateROPredict.bind(this);
-    this.onSpectraDescriptionChanged = this.onSpectraDescriptionChanged.bind(this);
+    this.isShowMultipleSelectFile = this.isShowMultipleSelectFile.bind(this);
   }
 
   componentDidMount() {
@@ -334,7 +335,7 @@ class ViewSpectra extends React.Component {
 
   writeCommon({
     peaks, shift, scan, thres, analysis, layout, isAscend, decimal, body,
-    keepPred, isIntensity, multiplicity, integration,
+    keepPred, isIntensity, multiplicity, integration, cyclicvoltaSt, curveSt
   }, isMpy = false) {
     const { sample, handleSampleChanged } = this.props;
     const si = this.getSpcInfo();
@@ -372,7 +373,7 @@ class ViewSpectra extends React.Component {
 
     const cb = () => (
       this.saveOp({
-        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity,
+        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, cyclicvoltaSt, curveSt
       })
     );
     handleSampleChanged(sample, cb);
@@ -404,6 +405,7 @@ class ViewSpectra extends React.Component {
     const peaksStr = FN.toPeakStr(fPeaks);
     const predict = JSON.stringify(rmRefreshed(analysis));
     const waveLengthStr = JSON.stringify(waveLength);
+    const cyclicvolta = JSON.stringify(cyclicvoltaSt);
 
     const { shifts } = shift;
     const selectedShift = shifts[curveIdx];
@@ -461,10 +463,10 @@ class ViewSpectra extends React.Component {
   }
 
   saveCloseOp({
-    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength
+    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
   }) {
     this.saveOp({
-      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength
+      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
     });
     this.closeOp();
   }
@@ -622,7 +624,7 @@ class ViewSpectra extends React.Component {
     );
   }
 
-  renderSpectraEditor(jcamp, predictions) {
+  renderSpectraEditor(jcamp, predictions, listMuliSpcs, listEntityFiles) {
     const { sample } = this.props;
     const {
       entity, isExist,
@@ -647,7 +649,7 @@ class ViewSpectra extends React.Component {
     }
 
     const others = this.buildOthers();
-    const operations = this.buildOpsByLayout(entity);
+    const operations = this.buildOpsByLayout(currEntity);
     const descriptions = this.getQDescVal();
     const forecast = {
       btnCb: this.predictOp,
@@ -681,7 +683,7 @@ class ViewSpectra extends React.Component {
   }
 
   renderTitle(idx) {
-    const { spcInfos } = this.state;
+    const { spcInfos, arrSpcIdx } = this.state;
     const si = this.getSpcInfo();
     if (!si) return null;
     const modalTitle = si ? `Spectra Editor - ${si.title}` : '';
@@ -707,8 +709,8 @@ class ViewSpectra extends React.Component {
         </span>
         <div style={{ display: 'inline-flex', margin: '0 0 0 100px' }}>
           <Select
-            options={options}
-            value={idx}
+            options={dsOptions}
+            value={si.idDt}
             clearable={false}
             style={{ width: 200 }}
             onChange={(e) => this.onDSSelectChange(e)}
@@ -728,6 +730,12 @@ class ViewSpectra extends React.Component {
             style={{ width: 500 }}
             onChange={onSelectChange}
           />
+          <TreeSelect
+            treeData={options}
+            value={isShowMultiSelect ? arrSpcIdx : idx}
+            treeCheckable={isShowMultiSelect}
+            style={{ width: 500 }}
+            onChange={onSelectChange} />
         </div>
         <Button
           bsStyle="danger"
