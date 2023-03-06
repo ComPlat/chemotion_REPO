@@ -55,6 +55,8 @@ import RepoXvialButton from '../components/common/RepoXvialButton';
 import RepoPreviewImage from '../components/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoSegment from './RepoSegment';
+import RepoMolViewerBtn from './RepoMolViewerBtn';
+import RepoMolViewerListBtn from './RepoMolViewerListBtn';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -89,8 +91,11 @@ const CollectionDesc = (props) => {
   );
 };
 
-const resizableSvg = path => (
-  <div className="preview-table" style={{ cursor: 'row-resize' }}><SvgFileZoomPan svgPath={path} duration={300} resize /></div>
+const resizableSvg = (path, extra = null) => (
+  <div className="preview-table" style={{ cursor: 'row-resize' }}>
+    {extra}
+    <SvgFileZoomPan svgPath={path} duration={300} resize />
+  </div>
 );
 
 const ChemotionId = props => (
@@ -943,7 +948,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath)}
+        {resizableSvg(svgPath, <RepoMolViewerBtn isPublic fileContent={molecule.molfile} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
@@ -1009,7 +1014,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath)}
+          {resizableSvg(svgPath, <RepoMolViewerBtn isPublic fileContent={element.molfile} />)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">
@@ -1777,7 +1782,7 @@ class RenderPublishAnalysesPanel extends Component {
         <div className="abstract">
           <div className="lower-text">
             <div className="sub-title">
-              <b>{kind}</b>&nbsp;
+              <b>{kind}</b>&nbsp;<RepoMolViewerListBtn el={element} container={analysis} isPublic={isPublic} />
               <RepoPublicComment isReviewer={isReviewer} id={analysis.id} type={type} pageId={pageId} pageType={pageType} userInfo={userInfo} title={kind} />&nbsp;
               <RepoUserComment isLogin={isLogin} id={analysis.id} type={type} pageId={pageId} pageType={pageType} />
             </div>
