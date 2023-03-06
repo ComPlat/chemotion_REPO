@@ -948,7 +948,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath, <RepoMolViewerBtn isPublic fileContent={molecule.molfile} />)}
+        {resizableSvg(svgPath)}
       </Col>
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
@@ -1014,7 +1014,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath, <RepoMolViewerBtn isPublic fileContent={element.molfile} />)}
+          {resizableSvg(svgPath)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">
