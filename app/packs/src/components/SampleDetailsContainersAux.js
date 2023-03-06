@@ -20,6 +20,8 @@ import { previewContainerImage } from './utils/imageHelper';
 import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 
+import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
+
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
     &nbsp;
@@ -348,6 +350,9 @@ const headerBtnGroup = (
         confirmRegenerateEdited={confirmRegenerateEdited}
         isReviewer={isReviewer}
       />
+      <span className="button-right">
+        <RepoMolViewerListBtn el={sample} container={container} isPublic={false} />
+      </span>
       <span
         className="button-right add-to-report"
         onClick={stopBubble}
