@@ -87,6 +87,7 @@ import {
   validateMolecule,
 } from './PublishCommon';
 import SampleDetailsRepoComment from './SampleDetailsRepoComment';
+import RepoMolViewerBtn from '../libHome/RepoMolViewerBtn';
 
 const MWPrecision = 6;
 
