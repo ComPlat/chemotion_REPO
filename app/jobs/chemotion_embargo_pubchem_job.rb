@@ -40,18 +40,6 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
     end
 
     begin
-      send_pubchem
-    rescue StandardError => e
-      Delayed::Worker.logger.error <<~TXT
-      ---------  #{self.class.name} send_pubchem error ------------
-        Error Message:  #{e}
-      --------------------------------------------------------------------
-      TXT
-      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[send_pubchem]" + e.to_s).deliver_now
-      # raise e
-    end
-
-    begin
       pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
       if pub_col.present? && pub_col.state == 'accepted'
         pub_col.transition_from_start_to_metadata_uploading!
@@ -67,6 +55,19 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
         Error Message:  #{e}
       --------------------------------------------------------------------
       TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[publish collection DOI]" + e.to_s).deliver_now
+      raise e
+    end
+
+    begin
+      send_pubchem
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name} send_pubchem error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[send_pubchem]" + e.to_s).deliver_now
       raise e
     end
 
@@ -80,7 +81,7 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
         ----------------------------------------------------------------------------------------------
       TXT
       PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
-      # raise e
+      raise e
     end
 
   end
