@@ -78,6 +78,7 @@ import {
   validateMolecule,
 } from './PublishCommon';
 import SampleDetailsRepoComment from './SampleDetailsRepoComment';
+import RepoMolViewerBtn from '../libHome/RepoMolViewerBtn';
 
 const MWPrecision = 6;
 
@@ -1497,6 +1498,7 @@ export default class SampleDetails extends React.Component {
               onTabPositionChanged={this.onTabPositionChanged}
             />
             {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
+            <RepoMolViewerBtn isPublic={false} fileContent={sample.molfile} />
             <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
               {tabContents}
             </Tabs>
