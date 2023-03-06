@@ -160,7 +160,13 @@ class PublicStore {
   }
 
   handleDisplayMolecule(moleculeList) {
-    const cb = () => PublicActions.getMolecules({ listType: moleculeList.listType });
+    let cb = () => PublicActions.getMolecules({ listType: moleculeList.listType });
+
+    if (this.molecules.length > 0) {
+      cb = () => {};
+      this.setState({ molecules: this.molecules });
+    }
+
     this.setState({
       guestPage: 'publications',
       elementType: 'molecule',
@@ -175,7 +181,12 @@ class PublicStore {
   handleDisplayReaction(reactionList) {
     const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
       RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
-    const cb = () => PublicActions.getReactions();
+    let cb = () => PublicActions.getReactions();
+
+    if (this.reactions.length > 0) {
+      cb = () => {};
+      this.setState({ reactions: this.reactions });
+    }
     this.setState({
       guestPage: 'publications',
       elementType: 'reaction',
