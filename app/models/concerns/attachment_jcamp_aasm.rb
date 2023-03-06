@@ -82,10 +82,6 @@ module AttachmentJcampAasm
         transitions from: %i[idle peaked edited non_jcamp queueing regenerating], to: :nmrium
       end
 
-      event :set_csv do
-        transitions from: %i[idle peaked non_jcamp], to: :csv
-      end
-
       event :set_failure do
         transitions from: %i[idle queueing regenerating failure nmrium], to: :failure
       end
@@ -314,7 +310,7 @@ module AttachmentJcampProcess
     end
 
     set_backup
-    delete_tmps(tmp_files_to_be_deleted)
+    delete_tmps([tmp_jcamp, tmp_img])
     delete_related_imgs(img_att)
     delete_related_edit_peak(jcamp_att)
     jcamp_att
