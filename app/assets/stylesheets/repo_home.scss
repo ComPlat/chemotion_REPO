@@ -7,6 +7,28 @@ $bs-infocolor: #5bc0de;
 $bs-warningcolor: #f0ad4e;
 $bs-successcolor: #5cb85c;
 
+@mixin viewer-modal {
+  height: 95%;
+  top: 52% !important;
+  margin: unset !important;
+}
+
+.file-viewer-modal {
+  @include viewer-modal;
+  width: 98vw !important;
+  .modal-content {
+    height: 95%;
+  }
+}
+
+.structure-viewer-modal {
+  @include viewer-modal;
+  width: 60vw !important;
+  .modal-content {
+    height: calc(100% - 60px);
+  }
+}
+
 .repo-xvial-info {
   .env {
     padding: 0px 2px 0px 2px;
