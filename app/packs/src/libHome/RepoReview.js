@@ -115,7 +115,7 @@ export default class RepoReview extends Component {
   handleSubmitReview(elementId, elementType, comment, btnAction, checklist, reviewComments){
     LoadingActions.start();
     ReviewActions.reviewPublish(elementId, elementType, comment, btnAction, checklist, reviewComments);
-    this.props.onHide(false);
+    // this.props.onHide(false);
   }
 
   handleReviewUpdate(e, col, rr) {
