@@ -11,8 +11,8 @@ class WelcomeMailer < ApplicationMailer
   def mail_welcome_message(user_id)
     @user = User.find(user_id)
     @message = File.read("#{Rails.root}/public/welcome-message.md")
-    @output = markdown(@message);
+    @output = markdown(@message)
 
-    mail(to: @user.email, subject: "[ELN] Welcome to Chemotion.")
+    mail(to: @user.email, subject: "Welcome to Chemotion Repository.")
   end
 end
