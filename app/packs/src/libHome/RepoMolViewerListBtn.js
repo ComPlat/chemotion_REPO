@@ -48,10 +48,10 @@ export default class RepoMolViewerListBtn extends Component {
     let datasetContainer = ArrayUtils.sortArrByIndex(filter(container.children, o => o.container_type === 'dataset' && o.attachments.length > 0));
     if (datasetContainer?.length < 1) { return this.renderBtn(true); }
 
-    datasetContainer = datasetContainer.map((dc) => {
+    datasetContainer = datasetContainer?.map((dc) => {
       const ds = Object.assign({}, dc);
       const { attachments } = ds;
-      ds.attachments = attachments.filter(attachment => ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(attachment.filename?.match(/\.([^.]+)$/)[1].toLowerCase()));
+      ds.attachments = attachments?.filter(attachment => ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(attachment?.filename?.match(/\.([^.]+)$/) && attachment?.filename?.match(/\.([^.]+)$/)[1]?.toLowerCase()));
       if (ds.attachments.length > 0) return ds;
       return null;
     });
