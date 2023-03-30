@@ -128,8 +128,17 @@ export default class RepoXvialButton extends React.Component {
       <Modal show={requestModalShow} onHide={() => this.closeModal()} backdrop="static">
         <Modal.Header closeButton><Modal.Title>Request compound</Modal.Title></Modal.Header>
         <Modal.Body>
-          <FormControl style={{ height: '400px' }} componentClass="textarea" inputRef={(m) => { this.rInput = m; }} />
+          <FormControl style={{ height: '300px' }} componentClass="textarea" inputRef={(m) => { this.rInput = m; }} placeholder="Example: I would like to request the access to a certain amount of this sample for this reason: (please give reason). Please contact me per email." />
           <br />
+          <p style={{ fontSize: '11px', fontStyle: 'italic' }}>
+            <b>Data privacy statement</b> This contact form can be used to get in contact to the team of
+            the molecule archive. The information that you enter into the form is sent - along
+            with the email address that you entered with the registration to chemotion
+            repository - to the management team of the compound platform only. The data is not
+            stored, the information is available per email only. People in the management team
+            handle your request as confidential information. No other services or third
+            parties are included.
+          </p>
           <Button bsStyle="warning" onClick={() => this.closeModal()}>Close</Button>&nbsp;
           <Button bsStyle="primary" onClick={() => this.request()}>Send request to the Compound-Platform</Button>
         </Modal.Body>
