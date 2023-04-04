@@ -121,7 +121,7 @@ export default class Navigation extends React.Component {
             }
             {
               true ?
-                <NavItem eventKey={5} target="_blank" href="https://www.chemotion.net/docs/repo/" className="white-nav-item">
+                <NavItem eventKey={5} target="_blank" href="https://www.chemotion.net/docs/repo" className="white-nav-item">
                   How-To&nbsp;<i className="fa fa-question-circle" aria-hidden="true" />
                 </NavItem> : null
             }
