@@ -21,7 +21,7 @@
     <title xml:lang="en-US"><%= element.molecule_name&.name %></title>
     <title titleType="AlternativeTitle"><%= element.molecule.inchistring %></title>
   </titles>
-  <publisher>chemotion.net</publisher>
+  <publisher>chemotion-repository</publisher>
   <publicationYear><%= Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
@@ -51,11 +51,38 @@
   <version>1</version>
   <descriptions>
     <description xml:lang="en-US" descriptionType="Abstract">
-      This dataset contains experimental data from a sample (<%= element.molecule.iupac_name.present? ? "#{element.molecule.iupac_name}, " : '' %><%= element.molecule.inchistring %>).<br />
-      The datasets from the following experiments are available:<br />
-      <% element.analyses.each do |analysis| %>
-      <%= (analysis.extended_metadata['kind'] || '').split('|').pop %><br />
+      <% if cust_sample[:type] == 'coupled_sample_structure' %>
+      This is a physical chemical entity[CHEBI_24431] associated with a molecule[CHEBI_25367].
+      The molecule[CHEBI_25367] can be described by the following molecule identifiers [data_0982]:
+      InChI[data_1197]: <%= "#{element.molecule_inchistring}" %>, by the chemical name[data_0997]: <%= "#{element.showed_name}" %>, and by the canonical SMILES[data_2301]: <%= "#{element.molecule_cano_smiles}" %>.
+      <% elsif cust_sample[:type] == 'decoupled_sample_structure' %>
+      This is a physical chemical entity[CHEBI_24431] associated with a molecule[CHEBI_25367], while the molecule[CHEBI_25367] is only part of the composition and does not describe the chemical entity[CHEBI_24431] sufficiently.
+      The molecule[CHEBI_25367] can be described by the following molecule identifiers [data_0982]:
+      InChI[data_1197]: <%= "#{element.molecule_inchistring}" %>, by the chemical name[data_0997]: <%= "#{element.showed_name}" %>, and by the canonical SMILES[data_2301]: <%= "#{element.molecule_cano_smiles}" %>.
+      <% elsif cust_sample[:type] == 'decoupled_sample' %>
+      This is a physical chemical entity[CHEBI_24431] which was not directly associated with a molecule[CHEBI_25367].
+      The physical chemical entity[CHEBI_24431] can be described by the chemical formula [data_0846]: <%= "#{element.sum_formula}" %>, and the molecular mass[data_0844]: <%= "#{element.molecular_mass}" %>.
       <% end %>
+      The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES[data_2301]: <%= element.molecule_cano_smiles %>
+      The physical chemical entity[CHEBI_24431] has the Sample ID [data_3273] as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>
+
+      The physical chemical entity[CHEBI_24431] can be described by the physical descriptors [CHEMINF_000025]:
+      Melting point descriptor[CHEMINF_000256]: <%= cust_sample[:melting_point] %>
+      Boiling point descriptor[CHEMINF_000257]: <%= cust_sample[:boiling_point] %>
+      Refractive index descriptor[CHEMINF_000253]:
+
+      The physical chemical entity[CHEBI_24431] can be further described by the following assays[OBI:0000070][CHMO:0001133]:
+      <% element.analyses.each do |analysis| %>
+        <%= (analysis.extended_metadata['kind'] || '') %>
+      <% end %>
+      The physical chemical entity[CHEBI_24431] was deposited to the Molecule Archive of the Karlsruhe Insitute of Technology (KIT) with the following Sample ID[data_3273]: CRS-<%= "#{pub.id}" %>
+
+      Used ontologies:
+      EDAM - Bioscientific data analysis ontology
+      CHEBI - Chemical Entities of Biological Interest
+      CHEMINF - chemical information ontology (information entities about chemical entities)
+      CHMO - Chemical Methods Ontology
+      OBI - Ontology for Biomedical Investigations
     </description>
   </descriptions>
 
