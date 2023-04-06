@@ -396,10 +396,9 @@ class Publication < ActiveRecord::Base
       ).last
       cdoi = coly.publication&.doi&.full_doi if coly.present?
     end
-
     parent_element = parent&.element
     literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
-    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi)
+    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi, cust_sample: cust_sample)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -647,6 +646,27 @@ class Publication < ActiveRecord::Base
     join literatures l2 on l.literature_id = l2.id
     where l.element_id = #{e_id} and l.element_type = '#{e_type}' and l.litype in ('citedOwn', 'citedRef', 'referTo')
     SQL
+  end
+
+  def cust_sample
+    if element_type == 'Sample'
+      desc_type = "#{element.decoupled ? 'de' : ''}coupled_sample#{element.molecule_inchikey == 'DUMMY' ? '' : '_structure'}"
+      melting_point = range_to_s(element.melting_point)
+      boiling_point = range_to_s(element.boiling_point)
+      { type: desc_type, melting_point: melting_point, boiling_point: boiling_point }
+    else
+      {}
+    end
+  end
+
+  def range_to_s(val)
+    if val.begin == -Float::INFINITY && val.end == Float::INFINITY
+      ''
+    else
+      start = val.begin == -Float::INFINITY ? '' : val.begin.to_f
+      finish = val.end == Float::INFINITY ? '' : val.end.to_f
+      "#{start}#{start == '' || finish == '' ? '' : ' - '}#{finish}"
+    end
   end
 
   def log_invalid_transition(to_state)
