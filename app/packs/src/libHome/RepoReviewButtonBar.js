@@ -14,6 +14,7 @@ const showButton = (btn, func, pubState, review_info) => {
   let btnBsStyle = '';
   let btnIcon = '';
   let btnTooltip = '';
+
   switch (btn) {
     case 'Accept':
       btnBsStyle = 'primary';

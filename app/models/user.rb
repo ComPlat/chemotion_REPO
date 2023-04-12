@@ -500,6 +500,24 @@ class User < ApplicationRecord
       .where("collections.label = 'Element To Review'").first
   end
 
+  def find_or_create_grouplead_collection
+    chemotion_user = User.chemotion_user
+    sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
+    sys_review_collection = Collection.create(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}")
+
+    col_attributes = {
+      user: self,
+      shared_by_id: chemotion_user.id,
+      is_locked: true,
+      is_shared: true
+    }
+
+    rc = Collection.find_by(col_attributes)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_review_collection.id,
+      permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    sys_review_collection
+  end
+
   def published_collection
     su_id = User.chemotion_user.id
     Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")

@@ -607,7 +607,7 @@ module Chemotion
             review_info: review_info
           }
         end
-    end
+      end
 
       resource :sample do
         helpers RepositoryHelpers
@@ -1079,7 +1079,6 @@ module Chemotion
         end
 
         post do
-
           pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType])
           declared_params = declared(params, include_missing: false)
 
@@ -1193,7 +1192,6 @@ module Chemotion
             col.sync_collections_users.destroy_all
             col.really_destroy!
           end
-
         end
         desc 'Generate account with chosen Embargo'
         params do
