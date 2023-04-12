@@ -66,6 +66,7 @@ gem 'omniauth-github', '~> 1.4.0'
 gem 'omniauth-orcid', git: 'https://github.com/datacite/omniauth-orcid'
 gem 'omniauth_openid_connect'
 gem 'omniauth-oauth2', '~> 1.7', '>= 1.7.2'
+gem 'omniauth-shibboleth'
 
 #gem 'chem_scanner', git: 'git@git.scc.kit.edu:ComPlat/chem_scanner.git'
 gem 'ffi-rzmq'

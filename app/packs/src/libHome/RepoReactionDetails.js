@@ -169,7 +169,7 @@ export default class RepoReactionDetails extends Component {
     } = this.state;
     const {
       canComment,
-      reviewLevel,
+      review_info,
       review
     } = this.props;
 
@@ -216,7 +216,7 @@ export default class RepoReactionDetails extends Component {
             showProp={showProp}
             bodyAttrs={bodyAttrs}
             onToggle={this.handleToggle}
-            reviewLevel={reviewLevel}
+            review_info={review_info}
             onComment={this.handleCommentBtn}
             propInfo={properties}
             canComment={canComment}
@@ -390,8 +390,7 @@ export default class RepoReactionDetails extends Component {
       reaction,
       isPublished,
       canComment,
-      reviewLevel,
-      isSubmitter,
+      review_info,
       showComment,
       review,
       canClose,
@@ -442,6 +441,12 @@ export default class RepoReactionDetails extends Component {
       buttons = ['Decline', 'Comments', 'Accept'];
       showDOI = '';
     }
+
+
+    if (review_info?.groupleader === true && review_info?.preapproved !== true) {
+      buttons = ['Comments', 'Review', 'Approve'];
+    }
+
     const idyLogin = typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview = typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
@@ -470,8 +475,7 @@ export default class RepoReactionDetails extends Component {
                   element={{ id: reaction.id, elementType: 'Reaction' }}
                   buttons={buttons}
                   buttonFunc={this.handleReviewBtn}
-                  reviewLevel={reviewLevel}
-                  isSubmitter={isSubmitter}
+                  review_info={review_info}
                   showComment={showComment}
                   taggData={taggData}
                   schemeOnly={schemeOnly}
@@ -523,8 +527,7 @@ export default class RepoReactionDetails extends Component {
                 field={this.state.commentField}
                 orgInfo={this.state.originInfo}
                 review={this.props.review}
-                isSubmitter={isSubmitter}
-                reviewLevel={reviewLevel}
+                review_info={review_info}
                 onUpdate={this.handleSubmitComment}
                 onHide={() => this.setState({ showCommentModal: false })}
               />
@@ -539,9 +542,8 @@ RepoReactionDetails.propTypes = {
   reaction: PropTypes.object.isRequired,
   isPublished: PropTypes.bool,
   canComment: PropTypes.bool,
-  reviewLevel: PropTypes.number,
   btnAction: PropTypes.string,
-  isSubmitter: PropTypes.bool,
+  review_info: PropTypes.object,
   showComment: PropTypes.bool,
   isReview: PropTypes.bool,
   review: PropTypes.object,
@@ -553,10 +555,9 @@ RepoReactionDetails.propTypes = {
 RepoReactionDetails.defaultProps = {
   isPublished: false,
   canComment: false,
-  isSubmitter: false,
+  review_info: {},
   showComment: true,
   btnAction: '',
-  reviewLevel: 0,
   isReview: false,
   review: {},
   canClose: true,

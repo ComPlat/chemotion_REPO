@@ -147,6 +147,7 @@ class API < Grape::API
   mount Chemotion::ConverterAPI
   mount Chemotion::RepositoryAPI
   mount Chemotion::ArticleAPI
+  mount Chemotion::CollaborationAPI
 
   add_swagger_documentation(info: {
     "title": "Chemotion Repository",
