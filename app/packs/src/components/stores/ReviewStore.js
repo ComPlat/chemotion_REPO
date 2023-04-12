@@ -76,14 +76,13 @@ class ReviewStore {
   }
 
   handleFetchSample(data) {
-    if (data.sample && data.reviewLevel === 0) {
+    if (data.sample && data?.review_info?.review_level === 0) {
     } else {
       this.setState({
         currentElement: data || {},
         element: data || {},
         elementType: 'sample',
-        reviewLevel: data?.reviewLevel || 0,
-        isSubmitter: data?.isSubmitter || false,
+        review_info: data?.review_info || {},
         review: data?.publication?.review || {},
       });
     }
@@ -115,7 +114,7 @@ class ReviewStore {
 
   handleDisplayReviewReaction(result) {
     const publication = (result.element && result.element.reaction && result.element.reaction.publication) || {};
-    if (result.element && result.element.reviewLevel === 0) {
+    if (result.element && result.element?.review_info?.review_level === 0) {
       Aviator.navigate('/home');
     } else {
       this.setState({
@@ -126,8 +125,7 @@ class ReviewStore {
         currentElement: result?.element || {},
         showReviewModal: false,
         review: publication?.review || {},
-        reviewLevel: result?.element?.reviewLevel || 0,
-        isSubmitter: result?.element?.isSubmitter || false
+        review_info: result?.element?.review_info || {},
       });
       Aviator.navigate(`/review/review_reaction/${result.id}`, { silent: true });
     }
@@ -136,7 +134,7 @@ class ReviewStore {
   handleDisplayReviewSample(result) {
     const publication = (result.element && result.element.publication) || {};
 
-    if (result.element && result.element.reviewLevel === 0) {
+    if (result.element && result.element?.review_info?.review_level === 0) {
       Aviator.navigate('/home');
     } else {
       this.setState({
@@ -146,8 +144,7 @@ class ReviewStore {
         currentElement: result?.element || {},
         showReviewModal: false,
         review: publication?.review || {},
-        isSubmitter: result?.element?.isSubmitter || false,
-        reviewLevel: result?.element?.reviewLevel || 0,
+        review_info: result?.element?.review_info || {},
       });
       Aviator.navigate(`/review/review_sample/${result.id}`, { silent: true });
     }

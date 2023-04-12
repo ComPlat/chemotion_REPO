@@ -10,8 +10,7 @@ export default class RepoReviewDetails extends Component {
       element: props.element,
       review: {},
       btnAction: '',
-      reviewLevel: 0,
-      isSubmitter: false
+      review_info: {},
     };
 
     this.onStoreChange = this.onStoreChange.bind(this);
@@ -41,8 +40,7 @@ export default class RepoReviewDetails extends Component {
           <RepoReactionDetails
             reaction={currentElement.reaction}
             canComment
-            reviewLevel={this.state.reviewLevel}
-            isSubmitter={this.state.isSubmitter}
+            review_info={this.state.review_info}
             btnAction={this.state.btnAction}
             isReview={true}
             review={this.state.review}
@@ -53,8 +51,7 @@ export default class RepoReviewDetails extends Component {
             element={currentElement}
             canComment
             btnAction={this.state.btnAction}
-            reviewLevel={this.state.reviewLevel}
-            isSubmitter={this.state.isSubmitter}
+            review_info={this.state.review_info}
             review={this.state.review}
           />);
       default: return <span />;

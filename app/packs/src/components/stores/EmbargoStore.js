@@ -11,6 +11,7 @@ class EmbargoStore {
     this.selectState;
     this.searchType;
     this.searchValue;
+    this.review_info == {};
     this.element = null;
     // this.elements = [];
 
@@ -32,7 +33,7 @@ class EmbargoStore {
 
   handleDisplayEmbargoElement(result) {
     const publication = result?.element?.publication || {};
-    if (result?.element?.reviewLevel === 0) {
+    if (result?.element?.review_info?.review_level === 0) {
       Aviator.navigate('/home/');
     } else {
       const elementType = (result.element.sample ? 'sample' : 'reaction');
@@ -43,7 +44,7 @@ class EmbargoStore {
         queryId: result.id,
         currentElement: result.element,
         review: publication?.review || {},
-        reviewLevel: result.element.reviewLevel
+        review_info: result.element?.review_info
       });
       Aviator.navigate(`/embargo/${elementType}/${result.id}`, { silent: true });
     }

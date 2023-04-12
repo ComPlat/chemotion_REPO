@@ -61,17 +61,21 @@ export default class RepoSampleDetails extends Component {
       element,
       isPublished,
       canComment,
-      reviewLevel,
-      isSubmitter,
+      review_info,
       showComment,
       review,
       canClose,
-      buttons,
     } = this.props;
+
+    let { buttons } = this.props;
+
 
     const history = review?.history || [];
     if (typeof (element) === 'undefined' || !element) {
       return <div />;
+    }
+    if (review_info?.groupleader === true && review_info?.preapproved !== true) {
+      buttons = ['Comments', 'Review', 'Approve'];
     }
 
     const {
@@ -95,7 +99,7 @@ export default class RepoSampleDetails extends Component {
       pubData = element.publication;
     }
 
-    tagData = (pubData.taggable_data) || {};
+    tagData = (pubData?.taggable_data) || {};
     const details = (samples || []).map((s) => {
       if (isPublished) {
         pubData = {
@@ -153,8 +157,7 @@ export default class RepoSampleDetails extends Component {
               <RepoReviewButtonBar
                 element={{ id: sample.id, elementType: 'Sample' }}
                 buttonFunc={this.handleReviewBtn}
-                reviewLevel={reviewLevel}
-                isSubmitter={isSubmitter}
+                review_info={review_info}
                 showComment={showComment}
                 currComment={(history && history.slice(-1).pop()) || {}}
                 buttons={buttons}
@@ -175,8 +178,7 @@ export default class RepoSampleDetails extends Component {
                   elementType="Sample"
                   field={this.state.commentField}
                   orgInfo={this.state.originInfo}
-                  isSubmitter={isSubmitter}
-                  reviewLevel={reviewLevel}
+                  review_info={review_info}
                   review={review || {}}
                   onUpdate={this.handleSubmitComment}
                   onHide={() => this.setState({ showCommentModal: false })}
@@ -194,9 +196,8 @@ RepoSampleDetails.propTypes = {
   element: PropTypes.object.isRequired,
   isPublished: PropTypes.bool,
   canComment: PropTypes.bool,
-  reviewLevel: PropTypes.number,
   btnAction: PropTypes.string,
-  isSubmitter: PropTypes.bool,
+  review_info: PropTypes.object,
   showComment: PropTypes.bool,
   review: PropTypes.object,
   canClose: PropTypes.bool,
@@ -208,8 +209,7 @@ RepoSampleDetails.defaultProps = {
   isPublished: false,
   canComment: false,
   btnAction: '',
-  reviewLevel: 0,
-  isSubmitter: false,
+  review_info: {},
   showComment: true,
   review: {},
   canClose: true,

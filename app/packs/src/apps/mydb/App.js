@@ -157,10 +157,9 @@ class App extends Component {
   }
 
   renderReviewModal() {
-    const { showReviewModal, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
+    const { showReviewModal, review_info, review, currentElement, elementType, btnAction } = this.state;
     const rrr = {};
-    rrr.reviewLevel = reviewLevel;
-    rrr.isSubmitter = isSubmitter;
+    rrr.review_info = review_info;
     rrr.review = review;
     rrr.btnAction = btnAction;
     rrr.elementType = elementType;

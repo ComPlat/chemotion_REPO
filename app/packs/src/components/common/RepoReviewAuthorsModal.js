@@ -10,6 +10,7 @@ import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 import UsersFetcher from '../fetchers/UsersFetcher';
 import SelectionField from '../common/SelectionField';
 import PublicFetcher from '../fetchers/PublicFetcher';
+import CollaboratorFetcher from '../fetchers/CollaboratorFetcher';
 import ReviewActions from '../actions/ReviewActions';
 import DeleteConfirmBtn from '../common/DeleteConfirmBtn';
 
@@ -266,7 +267,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
     let ids = [];
     ids.push(contributors.id);
     ids = ids.concat(author_ids);
-    UsersFetcher.loadOrcidByUserId({ ids }).then((result) => {
+    CollaboratorFetcher.loadOrcidByUserId({ ids }).then((result) => {
       const orcids = result.orcids || [];
       const cx = findIndex(orcids, o => o.id === contributors.id);
       if (cx > -1) {
@@ -312,7 +313,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   loadCollaborations() {
-    UsersFetcher.fetchMyCollaborations()
+    CollaboratorFetcher.fetchMyCollaborations()
       .then((result) => {
         this.setState({
           collaborations: result.authors
@@ -507,14 +508,14 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
 RepoReviewAuthorsModal.propTypes = {
   element: PropTypes.object,
-  isSubmitter: PropTypes.bool,
+  review_info: PropTypes.object,
   disabled: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   taggData: PropTypes.object.isRequired,
 };
 
 RepoReviewAuthorsModal.defaultProps = {
-  isSubmitter: false,
+  review_info: {},
   schemeOnly: false,
   disabled: false,
   taggData: {}

@@ -25,19 +25,18 @@
 #  name_abbreviation      :string(12)
 #  type                   :string           default("Person")
 #  reaction_name_prefix   :string(3)        default("R")
+#  layout                 :hstore           not null
 #  confirmation_token     :string
 #  confirmed_at           :datetime
 #  confirmation_sent_at   :datetime
 #  unconfirmed_email      :string
-#  layout                 :hstore           not null
 #  selected_device_id     :integer
 #  failed_attempts        :integer          default(0), not null
 #  unlock_token           :string
 #  locked_at              :datetime
 #  account_active         :boolean
 #  matrix                 :integer          default(0)
-#  omniauth_provider      :string
-#  omniauth_uid           :string
+#  providers              :jsonb
 #
 # Indexes
 #
@@ -240,7 +239,8 @@ class User < ApplicationRecord
   end
 
   def orcid
-    profile&.data&.fetch('ORCID', nil)
+    providers&.fetch('orcid', nil)
+    # profile&.data&.fetch('ORCID', nil)
   end
 
   def owns_collections?(collections)
@@ -389,6 +389,24 @@ class User < ApplicationRecord
       .where("sync_collections_users.shared_by_id = #{su_id}")
       .where("sync_collections_users.user_id = #{self.id}")
       .where("collections.label = 'Element To Review'").first
+  end
+
+  def find_or_create_grouplead_collection
+    chemotion_user = User.chemotion_user
+    sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
+    sys_review_collection = Collection.create(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}")
+
+    col_attributes = {
+      user: self,
+      shared_by_id: chemotion_user.id,
+      is_locked: true,
+      is_shared: true
+    }
+
+    rc = Collection.find_by(col_attributes)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_review_collection.id,
+      permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    sys_review_collection
   end
 
   def published_collection

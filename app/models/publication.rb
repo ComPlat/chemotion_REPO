@@ -26,6 +26,7 @@
 # Indexes
 #
 #  index_publications_on_ancestry  (ancestry)
+#  publications_element_idx        (element_type,element_id,deleted_at)
 #
 
 class Publication < ActiveRecord::Base
@@ -94,13 +95,17 @@ class Publication < ActiveRecord::Base
     case new_state
     when Publication::STATE_PENDING
       move_to_pending_collection
+      group_review_collection
     when Publication::STATE_REVIEWED
       move_to_review_collection
+      group_review_collection
     when Publication::STATE_ACCEPTED
       move_to_accepted_collection
+      group_review_collection
     when Publication::STATE_DECLINED
       declined_reverse_original_element
       declined_move_collections
+      group_review_collection
     end
   end
 
@@ -193,6 +198,27 @@ class Publication < ActiveRecord::Base
       a.extended_metadata&.delete('public_analysis') && a.save!
     end
     declined_reverse_original_reaction_elements
+  end
+
+  def group_review_collection
+    pub_user = User.find(published_by)
+    return false unless pub_user && element
+
+    group_reviewers = review['reviewers']
+    reviewers = User.where(id: group_reviewers) if group_reviewers.present?
+    return false if reviewers&.empty?
+
+    reviewers&.each do |user|
+      ## user = User.find(gl_id)
+      col = user.find_or_create_grouplead_collection
+      case element_type
+      when 'Sample'
+        CollectionsSample
+      when 'Reaction'
+        CollectionsReaction
+      end.create_in_collection([element.id], [col.id])
+    end
+
   end
 
   def declined_reverse_original_reaction_elements

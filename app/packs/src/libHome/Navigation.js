@@ -30,6 +30,7 @@ export default class Navigation extends React.Component {
     UIStore.listen(this.onUIChange);
     UserStore.listen(this.onChange);
     UserActions.fetchCurrentUser();
+    UserActions.fetchOmniauthProviders();
   }
 
   componentWillUnmount() {
@@ -41,6 +42,13 @@ export default class Navigation extends React.Component {
     const newId = state.currentUser ? state.currentUser.id : null;
     const oldId = this.state.currentUser ? this.state.currentUser.id : null;
     if (newId !== oldId) { this.setState({ currentUser: state.currentUser }); }
+
+
+    if (state.omniauthProviders !== this.state.omniauthProviders) {
+      this.setState({
+        omniauthProviders: state.omniauthProviders
+      });
+    }
   }
 
   onUIChange(state) {
@@ -71,13 +79,13 @@ export default class Navigation extends React.Component {
   }
 
   render() {
-    const { modalProps, currentUser } = this.state;
+    const { modalProps, currentUser, omniauthProviders } = this.state;
 
     let userBar = (<span />);
     if (currentUser) {
       userBar = (<UserAuth />);
     } else {
-      userBar = (<NavNewSession authenticityToken={this.token()} />);
+      userBar = (<NavNewSession authenticityToken={this.token()} omniauthProviders={omniauthProviders} />);
     }
     // const logo = <img height={50} alt="Chemotion-Repository" src="/images/repo/chemotion_full.svg"/>
     return (
