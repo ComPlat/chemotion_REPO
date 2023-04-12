@@ -439,6 +439,12 @@ export default class RepoReactionDetails extends Component {
       buttons = ['Decline', 'Comments', 'Accept'];
       showDOI = '';
     }
+
+
+    if (review_info?.groupleader === true && review_info?.preapproved !== true) {
+      buttons = ['Comments', 'Review', 'Approve'];
+    }
+
     const idyLogin = typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview = typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';

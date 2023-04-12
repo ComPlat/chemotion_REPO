@@ -60,6 +60,13 @@ const qCheckMsg = (sample, container) => {
   return '';
 };
 
+const isNMRKind = (container) => {
+  if (container.extended_metadata.kind) {
+    return container.extended_metadata.kind.includes('NMR');
+  }
+  return false;
+}
+
 const SpectraEditorBtn = ({
   sample, spcInfos, hasJcamp, hasChemSpectra,
   toggleSpectraModal, confirmRegenerate, confirmRegenerateEdited, hasEditedJcamp,
@@ -391,6 +398,9 @@ const headerBtnGroup = (
         toggleNMRDisplayerModal={toggleNMRDisplayerModal}
         hasNMRium={hasNMRium}
         isReviewer={isReviewer}
+        confirmRegenerateEdited={confirmRegenerateEdited}
+        toggleNMRDisplayerModal={toggleNMRDisplayerModal}
+        hasNMRium={hasNMRium}
       />
       <span className="button-right">
         <MolViewerListBtn el={sample} container={container} isPublic={false} disabled={!enableMoleculeViewer} />

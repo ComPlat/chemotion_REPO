@@ -209,6 +209,10 @@ module AttachmentJcampProcess
     generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
   end
 
+  def generate_nmrium_att(nmrium_tmp, addon, to_edit = false)
+    generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
+  end
+
   def build_params(params = {})
     _, extname = extension_parts
     params[:mass] = 0.0

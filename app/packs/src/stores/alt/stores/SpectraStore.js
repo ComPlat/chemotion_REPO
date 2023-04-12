@@ -105,7 +105,6 @@ class SpectraStore {
     if (newArrSpcIdx.length <= 1) {
       newArrSpcIdx = [];
     }
-
     this.setState({
       spcInfos: sortedSpcInfo,
       spcMetas,
