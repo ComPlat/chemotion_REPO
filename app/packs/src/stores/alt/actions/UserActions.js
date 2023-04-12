@@ -62,6 +62,7 @@ class UserActions {
       Aviator.navigate('/', { silent: true });
       location.href = '/';
       location.reload();
+      // location = '/home';
     });
   }
 

@@ -4,12 +4,12 @@ import { Row, Col, OverlayTrigger, Tooltip, Modal, Button, Table, Panel, Form, F
 import { findIndex, filter } from 'lodash';
 import uuid from 'uuid';
 import Select from 'react-select';
-import UsersFetcher from '../fetchers/UsersFetcher';
+import CollaboratorFetcher from '../fetchers/CollaboratorFetcher';
 import PublicFetcher from '../fetchers/PublicFetcher';
 import SelectionField from '../common/SelectionField';
 import DeleteConfirmBtn from '../common/DeleteConfirmBtn';
 
-const sortList = data => data.sort((a, b) => a.name.localeCompare(b.name));
+const sortList = data => data?.sort((a, b) => a?.name?.localeCompare(b.name));
 const addUserTooltip = <Tooltip id="addUser_tooltip">Save to my collaboration</Tooltip>;
 const removeAffTooltip = <Tooltip id="rmAff_tooltip">Remove this affiliation</Tooltip>;
 const refreshOrcidTooltip = <Tooltip id="rmAff_tooltip">Refresh affiliations from ORCID</Tooltip>;
@@ -88,7 +88,7 @@ export default class AuthorModal extends Component {
   }
 
   componentDidMount() {
-    UsersFetcher.fetchMyCollaborations()
+    CollaboratorFetcher.fetchMyCollaborations()
       .then((result) => {
         if (result.authors && result.authors.length > 0) {
           this.setState({ authors: sortList(result.authors) });
@@ -123,7 +123,7 @@ export default class AuthorModal extends Component {
     const params = {
       id: g.id, department, organization, country
     };
-    UsersFetcher.addCollaboratorAff(params)
+    CollaboratorFetcher.addCollaboratorAff(params)
       .then((result) => {
         if (result.error) {
           alert(result.error);
@@ -141,7 +141,7 @@ export default class AuthorModal extends Component {
   onDeleteAff(a, g) {
     const { authors } = this.state;
     const params = { user_id: g.id, aff_id: a.id };
-    UsersFetcher.deleteCollaboratorAff(params)
+    CollaboratorFetcher.deleteCollaboratorAff(params)
       .then((result) => {
         if (result.error) {
           alert(result.error);
@@ -155,7 +155,7 @@ export default class AuthorModal extends Component {
 
   onRefreshOrcidAff(g) {
     const params = { user_id: g.id };
-    UsersFetcher.refreshOrcidAff(params)
+    CollaboratorFetcher.refreshOrcidAff(params)
       .then((result) => {
         if (result.error) {
           alert(result.message);
@@ -180,6 +180,9 @@ export default class AuthorModal extends Component {
         break;
       case 'lastName':
         fields.lastName = ev.currentTarget.value;
+        break;
+      case 'email':
+        fields.email = ev.currentTarget.value;
         break;
       case 'orcid':
         fields.orcid = ev.currentTarget.value;
@@ -208,11 +211,12 @@ export default class AuthorModal extends Component {
   findUsers() {
     const { fields } = this.state;
     if ((!fields.firstName || fields.firstName.trim() === '') && (!fields.lastName || fields.lastName.trim() === '')
+    && (!fields.email || fields.email.trim() === '')
     && (!fields.orcid || fields.orcid.trim() === '')) {
-      alert('Please input First Name or Last Name');
+      alert('Please input Email or first name or last name');
       return false;
     }
-    UsersFetcher.fetchUsersByNameFirst(fields.lastName || '', fields.firstName || '')
+    CollaboratorFetcher.fetchUsersByNameFirst(fields.lastName || '', fields.firstName || '', fields.email || '')
       .then((result) => {
         if (result.users && result.users.length > 0) {
           this.setState({
@@ -228,29 +232,61 @@ export default class AuthorModal extends Component {
   }
 
   findOrcid() {
-    const { fields } = this.state;
+    const { fields, departments, organizations } = this.state;
     if (!fields.orcid || fields.orcid.trim() === '') {
       alert('Please input ORCID');
       return false;
     }
 
-    UsersFetcher.fetchandAddCollaboratorByOrcid(fields.orcid)
+    CollaboratorFetcher.fetchandAddCollaboratorByOrcid(fields.orcid)
       .then((result) => {
         if (result.error) {
           alert(`[${fields.orcid.trim()}] \n ${result.message}`);
           return false;
         }
 
-        this.setState({
-          authors: sortList(result.authors), users: [], fields: {}, showNewUser: false
-        });
+        if (result.users) {
+          const user = result.users || {};
+          if (user.id !== null) {
+            const users = [];
+            users.push(result.users);
+            this.setState({
+              users,
+              showNewUser: false,
+              fields: {}
+            });
+          } else {
+            fields.firstName = user.first_name;
+            fields.lastName = user.last_name;
+            fields.email = user.email;
+            const aff = (user.affiliations && user.affiliations[0]) || {};
+
+            fields.country = aff.country;
+            if (typeof (organizations.find(x => x.value === aff.organization)) === 'undefined') {
+              organizations.push({ label: aff.organization, value: aff.organization });
+            }
+            fields.organization = aff.organization;
+            if (typeof (departments.find(x => x.value === aff.department)) === 'undefined') {
+              departments.push({ label: aff.department, value: aff.department });
+            }
+            fields.department = aff.department;
+
+            this.setState({
+              showNewUser: true,
+              fields,
+              departments
+            });
+          }
+        } else {
+          this.setState({ showNewUser: true, users: [] });
+        }
       });
     return true;
   }
 
   handleAddUser(u) {
     const { authors } = this.state;
-    UsersFetcher.AddMyCollaboration({ id: u.id })
+    CollaboratorFetcher.AddMyCollaboration({ id: u.id })
       .then((result) => {
         authors.push(result.user);
         this.setState({
@@ -262,7 +298,18 @@ export default class AuthorModal extends Component {
   createAdd() {
     const { fields, authors } = this.state;
 
+
+    const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+
+    if (!fields.email?.match(validRegex)) {
+      alert(`Invalid Email Address [${fields.email}]`);
+      return false;
+    }
+
     const nilFields = [];
+    if (!fields.email || fields.email.trim() === '') {
+      nilFields.push('Email');
+    }
     if (!fields.firstName || fields.firstName.trim() === '') {
       nilFields.push('First Name');
     }
@@ -283,10 +330,10 @@ export default class AuthorModal extends Component {
       return false;
     }
 
-    UsersFetcher.createAddMyCollaboration(fields)
+    CollaboratorFetcher.createAddMyCollaboration(fields)
       .then((result) => {
         if (result.error) {
-          alert(result.error);
+          alert(result.message);
         } else {
           authors.push(result.user);
           this.setState({
@@ -299,7 +346,7 @@ export default class AuthorModal extends Component {
 
   handleDeleteCollaborator(c) {
     const { authors } = this.state;
-    UsersFetcher.deleteCollaboration({ id: c.id })
+    CollaboratorFetcher.deleteCollaboration({ id: c.id })
       .then((result) => {
         if (result.error) {
           alert(result.error);
@@ -330,6 +377,7 @@ export default class AuthorModal extends Component {
             &nbsp;
           </td>
           <td>{g.name}</td>
+          <td>{g.email}</td>
           <td>{g.orcid}</td>
           <td>{g.current_affiliations && g.current_affiliations.length > 0 ? g.current_affiliations[0].department : ''}</td>
           <td>{g.current_affiliations && g.current_affiliations.length > 0 ? g.current_affiliations[0].organization : ''}</td>
@@ -338,10 +386,10 @@ export default class AuthorModal extends Component {
       </tbody>
     ));
     let tbody = '';
-    if (Object.keys(authors).length <= 0) {
+    if (authors && Object.keys(authors).length <= 0) {
       tbody = '';
     } else {
-      tbody = authors.map(g => (
+      tbody = authors?.map(g => (
         <tbody key={`tbody_${g.id}`}>
           <tr key={`row_${g.id}`} id={`row_${g.id}`} style={{ fontWeight: 'bold' }}>
             <td>
@@ -352,6 +400,7 @@ export default class AuthorModal extends Component {
               &nbsp;
             </td>
             <td>{g.name}</td>
+            <td>{g.email}</td>
             <td>{g.orcid} {refreshAffByOrcid(g, this.onRefreshOrcidAff)}</td>
             <td>
               <Table style={{ backgroundColor: 'unset', margin: 'unset' }}>
@@ -368,7 +417,7 @@ export default class AuthorModal extends Component {
                           <td width="30%">
                             <SelectionField
                               options={this.state.departments}
-                              value={(this.state.fields && this.state.fields[`${g.id}@line_department`]) || ''}
+                              value={(this.state.fields && this.state.fields[`${g.id}@line_department`]) || 'a'}
                               field={`${g.id}@line_department`}
                               placeholder="e.g. Institute of Organic Chemistry"
                               onChange={this.handleInputChange}
@@ -378,7 +427,7 @@ export default class AuthorModal extends Component {
                           <td width="40%">
                             <SelectionField
                               options={this.state.organizations}
-                              value={(this.state.fields && this.state.fields[`${g.id}@line_organization`]) || ''}
+                              value={(this.state.fields && this.state.fields[`${g.id}@line_organization`]) || 'b'}
                               field={`${g.id}@line_organization`}
                               placeholder="e.g. Karlsruhe Institute of Technology"
                               onChange={this.handleInputChange}
@@ -493,7 +542,7 @@ export default class AuthorModal extends Component {
                     onChange={e => this.handleInputChange('orcid', e)}
                   />
                   <InputGroup.Button>
-                    <Button bsStyle="success" onClick={() => this.findOrcid()}><i className="fa fa-search" aria-hidden="true" />&nbsp;Find and save to collaboration by ORCID</Button>
+                    <Button bsStyle="success" onClick={() => this.findOrcid()}><i className="fa fa-search" aria-hidden="true" />&nbsp;Find by ORCID</Button>
                   </InputGroup.Button>
                 </InputGroup>
               </FormGroup>
@@ -504,6 +553,13 @@ export default class AuthorModal extends Component {
               <Form>
                 <FormGroup controlId="formInlineFirstName">
                   <InputGroup>
+                  <InputGroup.Addon>Email</InputGroup.Addon>
+                    <FormControl
+                      type="text"
+                      placeholder="eg: AK"
+                      value={this.state.fields.email || ''}
+                      onChange={e => this.handleInputChange('email', e)}
+                    />
                     <InputGroup.Addon>First Name</InputGroup.Addon>
                     <FormControl
                       type="text"
@@ -519,11 +575,11 @@ export default class AuthorModal extends Component {
                       onChange={e => this.handleInputChange('lastName', e)}
                     />
                     <InputGroup.Button>
-                      <Button bsStyle="success" onClick={() => this.findUsers()}>
-                        <i className="fa fa-search" aria-hidden="true" />&nbsp;
-                        Find by Name
-                      </Button>
-                    </InputGroup.Button>
+                        <Button bsStyle="success" onClick={() => this.findUsers()}>
+                          <i className="fa fa-search" aria-hidden="true" />&nbsp;
+                          Find
+                        </Button>
+                      </InputGroup.Button>
                   </InputGroup>
                 </FormGroup>
               </Form>
@@ -563,9 +619,10 @@ export default class AuthorModal extends Component {
                     <tr style={{ backgroundColor: '#ddd' }}>
                       <th width="10%">Action</th>
                       <th width="10%">Name</th>
+                      <th width="10%">Email</th>
                       <th width="10%">ORCID</th>
                       <th width="20%">Department</th>
-                      <th width="25%">Organization</th>
+                      <th width="15%">Organization</th>
                       <th width="15%">Country</th>
                     </tr>
                   </thead>
@@ -585,14 +642,15 @@ export default class AuthorModal extends Component {
                     <tr style={{ backgroundColor: '#ddd' }}>
                       <th width="5%">Action</th>
                       <th width="10%">Name</th>
+                      <th width="10%">Email</th>
                       <th width="15%">ORCID</th>
-                      <th width="70%">
+                      <th width="60%">
                         <Table style={{ backgroundColor: 'unset', margin: 'unset' }}>
                           <tbody>
                             <tr>
-                              <td style={{ padding: 'unset' }} width="30%">Department</td>
-                              <td style={{ padding: 'unset' }} width="40%">Organization</td>
-                              <td style={{ padding: 'unset' }} width="20%">Country</td>
+                              <td style={{ padding: 'unset' }} width="20%">Department</td>
+                              <td style={{ padding: 'unset' }} width="15%">Organization</td>
+                              <td style={{ padding: 'unset' }} width="15%">Country</td>
                               <td style={{ padding: 'unset' }} width="10%">&nbsp;</td>
                             </tr>
                           </tbody>

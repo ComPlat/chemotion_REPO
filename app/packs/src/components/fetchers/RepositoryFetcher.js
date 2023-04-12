@@ -40,7 +40,7 @@ export default class RepositoryFetcher {
   }
 
   static publishSample(params, option = null) {
-    const { sample, coauthors, refs, embargo, license, addMe } = params;
+    const { sample, coauthors, reviewers, refs, embargo, license, addMe } = params;
     const analysesIds = AnalysisIdstoPublish(sample);
     return fetch(`/api/v1/repository/publishSample/${option ? 'dois' : ''}`, {
       credentials: 'same-origin',
@@ -53,6 +53,7 @@ export default class RepositoryFetcher {
         sampleId: sample.id,
         analysesIds,
         coauthors,
+        reviewers,
         refs,
         embargo,
         license,
@@ -85,7 +86,7 @@ export default class RepositoryFetcher {
 
   static publishReactionScheme(params) {
     const {
-      reaction, coauthors, embargo, license, addMe, schemeDesc
+      reaction, coauthors, reviewers, embargo, license, addMe, schemeDesc
     } = params;
     return fetch('/api/v1/repository/publishReactionScheme', {
       credentials: 'same-origin',
@@ -101,6 +102,7 @@ export default class RepositoryFetcher {
         products: reaction.products,
         schemeDesc,
         coauthors,
+        reviewers,
         embargo,
         license,
         addMe
@@ -128,7 +130,7 @@ export default class RepositoryFetcher {
   }
 
   static publishReaction(params, option = null) {
-    const { reaction, coauthors, refs, embargo, license, isFullyPublish, addMe } = params;
+    const { reaction, coauthors, reviewers, refs, embargo, license, isFullyPublish, addMe } = params;
     if (!isFullyPublish) return this.publishReactionScheme(params);
     const analysesIds = reaction.samples.reduce((acc, s) => acc.concat(AnalysisIdstoPublish(s)),
       AnalysisIdstoPublish(reaction)
@@ -144,6 +146,7 @@ export default class RepositoryFetcher {
         reactionId: reaction.id,
         analysesIds,
         coauthors,
+        reviewers,
         refs,
         embargo,
         license,
@@ -231,6 +234,8 @@ export default class RepositoryFetcher {
       api = '/api/v1/repository/reviewing/comments';
     } else if (action === 'Accept') {
       api = '/api/v1/repository/reviewing/accepted';
+    } else if (action === 'Approve') {
+      api = '/api/v1/repository/reviewing/approved';
     } else if (action === 'Review') {
       api = '/api/v1/repository/reviewing/reviewed';
     } else if (action === 'Submit') {

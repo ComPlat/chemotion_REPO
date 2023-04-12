@@ -9,16 +9,22 @@ import PropTypes from 'prop-types';
 import RepoMetadataModal from '../components/common/RepoMetadataModal';
 import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
 
-const showButton = (btn, func, reviewLevel, pubState, isSubmitter) => {
+const showButton = (btn, func, pubState, review_info) => {
   let title = btn;
   let btnBsStyle = '';
   let btnIcon = '';
   let btnTooltip = '';
+
   switch (btn) {
     case 'Accept':
       btnBsStyle = 'primary';
       btnIcon = 'fa fa-paper-plane';
       btnTooltip = 'Accept publication';
+      break;
+    case 'Approve':
+      btnBsStyle = 'primary';
+      btnIcon = 'fa fa-paper-plane';
+      btnTooltip = 'Accept publication by group leader';
       break;
     case 'Review':
       btnBsStyle = 'info';
@@ -33,10 +39,10 @@ const showButton = (btn, func, reviewLevel, pubState, isSubmitter) => {
     case 'Decline':
       btnBsStyle = 'default';
       btnIcon = 'fa fa-eject';
-      if (reviewLevel === 2) {
+      if (review_info?.review_level === 2) {
         btnTooltip = 'Withdraw publication';
         title = 'Withdraw';
-      } else if (reviewLevel === 3) {
+      } else if (review_info?.review_level === 3) {
         btnTooltip = 'Reject publication';
         title = 'Reject';
       }
@@ -44,7 +50,9 @@ const showButton = (btn, func, reviewLevel, pubState, isSubmitter) => {
     default:
       break;
   }
-  return ((reviewLevel === 3 && pubState === 'pending' && btn !== 'Submit') || (isSubmitter === true && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline'))) ? (
+  return ((review_info?.review_level === 3 && pubState === 'pending' && btn !== 'Submit') ||
+  (pubState === 'pending' && btn !== 'Submit' && review_info?.preapproved !== true && btn !== 'Accept' && btn !== 'Decline' && review_info?.groupleader === true) ||
+  (review_info?.submitter === true && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline'))) ? (
     <OverlayTrigger
       key={`ot_${title}`}
       placement="top"
@@ -88,13 +96,13 @@ const RepoReviewButtonBar = props =>
       }
       {
         props.showComment === true && props.buttons.filter(b => b !== 'Comments').map(b =>
-          showButton(b, props.buttonFunc, props.reviewLevel, props.currComment.state, props.isSubmitter))
+          showButton(b, props.buttonFunc, props.currComment.state, props.review_info))
       }
       <RepoMetadataModal
         elementId={props.element.id}
         elementType={props.element.elementType.toLowerCase()}
       />
-      <RepoReviewAuthorsModal element={props.element} isSubmitter={props.isSubmitter} schemeOnly={props.schemeOnly} taggData={props.taggData} />
+      <RepoReviewAuthorsModal element={props.element} review_info={props.review_info} schemeOnly={props.schemeOnly} taggData={props.taggData} />
     </ButtonToolbar>
   );
 
@@ -105,9 +113,8 @@ RepoReviewButtonBar.propTypes = {
   }).isRequired,
   buttons: PropTypes.arrayOf(PropTypes.string),
   buttonFunc: PropTypes.func,
-  reviewLevel: PropTypes.number,
+  review_info: PropTypes.object,
   showComment: PropTypes.bool,
-  isSubmitter: PropTypes.bool,
   schemeOnly: PropTypes.bool,
   currComment: PropTypes.object,
   taggData: PropTypes.object
@@ -117,8 +124,7 @@ RepoReviewButtonBar.propTypes = {
 RepoReviewButtonBar.defaultProps = {
   buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
   buttonFunc: () => { },
-  reviewLevel: 0,
-  isSubmitter: false,
+  review_info: {},
   showComment: true,
   schemeOnly: false,
   currComment: {},

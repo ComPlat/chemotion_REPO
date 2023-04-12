@@ -38,8 +38,7 @@ export default class RepoEmbargoDetails extends Component {
           <RepoReactionDetails
             reaction={currentElement.reaction}
             canComment
-            reviewLevel={this.state.reviewLevel}
-            isSubmitter={this.state.isSubmitter}
+            review_info={this.state.review_info}
             showComment={false}
             btnAction={this.state.btnAction}
             isReview={false}
@@ -51,8 +50,7 @@ export default class RepoEmbargoDetails extends Component {
             element={currentElement}
             canComment
             btnAction={this.state.btnAction}
-            reviewLevel={this.state.reviewLevel}
-            isSubmitter={this.state.isSubmitter}
+            review_info={this.state.review_info}
             showComment={false}
             review={this.state.review}
           />);

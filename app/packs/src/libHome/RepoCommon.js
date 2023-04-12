@@ -623,21 +623,28 @@ IconToMyDB.defaultProps = {
 
 
 const ChecklistPanel = ({
-  checklist, isReviewer
+  checklist, isReviewer, review_info
 }) => {
-  const dtbl = checklist?.tbl?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'blue' }} />) : (<i className="fa fa-square-o" style={{ color: 'blue' }} />);
-  const ddes = checklist?.des?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'orange' }} />) : (<i className="fa fa-square-o" style={{ color: 'orange' }} />);
-  const dafm = checklist?.afm?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'green' }} />) : (<i className="fa fa-square-o" style={{ color: 'green' }} />);
-  const dact = checklist?.act?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'purple' }} />) : (<i className="fa fa-square-o" style={{ color: 'purple' }} />);
-  const dohd = checklist?.ohd?.status === true? (<i className="fa fa-check-square-o" style={{ color: 'red' }} />) : (<i className="fa fa-square-o" style={{ color: 'red' }} />);
+  const dglr = checklist?.glr?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'brown' }} />) : (<i className="fa fa-square-o" style={{ color: 'brown' }} />);
+  const dtbl = checklist?.tbl?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'blue' }} />) : (<i className="fa fa-square-o" style={{ color: 'blue' }} />);
+  const ddes = checklist?.des?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'orange' }} />) : (<i className="fa fa-square-o" style={{ color: 'orange' }} />);
+  const dafm = checklist?.afm?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'green' }} />) : (<i className="fa fa-square-o" style={{ color: 'green' }} />);
+  const dact = checklist?.act?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'purple' }} />) : (<i className="fa fa-square-o" style={{ color: 'purple' }} />);
+  const dohd = checklist?.ohd?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'red' }} />) : (<i className="fa fa-square-o" style={{ color: 'red' }} />);
+
+
   if (isReviewer === true) {
+    const leaders = review_info?.leaders?.length > 0 ? `additional reviewer(s): ${review_info?.leaders?.join(', ')}` : '';
+    const isGL = review_info?.leaders?.length > 0 ? (<OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">group leader review</Tooltip>}>{dglr}</OverlayTrigger>) : '';
     return (
       <div>
+        {isGL}&nbsp;
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">table values</Tooltip>}>{dtbl}</OverlayTrigger>&nbsp;
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">description</Tooltip>}>{ddes}</OverlayTrigger>&nbsp;
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">analysis format</Tooltip>}>{dafm}</OverlayTrigger>&nbsp;
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">analysis content</Tooltip>}>{dact}</OverlayTrigger>&nbsp;
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">on hold</Tooltip>}>{dohd}</OverlayTrigger>&nbsp;
+        &nbsp;{leaders}
       </div>
     );
   }
@@ -2216,8 +2223,7 @@ ClosePanel.propTypes = {
 const CommentBtn = (props) => {
   const {
     canComment,
-    reviewLevel,
-    isSubmitter,
+    review_info,
     onShow,
     field,
     review,
@@ -2230,9 +2236,8 @@ const CommentBtn = (props) => {
       <RepoCommentBtn
         field={field}
         review={review}
-        isSubmitter={isSubmitter}
+        review_info={review_info}
         orgInfo={orgInfo}
-        reviewLevel={reviewLevel}
         onShow={() => onShow(true, field, orgInfo)}
       />&nbsp;
     </span>
@@ -2242,15 +2247,14 @@ const CommentBtn = (props) => {
 CommentBtn.propTypes = {
   canComment: PropTypes.bool.isRequired,
   review: PropTypes.object.isRequired,
-  isSubmitter: PropTypes.bool,
-  reviewLevel: PropTypes.number.isRequired,
+  review_info: PropTypes.object,
   onShow: PropTypes.func.isRequired,
   field: PropTypes.string.isRequired,
   orgInfo: PropTypes.string.isRequired
 };
 
 CommentBtn.defaultProps = {
-  isSubmitter: false
+  review_info: {}
 };
 
 

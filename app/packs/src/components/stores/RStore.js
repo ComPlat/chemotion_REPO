@@ -14,7 +14,7 @@ class RStore {
   navigate(page, result) {
     const elementType = (result.element.sample ? 'sample' : 'reaction');
     const subPage = page === 'embargo' ? elementType : `review_${elementType}`;
-    if (result.element && result.element.reviewLevel === 0) {
+    if (result.element && result.element?.review_info?.review_level === 0) {
       Aviator.navigate('/home');
     } else {
       this.setState({ guestPage: page });

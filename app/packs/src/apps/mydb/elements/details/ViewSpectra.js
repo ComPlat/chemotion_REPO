@@ -195,14 +195,13 @@ class ViewSpectra extends React.Component {
     const sis = spcInfos.filter(x => x.idx === spcIdx);
     const si = sis.length > 0 ? sis[0] : spcInfos[0];
 
-    const opsTmp = sample.analysesContainers().map((ae) => {
+    const ops = sample.analysesContainers().map((ae) => {
       if (ae.id !== si.idAe) return null;
       return ae.children.map((ai) => {
         if (ai.id !== si.idAi) return null;
         return ai.extended_metadata.content.ops; // eslint-disable-line
       }).filter(r => r !== null);
-    }).filter(r => r !== null);
-    const ops = opsTmp && opsTmp[0] && opsTmp[0][0];
+    }).filter(r => r !== null)[0][0];
     return ops;
   }
 
@@ -566,6 +565,7 @@ class ViewSpectra extends React.Component {
       ];
     }
 
+    // TO BE CHECKED
     if (baseOps.length === 0) {
       baseOps = [{ name: 'predict', value: this.predictOp }];
     }
@@ -657,8 +657,7 @@ class ViewSpectra extends React.Component {
       molecule: 'molecule',
       predictions,
     };
-    const { spcInfos } = this.state;
-    const spcSvg = spcInfos && spcInfos[0] && spcInfos[0].svg;
+
     return (
       <Modal.Body>
         {
@@ -735,6 +734,7 @@ class ViewSpectra extends React.Component {
             value={isShowMultiSelect ? arrSpcIdx : idx}
             treeCheckable={isShowMultiSelect}
             style={{ width: 500 }}
+            maxTagCount={1}
             onChange={onSelectChange} />
         </div>
         <Button

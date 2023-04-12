@@ -25,6 +25,7 @@ import { ReactionInfo, ReactionSchemeOnlyInfo, AnalysisHeaderSample, PublishAnal
 import LoadingActions from './actions/LoadingActions';
 import { groupByCitation, Citation } from '../components/LiteratureCommon';
 import LiteraturesFetcher from '../components/fetchers/LiteraturesFetcher';
+import CollaboratorFetcher from '../components/fetchers/CollaboratorFetcher';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
 import { contentToText } from './utils/quillFormat';
 import { CitationTypeMap, CitationTypeEOL } from './CitationType';
@@ -56,6 +57,8 @@ export default class PublishReactionModal extends Component {
     this.state = {
       reaction,
       selectedUsers: [],
+      selectedReviewers: [],
+      showSelectionReviewer: false,
       collaborations: [],
       showPreview: false,
       showScheme: false,
@@ -81,6 +84,7 @@ export default class PublishReactionModal extends Component {
     this.handlePublishReaction = this.handlePublishReaction.bind(this);
     this.handleReserveDois = this.handleReserveDois.bind(this);
     this.handleSelectUser = this.handleSelectUser.bind(this);
+    this.handleSelectReviewer = this.handleSelectReviewer.bind(this);
     this.loadUserByName = this.loadUserByName.bind(this);
     this.handleAnalysesChecked = this.handleAnalysesChecked.bind(this);
     this.toggleScheme = this.toggleScheme.bind(this);
@@ -255,7 +259,7 @@ export default class PublishReactionModal extends Component {
   }
 
   loadMyCollaborations() {
-    UsersFetcher.fetchMyCollaborations()
+    CollaboratorFetcher.fetchMyCollaborations()
       .then((result) => { this.setState({ collaborations: result.authors }); });
   }
 
@@ -266,6 +270,10 @@ export default class PublishReactionModal extends Component {
       <div>  -{currentUser.current_affiliations[k]}</div>
     ));
     return (<div><h5><b>Contributor:</b></h5>{orcid}{currentUser.name} <br /> {aff} </div>);
+  }
+
+  handleSelectReviewer(val) {
+    if (val) { this.setState({ selectedReviewers: val }); }
   }
 
   loadUserByName(input) {
@@ -375,6 +383,7 @@ export default class PublishReactionModal extends Component {
       isFullyPublish,
       reaction: this.state.reaction,
       coauthors: this.state.selectedUsers.map(u => u.value),
+      reviewers: this.state.selectedReviewers.map(u => u.value),
       refs: this.state.selectedRefs,
       embargo: this.state.selectedEmbargo,
       license: this.state.selectedLicense,
@@ -447,6 +456,45 @@ export default class PublishReactionModal extends Component {
         />
         <div>
           {authorInfo}
+        </div>
+      </div>
+    );
+  }
+
+  addReviewers() {
+    const { selectedReviewers, collaborations } = this.state;
+    const options = collaborations.map(c => (
+      { label: c.name, value: c.id }
+    ));
+
+    const reviewerInfo = selectedReviewers && selectedReviewers.map((a) => {
+      const us = collaborations.filter(c => c.id === a.value);
+      const u = us && us.length > 0 ? us[0] : {};
+      const orcid = u.orcid == null ? '' : <OrcidIcon orcid={u.orcid} />;
+      const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
+        <div>  -{af.department}, {af.organization}, {af.country}</div>
+      ));
+      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>)
+    });
+
+
+    return (
+      <div >
+        <h5><b>Additional Reviewers:</b></h5>
+        <Select
+          multi
+          searchable
+          placeholder="Select reviewers from my collaboration"
+          backspaceRemoves
+          value={selectedReviewers}
+          valueKey="value"
+          labelKey="label"
+          matchProp="name"
+          options={options}
+          onChange={this.handleSelectReviewer}
+        />
+        <div>
+          {reviewerInfo}
         </div>
       </div>
     );
@@ -604,7 +652,7 @@ export default class PublishReactionModal extends Component {
   render() {
     const { show } = this.props;
     const {
-      reaction, selectedUsers, selectedRefs, publishType, bundles
+      reaction, selectedUsers, selectedReviewers, selectedRefs, publishType, bundles
     } = this.state;
 
     const isFullyPublish = publishType.selected === publishOptions.f;
@@ -855,6 +903,16 @@ export default class PublishReactionModal extends Component {
                   </Panel.Heading>
                   <Panel.Body collapsible>
                     {this.selectReferences()}
+                  </Panel.Body>
+                </Panel>
+                <Panel eventKey="6">
+                  <Panel.Heading>
+                    <Panel.Title toggle>
+                      <h4> Additional Reviewers ({selectedReviewers.length})</h4>
+                    </Panel.Title>
+                  </Panel.Heading>
+                  <Panel.Body collapsible>
+                    {this.addReviewers()}
                   </Panel.Body>
                 </Panel>
               </PanelGroup>

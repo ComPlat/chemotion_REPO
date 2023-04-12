@@ -6783,7 +6783,7 @@ d3-brush@1:
     d3-selection "1"
     d3-transition "1"
 
-d3-brush@2:
+d3-brush@2, d3-brush@2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/d3-brush/-/d3-brush-2.1.0.tgz#adadfbb104e8937af142e9a6e2028326f0471065"
   integrity sha512-cHLLAFatBATyIKqZOkk/mDHUbzne2B3ZwxkzMHvFTCZCmLaXDpZRihQSn8UNXTkGD/3lb/W2sQz0etAftmHMJQ==

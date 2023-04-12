@@ -34,7 +34,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
           &nbsp;{embargoBtn}
           <div>
             <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
-            <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} />
+            <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} review_info={e?.review_info || {}}  />
           </div>
         </td>
       </tr>
@@ -56,7 +56,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
         &nbsp;{embargoBtn}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
-          <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} />
+          <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} review_info={e?.review_info || {}} />
         </div>
       </td>
     </tr>
@@ -443,10 +443,9 @@ export default class RepoReview extends Component {
 
 
   renderReviewModal() {
-    const { showReviewModal, reviewData, reviewLevel, isSubmitter, review, currentElement, elementType, btnAction } = this.state;
+    const { showReviewModal, reviewData, review_info, review, currentElement, elementType, btnAction } = this.state;
     const rrr = {};
-    rrr['reviewLevel'] = reviewLevel;
-    rrr['isSubmitter'] = isSubmitter;
+    rrr['review_info'] = review_info;
     rrr['review'] = review;
     rrr['btnAction'] = btnAction;
     rrr['elementType'] = elementType;
@@ -462,13 +461,6 @@ export default class RepoReview extends Component {
         data={rrr}
         onSubmit={this.handleSubmitReview}
         onUpdate={this.handleReviewUpdate}
-        // elementId={sample.id}
-        // action={this.state.btnAction}
-        // isSubmitter={isSubmitter}
-        // reviewLevel={reviewLevel}
-        // review={review || {}}
-        // onSubmit={this.handleSubmitReview}
-        // onUpdate={this.handleReviewUpdate}
         onHide={() => this.setState({ showReviewModal: false })}
       />
     );

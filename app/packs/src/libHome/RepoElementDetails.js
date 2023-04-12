@@ -37,8 +37,7 @@ export default class RepoElementDetails extends Component {
         <RepoSampleDetails
           isPublished
           element={currentElement}
-          reviewLevel={this.state.reviewLevel}
-          isSubmitter={this.state.isSubmitter}
+          review_info={this.state.review_info}
           review={this.state.review || {}}
           listType={listType}
         />);
@@ -46,8 +45,7 @@ export default class RepoElementDetails extends Component {
         <RepoReactionDetails
           isPublished
           reaction={currentElement}
-          reviewLevel={this.state.reviewLevel}
-          isSubmitter={this.state.isSubmitter}
+          review_info={this.state.review_info}
           review={this.state.review || {}}
         />);
       default: return <span />;
