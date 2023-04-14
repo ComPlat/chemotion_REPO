@@ -19,6 +19,7 @@ set :linked_files, fetch(:linked_files, []).push(
   '.ruby-version',
   '.ruby-gemset',
   'config/compound_open_data.yml',
+  'config/ketcher_service.yml',
   'config/spectra.yml',
   'config/converter.yml',
   'config/node_service.yml'

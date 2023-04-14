@@ -32,7 +32,6 @@ module Chemotion
         post do
           smiles = params[:smiles]
           svg = params[:svg_file]
-
           babel_info = OpenBabelService.molecule_info_from_structure(smiles, 'smi')
           inchikey = babel_info[:inchikey]
           return {} if inchikey.blank?
@@ -78,6 +77,9 @@ module Chemotion
               else
                 FileUtils.cp(svg_file_src, svg_process[:svg_file_path])
               end
+            else
+              svg = Molecule.svg_reprocess(svg, molecule.molfile)
+              svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true)
             end
           end
           molecule.attributes.merge(temp_svg: File.exist?(svg_process[:svg_file_path]) && svg_process[:svg_file_name], ob_log: babel_info[:ob_log])
