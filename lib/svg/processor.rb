@@ -12,6 +12,8 @@ module SVG
                     Chemotion::MarvinjsSvgProcessor.new(svg)
                   when /chemdraw/i
                     Chemotion::ChemdrawSvgProcessor.new(svg)
+                  when /ketcher2/i
+                    Chemotion::MarvinjsSvgProcessor.new(svg)
                   when /ketcher/i
                     Ketcherails::SVGProcessor.new(svg)
                   else
