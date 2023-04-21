@@ -15,7 +15,7 @@ module AttachmentJcampAasm
     aasm do
       state :idle, initial: true
       state :queueing, :regenerating, :done
-      state :peaked, :edited, :backup, :image, :json, :csv
+      state :peaked, :edited, :backup, :image, :json, :csv, :nmrium
       state :failure
       state :non_jcamp
       state :oo_editing
