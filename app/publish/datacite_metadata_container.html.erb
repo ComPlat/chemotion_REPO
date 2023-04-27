@@ -21,7 +21,7 @@
     <title xml:lang="en-US"><%= (element.extended_metadata['kind'] || '').split('|').pop %> (<%= parent_element.molecule.iupac_name %>)</title>
     <title titleType="AlternativeTitle"><%= parent_element.molecule.inchistring %>)</title>
   </titles>
-  <publisher>chemotion.net</publisher>
+  <publisher>chemotion-repository</publisher>
   <publicationYear><%= Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
