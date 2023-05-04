@@ -667,7 +667,7 @@ class Publication < ActiveRecord::Base
     else
       start = val.begin == -Float::INFINITY ? '' : val.begin.to_f
       finish = val.end == Float::INFINITY ? '' : val.end.to_f
-      "#{start}#{start == '' || finish == '' ? '' : ' - '}#{finish}"
+      "#{start}#{start == '' || finish == '' ? '' : ' - '}#{finish} (°C)"
     end
   end
 
