@@ -60,6 +60,9 @@ $bs-successcolor: #5cb85c;
   .repo-pub-title {
     font-size: 150%;
   }
+  .repo-public-user-comment {
+    margin-left: auto;
+  }
 }
 
 .repo-pub-list-icons {
@@ -919,5 +922,43 @@ $bs-successcolor: #5cb85c;
   .ql-editor {
     cursor: inherit;
     padding: unset;
+  }
+}
+
+.repo-ma-panel {
+  span {
+    display: flex;
+    justify-content: center;
+    margin-right: 4px;
+  }
+  a {
+    @include xvial-elem-base;
+    cursor: pointer;
+    background-color: white;
+    padding: 0px 6px;
+  }
+  span i {
+    @include xvial-elem-base;
+  }
+}
+
+.repo-public-sample-info {
+  h5 {
+    margin-top: 4px;
+    margin-bottom: unset;
+    display: flex;
+    align-items: center;
+  }
+  h5 .btn-link {
+    padding: unset;
+  }
+}
+
+.repo-public-sample-rel {
+  button {
+    padding: 0px 0px;
+  }
+  button i {
+    font-size: 1.5em;
   }
 }
