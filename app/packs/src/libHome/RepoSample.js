@@ -8,22 +8,21 @@ import {
   AffiliationList,
   AnalysesTypeJoinLabel,
   AuthorList,
-  ChemotionId,
   CommentBtn,
   ContributorInfo,
   ClipboardCopyBtn,
-  DateInfo,
-  Doi,
-  IconLicense,
   IconToMyDB,
   RenderPublishAnalysesPanel,
   SidToPubChem,
   ToggleIndicator,
   ElStateLabel
 } from './RepoCommon';
-import { Citation, literatureContent, RefByUserInfo } from '../components/LiteratureCommon';
-import RepoUserComment from '../components/common/RepoUserComment';
-import RepoPublicComment from '../components/common/RepoPublicComment';
+import DateInfo from '../components/chemrepo/DateInfo';
+import LicenseIcon from '../components/chemrepo/LicenseIcon';
+import MAPanel from '../components/chemrepo/MoleculeArchive';
+import PublicSample from '../components/chemrepo/PublicSample';
+import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
+import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import RepoXvialButton from '../components/common/RepoXvialButton';
 import PublicActions from '../components/actions/PublicActions';
 import Sample from '../components/models/Sample';
@@ -44,8 +43,11 @@ export default class RepoSample extends Component {
     this.state = {
       expandSA: true, expandSG: ''
     };
+    this.panelRef = React.createRef();
+    this.materialRef = React.createRef();
+    this.handleAnalysesLink = this.handleAnalysesLink.bind(this);
+    this.handleMaterialLink = this.handleMaterialLink.bind(this);
     this.toggleSA = this.toggleSA.bind(this);
-    this.toggleSG = this.toggleSG.bind(this);
     this.renderAnalyses = this.renderAnalyses.bind(this);
   }
 
@@ -53,13 +55,17 @@ export default class RepoSample extends Component {
 
   componentDidUpdate() { scrollView(); }
 
+  handleAnalysesLink() {
+    this.panelRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  handleMaterialLink() {
+    this.materialRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+
   toggleSA() {
     const { expandSA } = this.state;
     this.setState({ expandSA: !expandSA });
-  }
-
-  toggleSG(sg) {
-    this.setState({ expandSG: sg.uuid });
   }
 
   updateRepoXvial(elementId) {
@@ -99,35 +105,19 @@ export default class RepoSample extends Component {
   render() {
     const {
       sample, pubData, tagData, isPublished,
-      canComment, handleCommentBtn, isLogin, isReviewer, element
+      isLogin, isReviewer, element
     } = this.props;
     const { xvialCom } = element;
-    const { expandSA, expandSG } = this.state;
-
+    const { expandSA } = this.state;
+// console.log(this.props);
     const affiliationMap = AffiliationMap(sample.affiliation_ids);
-    const references = sample.literatures ? sample.literatures.map(lit => (
-      <li key={`li_${lit.id}`} style={{ display: 'flex' }}>
-        <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />&nbsp;
-        <Citation key={lit.id} literature={lit} />
-      </li>
-    )) : [];
-
-    const refArray = [];
-    let referencesText = '';
-    if (canComment && sample.literatures) {
-      sample.literatures.forEach((lit) => {
-        const content = literatureContent(lit, true);
-        refArray.push(content);
-      });
-      referencesText = refArray.join('');
-    }
 
     const iupacUserDefined = ((sample.showed_name == sample.molecule_iupac) || sample.showed_name == null)
       ? <span />
       : <h5><b>Name: </b> {sample.showed_name} </h5>;
     const userInfo = sample.pub_info || '';
     const analyses = (sample.analyses && sample.analyses.children && sample.analyses.children.length > 0 && sample.analyses.children[0].children) || [];
-    let embargo = (<span />);
+    let embargo = null;
     let colDoiPrefix = (sample?.doi || '');
     colDoiPrefix = typeof colDoiPrefix === 'object' ? sample.doi?.full_doi : colDoiPrefix;
     colDoiPrefix = colDoiPrefix.split('/')[0];
@@ -148,12 +138,13 @@ export default class RepoSample extends Component {
       <Jumbotron key={`sample-${sample.id}`}>
         <span className="repo-pub-sample-header">
           <span className="repo-pub-title"><IconToMyDB isLogin={isLogin} isPublished={isPublished} id={sample.id} type="sample" /></span>&nbsp;
-          <span className="repo-pub-title"><DateInfo pubData={pubData} tagData={tagData} isPublished={isPublished} /></span>&nbsp;
+          <span className="repo-pub-title"><DateInfo isPublished={isPublished} preText="Sample" pubData={pubData} tagData={tagData} /></span>&nbsp;
           <SidToPubChem sid={sample.sid} />&nbsp;
           <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={sample.id} data={sample.xvial} saveCallback={() => this.updateRepoXvial(sample.molecule_id)} xvialCom={xvialCom} />
-          {IconLicense((isPublished ? sample.doi : sample.doi?.full_doi), sample.license, (sample.author_ids.length > 1))}
-          <RepoPublicComment isReviewer={isReviewer} id={sample.id} type="Sample" title={sample.showed_name} userInfo={userInfo} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
-          <RepoUserComment isLogin={isLogin} id={sample.id} type="Sample" title={sample.showed_name} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
+          <span className="repo-public-user-comment">
+            <PublicCommentModal isReviewer={isReviewer} id={sample.id} type="Sample" title={sample.showed_name} userInfo={userInfo} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
+            <UserCommentModal isLogin={isLogin} id={sample.id} type="Sample" title={sample.showed_name} pageType="molecules" pageId={sample.molecule_id} />&nbsp;
+          </span>
           {ElStateLabel(sample.embargo)}
         </span>
         <br />
@@ -167,25 +158,25 @@ export default class RepoSample extends Component {
           affiliations={sample.affiliations}
           affiliationMap={affiliationMap}
         />
-        <Doi type="sample" id={sample.id} doi={sample.doi} isPublished={isPublished} />
-        <ChemotionId id={pubData.id} type="sample" />
-        <h5>
-          {sample.reaction_ids.map(rid => (
-            <Button key={`reaction-link-btn-${rid}`} bsStyle="link" style={{ padding: '0px 0px' }} onClick={() => { window.location = `/home/publications/reactions/${rid}`; }}>
-              <i className="icon-reaction" style={{ fontSize: '1.5em' }} />{'Product of reaction'}
-            </Button>
-          ))}
-        </h5>
-        {embargo}
-        <h5>
-          <CommentBtn {...this.props} field="Reference" orgInfo={referencesText} onShow={handleCommentBtn} />
-          <b>Reference{references.length > 1 ? 's' : null}: </b>
-          <ul style={{ listStyle: 'none' }}>{references}</ul>
-        </h5>
+        <br />
+        <PublicSample {...this.props} embargo={embargo} handleAnalysesLink={this.handleAnalysesLink} handleMaterialLink={this.handleMaterialLink} />
+        <br />
+        <div ref={this.materialRef}>
+          <MAPanel isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={sample.id} data={sample.xvial} saveCallback={() => this.updateRepoXvial(sample.molecule_id)} xvialCom={xvialCom} />&nbsp;
+        </div>
         <RepoSegment segments={sample.segments} />
-        <ToggleIndicator onClick={this.toggleSA} name="Analyses" indicatorStyle={expandSA ? 'down' : 'right'} />
-        <span className="label" style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}>
-          {AnalysesTypeJoinLabel(ArrayUtils.sortArrByIndex(analyses), 'Sample')}
+        <span className="repo-pub-sample-header">
+          <div ref={this.panelRef}>
+            <ToggleIndicator onClick={this.toggleSA} name="Analyses" indicatorStyle={expandSA ? 'down' : 'right'} />
+          </div>
+          <span className="label" style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}>
+            {AnalysesTypeJoinLabel(ArrayUtils.sortArrByIndex(analyses), 'Sample')}
+          </span>
+          <LicenseIcon
+            doi={(isPublished ? sample.doi : sample.doi?.full_doi)}
+            license={sample.license}
+            hasCoAuthors={(sample.author_ids.length > 1)}
+          />
         </span>
         <Panel style={{ border: 'none' }} id="collapsible-panel-sample-analyses" expanded={expandSA} defaultExpanded={expandSA} onToggle={() => { }}>
           <Panel.Collapse>

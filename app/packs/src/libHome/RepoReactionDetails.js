@@ -20,7 +20,6 @@ import {
   CommentBtn,
   ContributorInfo,
   ClipboardCopyBtn,
-  DateInfo,
   Doi,
   ReactionTable,
   ReactionRinChiKey,
@@ -28,7 +27,6 @@ import {
   ReactionTlc,
   RenderAnalysisHeader,
   RenderPublishAnalysesPanel,
-  IconLicense,
   IconToMyDB,
   AnalysesTypeJoinLabel,
   SchemeWord,
@@ -37,12 +35,14 @@ import {
 import LoadingActions from '../components/actions/LoadingActions';
 import PublicActions from '../components/actions/PublicActions';
 import ReviewActions from '../components/actions/ReviewActions';
+import DateInfo from '../components/chemrepo/DateInfo';
+import LicenseIcon from '../components/chemrepo/LicenseIcon';
+import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
+import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import QuillViewer from '../components/QuillViewer';
 import { Citation, literatureContent, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoReactionSchemeInfo from './RepoReactionSchemeInfo';
 import RepoReviewButtonBar from './RepoReviewButtonBar';
-import RepoUserComment from '../components/common/RepoUserComment';
-import RepoPublicComment from '../components/common/RepoPublicComment';
 import Sample from '../components/models/Sample';
 import RepoSegment from './RepoSegment';
 
@@ -481,10 +481,14 @@ export default class RepoReactionDetails extends Component {
             {canClose ? <ClosePanel element={reaction} /> : ''}
             <h4>
               <IconToMyDB isLogin={idyLogin} isPublished={isPublished} id={reaction.id} type="reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;
-              <DateInfo pubData={pubData} tagData={taggData} isPublished={isPublished} />
-              {IconLicense((isPublished ? taggData.doi : doi.full_doi), license, (taggData.author_ids && (taggData.author_ids.length > 1)))}
-              <RepoPublicComment isReviewer={idyReview} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} userInfo={userInfo} />&nbsp;
-              <RepoUserComment isLogin={idyLogin} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} />
+              <DateInfo isPublished={isPublished} preText="Reaction" pubData={pubData} tagData={taggData} />&nbsp;
+              <LicenseIcon
+                doi={(isPublished ? taggData.doi : doi.full_doi)}
+                license={license}
+                hasCoAuthors={(taggData.author_ids && (taggData.author_ids.length > 1))}
+              />
+              <PublicCommentModal isReviewer={idyReview} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} userInfo={userInfo} />&nbsp;
+              <UserCommentModal isLogin={idyLogin} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} />
             </h4>
             <br />
             <ContributorInfo contributor={taggData.contributors} showHelp={schemeOnly} />
@@ -501,7 +505,7 @@ export default class RepoReactionDetails extends Component {
             {embargo}
             <h5>
               <CommentBtn {...this.props} field="Reference" orgInfo={referencesText} onShow={this.handleCommentBtn} />
-              <b>Reference{references.length > 1 ? 's' : null}: </b>
+              <b>Reference{references.length > 1 ? 's' : null} in the Literature: </b>
               <ul style={{ listStyle: 'none' }}>{references}</ul>
             </h5>
             <br />
