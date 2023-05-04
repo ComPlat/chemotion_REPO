@@ -100,7 +100,7 @@ const resizableSvg = (path, extra = null) => (
 
 const ChemotionId = props => (
   <h5>
-    <b>ID: </b>
+    <b>{props.type?.replace(/^\w/, c => c.toUpperCase())} ID: </b>
     <Button key={`reaction-jumbtn-${props.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${props.id}`; }}>
       {props.type === 'reaction' ? 'CRR' : 'CRS'}-{props.id}
     </Button><ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${props.id}`} />
@@ -591,47 +591,6 @@ const labelStyle = {
   marginRight: '2px'
 };
 
-const IconLicense = (doi, cp, hasCoAuthors = false) => {
-  const anc = doi == null ? '' : doi.split('/').pop();
-  const presentStyle = { height: '26px' };
-  let presentHref = 'http://creativecommons.org/licenses/by-sa/4.0/';
-  let presentAlt = 'This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.';
-  let presentPath = '/images/creative_common/cc-by-sa.svg';
-  const cc0Alt = [
-    'To the extent possible under law, the',
-    (hasCoAuthors ? 'persons' : 'person'),
-    'who associated CC0 with this work',
-    (hasCoAuthors ? 'have' : 'has'),
-    'waived all copyright and related or neighboring rights to this work.'
-  ].join(' ');
-
-  switch (cp) {
-    case 'CC BY-SA':
-      presentHref = 'http://creativecommons.org/licenses/by-sa/4.0/';
-      presentAlt = 'This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.';
-      presentPath = '/images/creative_common/cc-by-sa.svg';
-      break;
-    case 'CC BY':
-      presentHref = 'http://creativecommons.org/licenses/by/4.0/';
-      presentAlt = 'This work is licensed under a Creative Commons Attribution 4.0 International License.';
-      presentPath = '/images/creative_common/cc-by.svg';
-      break;
-    case 'CC0':
-      presentHref = 'http://creativecommons.org/publicdomain/zero/1.0/';
-      presentAlt = cc0Alt;
-      presentPath = '/images/creative_common/cc-zero.svg';
-      break;
-    case 'No License':
-      presentHref = '';
-      presentAlt = 'No License';
-      presentPath = '';
-      break;
-    default:
-      break;
-  }
-  return presentHref === '' ? null : <a name={anc} id={anc} rel="noreferrer noopener" target="_blank" href={presentHref}><img src={presentPath} style={presentStyle} alt={presentAlt} title={presentAlt} /></a>;
-};
-
 const IconToMyDB = ({
   id, type, tooltipTitle = 'Link to My DB', isLogin = false, isPublished = true
 }) => {
@@ -1054,7 +1013,7 @@ const RenderAnalysisHeader = (props) => {
             }
           </h6>
           <h6>
-            <b>ID: </b>
+            <b>Sample ID: </b>
             <Button key={`reaction-jumbtn-${element.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${crsId}`; }}>
               CRS-{crsId}
             </Button><ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${crsId}`} />
@@ -1063,7 +1022,7 @@ const RenderAnalysisHeader = (props) => {
       </Row>
       <Row>
         <Col sm={12} md={12} lg={12}>
-          <h5><b>Reference{references.length > 1 ? 's' : null}: </b></h5>
+          <h5><b>Reference{references.length > 1 ? 's' : null} in the Literature: </b></h5>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
           <RepoSegment segments={element.segments} />
         </Col>
@@ -1752,7 +1711,7 @@ class RenderPublishAnalysesPanel extends Component {
     const insText = instrumentText(analysis);
     const crdLink = (isPublic === false) ? (
       <div className="sub-title" inline="true">
-        <b>ID: </b>
+        <b>Reaction ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1761,8 +1720,8 @@ class RenderPublishAnalysesPanel extends Component {
 
       </div >
     ) : (
-      <div className = "sub-title" inline = "true">
-        <b>ID: </b>
+      <div className="sub-title" inline="true">
+        <b>Reaction ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1871,7 +1830,7 @@ class RenderPublishAnalyses extends Component {
               <DownloadMetadataBtn type="container" id={analysis.id} />
             </div>
             <div className="sub-title" inline="true">
-              <b>ID: </b>
+              <b>Reaction ID: </b>
               <Button bsStyle="link" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
                 CRD-{ analysis.pub_id }
               </Button>
@@ -1911,7 +1870,7 @@ class RenderPublishAnalyses extends Component {
       <Panel key={`analysis-${analysis.id}`} expanded={expanded} className="panel-analyses-public" onToggle={() => { }}>
         <Panel.Heading style={{ border: 'unset' }}>
           <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{formattedTime}</i>
-            {IconLicense(null, this.props.license, (this.props.publication.author_ids.length > 1))}
+            {LicenseIcon(null, this.props.license, (this.props.publication.author_ids.length > 1))}
           </h4>
           <p>&nbsp;</p>
           <b>{kind}</b>&nbsp;
@@ -2337,33 +2296,6 @@ Doi.propTypes = {
   isPublished: PropTypes.bool.isRequired,
 };
 
-const DateInfo = (props) => {
-  const {
-    pubData, tagData, isPublished
-  } = props;
-
-  let time = '';
-  let formattedTime = '';
-
-  if (isPublished) {
-    time = new Date(tagData && (tagData.published_at || tagData.doi_reg_at));
-    formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
-    return (<span><b>Published on </b> <i>{formattedTime}</i></span>);
-  }
-
-  time = new Date(pubData && pubData.created_at);
-  formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
-  const uTime = new Date(pubData && pubData.updated_at);
-  const formattedUTime = `${uTime.getDate()}-${uTime.getMonth() + 1}-${uTime.getFullYear()} ${uTime.getHours()}:${uTime.getMinutes()} `;
-  return (<div className="date_info"><div><b>Submitted on </b> <i>{formattedTime}</i></div><div className="updated">Updated on {formattedUTime}</div></div>);
-};
-
-DateInfo.propTypes = {
-  pubData: PropTypes.object.isRequired,
-  tagData: PropTypes.object.isRequired,
-  isPublished: PropTypes.bool.isRequired,
-};
-
 export {
   AnalysisHeaderSample,
   AnalysesTypeJoinLabel,
@@ -2381,7 +2313,6 @@ export {
   DateFormatYMDLong,
   DateFormatDMYTime,
   DatasetDetail,
-  DateInfo,
   Doi,
   DownloadDOICsv,
   DownloadMetadataBtn,
@@ -2391,7 +2322,6 @@ export {
   ElSubmitTime,
   ElAspect,
   EmbargoCom,
-  IconLicense,
   IconToMyDB,
   ChecklistPanel,
   isNmrPass,

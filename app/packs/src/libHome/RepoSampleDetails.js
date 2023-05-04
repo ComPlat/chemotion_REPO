@@ -108,6 +108,7 @@ export default class RepoSampleDetails extends Component {
       }
       const el = {
         id: s.id || s.sample_id,
+        decoupled: s.decoupled,
         sid: s.sid,
         short_label: s.short_label || '',
         xvial: s.xvial,
