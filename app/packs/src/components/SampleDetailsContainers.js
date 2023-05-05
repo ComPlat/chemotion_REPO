@@ -6,6 +6,8 @@ import UIStore from './stores/UIStore';
 import ArrayUtils from './utils/ArrayUtils';
 import { reOrderArr } from './utils/DndControl';
 import ViewSpectra from './ViewSpectra';
+
+import NMRiumDisplayer from './NMRiumDisplayer';
 import {
   RndNotAvailable, RndNoAnalyses,
   RndOrder, RndEdit
@@ -246,6 +248,11 @@ export default class SampleDetailsContainers extends Component {
         <div>
           { content }
           <ViewSpectra
+            sample={sample}
+            handleSampleChanged={handleSampleChanged}
+            handleSubmit={handleSubmit}
+          />
+          <NMRiumDisplayer
             sample={sample}
             handleSampleChanged={handleSampleChanged}
             handleSubmit={handleSubmit}

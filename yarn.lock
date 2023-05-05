@@ -1292,12 +1292,12 @@
     "@citation-js/name" "^0.4.2"
     wikidata-sdk "7"
 
-"@complat/chem-spectra-client@0.11.1":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@complat/chem-spectra-client/-/chem-spectra-client-0.11.1.tgz#93699a39b561450fc73681dc6a673e908ab80611"
-  integrity sha512-rFZSBP0x1hiCxe0TXqZbu8688PjVQ4UpPE2xhr3tCXqGCozIsM3JTxvSqMLeeiT5atzIWhuTPl//LR0A2VXyNA==
+"@complat/chem-spectra-client@0.11.4":
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/@complat/chem-spectra-client/-/chem-spectra-client-0.11.4.tgz#651d3255bfb8a7a693bee9b15fd74b0a31b1e273"
+  integrity sha512-97V6Q1ztaJkUshl162kInedzusDXNDPZ3TRw40DJIMmFuCzma/bAXPEQhoIQVZzJ9ufEPzke+dl6o8RvVG7D2Q==
   dependencies:
-    "@complat/react-spectra-editor" "0.11.1"
+    "@complat/react-spectra-editor" "0.11.4"
     "@material-ui/core" "^3.9.4"
     "@material-ui/icons" "^3.0.2"
     axios "^0.21.1"
@@ -1314,12 +1314,12 @@
     redux-form "^8.3.7"
     redux-saga "^1.1.3"
 
-"@complat/react-spectra-editor@0.11.1":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@complat/react-spectra-editor/-/react-spectra-editor-0.11.1.tgz#3ef5326f6bd7190ae9f30198bbd3d658e15f7f9e"
-  integrity sha512-0JSIQsAtak77xobZxuDzDW3sraVlTF88Yn1Ge8SvHVrzntVI6iuM8jt3OedNfpyU1HIkwnqPKyYxUwI2QaszIQ==
+"@complat/react-spectra-editor@0.11.4":
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/@complat/react-spectra-editor/-/react-spectra-editor-0.11.4.tgz#5abfc4268fd2bc9a2bd954f91a0b3708843bac63"
+  integrity sha512-CFcDog6IriKF63FhyuG4A8kUvfncbHrQx5BphUfdUe0Ke3SOUuSZgzO5HmvB7LOMBnyTFiIu8cZAvRLNWkd2sg==
   dependencies:
-    "@complat/react-svg-file-zoom-pan" "^1.0.11"
+    "@complat/react-svg-file-zoom-pan" "1.0.15"
     "@material-ui/core" "^4.10.0"
     "@material-ui/icons" "^4.10.0"
     "@mdi/js" "^4.7.95"
@@ -1330,7 +1330,8 @@
     browserslist "^4.16.3"
     classnames "^2.2.6"
     d3 "^5.5.0"
-    d3-selection "^1.3.0"
+    d3-brush "2.1.0"
+    d3-selection "^2.0.0"
     d3-tip "^0.9.1"
     jcampconverter "4.1.0"
     ml-savitzky-golay-generalized "1.1.1"
@@ -1346,7 +1347,7 @@
     regenerator-transform "^0.13.3"
     reselect "^4.0.0"
 
-"@complat/react-svg-file-zoom-pan@^1.0.11":
+"@complat/react-svg-file-zoom-pan@1.0.15":
   version "1.0.15"
   resolved "https://registry.yarnpkg.com/@complat/react-svg-file-zoom-pan/-/react-svg-file-zoom-pan-1.0.15.tgz#5e07dbcacd5fb8a8dd22baa347bec70747f3f27e"
   integrity sha512-M5zZJaI+5k5Fkyp07voJFA96q2JTWojUyPSyr4K90NxcgDc3EaCfa7zp3IgGZMpWmFRGl8r1jKWTfoSOYGbi1g==
@@ -5038,7 +5039,7 @@ d3-brush@1:
     d3-selection "1"
     d3-transition "1"
 
-d3-brush@2:
+d3-brush@2, d3-brush@2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/d3-brush/-/d3-brush-2.1.0.tgz#adadfbb104e8937af142e9a6e2028326f0471065"
   integrity sha512-cHLLAFatBATyIKqZOkk/mDHUbzne2B3ZwxkzMHvFTCZCmLaXDpZRihQSn8UNXTkGD/3lb/W2sQz0etAftmHMJQ==
@@ -5371,7 +5372,7 @@ d3-selection@1, d3-selection@^1.1.0, d3-selection@^1.3.0:
   resolved "https://registry.yarnpkg.com/d3-selection/-/d3-selection-1.4.2.tgz#dcaa49522c0dbf32d6c1858afc26b6094555bc5c"
   integrity sha512-SJ0BqYihzOjDnnlfyeHT0e30k0K1+5sR3d5fNueCNeuhZTnGw4M4o8mqJchSwgKMXCNFo+e2VTChiSJ0vYtXkg==
 
-d3-selection@2:
+d3-selection@2, d3-selection@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/d3-selection/-/d3-selection-2.0.0.tgz#94a11638ea2141b7565f883780dabc7ef6a61066"
   integrity sha512-XoGGqhLUN/W14NmaqcO/bb1nqjDAw5WtSYb2X8wiuQWvSZUsUVYsOSkOybUrNvcBjaywBdYPy03eXHMXjk9nZA==
@@ -12285,10 +12286,10 @@ repeat-string@^1.6.1:
   resolved "https://registry.yarnpkg.com/repeat-string/-/repeat-string-1.6.1.tgz#8dcae470e1c88abc2d600fff4a776286da75e637"
   integrity sha1-jcrkcOHIirwtYA//Sndihtp15jc=
 
-repo-review-ui@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-0.0.7.tgz#d21d0a3fe9b31fac8d45400729bcb92832f937fe"
-  integrity sha512-VOdC66rsdi0G0Aiv0Jw7hg8GBeuxIkijqzgEtaDe92bpK96qKpN6lFPg2N2GLKpFtfRYWc3embXoA6pz/wDyAA==
+repo-review-ui@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-0.0.8.tgz#96ec0d88e7fe1f35167caa754ffeb7b9e796f6c8"
+  integrity sha512-FznXzd0USKJUfjPtaKK+7gXjySDH5be/oy5NYLRiqcT9gY0vq5eU63DKyeF52ctkt/A9pniIsglss6hzlsMz8w==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"

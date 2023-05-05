@@ -183,9 +183,9 @@ Rails.application.routes.draw do
 
   mount API => '/'
 
-  if Rails.env.development?
-    mount GrapeSwaggerRails::Engine => '/swagger_doc'
-  end
+  # if Rails.env.development?
+  mount GrapeSwaggerRails::Engine => '/swagger_doc'
+  # end
 
   #root to: redirect('home')
   root to: 'pages#root_page' # , as: :unauthenticated_root

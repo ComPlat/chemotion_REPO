@@ -37,9 +37,9 @@ class SpectraActions {
     };
   }
 
-  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr, cyclicvolta, curveIdx=0) {
+  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr, cyclicvolta, curveIdx = 0, simulatenmr = false) {
     return (dispatch) => {
-      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr, cyclicvolta, curveIdx)
+      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr, cyclicvolta, curveIdx, simulatenmr)
         .then((fetchedFiles) => {
           dispatch({ fetchedFiles, spcInfo });
           cb();
@@ -70,19 +70,19 @@ class SpectraActions {
         spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity,
         predict, targetPeaks, layout, keepPred
       ).then((fetchedFiles) => {
-          dispatch({ fetchedFiles, spcInfo });
-          cb();
-        }).catch((errorMessage) => {
-          console.log(errorMessage); // eslint-disable-line
-        });
+        dispatch({ fetchedFiles, spcInfo });
+        cb();
+      }).catch((errorMessage) => {
+        console.log(errorMessage); // eslint-disable-line
+      });
     };
   }
 
-  SelectIdx(spcIdx, arrSpcIdx=[]) {
+  SelectIdx(spcIdx, arrSpcIdx = []) {
     return { spcIdx, arrSpcIdx };
   }
 
-  AddOthers(payload)  {
+  AddOthers(payload) {
     const jcamps = payload.jcamps || [];
     const jcamp = jcamps[0];
 
@@ -102,6 +102,26 @@ class SpectraActions {
         .then(() => {
           dispatch();
           cb();
+        }).catch((errorMessage) => {
+          console.log(errorMessage); // eslint-disable-line
+        });
+    };
+  }
+
+  ToggleModalNMRDisplayer() {
+    return null;
+  }
+
+  LoadSpectraForNMRDisplayer(spcInfos) {
+    const idxs = spcInfos && spcInfos.map(si => si.idx);
+    if (idxs.length === 0) {
+      return null;
+    }
+
+    return (dispatch) => {
+      AttachmentFetcher.fetchFiles(idxs)
+        .then((fetchedFiles) => {
+          dispatch({ fetchedFiles, spcInfos });
         }).catch((errorMessage) => {
           console.log(errorMessage); // eslint-disable-line
         });
