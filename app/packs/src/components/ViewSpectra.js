@@ -190,14 +190,13 @@ class ViewSpectra extends React.Component {
     const sis = spcInfos.filter(x => x.idx === spcIdx);
     const si = sis.length > 0 ? sis[0] : spcInfos[0];
 
-    const opsTmp = sample.analysesContainers().map((ae) => {
+    const ops = sample.analysesContainers().map((ae) => {
       if (ae.id !== si.idAe) return null;
       return ae.children.map((ai) => {
         if (ai.id !== si.idAi) return null;
         return ai.extended_metadata.content.ops; // eslint-disable-line
       }).filter(r => r !== null);
-    }).filter(r => r !== null);
-    const ops = opsTmp && opsTmp[0] && opsTmp[0][0];
+    }).filter(r => r !== null)[0][0];
     return ops;
   }
 
@@ -608,8 +607,7 @@ class ViewSpectra extends React.Component {
       molecule: 'molecule',
       predictions,
     };
-    const { spcInfos } = this.state;
-    const spcSvg = spcInfos && spcInfos[0] && spcInfos[0].svg;
+
     return (
       <Modal.Body>
         {
@@ -622,7 +620,7 @@ class ViewSpectra extends React.Component {
               others={others}
               operations={operations}
               forecast={forecast}
-              molSvg={spcSvg || sample.svgPath}
+              molSvg={sample.svgPath}
               descriptions={descriptions}
               canChangeDescription
               onDescriptionChanged={this.onSpectraDescriptionChanged}
