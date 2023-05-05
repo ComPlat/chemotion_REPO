@@ -18,6 +18,7 @@ import { groupByCitation, Citation } from '../components/LiteratureCommon';
 import { MoleculeInfo, EmbargoCom, isNmrPass, isDatasetPass, OrcidIcon } from '../libHome/RepoCommon';
 import LoadingActions from './actions/LoadingActions';
 import SamplesFetcher from './fetchers/SamplesFetcher';
+import CollaboratorFetcher from './fetchers/CollaboratorFetcher';
 import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
 import EmbargoFetcher from './fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from './CitationType';
@@ -30,12 +31,14 @@ export default class PublishSampleModal extends Component {
     this.state = {
       sample,
       selectedUsers: [],
+      selectedReviewers: [],
       showSelectionUser: false,
       showSelectionAnalysis: false,
       showPreview: false,
       currentUser,
       selectedRefs: [],
       collaborations: [],
+      showSelectionReviewer: false,
       literatures: new Immutable.Map(),
       sortedIds: [],
       selectedEmbargo: '-1',
@@ -49,6 +52,7 @@ export default class PublishSampleModal extends Component {
     this.handlePublishSample = this.handlePublishSample.bind(this);
     this.handleReserveDois = this.handleReserveDois.bind(this);
     this.handleSelectUser = this.handleSelectUser.bind(this);
+    this.handleSelectReviewer = this.handleSelectReviewer.bind(this);
     this.promptTextCreator = this.promptTextCreator.bind(this);
     this.loadUserByName = this.loadUserByName.bind(this);
     this.loadReferences = this.loadReferences.bind(this);
@@ -100,7 +104,7 @@ export default class PublishSampleModal extends Component {
   }
 
   loadMyCollaborations() {
-    UsersFetcher.fetchMyCollaborations()
+    CollaboratorFetcher.fetchMyCollaborations()
     .then((result) => {
       this.setState({
         collaborations: result.authors
@@ -119,6 +123,10 @@ export default class PublishSampleModal extends Component {
 
   handleSelectUser(val) {
     if (val) { this.setState({ selectedUsers: val }); }
+  }
+
+  handleSelectReviewer(val) {
+    if (val) { this.setState({ selectedReviewers: val }); }
   }
 
   loadUserByName(input) {
@@ -184,6 +192,7 @@ export default class PublishSampleModal extends Component {
   handlePublishSample() {
     const { selectedLicense, cc0Consent } = this.state;
     const authorCount = this.state.selectedUsers && this.state.selectedUsers.length;
+    // const reviewerCount = this.state.selectedReviewers && this.state.selectedReviewers.length;
     const plural = authorCount > 0 ? 's' : '';
 
     if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
@@ -226,6 +235,7 @@ export default class PublishSampleModal extends Component {
       // sample: this.state.sample,
       sample,
       coauthors: this.state.selectedUsers.map(u => u.value),
+      reviewers: this.state.selectedReviewers.map(u => u.value),
       refs: this.state.selectedRefs,
       embargo: this.state.selectedEmbargo,
       license: this.state.selectedLicense,
@@ -308,6 +318,45 @@ export default class PublishSampleModal extends Component {
         />
         <div>
           {authorInfo}
+        </div>
+      </div>
+    );
+  }
+
+  addReviewers() {
+    const { selectedReviewers, collaborations } = this.state;
+    const options = collaborations.map(c => (
+      { label: c.name, value: c.id }
+    ));
+
+    const reviewerInfo = selectedReviewers && selectedReviewers.map((a) => {
+      const us = collaborations.filter(c => c.id === a.value);
+      const u = us && us.length > 0 ? us[0] : {};
+      const orcid = u.orcid == null ? '' : <OrcidIcon orcid={u.orcid} />;
+      const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
+        <div>  -{af.department}, {af.organization}, {af.country}</div>
+      ));
+      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>)
+    });
+
+
+    return (
+      <div >
+        <h5><b>Additional Reviewers:</b></h5>
+        <Select
+          multi
+          searchable
+          placeholder="Select reviewers from my collaboration"
+          backspaceRemoves
+          value={selectedReviewers}
+          valueKey="value"
+          labelKey="label"
+          matchProp="name"
+          options={options}
+          onChange={this.handleSelectReviewer}
+        />
+        <div>
+          {reviewerInfo}
         </div>
       </div>
     );
@@ -422,6 +471,7 @@ export default class PublishSampleModal extends Component {
     const {
       showPreview,
       selectedUsers,
+      selectedReviewers,
       selectedRefs
     } = this.state;
     const analyses = sample.analysisArray();
@@ -513,6 +563,16 @@ export default class PublishSampleModal extends Component {
                   </Panel.Heading>
                   <Panel.Body collapsible>
                     {this.selectReferences()}
+                  </Panel.Body>
+                </Panel>
+                <Panel eventKey="6">
+                  <Panel.Heading>
+                    <Panel.Title toggle>
+                      <h4> Additional Reviewers ({selectedReviewers.length})</h4>
+                    </Panel.Title>
+                  </Panel.Heading>
+                  <Panel.Body collapsible>
+                    {this.addReviewers()}
                   </Panel.Body>
                 </Panel>
               </PanelGroup>

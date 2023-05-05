@@ -12,7 +12,7 @@ module SubmissionHelpers
 
   def coauthor_validation(coauthors)
     coauthor_ids = []
-    coauthors.each do |coa|
+    coauthors&.each do |coa|
       val = coa.strip
       usr = User.where(type: %w[Person Collaborator]).where.not(confirmed_at: nil).where('id = ? or email = ?', val.to_i, val.to_s).first
       error!('invalid co-author: ' + val.to_s, 404) if usr.nil?

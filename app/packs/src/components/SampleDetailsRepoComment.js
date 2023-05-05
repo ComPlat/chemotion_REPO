@@ -12,8 +12,7 @@ export default class SampleDetailsRepoComment extends Component {
 
     this.state = {
       element: null,
-      reviewLevel: 0,
-      isSubmitter: false,
+      review_info: {}
     };
     this.onStoreChange = this.onStoreChange.bind(this);
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
@@ -38,14 +37,13 @@ export default class SampleDetailsRepoComment extends Component {
   }
 
   render() {
-    const { element } = this.state;
+    const { element, review_info } = this.state;
     return element && element.sample && element.publication ?
       (
         <RepoSampleDetails
           element={element}
           canComment
-          reviewLevel={this.state.reviewLevel}
-          isSubmitter={this.state.isSubmitter}
+          review_info={review_info}
           onReviewUpdate={this.handleReviewUpdate}
           review={this.state.review || {}}
           canClose={false}

@@ -157,6 +157,17 @@ module RepositoryHelpers
     return false
   end
 
+  def repo_review_info(pub, user_id, lst)
+    {
+      submitter: pub.published_by == user_id,
+      reviewer: User.reviewer_ids.include?(user_id) || false,
+      groupleader: pub.review.dig('reviewers')&.include?(user_id),
+      leaders: User.where(id: pub.review.dig('reviewers'))&.map{ |u| u.name },
+      preapproved: pub.review.dig('checklist', 'glr', 'status') == true,
+      review_level: repo_review_level(pub.element_id, pub.element_type)
+    }
+  end
+
   def repo_review_level(id, type)
     return 3 if User.reviewer_ids&.include? current_user.id
     pub = Publication.find_by(element_id: id, element_type: type.classify)

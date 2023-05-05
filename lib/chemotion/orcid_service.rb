@@ -10,10 +10,10 @@ module Chemotion
 
       record = Nokogiri::XML(record).to_xml
       record = Hash.from_xml(record).as_json
-      person = record['person']
       person = OpenStruct.new(
-        given_names: person['name']['given_names'],
-        family_name: person['name']['family_name']
+        given_names: record.dig('person', 'name', 'given_names'),
+        family_name: record.dig('person', 'name', 'family_name'),
+        email: record.dig('person', 'emails', 'email', 'email')
       )
       result = OpenStruct.new(person: person)
       result

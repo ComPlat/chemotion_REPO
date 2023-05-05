@@ -10,8 +10,7 @@ export default class ReactionDetailsRepoComment extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      reaction: null,
-      reviewLevel: 0
+      reaction: null
     };
     this.onStoreChange = this.onStoreChange.bind(this);
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
@@ -42,8 +41,7 @@ export default class ReactionDetailsRepoComment extends Component {
         <RepoReactionDetails
           reaction={reaction}
           canComment
-          reviewLevel={this.state.reviewLevel}
-          isSubmitter={this.state.isSubmitter}
+          review_info={review_info}
           onReviewUpdate={this.handleReviewUpdate}
           review={this.state.review || {}}
           canClose={false}

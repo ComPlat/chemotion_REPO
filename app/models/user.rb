@@ -23,19 +23,18 @@
 #  name_abbreviation      :string(12)
 #  type                   :string           default("Person")
 #  reaction_name_prefix   :string(3)        default("R")
+#  layout                 :hstore           not null
 #  confirmation_token     :string
 #  confirmed_at           :datetime
 #  confirmation_sent_at   :datetime
 #  unconfirmed_email      :string
-#  layout                 :hstore           not null
 #  selected_device_id     :integer
 #  failed_attempts        :integer          default(0), not null
 #  unlock_token           :string
 #  locked_at              :datetime
 #  account_active         :boolean
 #  matrix                 :integer          default(0)
-#  omniauth_provider      :string
-#  omniauth_uid           :string
+#  providers              :jsonb
 #
 # Indexes
 #
@@ -49,6 +48,7 @@
 
 class User < ApplicationRecord
   attr_writer :login, :orcid
+  attr_accessor :provider, :uid
   acts_as_paranoid
   # Include default devise modules. Others available are: :timeoutable
   devise :database_authenticatable, :registerable, :confirmable,
@@ -211,7 +211,8 @@ class User < ApplicationRecord
   end
 
   def orcid
-    profile&.data&.fetch('ORCID', nil)
+    providers&.fetch('orcid', nil)
+    # profile&.data&.fetch('ORCID', nil)
   end
 
   def owns_collections?(collections)
@@ -360,6 +361,24 @@ class User < ApplicationRecord
       .where("collections.label = 'Element To Review'").first
   end
 
+  def find_or_create_grouplead_collection
+    chemotion_user = User.chemotion_user
+    sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
+    sys_review_collection = Collection.create(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}")
+
+    col_attributes = {
+      user: self,
+      shared_by_id: chemotion_user.id,
+      is_locked: true,
+      is_shared: true
+    }
+
+    rc = Collection.find_by(col_attributes)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_review_collection.id,
+      permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    sys_review_collection
+  end
+
   def published_collection
     su_id = User.chemotion_user.id
     Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
@@ -470,27 +489,31 @@ class User < ApplicationRecord
   end
 
   def self.from_omniauth(provider, uid, email, first_name, last_name)
-    where(omniauth_provider: provider, omniauth_uid: uid).first_or_create do |user|
-      # update the email, the first_name, and the last_name on every login
-      user.email = email
-      user.first_name = first_name
-      user.last_name = last_name
-      user.password = Devise.friendly_token[0,20]
+    user = find_by(email: email)
+    if user.present?
+      providers = user.providers || {}
+      providers[provider] = uid
+      user.providers = providers
+      user.save!
+    else
+      user = User.new(
+        email: email,
+        first_name: first_name,
+        last_name: last_name,
+        password: Devise.friendly_token[0, 20],
+      )
     end
+    user
   end
 
   def link_omniauth(provider, uid)
-    if User.where(omniauth_provider: provider, omniauth_uid: uid).exists?
-      return nil
-    else
-      self.omniauth_provider = provider
-      self.omniauth_uid = uid
-      self.save
-    end
+    providers = {} if providers.nil?
+    providers[provider] = uid
+    save!
   end
 
   def password_required?
-    super && omniauth_provider.blank?
+    super && provider.blank?
   end
 
   private
@@ -561,12 +584,13 @@ class User < ApplicationRecord
   def delete_data
     # TODO: logic to check if user can be really destroy or which data can be deleted
     count = samples.count
-      # + self.reactions.count
-      # + self.wellplates.count
-      # + self.screens.count
-      # + self.research_plans.count
+    # + self.reactions.count
+    # + self.wellplates.count
+    # + self.screens.count
+    # + self.research_plans.count
     update_columns(email: "#{id}_#{name_abbreviation}@deleted")
     update_columns(name_abbreviation: nil) if count.zero?
+    update_columns(providers: nil)
   end
 end
 

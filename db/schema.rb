@@ -10,11 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_04_26_080445) do
+ActiveRecord::Schema.define(version: 2023_04_04_112233) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pg_trgm"
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "postgres_fdw"
   enable_extension "uuid-ossp"
@@ -847,7 +848,9 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
     t.datetime "published_at"
     t.jsonb "review"
     t.datetime "accepted_at"
+    t.text "oai_metadata_xml"
     t.index ["ancestry"], name: "index_publications_on_ancestry"
+    t.index ["element_type", "element_id", "deleted_at"], name: "publications_element_idx"
   end
 
   create_table "reactions", id: :serial, force: :cascade do |t|
@@ -1100,6 +1103,7 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
     t.string "uuid"
     t.jsonb "properties_release", default: {}
     t.datetime "released_at"
+    t.string "identifier"
   end
 
   create_table "segment_klasses_revisions", id: :serial, force: :cascade do |t|
@@ -1236,8 +1240,7 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
     t.datetime "locked_at"
     t.boolean "account_active"
     t.integer "matrix", default: 0
-    t.string "omniauth_provider"
-    t.string "omniauth_uid"
+    t.jsonb "providers"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -1456,6 +1459,16 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
          ) and (ul.access_level = 1 or (ul.access_level = 0 and ul.user_id = $1)) order by title  ) uls
        $function$
   SQL
+  create_function :literatures_by_element, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
+       RETURNS TABLE(literatures text)
+       LANGUAGE sql
+      AS $function$
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
+         and l.element_type = $1 and l.element_id = $2
+       $function$
+  SQL
   create_function :pub_reactions_by_molecule, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
        RETURNS TABLE(reaction_ids integer)
@@ -1467,6 +1480,17 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
            and c.deleted_at is null and cr.deleted_at is null and r.deleted_at is null and rs.deleted_at is null and s.deleted_at is null and m.deleted_at is null
            and s.molecule_id = m.id and m.id=$2)
         $function$
+  SQL
+  create_function :set_segment_klasses_identifier, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.set_segment_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update segment_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
   SQL
   create_function :shared_user_as_json, sql_definition: <<-SQL
       CREATE OR REPLACE FUNCTION public.shared_user_as_json(in_user_id integer, in_current_user_id integer)
@@ -1544,19 +1568,12 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
              order by extended_metadata -> 'instrument' limit 10
            $function$
   SQL
-  create_function :literatures_by_element, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.literatures_by_element(element_type text, element_id integer)
-       RETURNS TABLE(literatures text)
-       LANGUAGE sql
-      AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
-         and l.element_type = $1 and l.element_id = $2
-       $function$
-  SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
       CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
+  SQL
+  create_trigger :set_segment_klasses_identifier, sql_definition: <<-SQL
+      CREATE TRIGGER set_segment_klasses_identifier AFTER INSERT ON public.segment_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_segment_klasses_identifier()
   SQL
 
   create_view "compound_open_data_locals", sql_definition: <<-SQL
@@ -1642,6 +1659,18 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
      FROM publications
     WHERE (publications.deleted_at IS NULL);
   SQL
+  create_view "publication_collections", sql_definition: <<-SQL
+      SELECT p.id,
+      p.state,
+      p.element_id,
+      (p.taggable_data ->> 'label'::text) AS label,
+      (p.taggable_data ->> 'col_doi'::text) AS doi,
+      jsonb_array_elements((p.taggable_data -> 'element_dois'::text)) AS elobj,
+      p.doi_id,
+      p.published_by
+     FROM publications p
+    WHERE ((p.deleted_at IS NULL) AND ((p.element_type)::text = 'Collection'::text));
+  SQL
   create_view "publication_ontologies", sql_definition: <<-SQL
       SELECT root.element_type,
       root.element_id,
@@ -1672,6 +1701,13 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
       'sample'::text AS ex_type,
       count(publications.id) AS e_cnt
      FROM publications
+    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'sample'::text AS el_type,
+      'xvial'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM (publications
+       JOIN element_tags et ON ((((et.taggable_type)::text = 'Sample'::text) AND (((et.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((et.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text)) AND (et.taggable_id = publications.element_id))))
     WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
   UNION
    SELECT 'reaction'::text AS el_type,
@@ -1728,17 +1764,5 @@ ActiveRecord::Schema.define(version: 2022_04_26_080445) do
        JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
        JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
     WHERE (cols.deleted_at IS NULL);
-  SQL
-  create_view "publication_collections", sql_definition: <<-SQL
-      SELECT p.id,
-      p.state,
-      p.element_id,
-      (p.taggable_data ->> 'label'::text) AS label,
-      (p.taggable_data ->> 'col_doi'::text) AS doi,
-      jsonb_array_elements((p.taggable_data -> 'element_dois'::text)) AS elobj,
-      p.doi_id,
-      p.published_by
-     FROM publications p
-    WHERE ((p.deleted_at IS NULL) AND ((p.element_type)::text = 'Collection'::text));
   SQL
 end
