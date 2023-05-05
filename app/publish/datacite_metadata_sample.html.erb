@@ -64,7 +64,7 @@
       The physical chemical entity[CHEBI_24431] can be described by the chemical formula [data_0846]: <%= "#{element.sum_formula}" %>, and the molecular mass[data_0844]: <%= "#{element.molecular_mass}" %>.
       <% end %>
       The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES descriptor[cheminf_000007]: <%= element.molecule_cano_smiles %>
-      The physical chemical entity[CHEBI_24431] has the Sample ID [data_3273] as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>
+      The physical chemical entity[CHEBI_24431] has the following Sample ID as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>
 
       The physical chemical entity[CHEBI_24431] can be described by the physical descriptors [CHEMINF_000025]:
       Melting point descriptor[CHEMINF_000256]: <%= cust_sample[:melting_point] %>
@@ -75,7 +75,7 @@
       <% element.analyses.each do |analysis| %>
         <%= (analysis.extended_metadata['kind'] || '') %>
       <% end %>
-      The physical chemical entity[CHEBI_24431] was deposited to the Molecule Archive of the Karlsruhe Insitute of Technology (KIT) with the following Sample ID: Comp-<%= "#{element.tag&.taggable_data&.dig('xvial','num')}" %>
+      The physical chemical entity[CHEBI_24431] was deposited to the Molecule Archive of the Karlsruhe Insitute of Technology (KIT) with the following Sample ID: <%= cust_sample[:x_id] %>
 
       Used ontologies:
       CHEBI - Chemical Entities of Biological Interest

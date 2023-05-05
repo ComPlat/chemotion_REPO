@@ -650,12 +650,20 @@ class Publication < ActiveRecord::Base
     SQL
   end
 
+  def get_xvial(xvial)
+    com_config = Rails.configuration.compound_opendata
+    return nil unless com_config.present? && xvial.present?
+
+    CompoundOpenData.where("x_data ->> 'xid' = ?", xvial)
+  end
+
   def cust_sample
     if element_type == 'Sample'
       desc_type = "#{element.decoupled ? 'de' : ''}coupled_sample#{element.molecule_inchikey == 'DUMMY' ? '' : '_structure'}"
       melting_point = range_to_s(element.melting_point)
       boiling_point = range_to_s(element.boiling_point)
-      { type: desc_type, melting_point: melting_point, boiling_point: boiling_point }
+
+      { type: desc_type, melting_point: melting_point, boiling_point: boiling_point, x_id: get_xvial(element.tag&.taggable_data&.dig('xvial','num'))&.first&.x_short_label  }
     else
       {}
     end
