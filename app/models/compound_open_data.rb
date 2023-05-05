@@ -17,4 +17,5 @@
 #
 
 class CompoundOpenData < ApplicationRecord
+  default_scope { order(x_created_at: :desc) }
 end
