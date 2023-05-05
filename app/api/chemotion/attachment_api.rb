@@ -522,6 +522,8 @@ module Chemotion
         optional :waveLength, type: String
         optional :cyclicvolta, type: String
         optional :curveIdx, type: Integer
+        optional :simulatenmr, type: Boolean
+
       end
       post 'save_spectrum' do
         jcamp_att = @attachment.generate_spectrum(

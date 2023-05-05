@@ -141,7 +141,7 @@ module Reporter
       end
 
       def sum_formular_delta(m)
-        delta = m[:sum_formular].scan(/\d+|\W+|[a-zA-Z]+/).map do |e|
+        delta = m[:sum_formular]&.scan(/\d+|\W+|[a-zA-Z]+/)&.map do |e|
           if e.match(/\d+/).present?
             {"attributes"=>{"script"=>"sub"}, "insert"=>e}
           elsif e.match(/\W+/).present?
@@ -150,7 +150,7 @@ module Reporter
             {"insert"=>e}
           end
         end
-        delta = [{"insert"=>"Formula: "}] + delta + [{"insert"=>"; "}]
+        [{"insert"=>"Formula: "}] + (delta || [{"insert"=>"; "}]) + [{"insert"=>"; "}]
       end
 
       def cas_delta(cas)

@@ -19,6 +19,7 @@ class SpectraStore {
     this.fetched = false;
     this.writing = false;
     this.others = [];
+    this.showModalNMRDisplayer = false;
 
     this.bindListeners({
       handleToggleModal: SpectraActions.ToggleModal,
@@ -32,6 +33,8 @@ class SpectraStore {
       handleSelectIdx: SpectraActions.SelectIdx,
       handleAddOthers: SpectraActions.AddOthers,
       handleRegenerateEdited: SpectraActions.RegenerateEdited,
+      handleToggleModalNMRDisplayer: SpectraActions.ToggleModalNMRDisplayer,
+      handleLoadSpectraForNMRDisplayer: SpectraActions.LoadSpectraForNMRDisplayer,
     });
   }
 
@@ -60,10 +63,12 @@ class SpectraStore {
     const { files } = fetchedFiles;
     if (!files) return [];
     const returnFiles = files.map(f => this.decodeSpectrum(f)).filter(r => r !== null);
+    if (returnFiles === null || returnFiles === undefined) {
+      return [];
+    }
     return returnFiles.sort(function(a, b) {
       return b.idx - a.idx;
     });
-    // return files.map(f => this.decodeSpectrum(f)).filter(r => r !== null);
   }
 
   handleToggleModal() {
@@ -78,12 +83,19 @@ class SpectraStore {
 
   handleLoadSpectra({ fetchedFiles, spcInfos }) {
     const spcMetas = this.decodeSpectra(fetchedFiles);
+    let newArrSpcIdx = spcMetas.map(spci => (
+      spci.idx
+    )).filter(r => r !== null);
+    if (newArrSpcIdx.length <= 1) {
+      newArrSpcIdx = [];
+    }
     this.setState({
       spcInfos,
       spcMetas,
       fetched: true,
       spcIdx: (spcMetas[0].idx || 0),
       others: [],
+      arrSpcIdx: newArrSpcIdx,
     });
   }
 
@@ -169,6 +181,26 @@ class SpectraStore {
     const jcampData = FN.ExtractJcamp(origData);
     this.setState({ others: [jcampData] });
   }
+
+  handleToggleModalNMRDisplayer() {
+    this.setState({
+      spcMetas: [],
+      spcInfos: [],
+      showModalNMRDisplayer: !this.showModalNMRDisplayer,
+      fetched: false,
+      others: [],
+    })
+  }
+
+  handleLoadSpectraForNMRDisplayer({ fetchedFiles, spcInfos }) {
+    this.setState({
+      spcInfos,
+      fetchedFiles,
+      fetched: true,
+    });
+  }
+
+
 }
 
 export default alt.createStore(SpectraStore, 'SpectraStore');
