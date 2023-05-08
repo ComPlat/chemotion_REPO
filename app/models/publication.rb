@@ -596,8 +596,14 @@ class Publication < ActiveRecord::Base
       else
         published_collection_ids = my_published_collection_ids + [Collection.public_collection_id]
       end
-
       collections_klass = "Collections#{element_type}".constantize
+      if element_type == 'Sample'
+        gl_col_ids = collections_klass.joins(:collection).where(sample_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
+      end
+      if element_type == 'Reaction'
+        gl_col_ids = collections_klass.joins(:collection).where(reaction_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
+      end
+      collections_klass.remove_in_collection([element_id], gl_col_ids ) if gl_col_ids.present?
       collections_klass.remove_in_collection([element_id], pending_collection_ids)
       collections_klass.remove_in_collection([element_id], Collection.element_to_review_collection.pluck(:id))
       collections_klass.create_in_collection([element_id], published_collection_ids)
