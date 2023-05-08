@@ -61,7 +61,7 @@
       InChI descriptor[cheminf_000113]: <%= "#{element.molecule_inchistring}" %>, and canonical SMILES descriptor[cheminf_000007]: <%= "#{element.molecule_cano_smiles}" %>, and by the IUPAC name[cheminf_000107]: <%= "#{element.molecule_iupac_name}" %>.
       <% elsif cust_sample[:type] == 'decoupled_sample' %>
       This is a physical chemical entity[CHEBI_24431] which was not directly associated with a molecule[CHEBI_25367].
-      The physical chemical entity[CHEBI_24431] can be described by the molecular mass[data_0844]: <%= "#{element.molecular_mass}" %>.
+      The physical chemical entity[CHEBI_24431] can be described by the molecular mass descriptor [cheminf_000088]: <%= "#{element.molecular_mass}" %>.
       <% end %>
       The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES descriptor[cheminf_000007]: <%= element.molecule_cano_smiles %>
       The physical chemical entity[CHEBI_24431] has the following Sample ID as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>

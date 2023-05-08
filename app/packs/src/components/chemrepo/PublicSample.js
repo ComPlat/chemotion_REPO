@@ -28,23 +28,32 @@ const PublicSample = (_props) => {
     : '';
 
   const reactionLink = sample.reaction_ids?.length > 0 ? (
-    <Button id="public-sample-reaction-link" bsStyle="link" onClick={() => { window.location = `/home/publications/reactions/${sample.reaction_ids[0]}`; }}>
-      Is Product of a reaction <i className="icon-reaction" />
-    </Button>
+    <>
+      &nbsp;
+      <Button id="public-sample-reaction-link" bsStyle="link" onClick={() => { window.location = `/home/publications/reactions/${sample.reaction_ids[0]}`; }}>
+        Is Product of a reaction <i className="icon-reaction" />
+      </Button>
+    </>
   ) : null;
 
 
   const analyticalLink = analyses.length > 0 ? (
-    <Button id="public-sample-analytical-link" bsStyle="link" onClick={handleAnalysesLink}>
-      has analytical data
-    </Button>
+    <>
+      {reactionLink ? ',' : ''}&nbsp;&nbsp;
+      <Button id="public-sample-analytical-link" bsStyle="link" onClick={handleAnalysesLink}>
+        has analytical data
+      </Button>
+    </>
   ) : null;
 
   const hasData = !!(sample.xvial && sample.xvial !== '');
   const materialLink = hasData ? (
-    <Button id="public-sample-material-link" bsStyle="link" onClick={handleMaterialLink}>
-      has a record as physically available material
-    </Button>
+    <>
+      {analyticalLink ? ',' : ''}&nbsp;&nbsp;
+      <Button id="public-sample-material-link" bsStyle="link" onClick={handleMaterialLink}>
+        has a record as physically available material
+      </Button>
+    </>
   ) : null;
 
   return (
@@ -54,8 +63,9 @@ const PublicSample = (_props) => {
       <ChemotionId id={pubData.id} type="sample" />
       {embargo}
       <h5>
-        <b>Relations of this sample: </b> {reactionLink}, {analyticalLink}, {materialLink}
+        <b>Relations of this sample: </b>{reactionLink}{analyticalLink}{materialLink}
       </h5>
+      <br />
       <h5>
         <span>
           <b>Reference{references.length > 1 ? 's' : null} in the Literature: </b>
