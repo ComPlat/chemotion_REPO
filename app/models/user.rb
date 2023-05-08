@@ -394,7 +394,7 @@ class User < ApplicationRecord
   def find_or_create_grouplead_collection
     chemotion_user = User.chemotion_user
     sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
-    sys_review_collection = Collection.create(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}")
+    sys_review_collection = Collection.find_or_create_by(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}", shared_by_id: id)
 
     col_attributes = {
       user: self,

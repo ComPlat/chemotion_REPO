@@ -95,6 +95,15 @@ class PublicationMailer < ActionMailer::Base
     []
   end
 
+  def group_leaders
+    reviewers = @publication.review.dig('reviewers')
+    if reviewers.nil?
+      []
+    else
+      Person.where(id: reviewers).pluck(:email)
+    end
+  end
+
   def init_params(publication_id,current_user_id=0)
     @publication = Publication.find(publication_id)
     @doi = @publication.doi
@@ -151,10 +160,11 @@ class PublicationMailer < ActionMailer::Base
   def mail_reviewing_request(publication_id)
     init_params(publication_id)
     #reviewing_notify
-    return unless reviewers.present?
+    # return unless reviewers.present?
+    return if @publication.review.dig('reviewers').nil? || @publication.review.dig('history').length > 2
 
     mail(
-      to: reviewers,
+      to: group_leaders,
       subject: subject('Pending for publication. Review Request')
     ) do |format|
       format.html
@@ -207,7 +217,7 @@ class PublicationMailer < ActionMailer::Base
     #approved_notify
     mail(
       to: @creator.email,
-      bcc: reviewers,
+      bcc: group_leaders,
       subject: "Chemotion Repository: Embargo collection: #{@embargo_collection.label} released",
     ) do |format|
       format.html
