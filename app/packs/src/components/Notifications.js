@@ -4,6 +4,7 @@ import connectToStores from 'alt-utils/lib/connectToStores';
 
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import NotificationStore from 'src/stores/alt/stores/NotificationStore';
+import uuid from 'uuid';
 
 class Notifications extends Component {
   componentDidMount() {
@@ -13,7 +14,7 @@ class Notifications extends Component {
   render() {
     return (
       <div>
-        <NotificationSystem ref={(notification) => { this.notificationSystem = notification; }} />
+        <NotificationSystem key={uuid.v4()} ref={(notification) => { this.notificationSystem = notification; }} />
       </div>
     );
   }
