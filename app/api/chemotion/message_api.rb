@@ -16,7 +16,7 @@ module Chemotion
         requires :is_ack, type: Integer, desc: 'whether messages are acknowledged or not'
       end
       get 'list' do
-        messages = NotifyMessage.where(receiver_id: current_user.id)
+        messages = NotifyMessage.where(receiver_id: current_user.id).limit(100)
         messages = messages.where(is_ack: params[:is_ack]) if params[:is_ack] < 9
         message_list = present(messages, with: Entities::MessageEntity, root: 'messages')
 
