@@ -28,7 +28,7 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
       channel_subject: Channel::PUBLICATION_REVIEW,
       message_from: submitter
     }
-    sgl = publication.review.dig('reviewers').nil? ? submitter : publication.review.dig('reviewers') + [submitter]
+    sgl = publication.review.dig('reviewers').nil? ? [submitter] : publication.review.dig('reviewers') + [submitter]
 
     case publication.state
     when Publication::STATE_PENDING

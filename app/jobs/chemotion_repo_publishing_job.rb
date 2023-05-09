@@ -138,8 +138,7 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
       PublicationMailer.mail_publish_approval(@publication.id).deliver_now
     end
     submitter = @publication.published_by || @publication.taggable_data['creators']&.first&.dig('id')
-    sgl = @publication.review.dig('reviewers').nil? ? submitter : @publication.review.dig('reviewers') + [submitter]
-
+    sgl = @publication.review.dig('reviewers').nil? ? [submitter] : @publication.review.dig('reviewers') + [submitter]
     Message.create_msg_notification(
       channel_subject: Channel::PUBLICATION_REVIEW,
       message_from: submitter,
