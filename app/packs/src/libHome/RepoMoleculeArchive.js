@@ -72,7 +72,7 @@ const RepoMoleculeArchive = (props) => {
             </div>
             <div className="border">
               <div className="dl">Group</div>
-              <div className="dr">{molecule.xvial_archive[0]?.group}</div>
+              <div className="dr">{molecule.xvial_archive[0]?.group || 'Stefan Bräse Group'}</div>
             </div>
           </div>
           <div>
