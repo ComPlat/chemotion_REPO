@@ -57,6 +57,7 @@ import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoSegment from './RepoSegment';
 import RepoMolViewerBtn from './RepoMolViewerBtn';
 import RepoMolViewerListBtn from './RepoMolViewerListBtn';
+import LicenseIcon from '../components/chemrepo/LicenseIcon';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
