@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const LicenseIcon = (props) => {
   const { doi, license, hasCoAuthors = false } = props;
-  const anc = doi.split('/').pop();
+  const anc = doi?.split('/').pop() || '';
   const presentStyle = { height: '26px' };
   let presentHref = 'http://creativecommons.org/licenses/by-sa/4.0/';
   let presentAlt = 'This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.';
