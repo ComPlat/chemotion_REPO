@@ -1878,7 +1878,10 @@ class RenderPublishAnalyses extends Component {
       <Panel key={`analysis-${analysis.id}`} expanded={expanded} className="panel-analyses-public" onToggle={() => { }}>
         <Panel.Heading style={{ border: 'unset' }}>
           <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{formattedTime}</i>
-            {LicenseIcon(null, this.props.license, (this.props.publication.author_ids.length > 1))}
+            <LicenseIcon
+              license={this.props.license}
+              hasCoAuthors={(this.props.publication.author_ids.length > 1)}
+            />
           </h4>
           <p>&nbsp;</p>
           <b>{kind}</b>&nbsp;
