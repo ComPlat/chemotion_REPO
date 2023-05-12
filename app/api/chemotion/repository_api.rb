@@ -591,8 +591,6 @@ module Chemotion
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
           review_info = repo_review_info(publication, current_user&.id, false)
-          # preapproved = publication.review.dig('checklist', 'glr', 'status') == true
-          # is_leader = publication.review.dig('reviewers')&.include?(current_user&.id)
           publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id)
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
