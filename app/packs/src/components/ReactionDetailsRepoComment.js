@@ -26,7 +26,6 @@ export default class ReactionDetailsRepoComment extends Component {
   }
 
   onStoreChange(state) {
-    console.log(state);
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
