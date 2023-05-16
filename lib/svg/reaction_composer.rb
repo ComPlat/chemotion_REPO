@@ -429,7 +429,7 @@ module SVG
       if svg_path.include?('/samples')
         doc.at_css('svg')
       else
-        doc.at_css('g svg')
+        doc.at_css('g svg').presence || doc.at_css('svg')
       end
     end
 
