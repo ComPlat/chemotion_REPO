@@ -35,7 +35,7 @@ export default class ReactionDetailsRepoComment extends Component {
   }
 
   render() {
-    const { reaction } = this.state;
+    const { reaction, review_info } = this.state;
     return reaction && reaction.publication ?
       (
         <RepoReactionDetails
