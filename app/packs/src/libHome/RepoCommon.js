@@ -634,7 +634,7 @@ const ChecklistPanel = ({
   const dohd = checklist?.ohd?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'red' }} />) : (<i className="fa fa-square-o" style={{ color: 'red' }} />);
 
 
-  if (isReviewer === true) {
+  if (isReviewer === true || review_info?.groupleader == true) {
     const leaders = review_info?.leaders?.length > 0 ? `additional reviewer(s): ${review_info?.leaders?.join(', ')}` : '';
     const isGL = review_info?.leaders?.length > 0 ? (<OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">group leader review</Tooltip>}>{dglr}</OverlayTrigger>) : '';
     return (
