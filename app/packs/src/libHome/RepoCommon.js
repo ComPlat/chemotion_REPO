@@ -101,7 +101,7 @@ const resizableSvg = (path, extra = null) => (
 
 const ChemotionId = props => (
   <h5>
-    <b>{props.type?.replace(/^\w/, c => c.toUpperCase())} ID: </b>
+    <b>{props.type?.replace(/^\w/, c => c.toUpperCase())} ID:&nbsp;</b>
     <Button key={`reaction-jumbtn-${props.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${props.id}`; }}>
       {props.type === 'reaction' ? 'CRR' : 'CRS'}-{props.id}
     </Button><ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${props.id}`} />
@@ -2288,7 +2288,7 @@ const Doi = (props) => {
 
   return (
     <h5>
-      <b>{title} </b>
+      <b>{title}&nbsp;</b>
       {data}
     </h5>
   );
