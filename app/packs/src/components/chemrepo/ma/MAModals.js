@@ -1,10 +1,10 @@
 /* eslint-disable react/forbid-prop-types */
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, Tooltip, FormControl, Table } from 'react-bootstrap';
 import uuid from 'uuid';
-import NotificationActions from '../../actions/NotificationActions';
+import NotificationSystem from 'react-notification-system';
 import RepositoryFetcher from '../../fetchers/RepositoryFetcher';
 
 export const listCom = (xvialCom, data = '') => {
@@ -48,6 +48,7 @@ export const MARequestModal = (props) => {
   } = props;
   const [requestModalShow, setRequestModalShow] = useState(false);
   const [rInput, setRInput] = useState(null);
+  const notificationSystem = useRef(null);
   const hasData = !!(data && data !== '');
 
   if (!(allowRequest && hasData)) return null;
@@ -56,11 +57,9 @@ export const MARequestModal = (props) => {
     if (isLogin) {
       setRequestModalShow(true);
     } else {
-      NotificationActions.add({
-        title: 'Request to the Compound-Platform.eu',
-        message: 'Please log in to send the request.',
-        level: 'warning',
-        position: 'tc'
+      const notification = notificationSystem.current;
+      notification.addNotification({
+        title: 'Request to the Compound-Platform.eu', message: 'Please log in to send the request.', level: 'warning', position: 'tc'
       });
     }
   };
@@ -69,11 +68,9 @@ export const MARequestModal = (props) => {
     RepositoryFetcher.compound(elementId, rInput.value, 'request')
       .then(() => {
         setRequestModalShow(false);
-        NotificationActions.add({
-          title: 'Request to the Compound-Platform.eu',
-          message: 'Your request has been emailed to the Compound-Platform',
-          level: 'info',
-          position: 'tc'
+        const notification = notificationSystem.current;
+        notification.addNotification({
+          title: 'Request to the Compound-Platform.eu', message: 'Your request has been emailed to the Compound-Platform.', level: 'info', position: 'tc'
         });
       });
   };
@@ -101,6 +98,7 @@ export const MARequestModal = (props) => {
           <Button bsStyle="primary" onClick={() => request()}>Send request to the Compound-Platform</Button>
         </Modal.Body>
       </Modal>
+      <NotificationSystem ref={notificationSystem} />
     </>
   );
 };
