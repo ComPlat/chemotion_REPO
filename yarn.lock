@@ -12286,10 +12286,10 @@ repeat-string@^1.6.1:
   resolved "https://registry.yarnpkg.com/repeat-string/-/repeat-string-1.6.1.tgz#8dcae470e1c88abc2d600fff4a776286da75e637"
   integrity sha1-jcrkcOHIirwtYA//Sndihtp15jc=
 
-repo-review-ui@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-0.0.9.tgz#13f974dad2324d1f58d0477814a2f2a77c729426"
-  integrity sha512-VQvAUoPeIvTaYQHVZVRz9QMwAX3tuN4Tw7ZvsbeQFUpjyU+6GSwqufhyKapKzE6TV3HMxvfsG1b6oBya7RRZ8w==
+repo-review-ui@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-0.0.10.tgz#c752d2aad88d21296d4cceb5bb1c25cf180f4fe0"
+  integrity sha512-75qs8hnXYrIw0Xhv2EdbPqbpS96hvQ5f6xaf/wax4ntMWQUQieoc6gSc/aCjerxZ1qWlV3BfdndiHt/c1Okuow==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"
