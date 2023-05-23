@@ -45,7 +45,7 @@ class ReviewActions {
   reviewPublish(id, type, comment, action, checklist, reviewComments) {
     return (dispatch) => { RepositoryFetcher.repoReviewPublish(id, type, comment, action, checklist, reviewComments)
       .then((result) => {
-        dispatch({ id :id, element: result[`${type}`], type: type, review: result.review, comment: comment, action: action })
+        dispatch({ id :id, element: result[`${type}`], type: type, review: result.review, comment: comment, action: action, review_info: result.review_info })
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });};
