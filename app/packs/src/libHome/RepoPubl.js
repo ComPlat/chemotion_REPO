@@ -68,7 +68,7 @@ const hints = {
     content: 'Scheme-only reactions contain the schematic representation of the reaction and its reagents, reactants and products including the most relevant reaction conditions. Scheme-only entries are generated if analytical data are missing.'
   },
   moleculeArchive: {
-    title: 'Physcial samples',
+    title: 'Physical samples',
     content: 'A physical sample was registered to the Molecule Archive of the Compound Platform and can be requested from there.'
   }
 };
