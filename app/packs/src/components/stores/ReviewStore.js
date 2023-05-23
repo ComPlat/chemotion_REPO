@@ -16,6 +16,7 @@ class ReviewStore {
     this.searchValue;
     this.currentElement = null;
     this.review = {};
+    this.review_info = {}
 
     this.bindListeners({
       handleReviewModal: ReviewActions.handleReviewModal,
@@ -108,7 +109,7 @@ class ReviewStore {
 
   handelReviewPublish(results) {
     // const { history, checklist, reviewComments } = results.review;
-    this.setState({ review: results.review, showReviewModal: false });
+    this.setState({ review: results.review, showReviewModal: false, review_info: results.review_info });
     ReviewActions.getElements(this.selectType || 'All', this.selectState || 'pending', this.searchType || 'All', this.searchValue || '', this.page, this.perPage);
   }
 

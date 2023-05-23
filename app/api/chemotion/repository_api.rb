@@ -807,8 +807,9 @@ module Chemotion
           save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], nil, false)
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
-          { "#{params[:type]}": element, review: his || @root_publication.review }
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
         end
 
         post :comment do
@@ -826,7 +827,8 @@ module Chemotion
           # @root_publication.element
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, review: @root_publication.review }
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: @root_publication.review, review_info: review_info }
         end
 
         post :submit do
@@ -837,12 +839,18 @@ module Chemotion
           @root_publication.inform_users(Publication::STATE_PENDING)
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
-          { "#{params[:type]}": element, review: his || @root_publication.review }
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
         end
 
         post :approved do
           approve_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'approved', false)
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
         end
 
         post :accepted do
@@ -857,7 +865,8 @@ module Chemotion
 
           element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
           element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
-          { "#{params[:type]}": element, review: @root_publication.review, message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off' }
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: @root_publication.review, message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off', review_info: review_info }
         end
         post :declined do
           save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'declined', false)

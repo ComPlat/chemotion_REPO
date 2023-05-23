@@ -29,7 +29,7 @@ const showButton = (btn, func, pubState, review_info) => {
     case 'Review':
       btnBsStyle = 'info';
       btnIcon = 'fa fa-exchange';
-      btnTooltip = 'Review publication, modification required for submittor';
+      btnTooltip = 'Review publication, modification required for submitter';
       break;
     case 'Submit':
       btnBsStyle = 'info';
