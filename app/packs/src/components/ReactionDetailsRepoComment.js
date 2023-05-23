@@ -26,7 +26,6 @@ export default class ReactionDetailsRepoComment extends Component {
   }
 
   onStoreChange(state) {
-    console.log(state);
     this.setState(prevState => ({ ...prevState, ...state }));
   }
 
@@ -35,7 +34,7 @@ export default class ReactionDetailsRepoComment extends Component {
   }
 
   render() {
-    const { reaction } = this.state;
+    const { reaction, review_info } = this.state;
     return reaction && reaction.publication ?
       (
         <RepoReactionDetails

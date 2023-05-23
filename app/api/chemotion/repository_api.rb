@@ -386,10 +386,10 @@ module Chemotion
 
           svg_file = e.element.sample_svg_file if element_type == 'Sample'
           title = e.element.short_label if element_type == 'Sample'
-          checklist = e.review['checklist'] if User.reviewer_ids.include?(current_user&.id)
+          review_info = repo_review_info(e, current_user&.id, true)
+          checklist = e.review['checklist'] if User.reviewer_ids.include?(current_user&.id) || review_info[:groupleader] == true
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
 
-          review_info = repo_review_info(e, current_user&.id, true)
 
           elements.push(
             id: e.element_id, svg: svg_file, type: element_type, title: title, checklist: checklist || {}, review_info: review_info, isReviewer: User.reviewer_ids.include?(current_user&.id) || false,
@@ -552,7 +552,7 @@ module Chemotion
           schemeList = get_reaction_table(params[:id])
           publication = Publication.find_by(element_id: params[:id], element_type: 'Reaction')
           review_info = repo_review_info(publication, current_user&.id, false)
-          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || (publication.review.dig('reviewers')&.include?(current_user&.id))
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
           published_user = User.find(publication.published_by) unless publication.nil?
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
@@ -591,7 +591,9 @@ module Chemotion
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
           review_info = repo_review_info(publication, current_user&.id, false)
-          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id)
+          # preapproved = publication.review.dig('checklist', 'glr', 'status') == true
+          # is_leader = publication.review.dig('reviewers')&.include?(current_user&.id)
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
           published_user = User.find(publication.published_by) unless publication.nil?
           literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
           # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
@@ -757,7 +759,6 @@ module Chemotion
               review_history << next_node
               review['history'] = review_history
             end
-
             if checklist&.length&.positive?
               revst = review['checklist'] || {}
               checklist.each do |k, v|

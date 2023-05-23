@@ -101,7 +101,7 @@ const resizableSvg = (path, extra = null) => (
 
 const ChemotionId = props => (
   <h5>
-    <b>{props.type?.replace(/^\w/, c => c.toUpperCase())} ID: </b>
+    <b>{props.type?.replace(/^\w/, c => c.toUpperCase())} ID:&nbsp;</b>
     <Button key={`reaction-jumbtn-${props.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${props.id}`; }}>
       {props.type === 'reaction' ? 'CRR' : 'CRS'}-{props.id}
     </Button><ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${props.id}`} />
@@ -634,7 +634,7 @@ const ChecklistPanel = ({
   const dohd = checklist?.ohd?.status === true ? (<i className="fa fa-check-square-o" style={{ color: 'red' }} />) : (<i className="fa fa-square-o" style={{ color: 'red' }} />);
 
 
-  if (isReviewer === true) {
+  if (isReviewer === true || review_info?.groupleader == true) {
     const leaders = review_info?.leaders?.length > 0 ? `additional reviewer(s): ${review_info?.leaders?.join(', ')}` : '';
     const isGL = review_info?.leaders?.length > 0 ? (<OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">group leader review</Tooltip>}>{dglr}</OverlayTrigger>) : '';
     return (
@@ -2288,7 +2288,7 @@ const Doi = (props) => {
 
   return (
     <h5>
-      <b>{title} </b>
+      <b>{title}&nbsp;</b>
       {data}
     </h5>
   );

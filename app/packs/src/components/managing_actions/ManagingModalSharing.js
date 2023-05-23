@@ -132,7 +132,6 @@ export default class ManagingModalSharing extends React.Component {
       };
     });
 
-    console.log(filterParams);
     return filterParams;
   }
 
@@ -181,8 +180,6 @@ export default class ManagingModalSharing extends React.Component {
         collection_id: collectionId
       };
     });
-    console.log(filterParams);
-
     return filterParams;
   }
 
