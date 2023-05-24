@@ -22,7 +22,7 @@
     <title titleType="AlternativeTitle"><%= element.rinchi_short_key %></title>
   </titles>
   <publisher>chemotion-repository</publisher>
-  <publicationYear><%= Time.now.strftime("%Y") %></publicationYear>
+  <publicationYear><%= pub.published_at&.strftime("%Y") || Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
     <contributor contributorType="Researcher">
