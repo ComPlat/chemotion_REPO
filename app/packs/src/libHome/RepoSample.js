@@ -20,12 +20,13 @@ import {
 import DateInfo from '../components/chemrepo/DateInfo';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import MAPanel from '../components/chemrepo/MoleculeArchive';
+import PublicActions from '../components/actions/PublicActions';
+import PublicAnchor from '../components/chemrepo/PublicAnchor';
 import PublicSample from '../components/chemrepo/PublicSample';
 import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
-import UserCommentModal from '../components/chemrepo/UserCommentModal';
-import PublicActions from '../components/actions/PublicActions';
-import Sample from '../components/models/Sample';
 import RepoSegment from './RepoSegment';
+import Sample from '../components/models/Sample';
+import UserCommentModal from '../components/chemrepo/UserCommentModal';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -127,7 +128,6 @@ export default class RepoSample extends Component {
     } = this.props;
     const { xvialCom } = element;
     const { expandSA } = this.state;
-    // console.log(this.props);
     const affiliationMap = AffiliationMap(sample.affiliation_ids);
 
     const iupacUserDefined =
@@ -179,6 +179,7 @@ export default class RepoSample extends Component {
 
     return (
       <Jumbotron key={`sample-${sample.id}`}>
+        <PublicAnchor doi={sample.doi} isPublished={isPublished} />
         <span className="repo-pub-sample-header">
           <span className="repo-pub-title">
             <IconToMyDB
@@ -277,7 +278,6 @@ export default class RepoSample extends Component {
             )}
           </span>
           <LicenseIcon
-            doi={isPublished ? sample.doi : sample.doi?.full_doi}
             license={sample.license}
             hasCoAuthors={sample.author_ids.length > 1}
           />
