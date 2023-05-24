@@ -63,7 +63,10 @@
       This is a physical chemical entity[CHEBI_24431] which was not directly associated with a molecule[CHEBI_25367].
       The physical chemical entity[CHEBI_24431] can be described by the molecular mass descriptor [cheminf_000088]: <%= "#{element.molecular_mass}" %>.
       <% end %>
-      The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES descriptor[cheminf_000007]: <%= element.molecule_cano_smiles %>
+      The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES descriptor[cheminf_000007]:
+      <% element.solvent&.each do |solvent| %>
+        <%= solvent['smiles'] %>
+      <% end %>
       The physical chemical entity[CHEBI_24431] has the following Sample ID as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>
 
       The physical chemical entity[CHEBI_24431] can be described by the physical descriptors [CHEMINF_000025]:
@@ -72,7 +75,7 @@
       Refractive index descriptor[CHEMINF_000253]:
 
       The physical chemical entity[CHEBI_24431] can be further described by the following assays[OBI:0000070][CHMO:0001133]:
-      <% element.analyses.each do |analysis| %>
+      <% element.analyses&.each do |analysis| %>
         <%= (analysis.extended_metadata['kind'] || '') %>
       <% end %>
       The physical chemical entity[CHEBI_24431] was deposited to the Molecule Archive of the Karlsruhe Insitute of Technology (KIT) with the following Sample ID: <%= cust_sample[:x_id] %>
