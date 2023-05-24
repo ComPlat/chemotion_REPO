@@ -267,6 +267,27 @@ const DownloadMetadataBtn = (l) => {
   );
 };
 
+
+const DownloadJsonBtn = (l) => {
+  const contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
+  return (
+    <OverlayTrigger
+      placement="bottom"
+      overlay={<Tooltip id={`tt_metadata__${uuid.v4()}`}>download JSON-LD</Tooltip>}
+    >
+      <Button
+        style={{ backgroundColor: 'grey', color:'white', marginLeft: '5px' }}
+        bsSize="xsmall"
+        onClick={() => Utils.downloadFile({
+          contents: contentUrl
+        })}
+      >
+        JSON-LD
+      </Button>
+    </OverlayTrigger>
+  );
+};
+
 const DownloadDOICsv = (e, a) => {
   const dataToCsvURI = data => encodeURI(`data:text/csv;charset=utf-8,${data.map(row => row.join(',')).join('\n')}`);
   const dois = [];
@@ -1010,6 +1031,7 @@ const RenderAnalysisHeader = (props) => {
                   </Button>
                   <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
                   <DownloadMetadataBtn type="sample" id={element.id} />
+                  <DownloadJsonBtn type="sample" id={element.id} />
                 </span>
               )
               :
@@ -1676,6 +1698,7 @@ const AnalysisHeaderSample = ({ sample, sampleType }) => {
           </Button>
           <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
           <DownloadMetadataBtn type="sample" id={sample.id} />
+          <DownloadJsonBtn type="sample" id={sample.id} />
         </Col>
       </Row>
     </div>
@@ -1713,6 +1736,7 @@ class RenderPublishAnalysesPanel extends Component {
         </Button>
         <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
         <DownloadMetadataBtn type="container" id={analysis.id} />
+        <DownloadJsonBtn type="container" id={analysis.id} />
       </div>
     );
 
@@ -1836,6 +1860,7 @@ class RenderPublishAnalyses extends Component {
               </Button>
               <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
               <DownloadMetadataBtn type="container" id={analysis.id} />
+              <DownloadJsonBtn type="container" id={analysis.id} />
             </div>
             <div className="sub-title" inline="true">
               <b>Reaction ID: </b>
@@ -2276,6 +2301,7 @@ const Doi = (props) => {
         </Button>
         <ClipboardCopyBtn text={`https://dx.doi.org/${doi}`} />
         <DownloadMetadataBtn type={type} id={id} />
+        <DownloadJsonBtn type={type} id={id} />
       </span>
     );
   } else {
@@ -2324,6 +2350,7 @@ export {
   Doi,
   DownloadDOICsv,
   DownloadMetadataBtn,
+  DownloadJsonBtn,
   EditorTips,
   ElementIcon,
   ElStateLabel,
