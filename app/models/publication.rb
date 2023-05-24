@@ -28,7 +28,6 @@
 #  index_publications_on_ancestry  (ancestry)
 #  publications_element_idx        (element_type,element_id,deleted_at)
 #
-
 class Publication < ActiveRecord::Base
   class Net::FTP
     def puttextcontent(content, remotefile, &block)
@@ -42,6 +41,7 @@ class Publication < ActiveRecord::Base
   end
 
   acts_as_paranoid
+  include MetadataJsonld
   has_ancestry
   belongs_to :element, polymorphic: true
   belongs_to :original_element, polymorphic: true, optional: true
