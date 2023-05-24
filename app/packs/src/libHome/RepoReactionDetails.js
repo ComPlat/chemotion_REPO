@@ -1,11 +1,5 @@
 import React, { Component } from 'react';
-import {
-  Panel,
-  Row,
-  Col,
-  Button,
-  Jumbotron,
-} from 'react-bootstrap';
+import { Panel, Row, Col, Button, Jumbotron } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import { head, filter } from 'lodash';
 import { RepoCommentModal } from 'repo-review-ui';
@@ -30,17 +24,22 @@ import {
   IconToMyDB,
   AnalysesTypeJoinLabel,
   SchemeWord,
-  resizableSvg
+  resizableSvg,
 } from './RepoCommon';
 import LoadingActions from '../components/actions/LoadingActions';
 import PublicActions from '../components/actions/PublicActions';
 import ReviewActions from '../components/actions/ReviewActions';
 import DateInfo from '../components/chemrepo/DateInfo';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
+import PublicAnchor from '../components/chemrepo/PublicAnchor';
 import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import QuillViewer from '../components/QuillViewer';
-import { Citation, literatureContent, RefByUserInfo } from '../components/LiteratureCommon';
+import {
+  Citation,
+  literatureContent,
+  RefByUserInfo,
+} from '../components/LiteratureCommon';
 import RepoReactionSchemeInfo from './RepoReactionSchemeInfo';
 import RepoReviewButtonBar from './RepoReviewButtonBar';
 import Sample from '../components/models/Sample';
@@ -60,7 +59,7 @@ export default class RepoReactionDetails extends Component {
       // btnAction: '',
       showCommentModal: false,
       commentField: '',
-      originInfo: ''
+      originInfo: '',
     };
 
     this.toggleScheme = this.toggleScheme.bind(this);
@@ -133,7 +132,14 @@ export default class RepoReactionDetails extends Component {
 
   handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
-    ReviewActions.reviewPublish(elementId, 'reaction', comment, action, checklist, reviewComments);
+    ReviewActions.reviewPublish(
+      elementId,
+      'reaction',
+      comment,
+      action,
+      checklist,
+      reviewComments
+    );
     // this.setState({ showReviewModal: false });
   }
 
@@ -141,14 +147,14 @@ export default class RepoReactionDetails extends Component {
     this.setState({
       showCommentModal: show,
       commentField: field,
-      originInfo: orgInfo
+      originInfo: orgInfo,
     });
   }
 
   handleSubmitComment(elementId, elementType, field, comment, origInfo) {
     LoadingActions.start();
     const cinfo = {};
-    if (typeof (cinfo[field]) === 'undefined') {
+    if (typeof cinfo[field] === 'undefined') {
       cinfo[field] = {};
     }
     cinfo[field].comment = comment;
@@ -164,47 +170,61 @@ export default class RepoReactionDetails extends Component {
   }
 
   reactionInfo(reaction) {
-    const {
-      showScheme, showRinchi, showProp, showTlc
-    } = this.state;
-    const {
-      canComment,
-      review_info,
-      review
-    } = this.props;
+    const { showScheme, showRinchi, showProp, showTlc } = this.state;
+    const { canComment, review_info, review } = this.props;
 
     const svgPath = `/images/reactions/${reaction.reaction_svg_file}`;
     const content = reaction.description;
     const additionInfo = reaction.observation;
 
-    const descContent = (content && content.ops && content.ops.length > 0
-      && content.ops[0].insert) ? content.ops[0].insert.trim() : '';
+    const descContent =
+      content && content.ops && content.ops.length > 0 && content.ops[0].insert
+        ? content.ops[0].insert.trim()
+        : '';
     let descQV = (
-      <span><b>Description:</b><QuillViewer value={content} preview />
-      </span>);
+      <span>
+        <b>Description:</b>
+        <QuillViewer value={content} preview />
+      </span>
+    );
     if (descContent === '') descQV = '';
 
-    const addinfoContent = (additionInfo && additionInfo.ops && additionInfo.ops.length > 0 &&
-      additionInfo.ops[0].insert) ? additionInfo.ops[0].insert.trim() : '';
+    const addinfoContent =
+      additionInfo &&
+      additionInfo.ops &&
+      additionInfo.ops.length > 0 &&
+      additionInfo.ops[0].insert
+        ? additionInfo.ops[0].insert.trim()
+        : '';
     let addQV = (
-      <span><b>Additional information for publication and purification details:</b>
+      <span>
+        <b>Additional information for publication and purification details:</b>
         <QuillViewer value={additionInfo} preview />
-      </span>);
+      </span>
+    );
     if (addinfoContent === '') addQV = '';
 
-    const temperature = reaction.temperature ? `${reaction.temperature.userText} ${reaction.temperature.valueUnit}` : '';
+    const temperature = reaction.temperature
+      ? `${reaction.temperature.userText} ${reaction.temperature.valueUnit}`
+      : '';
     const duration = CalcDuration(reaction);
     const properties = `Status:[${reaction.status}]; Temperature:[${temperature}]; Duration: [${duration}]`;
-    const tlc = `Solvents (parts):[${reaction.tlc_solvents || ''}]; Rf-Value:[${reaction.rf_value || ''}]; TLC-Description: [${reaction.tlc_description || ''}]`;
+    const tlc = `Solvents (parts):[${reaction.tlc_solvents || ''}]; Rf-Value:[${
+      reaction.rf_value || ''
+    }]; TLC-Description: [${reaction.tlc_description || ''}]`;
 
     const bodyAttrs = {
       style: {
         fontSize: '90%',
-        paddingBottom: 'unset'
-      }
+        paddingBottom: 'unset',
+      },
     };
-    const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
-      reaction.publication.taggable_data.scheme_only === true) || false;
+    const schemeOnly =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data &&
+        reaction.publication.taggable_data.scheme_only === true) ||
+      false;
     if (schemeOnly) {
       if (canComment) {
         return (
@@ -246,7 +266,12 @@ export default class RepoReactionDetails extends Component {
           </Row>
           <Row>
             <Col sm={12} md={12} lg={12}>
-              <CommentBtn {...this.props} field="Reaction Table" orgInfo="<Reaction Table>" onShow={this.handleCommentBtn} />
+              <CommentBtn
+                {...this.props}
+                field="Reaction Table"
+                orgInfo="<Reaction Table>"
+                onShow={this.handleCommentBtn}
+              />
               <ReactionTable
                 reaction={reaction}
                 toggle={this.toggleScheme}
@@ -261,11 +286,21 @@ export default class RepoReactionDetails extends Component {
           <Row>
             <Col sm={12} md={12} lg={12}>
               <div className="desc small-p">
-                <CommentBtn {...this.props} field="Description" orgInfo={descContent} onShow={this.handleCommentBtn} />
+                <CommentBtn
+                  {...this.props}
+                  field="Description"
+                  orgInfo={descContent}
+                  onShow={this.handleCommentBtn}
+                />
                 {descQV}
               </div>
               <div className="desc small-p">
-                <CommentBtn {...this.props} field="Additional information" orgInfo={addinfoContent} onShow={this.handleCommentBtn} />
+                <CommentBtn
+                  {...this.props}
+                  field="Additional information"
+                  orgInfo={addinfoContent}
+                  onShow={this.handleCommentBtn}
+                />
                 {addQV}
               </div>
             </Col>
@@ -282,7 +317,12 @@ export default class RepoReactionDetails extends Component {
           </Row>
           <Row>
             <Col sm={12} md={12} lg={12}>
-              <CommentBtn {...this.props} field="Properties" orgInfo={properties} onShow={this.handleCommentBtn} />
+              <CommentBtn
+                {...this.props}
+                field="Properties"
+                orgInfo={properties}
+                onShow={this.handleCommentBtn}
+              />
               <ReactionProperties
                 reaction={reaction}
                 toggle={this.toggleProp}
@@ -293,7 +333,12 @@ export default class RepoReactionDetails extends Component {
           </Row>
           <Row>
             <Col sm={12} md={12} lg={12}>
-              <CommentBtn {...this.props} field="TLC-Control" orgInfo={tlc} onShow={this.handleCommentBtn} />
+              <CommentBtn
+                {...this.props}
+                field="TLC-Control"
+                orgInfo={tlc}
+                onShow={this.handleCommentBtn}
+              />
               <ReactionTlc
                 reaction={reaction}
                 toggle={this.toggleTlc}
@@ -307,23 +352,69 @@ export default class RepoReactionDetails extends Component {
     );
   }
 
-  renderAnalysisView(container, type, product = null, idx = -1, isLogin = false, isReviewer = false, references = []) {
-    if (typeof (container) === 'undefined' || !container) return <span />;
+  renderAnalysisView(
+    container,
+    type,
+    product = null,
+    idx = -1,
+    isLogin = false,
+    isReviewer = false,
+    references = []
+  ) {
+    if (typeof container === 'undefined' || !container) return <span />;
 
-    const analyses = ArrayUtils.sortArrByIndex(head(filter(container.children, o => o.container_type === 'analyses')).children);
+    const analyses = ArrayUtils.sortArrByIndex(
+      head(filter(container.children, (o) => o.container_type === 'analyses'))
+        .children
+    );
     const show = this.state.showRA[idx] || true;
-    if (typeof (analyses) === 'undefined' || !analyses || analyses.length === 0) {
+    if (typeof analyses === 'undefined' || !analyses || analyses.length === 0) {
       return <div />;
     }
-    const pdInfos = (this.props.reaction.infos && this.props.reaction.infos.pd_infos && this.props.reaction.infos.pd_infos[product && product.id]) || '';
-    const productHeader = (typeof (product) !== 'undefined' && product) ? <RenderAnalysisHeader key={`reaction-product-header-${product.id}`} reactionId={this.props.reaction.id} element={product} isPublic={this.props.isPublished} isLogin={isLogin} isReviewer={isReviewer} userInfo={pdInfos} updateRepoXvial={() => this.updateRepoXvial()} xvialCom={product.xvialCom} literatures={references} /> : <span />;
-    const specSample = (type === 'Sample' && typeof (product) !== 'undefined' && product) ? new Sample(product) : null;
+    const pdInfos =
+      (this.props.reaction.infos &&
+        this.props.reaction.infos.pd_infos &&
+        this.props.reaction.infos.pd_infos[product && product.id]) ||
+      '';
+    const productHeader =
+      typeof product !== 'undefined' && product ? (
+        <RenderAnalysisHeader
+          key={`reaction-product-header-${product.id}`}
+          reactionId={this.props.reaction.id}
+          element={product}
+          isPublic={this.props.isPublished}
+          isLogin={isLogin}
+          isReviewer={isReviewer}
+          userInfo={pdInfos}
+          updateRepoXvial={() => this.updateRepoXvial()}
+          xvialCom={product.xvialCom}
+          literatures={references}
+        />
+      ) : (
+        <span />
+      );
+    const specSample =
+      type === 'Sample' && typeof product !== 'undefined' && product
+        ? new Sample(product)
+        : null;
     const analysesView = analyses.map((analysis) => {
-      const kind = analysis.extended_metadata && analysis.extended_metadata.kind && analysis.extended_metadata['kind'].split('|').pop().trim();
-      const anaInfo = (this.props.reaction.infos && this.props.reaction.infos.ana_infos && this.props.reaction.infos.ana_infos[analysis.id]) || '';
+      const kind =
+        analysis.extended_metadata &&
+        analysis.extended_metadata.kind &&
+        analysis.extended_metadata['kind'].split('|').pop().trim();
+      const anaInfo =
+        (this.props.reaction.infos &&
+          this.props.reaction.infos.ana_infos &&
+          this.props.reaction.infos.ana_infos[analysis.id]) ||
+        '';
       return (
         <span key={`analysis_${analysis.id}`}>
-          <CommentBtn {...this.props} field={`Analysis_${analysis.id}`} orgInfo={kind} onShow={this.handleCommentBtn} />
+          <CommentBtn
+            {...this.props}
+            field={`Analysis_${analysis.id}`}
+            orgInfo={kind}
+            onShow={this.handleCommentBtn}
+          />
           <RenderPublishAnalysesPanel
             key={`${type}_${analysis.id}`}
             userInfo={anaInfo}
@@ -350,7 +441,7 @@ export default class RepoReactionDetails extends Component {
             color: 'white',
             fontSize: 'smaller',
             fontWeight: 'bold',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
           onClick={() => this.toggleRA(idx)}
         >
@@ -358,12 +449,27 @@ export default class RepoReactionDetails extends Component {
           <i className={`glyphicon ${show}`} />
           <i className={`fa fa-caret-${show ? 'down' : 'right'}`} />
         </span>
-        <span className="label" style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}>
+        <span
+          className="label"
+          style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}
+        >
           {AnalysesTypeJoinLabel(analyses, type)}
         </span>
-        <Panel style={{ border: 'none' }} id={`collapsible_${type}_analyses`} expanded={show} defaultExpanded onToggle={() => { }}>
+        <Panel
+          style={{ border: 'none' }}
+          id={`collapsible_${type}_analyses`}
+          expanded={show}
+          defaultExpanded
+          onToggle={() => {}}
+        >
           <Panel.Collapse>
-            <Panel.Body style={{ fontSize: '90%', backgroundColor: '#f5f5f5', padding: '4' }}>
+            <Panel.Body
+              style={{
+                fontSize: '90%',
+                backgroundColor: '#f5f5f5',
+                padding: '4',
+              }}
+            >
               {productHeader}
               {analysesView}
             </Panel.Body>
@@ -373,14 +479,32 @@ export default class RepoReactionDetails extends Component {
     );
   }
 
-  renderProductAnalysisView(products, isLogin = false, isReviewer = false, references = []) {
-    if (typeof (products) === 'undefined' || !products || products.length === 0) {
+  renderProductAnalysisView(
+    products,
+    isLogin = false,
+    isReviewer = false,
+    references = []
+  ) {
+    if (typeof products === 'undefined' || !products || products.length === 0) {
       return <span />;
     }
-    const prdReferences = (_sid, _references) => (_references ? _references.filter(r => r.element_type === 'Sample' && r.element_id === _sid) : []);
+    const prdReferences = (_sid, _references) =>
+      _references
+        ? _references.filter(
+            (r) => r.element_type === 'Sample' && r.element_id === _sid
+          )
+        : [];
     return products.map((product, idx) => (
       <div key={`product-${product.id}`}>
-        {this.renderAnalysisView(product.container, 'Sample', product, idx, isLogin, isReviewer, prdReferences(product.id, references))}
+        {this.renderAnalysisView(
+          product.container,
+          'Sample',
+          product,
+          idx,
+          isLogin,
+          isReviewer,
+          prdReferences(product.id, references)
+        )}
       </div>
     ));
   }
@@ -396,24 +520,32 @@ export default class RepoReactionDetails extends Component {
       canClose,
     } = this.props;
     let { buttons } = this.props;
-    if (typeof (reaction) === 'undefined' || !reaction) {
+    if (typeof reaction === 'undefined' || !reaction) {
       return <div />;
     }
 
-    const taggData = (reaction && reaction.publication && reaction.publication.taggable_data) || {};
+    const taggData =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data) ||
+      {};
     const pubData = (reaction && reaction.publication) || {};
     const doi = (reaction && reaction.doi) || {};
 
     const aId = [].concat.apply([], taggData.affiliation_ids);
     const affiliationMap = {};
     const { literatures } = reaction;
-    const references = literatures ? literatures.map(lit => (
-      <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
-        <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />&nbsp;
-        <i className={`icon-${lit.element_type.toLowerCase()}`} />&nbsp;
-        <Citation key={lit.id} literature={lit} />
-      </li>
-    )) : [];
+    const references = literatures
+      ? literatures.map((lit) => (
+          <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
+            <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />
+            &nbsp;
+            <i className={`icon-${lit.element_type.toLowerCase()}`} />
+            &nbsp;
+            <Citation key={lit.id} literature={lit} />
+          </li>
+        ))
+      : [];
     const refArray = [];
     let referencesText = '';
     if (literatures) {
@@ -433,72 +565,140 @@ export default class RepoReactionDetails extends Component {
     });
     const license = taggData.license || 'CC BY-SA';
 
-    const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
-      reaction.publication.taggable_data.scheme_only === true) || false;
+    const schemeOnly =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data &&
+        reaction.publication.taggable_data.scheme_only === true) ||
+      false;
 
-    let showDOI = <Doi type="reaction" id={reaction.id} doi={isPublished ? taggData.doi : doi} isPublished={isPublished} />;
+    let showDOI = (
+      <Doi
+        type="reaction"
+        id={reaction.id}
+        doi={isPublished ? taggData.doi : doi}
+        isPublished={isPublished}
+      />
+    );
     if (schemeOnly) {
       buttons = ['Decline', 'Comments', 'Accept'];
       showDOI = '';
     }
 
-
-    if (review_info?.groupleader === true && review_info?.preapproved !== true) {
+    if (
+      review_info?.groupleader === true &&
+      review_info?.preapproved !== true
+    ) {
       buttons = ['Comments', 'Review', 'Approve'];
     }
 
-    const idyLogin = typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
-    const idyReview = typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
+    const idyLogin =
+      typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
+    const idyReview =
+      typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
-    let embargo = (<span />);
-    const colDoiPrefix = isPublished ? taggData.doi?.split('/')[0] : doi?.full_doi?.split('/')[0];
+    let embargo = <span />;
+    const colDoiPrefix = isPublished
+      ? taggData.doi?.split('/')[0]
+      : doi?.full_doi?.split('/')[0];
     if (reaction.embargo) {
-      const embargoLink = isPublished ? `/inchikey/collection/${reaction.embargo}` : `/embargo/reaction/${reaction.id}`;
+      const embargoLink = isPublished
+        ? `/inchikey/collection/${reaction.embargo}`
+        : `/embargo/reaction/${reaction.id}`;
       embargo = (
         <span>
-          <b>Access to the DOI and metadata for the whole data collection: </b> &nbsp;
-          <Button key="embargo-link-btn" bsStyle="link" href={embargoLink} target="_blank" style={{ padding: '0px 0px' }}>
-            <i className="fa fa-database" />&nbsp;&nbsp;{reaction.embargo}
+          <b>Access to the DOI and metadata for the whole data collection: </b>{' '}
+          &nbsp;
+          <Button
+            key="embargo-link-btn"
+            bsStyle="link"
+            href={embargoLink}
+            target="_blank"
+            style={{ padding: '0px 0px' }}
+          >
+            <i className="fa fa-database" />
+            &nbsp;&nbsp;{reaction.embargo}
           </Button>
-          <ClipboardCopyBtn text={`https://dx.doi.org/${colDoiPrefix}/collection/${reaction.embargo}`} tooltip="retrieve and copy collection DOI" />
+          <ClipboardCopyBtn
+            text={`https://dx.doi.org/${colDoiPrefix}/collection/${reaction.embargo}`}
+            tooltip="retrieve and copy collection DOI"
+          />
         </span>
       );
     }
     return (
       <div style={{ border: 'none' }}>
-        <div >
+        <div>
           <Jumbotron key={`reaction-${reaction.id}`}>
-            {
-              canComment ?
-                <RepoReviewButtonBar
-                  element={{ id: reaction.id, elementType: 'Reaction' }}
-                  buttons={buttons}
-                  buttonFunc={this.handleReviewBtn}
-                  review_info={review_info}
-                  showComment={showComment}
-                  taggData={taggData}
-                  schemeOnly={schemeOnly}
-                  currComment={(review?.history && review?.history.length > 0 && review?.history.slice(-1).pop()) || {}}
-                /> : ''
-            }
+            <PublicAnchor doi={taggData.doi} isPublished={isPublished} />
+            {canComment ? (
+              <RepoReviewButtonBar
+                element={{ id: reaction.id, elementType: 'Reaction' }}
+                buttons={buttons}
+                buttonFunc={this.handleReviewBtn}
+                review_info={review_info}
+                showComment={showComment}
+                taggData={taggData}
+                schemeOnly={schemeOnly}
+                currComment={
+                  (review?.history &&
+                    review?.history.length > 0 &&
+                    review?.history.slice(-1).pop()) ||
+                  {}
+                }
+              />
+            ) : (
+              ''
+            )}
             {canClose ? <ClosePanel element={reaction} /> : ''}
             <h4>
-              <IconToMyDB isLogin={idyLogin} isPublished={isPublished} id={reaction.id} type="reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;
-              <DateInfo isPublished={isPublished} preText="Reaction" pubData={pubData} tagData={taggData} />&nbsp;
-              <LicenseIcon
-                doi={(isPublished ? taggData.doi : doi.full_doi)}
-                license={license}
-                hasCoAuthors={(taggData.author_ids && (taggData.author_ids.length > 1))}
+              <IconToMyDB
+                isLogin={idyLogin}
+                isPublished={isPublished}
+                id={reaction.id}
+                type="reaction"
               />
-              <PublicCommentModal isReviewer={idyReview} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} userInfo={userInfo} />&nbsp;
-              <UserCommentModal isLogin={idyLogin} id={reaction.id} type="Reaction" title={`Reaction, CRR-${pubData.id}`} />
+              {schemeOnly ? <SchemeWord /> : ''}&nbsp;
+              <DateInfo
+                isPublished={isPublished}
+                preText="Reaction"
+                pubData={pubData}
+                tagData={taggData}
+              />
+              &nbsp;
+              <LicenseIcon
+                license={license}
+                hasCoAuthors={
+                  taggData.author_ids && taggData.author_ids.length > 1
+                }
+              />
+              <PublicCommentModal
+                isReviewer={idyReview}
+                id={reaction.id}
+                type="Reaction"
+                title={`Reaction, CRR-${pubData.id}`}
+                userInfo={userInfo}
+              />
+              &nbsp;
+              <UserCommentModal
+                isLogin={idyLogin}
+                id={reaction.id}
+                type="Reaction"
+                title={`Reaction, CRR-${pubData.id}`}
+              />
             </h4>
             <br />
-            <ContributorInfo contributor={taggData.contributors} showHelp={schemeOnly} />
+            <ContributorInfo
+              contributor={taggData.contributors}
+              showHelp={schemeOnly}
+            />
             <h5>
               <b>{AuthorTitle(taggData.author_ids)} </b>
-              <AuthorList creators={taggData.creators} affiliationMap={affiliationMap} />
+              <AuthorList
+                creators={taggData.creators}
+                affiliationMap={affiliationMap}
+              />
             </h5>
             <AffiliationList
               affiliations={taggData.affiliations}
@@ -508,37 +708,59 @@ export default class RepoReactionDetails extends Component {
             <ChemotionId id={pubData.id} type="reaction" />
             {embargo}
             <h5>
-              <CommentBtn {...this.props} field="Reference" orgInfo={referencesText} onShow={this.handleCommentBtn} />
-              <b>Reference{references.length > 1 ? 's' : null} in the Literature: </b>
+              <CommentBtn
+                {...this.props}
+                field="Reference"
+                orgInfo={referencesText}
+                onShow={this.handleCommentBtn}
+              />
+              <b>
+                Reference{references.length > 1 ? 's' : null} in the Literature:{' '}
+              </b>
               <ul style={{ listStyle: 'none' }}>{references}</ul>
             </h5>
             <br />
-            <h5>
-              {this.reactionInfo(reaction)}
-            </h5>
+            <h5>{this.reactionInfo(reaction)}</h5>
             <RepoSegment segments={reaction.segments} />
-            {schemeOnly ? '' : this.renderAnalysisView(reaction.container, 'Reaction', null, -1, idyLogin, idyReview)}
-            {schemeOnly ? '' : this.renderProductAnalysisView(reaction.products, idyLogin, idyReview, literatures)}
+            {schemeOnly
+              ? ''
+              : this.renderAnalysisView(
+                  reaction.container,
+                  'Reaction',
+                  null,
+                  -1,
+                  idyLogin,
+                  idyReview
+                )}
+            {schemeOnly
+              ? ''
+              : this.renderProductAnalysisView(
+                  reaction.products,
+                  idyLogin,
+                  idyReview,
+                  literatures
+                )}
           </Jumbotron>
         </div>
-        {
-          canComment ? (
-            <div>
-              <RepoCommentModal
-                show={this.state.showCommentModal}
-                elementId={reaction.id}
-                elementType="reaction"
-                field={this.state.commentField}
-                orgInfo={this.state.originInfo}
-                review={this.props.review}
-                review_info={review_info}
-                onUpdate={this.handleSubmitComment}
-                onHide={() => this.setState({ showCommentModal: false })}
-              />
-            </div>
-          ) : ''
-        }
-      </div>);
+        {canComment ? (
+          <div>
+            <RepoCommentModal
+              show={this.state.showCommentModal}
+              elementId={reaction.id}
+              elementType="reaction"
+              field={this.state.commentField}
+              orgInfo={this.state.originInfo}
+              review={this.props.review}
+              review_info={review_info}
+              onUpdate={this.handleSubmitComment}
+              onHide={() => this.setState({ showCommentModal: false })}
+            />
+          </div>
+        ) : (
+          ''
+        )}
+      </div>
+    );
   }
 }
 
