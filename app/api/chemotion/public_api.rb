@@ -795,6 +795,22 @@ module Chemotion
           env['api.format'] = :binary
           @publication.metadata_xml
         end
+
+        desc "Download JSON-Link Data"
+        get :download_json do
+          el_type = params['type'] == "container" ? "analysis" : params['type']
+          filename = URI.escape("JSON-LD_#{el_type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+          content_type('application/json')
+          header['Content-Disposition'] = "attachment; filename=" + filename
+          env['api.format'] = :binary
+          if el_type == "sample"
+            @publication.json_ld_sample
+          elsif el_type == "reaction"
+            @publication.json_ld_reaction
+          elsif el_type == "analysis"
+            @publication.json_ld_container
+          end
+        end
       end
 
       resource :published_statics do
