@@ -8,7 +8,8 @@ const MAGrid = (props) => {
   const [rowData] = useState(xvialCompounds.data || []);
 
   const columnDefs = [
-    { headerName: 'X-Vial', field: 'x_data.xid' },
+    { headerName: 'X-Vial', field: 'x_data.xid', width: 100 },
+    { headerName: 'Name of origin Sample', field: 'x_data.origin_id' },
     { headerName: 'Provided by', field: 'x_data.provided_by' },
     {
       headerName: 'Group',
@@ -16,7 +17,6 @@ const MAGrid = (props) => {
       valueGetter: 'data.x_data.group || "Stefan Bräse Group"',
     },
     { headerName: 'Short label of Sample', field: 'x_short_label' },
-    { headerName: 'Created at', field: 'x_created_at' },
   ];
 
   const getRowStyle = (params) => {
