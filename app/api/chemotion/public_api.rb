@@ -774,22 +774,54 @@ module Chemotion
       end
 
       resource :metadata do
+        desc "batch download metadata"
+        params do
+          requires :type, type: String, desc: 'Type', values: %w[Sample Reaction Container Collection]
+          requires :offset, type: Integer, desc: 'Offset', default: 0
+          requires :limit, type: Integer, desc: 'Limit', default: 100
+          optional :date_from, type: String, desc: 'Published date from'
+          optional :date_to, type: String, desc: 'Published date to'
+        end
+        get :publications do
+          service_url = Rails.env.production? ? 'https://www.chemotion-repository.net' : 'http://localhost:3000'
+          api_url = '/api/v1/public/metadata/download_json?inchikey='
+
+          result = declared(params, include_missing: false)
+          list = []
+          limit = params[:limit] - params[:offset] > 1000 ? params[:offset] + 1000 : params[:limit]
+          scope = Publication.where(element_type: params[:type])
+          scope = scope.where('published_at >= ?', params[:date_from]) if params[:date_from].present?
+          scope = scope.where('published_at <= ?', params[:date_to]) if params[:date_to].present?
+          publications = scope.order(:published_at).offset(params[:offset]).limit(limit)
+          publications.map do |publication|
+            inchikey = publication&.doi&.suffix
+            list.push("#{service_url}#{api_url}#{inchikey}") if inchikey.present?
+          end
+          result[:publications] = list
+          result[:limit] = limit
+          result
+        end
+
         desc "metadata of publication"
         params do
-          requires :id, type: Integer, desc: "Id"
-          requires :type, type: String, desc: "Type", values: %w[sample reaction container collection]
+          optional :id, type: Integer, desc: "Id"
+          optional :type, type: String, desc: "Type", values: %w[sample reaction container collection]
+          optional :inchikey, type: String, desc: "inchikey"
         end
         after_validation do
-          @publication = Publication.find_by(
-            element_type: params['type'].classify,
-            element_id: params['id']
-          )
-          error!('404 Publication not found', 404) unless @publication && @publication.state.include?("completed")
+          @type = params['type']&.classify
+          @publication = Publication.find_by(element_type: @type, element_id: params['id'], state: 'completed') if params['id'].present?
+          if params['inchikey'].present? && @publication.nil?
+            doi = Doi.find_by(suffix: params['inchikey'])
+            @publication = Publication.find_by(doi_id: doi.id, state: 'completed') if doi.present?
+            @type = @publication&.element_type
+          end
+          @type = @type == "Container" ? "Analysis" : @type
+          error!('404 Publication not found', 404) unless @publication.present?
         end
         desc "Download metadata_xml"
         get :download do
-          el_type = params['type'] == "container" ? "analysis" : params['type']
-          filename = URI.escape("metadata_#{el_type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+          filename = URI.escape("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
           content_type('application/octet-stream')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
@@ -798,18 +830,11 @@ module Chemotion
 
         desc "Download JSON-Link Data"
         get :download_json do
-          el_type = params['type'] == "container" ? "analysis" : params['type']
-          filename = URI.escape("JSON-LD_#{el_type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+          filename = URI.escape("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
-          if el_type == "sample"
-            @publication.json_ld_sample
-          elsif el_type == "reaction"
-            @publication.json_ld_reaction
-          elsif el_type == "analysis"
-            @publication.json_ld_container
-          end
+          @publication.json_ld
         end
       end
 
@@ -823,7 +848,7 @@ module Chemotion
 
     namespace :upload do
       before do
-        error!('Unauthorized' , 401) unless TokenAuthentication.new(request, with_remote_addr: true).is_successful?
+        error!('Unauthorized', 401) unless TokenAuthentication.new(request, with_remote_addr: true).is_successful?
       end
       resource :attachments do
         desc "Upload files"
