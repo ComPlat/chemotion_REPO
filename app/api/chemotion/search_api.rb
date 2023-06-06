@@ -8,6 +8,7 @@ module Chemotion
 
     # TODO implement search cache?
     helpers CollectionHelpers
+    helpers CompoundHelpers
     helpers do
       params :search_params do
         optional :page, type: Integer
@@ -216,7 +217,7 @@ module Chemotion
           ttl_mol = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
           slist = paginate(ttl_mol)
           sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
-#byebug
+
           ssids = sentities.map { |e| e[:sid] }
 
           xvial_count_ssql = <<~SQL
@@ -233,6 +234,7 @@ module Chemotion
           sentities = sentities.each do |obj|
             obj[:xvial_count] = 1 if x_cnt_sids.include?(obj[:sid])
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_sids || []).include?(obj[:sid])
+            obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], true)
           end
 
           filter_reactions = Reaction.where("reactions.id in (?)", reactions)
