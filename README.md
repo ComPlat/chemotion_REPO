@@ -4,7 +4,7 @@ A repository for chemists based on chemotion ELN !
 
 ---
 
-**⸢ [Installation] ⸥ ⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
+**⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
 
 ---
 
@@ -12,7 +12,8 @@ A repository for chemists based on chemotion ELN !
 
 Chemotion_REPOSITORY for Chemists.
 
-Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruhe Institute of Technology.
+**Copyright © `2015` - `2022` [Nicole Jung]** <br>
+of the **[Karlsruhe Institute of Technology]**.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -27,17 +28,24 @@ Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruh
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-[![Badge JS]][JS Tests] <br>
-[![Badge Acceptance]][Acceptance Tests]  <br>
-[![Badge Ruby]][Ruby Tests]
-
 ---
 
 ## Sponsors
 
 ## User Documentation
 
-see online ![docs](https://www.chemotion.net/chemotionsaurus/docs/eln/about)
+see online **⸢ [Documentation] ⸥**
 
 [INSTALL]: INSTALL.md
+
+
+<!----------------------------------------------------------------------------->
+
+[Installation]: https://www.chemotion.net/docs/eln/install_configure/
+[Documentation]: https://www.chemotion.net/docs/repo/
+[Changelog]: CHANGELOG.md
+
+[Nicole Jung]: mailto:nicole.jung@kit.edu
+[Karlsruhe Institute of Technology]: https://www.kit.edu/english/
+
+
