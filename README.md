@@ -8,7 +8,7 @@ A repository for chemists based on chemotion ELN !
 
 Chemotion_REPOSITORY for Chemists.
 
-**Copyright © `2015` - `2022` [Nicole Jung]** <br>
+**Copyright © `2015` - `2023` [Nicole Jung]** <br>
 of the **[Karlsruhe Institute of Technology]**.
 
     This program is free software: you can redistribute it and/or modify
