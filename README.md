@@ -28,6 +28,10 @@ of the **[Karlsruhe Institute of Technology]**.
 
 ## Sponsors
 
+This project has been funded by the **[DFG]**.
+
+[![DFG Logo]][DFG]
+
 ## User Documentation
 
 see online **⸢ [Documentation] ⸥**
@@ -40,6 +44,9 @@ see online **⸢ [Documentation] ⸥**
 [Installation]: https://www.chemotion.net/docs/eln/install_configure/
 [Documentation]: https://www.chemotion.net/docs/repo/
 [Changelog]: CHANGELOG.md
+
+[DFG]: https://www.dfg.de/en/
+[DFG Logo]: https://www.dfg.de/zentralablage/bilder/service/logos_corporate_design/logo_negativ_267.png
 
 [Nicole Jung]: mailto:nicole.jung@kit.edu
 [Karlsruhe Institute of Technology]: https://www.kit.edu/english/
