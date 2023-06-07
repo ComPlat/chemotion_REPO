@@ -1,4 +1,4 @@
-class AddPublishedAtPublications < ActiveRecord::Migration
+class AddPublishedAtPublications < ActiveRecord::Migration[4.2]
 def change
   add_column :publications, :published_by, :integer
   add_column :publications, :published_at, :datetime

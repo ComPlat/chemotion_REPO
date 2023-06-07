@@ -13,6 +13,7 @@
 #  waste        :boolean          default(FALSE)
 #  coefficient  :float            default(1.0)
 #  scheme_yield :float
+#  show_label   :boolean          default(FALSE), not null
 #
 # Indexes
 #
@@ -20,27 +21,29 @@
 #  index_reactions_samples_on_sample_id    (sample_id)
 #
 
-class ReactionsSample < ActiveRecord::Base
+class ReactionsSample < ApplicationRecord
   acts_as_paranoid
-  belongs_to :reaction
-  belongs_to :sample
+  belongs_to :reaction, optional: true
+  belongs_to :sample, optional: true
 
   include ReactionSampleCollections
 
   def self.get_samples(reaction_ids)
-    self.where(reaction_id: reaction_ids).pluck(:sample_id).compact.uniq
+    where(reaction_id: reaction_ids).pluck(:sample_id).compact.uniq
   end
 
-  def self.get_reactions samples_ids
-    self.where(sample_id: samples_ids).pluck(:reaction_id).compact.uniq
+  def self.get_reactions(samples_ids)
+    where(sample_id: samples_ids).pluck(:reaction_id).compact.uniq
   end
 end
 
 class ReactionsStartingMaterialSample < ReactionsSample
   include Tagging
+  include Reactable
 end
 
 class ReactionsReactantSample < ReactionsSample
+  include Tagging
   include Reactable
 end
 

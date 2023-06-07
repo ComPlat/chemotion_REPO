@@ -21,31 +21,18 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
   end
 
   private
-
-  # NB: Moved to model
-  # def process_element
-  #   case publication.state
-  #   when Publication::STATE_PENDING
-  #     publication.move_to_pending_collection
-  #   when Publication::STATE_REVIEWED
-  #     publication.move_to_review_collection
-  #   when Publication::STATE_ACCEPTED
-  #     publication.move_to_accepted_collection
-  #   when Publication::STATE_DECLINED
-  #     publication.declined_reverse_original_element
-  #     publication.declined_move_collections
-  #   end
-  # end
-
   def notify_users
+    submitter = publication.published_by || publication.taggable_data['creators']&.first&.dig('id')
+
     args = {
       channel_subject: Channel::PUBLICATION_REVIEW,
-      message_from: publication.published_by || publication.taggable_data['creators']&.first&.dig('id')
+      message_from: submitter
     }
+    sgl = publication.review.dig('reviewers').nil? ? [submitter] : publication.review.dig('reviewers') + [submitter]
 
     case publication.state
     when Publication::STATE_PENDING
-      args[:message_to] = User.reviewer_ids
+      args[:message_to] = User.reviewer_ids + (publication.review.dig('reviewers') || [])
       args[:data_args] = {
         subject: "Chemotion Repository: Review Request for #{publication.doi.suffix}"
       }
@@ -58,6 +45,7 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
         subject: "Chemotion Repository: Publication Accepted. for #{publication.doi.suffix}  \n Once the embargo is released, this submission will be published."
       }
     when Publication::STATE_DECLINED
+      args[:message_to] = sgl
       title = publication.published_by == @current_user_id ? 'withdrawn' : 'rejected'
       args[:data_args] = {
         subject: "Chemotion Repository: Publication #{title}. for #{publication.doi.suffix}."
@@ -84,31 +72,12 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
     else
       return
     end
+  rescue StandardError => e
+    Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name}  mail_users error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+    TXT
+
   end
-
-  # NB: NOT USED?
-  # NB: Moved to model
-  # def release_original_element
-  #   ot = publication.original_element&.tag&.taggable_data&.delete("publish_#{publication.element_type.downcase}")
-  #   publication.original_element.tag.save! unless ot.nil?
-  #
-  #   case publication.element_type
-  #   when 'Sample'
-  #     clear_orig_analyses(publication.original_element)
-  #   when 'Reaction'
-  #     clear_orig_analyses(publication.original_element)
-  #     publication.original_element&.samples&.each do |s|
-  #       t = s.tag&.taggable_data&.delete('publish_sample')
-  #       s.tag.save! unless t.nil?
-  #       clear_orig_analyses(s)
-  #     end
-  #   end
-  # end
-
-  # def clear_orig_analyses(element)
-  #   element&.analyses&.each do |a|
-  #     t = a.tag&.taggable_data&.delete('publish_analysis')
-  #     a.tag.save! unless t.nil?
-  #   end
-  # end
 end

@@ -46,6 +46,13 @@ module Chemotion
         end
         can_write
       end
+
+      def validate_uuid_format(uuid)
+        uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        return true if uuid_regex.match?(uuid.to_s.downcase)
+
+        return false
+      end
     end
 
     rescue_from ActiveRecord::RecordNotFound do |error|
@@ -75,10 +82,10 @@ module Chemotion
 
     resource :attachable do
       params do
-        optional :files, type: Array[File], desc: "files"
-        optional :attachable_type, type: String, desc: "attachable_type"
-        optional :attachable_id, type: Integer, desc: "attachable id"
-        optional :del_files, type: Array[Integer], desc: "del file id"
+        optional :files, type: Array[File], desc: 'files', default: []
+        optional :attachable_type, type: String, desc: 'attachable_type'
+        optional :attachable_id, type: Integer, desc: 'attachable id'
+        optional :del_files, type: Array[Integer], desc: 'del file id', default: []
       end
       after_validation do
         case params[:attachable_type]
@@ -87,54 +94,39 @@ module Chemotion
         end
       end
 
-      desc "Update attachable records"
-      post "update_attachments_attachable" do
+      desc 'Update attachable records'
+      post 'update_attachments_attachable' do
         attachable_type = params[:attachable_type]
         attachable_id = params[:attachable_id]
-        if params[:files] && params[:files].length > 0
-          attach_ary = Array.new
-          rp_attach_ary = Array.new
+        unless params[:files].empty?
+          attach_ary = []
+          rp_attach_ary = []
           params[:files].each do |file|
-            if tempfile = file[:tempfile]
-                a = Attachment.new(
-                  bucket: file[:container_id],
-                  filename: file[:filename],
-                  file_path: file[:tempfile],
-                  created_by: current_user.id,
-                  created_for: current_user.id,
-                  content_type: file[:type],
-                  attachable_type: attachable_type,
-                  attachable_id: attachable_id
-                )
-                begin
-                  a.save!
-                  attach_ary.push(a.id)
-                  rp_attach_ary.push(a.id) if (a.attachable_type == 'ResearchPlan')
-                ensure
-                  tempfile.close
-                  tempfile.unlink
-                end
+            if (tempfile = file[:tempfile])
+              a = Attachment.new(
+                bucket: file[:container_id],
+                filename: file[:filename],
+                file_path: file[:tempfile],
+                created_by: current_user.id,
+                created_for: current_user.id,
+                content_type: file[:type],
+                attachable_type: attachable_type,
+                attachable_id: attachable_id
+              )
+              begin
+                a.save!
+                attach_ary.push(a.id)
+                rp_attach_ary.push(a.id) if %w[ResearchPlan Element].include?(attachable_type)
+              ensure
+                tempfile.close
+                tempfile.unlink
+              end
             end
           end
-
-          if rp_attach_ary.length > 0
-            #TransferThumbnailToPublicJob.perform_now(rp_attach_ary)
-            TransferThumbnailToPublicJob.set(queue: "transfer_thumbnail_to_public_#{current_user.id}")
-                           .perform_later(rp_attach_ary)
-          end
-          if attach_ary.length > 0
-            TransferFileFromTmpJob.set(queue: "transfer_file_from_tmp_#{current_user.id}")
-                         .perform_later(attach_ary)
-          end
+          TransferThumbnailToPublicJob.set(queue: "transfer_thumbnail_to_public_#{current_user.id}").perform_later(rp_attach_ary) unless rp_attach_ary.empty?
+          TransferFileFromTmpJob.set(queue: "transfer_file_from_tmp_#{current_user.id}").perform_later(attach_ary) unless attach_ary.empty?
         end
-        if params[:del_files] && params[:del_files].length > 0
-          Attachment.where('id IN (?) AND attachable_type = (?)', params[:del_files].map!(&:to_i), attachable_type).update_all(attachable_id: nil)
-          if params[:attachable_type] == 'ResearchPlan'
-            a = Attachment.find_by(attachable_type: 'ResearchPlan', attachable_id: params[:attachable_id])
-            rp = ResearchPlan.find(params[:attachable_id])
-            #rp.update!(thumb_svg: a.nil?? nil : '/images/thumbnail/' + a.identifier)
-          end
-        end
+        Attachment.where('id IN (?) AND attachable_type = (?)', params[:del_files].map!(&:to_i), attachable_type).update_all(attachable_id: nil) unless params[:del_files].empty?
         true
       end
     end
@@ -150,9 +142,16 @@ module Chemotion
         # when /post/i
         when /get/i
           can_dwnld = false
-          if request.url =~ /zip/
+          if /zip/.match?(request.url)
             @container = Container.find(params[:container_id])
             if (element = @container.root.containable)
+              can_read = ElementPolicy.new(current_user, element).read?
+              can_dwnld = can_read &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+            end
+          elsif /sample_analyses/.match?(request.url)
+            @sample = Sample.find(params[:sample_id])
+            if (element = @sample)
               can_read = ElementPolicy.new(current_user, element).read?
               can_dwnld = can_read &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
@@ -164,46 +163,122 @@ module Chemotion
                           ElementPolicy.new(current_user, element).read? &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
             end
+
+            if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
+              element = Segment.find(@attachment.attachable_id)&.element
+              can_dwnld = @attachment.created_for == current_user.id ||
+                          (ElementPolicy.new(current_user, element).read? &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
+            end
           end
           error!('401 Unauthorized', 401) unless can_dwnld
         end
       end
 
-      desc "Delete Attachment"
+      desc 'Delete Attachment'
       delete ':attachment_id' do
         @attachment.delete
       end
 
-      desc "Delete container id of attachment"
+      desc 'Delete container id of attachment'
       delete 'link/:attachment_id' do
         @attachment.attachable_id = nil
         @attachment.attachable_type = 'Container'
         @attachment.save!
       end
 
-      desc "Upload attachments"
+      desc 'Upload attachments'
       post 'upload_dataset_attachments' do
-        params.each do |file_id, file|
-          if tempfile = file[:tempfile]
-              a = Attachment.new(
-                bucket: file[:container_id],
-                filename: file[:filename],
-                key: file[:name],
-                file_path: file[:tempfile],
-                created_by: current_user.id,
-                created_for: current_user.id,
-                content_type: file[:type]
-              )
-            begin
-              a.save!
-            ensure
-              tempfile.close
-              tempfile.unlink
-            end
+        params.each do |_file_id, file|
+          next unless tempfile = file[:tempfile]
+
+          a = Attachment.new(
+            bucket: file[:container_id],
+            filename: file[:filename],
+            key: file[:name],
+            file_path: file[:tempfile],
+            created_by: current_user.id,
+            created_for: current_user.id,
+            content_type: file[:type]
+          )
+          begin
+            a.save!
+          ensure
+            tempfile.close
+            tempfile.unlink
           end
         end
         true
       end
+
+      desc 'Upload large file as chunks'
+      post 'upload_chunk' do
+        params do
+          require :file, type: File, desc: 'file'
+          require :counter, type: Integer, default: 0
+          require :key, type: String
+        end
+        return { ok: false, statusText: 'File key is not valid' } unless validate_uuid_format(params[:key])
+
+        FileUtils.mkdir_p(Rails.root.join('tmp/uploads', 'chunks'))
+        File.open(Rails.root.join('tmp/uploads', 'chunks', "#{params[:key]}$#{params[:counter]}"), 'wb') do |file|
+          File.open(params[:file][:tempfile], 'r') do |data|
+            file.write(data.read)
+          end
+        end
+
+        true
+      end
+
+
+      desc 'Upload completed'
+      post 'upload_chunk_complete' do
+        params do
+          require :filename, type: String
+          require :key, type: String
+        end
+        return { ok: false, statusText: 'File key is not valid' } unless validate_uuid_format(params[:key])
+
+        begin
+          file_name = ActiveStorage::Filename.new(params[:filename]).sanitized
+          FileUtils.mkdir_p(Rails.root.join('tmp/uploads', 'full'))
+          entries = Dir["#{Rails.root.join('tmp/uploads', 'chunks', params[:key])}*"].sort_by { |s| s.scan(/\d+/).last.to_i }
+          file_path = Rails.root.join('tmp/uploads', 'full', params[:key])
+          file_path = "#{file_path}#{File.extname(file_name)}"
+          file_checksum = Digest::MD5.new
+          File.open(file_path, 'wb') do |outfile|
+            entries.each do |file|
+              buff = File.open(file, 'rb').read
+              file_checksum.update(buff)
+              outfile.write(buff)
+            end
+          end
+
+          if file_checksum == params[:checksum]
+            attach = Attachment.new(
+              bucket: nil,
+              filename: file_name,
+              key: params[:key],
+              file_path: file_path,
+              created_by: current_user.id,
+              created_for: current_user.id,
+              content_type: MIME::Types.type_for(file_name)[0].to_s
+            )
+
+            attach.save!
+
+            return true
+          else
+            return { ok: false, statusText: 'File upload has error. Please try again!' }
+          end
+        ensure
+          entries.each do |file|
+            File.delete(file) if File.exist?(file)
+          end
+          File.delete(file_path) if File.exist?(file_path)
+        end
+      end
+
 
       desc "Upload files to Inbox as unsorted"
       post 'upload_to_inbox' do
@@ -238,7 +313,7 @@ module Chemotion
       desc "Download the attachment file"
       get ':attachment_id' do
         content_type "application/octet-stream"
-        header['Content-Disposition'] = "attachment; filename=" + @attachment.filename
+        header['Content-Disposition'] = 'attachment; filename="' + @attachment.filename + '"'
         env['api.format'] = :binary
         @attachment.read_file
       end
@@ -254,6 +329,14 @@ module Chemotion
             zip.put_next_entry att.filename
             zip.write att.read_file
           end
+          file_text = "";
+          @container.attachments.each do |att|
+            file_text += "#{att.filename} #{att.checksum}\n"
+          end
+          hyperlinks_text = ""
+          JSON.parse(@container.extended_metadata.fetch('hyperlinks', '[]')).each do |link|
+            hyperlinks_text += "#{link} \n"
+          end
           zip.put_next_entry "dataset_description.txt"
           zip.write <<~DESC
           dataset name: #{@container.name}
@@ -262,9 +345,53 @@ module Chemotion
           #{@container.description}
 
           Files:
+          #{file_text}
+          Hyperlinks:
+          #{hyperlinks_text}
           DESC
-          @container.attachments.each do |att|
-            zip.write "#{att.filename} #{att.checksum}\n"
+        end
+        zip.rewind
+        zip.read
+      end
+
+      desc "Download the zip attachment file by sample_id"
+      get 'sample_analyses/:sample_id' do
+        env['api.format'] = :binary
+        content_type('application/zip, application/octet-stream')
+        #@sample = Sample.find(params[:sample_id])
+        filename = URI.escape("#{@sample.short_label}-analytical-files.zip")
+        header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+        zip = Zip::OutputStream.write_buffer do |zip|
+
+          @sample.analyses.each do |analysis|
+            analysis.children.each do |dataset|
+              dataset.attachments.each do |att|
+                zip.put_next_entry att.filename
+                zip.write att.read_file
+              end
+            end
+          end
+
+          zip.put_next_entry "sample_#{@sample.short_label} analytical_files.txt"
+          zip.write <<~DESC
+          sample short label: #{@sample.short_label}
+          sample id: #{@sample.id}
+          analyses count: #{@sample.analyses&.length || 0}
+
+          Files:
+          DESC
+
+          @sample.analyses&.each do |analysis|
+            zip.write "analysis name: #{analysis.name}\n"
+            zip.write "analysis type: #{analysis.extended_metadata.fetch('kind', nil)}\n\n"
+            analysis.children.each do |dataset|
+              zip.write "dataset: #{dataset.name}\n"
+              zip.write "instrument: #{dataset.extended_metadata.fetch('instrument', nil)}\n\n"
+              dataset.attachments.each do |att|
+                zip.write "#{att.filename}   #{att.checksum}\n"
+              end
+            end
+            zip.write "\n"
           end
         end
         zip.rewind
@@ -348,6 +475,35 @@ module Chemotion
         end
       end
 
+      desc 'Regenerate edited spectra'
+      params do
+        requires :edited, type: Array[Integer]
+        optional :molfile, type: String
+      end
+      post 'regenerate_edited_spectrum' do
+        pm = to_rails_snake_case(params)
+        pm[:edited].each do |g_id|
+          att = Attachment.find(g_id)
+          next unless att
+          can_edit = writable?(att)
+          if can_edit
+            abs_path = att.abs_path
+            molfile = pm[:molfile]
+            result =  Tempfile.create('molfile') do |t_molfile|
+              t_molfile.write(molfile)
+              t_molfile.rewind
+              Chemotion::Jcamp::RegenerateJcamp.spectrum(
+                abs_path, t_molfile.path
+              )
+            end
+
+            att.file_data = result
+            att.rewrite_file_data!
+            { status: true }
+          end
+        end
+      end
+
       desc 'Save spectra to file'
       params do
         requires :attachment_id, type: Integer
@@ -363,6 +519,11 @@ module Chemotion
         optional :thres, type: String
         optional :predict, type: String
         optional :keep_pred, type: Boolean
+        optional :waveLength, type: String
+        optional :cyclicvolta, type: String
+        optional :curveIdx, type: Integer
+        optional :simulatenmr, type: Boolean
+
       end
       post 'save_spectrum' do
         jcamp_att = @attachment.generate_spectrum(
@@ -374,13 +535,29 @@ module Chemotion
       desc 'Make spectra inference'
       params do
         requires :attachment_id, type: Integer
+        optional :peaks_str, type: String
+        optional :shift_select_x, type: String
+        optional :shift_ref_name, type: String
+        optional :shift_ref_value, type: String
+        optional :shift_ref_value, type: String
+        optional :integration, type: String
+        optional :multiplicity, type: String
+        optional :mass, type: String
+        optional :scan, type: String
+        optional :thres, type: String
+        optional :predict, type: String
+        optional :keep_pred, type: Boolean
         optional :peaks, type: String
         optional :shift, type: String
         optional :layout, type: String
       end
       post 'infer' do
-        content_type('application/json')
-        @attachment.infer_spectrum(params)
+        predict = @attachment.infer_spectrum(params)
+        params[:predict] = predict.to_json
+        jcamp_att = @attachment.generate_spectrum(
+          false, false, params
+        )
+        { files: [raw_file_obj(jcamp_att)], predict: predict }
       end
 
       namespace :svgs do

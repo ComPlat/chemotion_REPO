@@ -12,6 +12,8 @@
 #  readout      :string
 #  additive     :string
 #  deleted_at   :datetime
+#  label        :string           default("Molecular structure"), not null
+#  color_code   :string
 #
 # Indexes
 #
@@ -20,12 +22,14 @@
 #  index_wells_on_wellplate_id  (wellplate_id)
 #
 
-class Well < ActiveRecord::Base
+class Well < ApplicationRecord
   acts_as_paranoid
   belongs_to :wellplate
-  belongs_to :sample
+  belongs_to :sample, optional: true
+
+  include Tagging
 
   def self.get_samples_in_wellplates(wellplate_ids)
-    self.where(wellplate_id: wellplate_ids).pluck(:sample_id).compact.uniq
+    where(wellplate_id: wellplate_ids).pluck(:sample_id).compact.uniq
   end
 end

@@ -16,6 +16,7 @@ module Entities
     expose :timestamp_stop, if: -> (obj, opts) { obj.respond_to? :timestamp_stop}
     expose :observation, if: -> (obj, opts) { obj.respond_to? :observation}
     expose :rf_value, if: -> (obj, opts) { obj.respond_to? :rf_value}
+    expose :embargo, if: -> (obj, opts) { obj.respond_to? :embargo}
     expose :duration
   end
 end

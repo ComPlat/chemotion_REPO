@@ -1,4 +1,4 @@
-class ImportCollectionsJob < ActiveJob::Base
+class ImportCollectionsJob < ApplicationJob
   include ActiveJob::Status
 
   queue_as :import_collections
@@ -35,5 +35,9 @@ class ImportCollectionsJob < ActiveJob::Base
     ensure
       att&.destroy!
     end
+  end
+
+  def max_attempts
+    1
   end
 end

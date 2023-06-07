@@ -27,11 +27,18 @@
 .env.test
 .env.production
 
+/config/matrices.json
+/config/klasses.json
 /config/mailcollector.yml
 /config/datamailcollector.yml
 /config/datacollector.yml
 /config/datacollectors.yml
 /config/data_collector_keys/*
+/config/user_props.yml
+/config/profile_default.yml
+/config/compute_props.yml
+/config/converter.yml
+/config/ketcher_service.yml
 !/config/data_collector_keys/.keep
 
 /config/database.yml
@@ -39,6 +46,9 @@
 /config/storage.yml
 /config/spectra.yml
 /config/editors.yml
+/config/inference.yml
+/config/omniauth.yml
+/config/scifinder_n.yml
 
 /node_modules
 
@@ -79,6 +89,10 @@
 !/public/images/wild_card/
 !/public/images/ghs/
 !/public/images/creative_common/
+
+/public/editors/*
+!/public/editors/.keep
+/public/favicon.ico
 
 /public/ontologies/*
 !/public/ontologies/.keep
@@ -138,6 +152,7 @@
 #config generated files
 aliasifyConfig.js
 /app/assets/javascripts/components/extra/*
+/app/packs/src/components/extra/*
 
 # Backups folder
 backup/deploy_backup
@@ -149,3 +164,25 @@ backup/weekly_backup
 # vim tags
 tags
 tags.temp
+.vscode/*
+
+.*.swp
+
+spec/examples.txt
+
+# Ignore master key for decrypting credentials and more.
+/config/master.key
+
+# yarn / pack
+/public/packs
+/public/packs-test
+/yarn-error.log
+yarn-debug.log*
+
+#welcome message
+/public/welcome-message.md
+
+vendor/bundle/*
+vendor/cache/*
+.idea/*
+.devcontainer

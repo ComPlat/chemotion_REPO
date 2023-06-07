@@ -2,6 +2,10 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
   attr_reader :publication, :element, :publications
   INVALID_STATE = "INVALID STATE"
 
+  def max_attempts
+    1
+  end
+
   def perform(id, action, current_user_id = 0)
     @publication = Publication.find(id)
     @publications = [publication] + publication.descendants
@@ -14,7 +18,6 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
       publication.logger(INVALID_STATE)
       raise INVALID_STATE
     end
-
     send(publication.state)
   end
 
@@ -92,6 +95,15 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
       [Publication::STATE_PUBCHEM_REGISTERED, Publication::STATE_COMPLETING]
     )
     pubchem_registered
+
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name} pubchem_registering error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @publication.id, "[pubchem_registering]" + e.to_s).deliver_now
+      raise e
   end
 
   def pubchem_registered
@@ -125,21 +137,33 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
     if ENV['PUBLISH_MODE'] == 'production'
       PublicationMailer.mail_publish_approval(@publication.id).deliver_now
     end
+    submitter = @publication.published_by || @publication.taggable_data['creators']&.first&.dig('id')
+    sgl = @publication.review.dig('reviewers').nil? ? [submitter] : @publication.review.dig('reviewers') + [submitter]
     Message.create_msg_notification(
       channel_subject: Channel::PUBLICATION_REVIEW,
-      message_from: @publication.published_by || @publication.taggable_data['creators']&.first&.dig('id'),
+      message_from: submitter,
+      message_to: sgl,
       data_args: {subject: "Congratulations! Chemotion Repository: #{@publication.doi.suffix} published"}
     )
+  rescue StandardError => e
+    Delayed::Worker.logger.error <<~TXT
+    ---------  #{self.class.name} completed error ------------
+      Error Message:  #{e}
+    --------------------------------------------------------------------
+    TXT
+    PublicationMailer.mail_job_error(self.class.name, @publication.id, "[completed]" + e.to_s).deliver_now
+    raise e
   end
 
   def published
   end
 
   def remove_publish_pending
+    return if @publication.original_element.nil?
     ot = @publication.original_element&.tag&.taggable_data&.delete('publish_pending')
-    @publication.original_element.tag.save! unless ot.nil?
+    @publication.original_element&.tag.save! unless ot.nil?
     if @publication.element_type == 'Reaction'
-      @publication.original_element&.samples.each do |s|
+      @publication.original_element&.samples&.each do |s|
         t = s.tag&.taggable_data&.delete('publish_pending')
         s.tag.save! unless t.nil?
       end

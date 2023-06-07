@@ -32,6 +32,7 @@ module Chemotion
         dl_r = dl[:reaction_detail_level]
         dl_wp = dl[:wellplate_detail_level]
         dl_sc = dl[:screen_detail_level]
+        dl_e = dl[:element_detail_level]
 
         d_for = proc do |klass|
           klass.by_collection_id(collection_id)
@@ -39,7 +40,18 @@ module Chemotion
 
         search_by_field = proc do |klass, field, qry|
           scope = d_for.call klass
-          scope.send("by_#{field}", qry).page(1).per(page_size).pluck(field).uniq
+          collection = scope.send("by_#{field}", qry).page(1).per(page_size)
+
+          if klass.columns_hash.key?(field.to_s)
+            collection.pluck(field).uniq
+          else
+            collection.map(&field).uniq
+          end
+        end
+
+        search_by_element_short_label = proc do |klass, qry|
+          scope = d_for.call klass
+          scope.send("by_short_label", qry).page(1).per(page_size).map { |el| {klass: el.element_klass.name, icon: el.element_klass.icon_name, label: "#{el.element_klass.label} Short Label", name: el.short_label } }
         end
 
         qry = params[:query]
@@ -52,7 +64,7 @@ module Chemotion
           polymer_type = dl_s.positive? && d_for.call(Sample)
                                                 .by_residues_custom_info('polymer_type', qry)
                                                 .pluck("residues.custom_info -> 'polymer_type'").uniq || []
-          sum_formula = dl_s.positive? && search_by_field.call(Molecule, :sum_formular, qry) || []
+          sum_formula = dl_s.positive? && search_by_field.call(Sample, :molecule_sum_formular, qry) || []
           iupac_name = dl_s.positive? && search_by_field.call(Molecule, :iupac_name, qry) || []
           inchistring = dl_s.positive? && search_by_field.call(Molecule, :inchistring, qry) || []
           inchikey = dl_s.positive? && search_by_field.call(Molecule, :inchikey, qry) || []
@@ -110,13 +122,33 @@ module Chemotion
             requirements: requirements
           }
         else
+          # element_short_label = dl_e.positive? && search_by_element_short_label.call(Element, qry) || []
+          if qry =~ /\ACR(R|S|D)-(\d+)\Z/
+            typ = Regexp.last_match(1)
+            pid = Regexp.last_match(2)
+            element_type = case typ
+                           when 'R'
+                             'Reaction'
+                           when 'S'
+                             'Sample'
+                           when 'D'
+                             'Container'
+                           end
+            pids = Publication.where(
+              "state LIKE 'completed%' and element_type = ? and id = ?", element_type, pid
+            ).map do |pub|
+              "CR#{typ}-#{pub.id}"
+            end
+          end
+          chemotion_id = pids || []
+          element_short_label = dl_e&.positive? && search_by_element_short_label.call(Element, qry) || []
           sample_name = dl_s.positive? && search_by_field.call(Sample, :name, qry) || []
           sample_short_label = dl_s.positive? && search_by_field.call(Sample, :short_label, qry) || []
           sample_external_label = dl_s > -1 && search_by_field.call(Sample, :external_label, qry) || []
           polymer_type = dl_s.positive? && d_for.call(Sample)
                                                 .by_residues_custom_info('polymer_type', qry)
                                                 .pluck("residues.custom_info -> 'polymer_type'").uniq || []
-          sum_formula = dl_s.positive? && search_by_field.call(Molecule, :sum_formular, qry) || []
+          sum_formula = dl_s.positive? && search_by_field.call(Sample, :molecule_sum_formular, qry) || []
           iupac_name = dl_s.positive? && search_by_field.call(Molecule, :iupac_name, qry) || []
           inchistring = dl_s.positive? && search_by_field.call(Molecule, :inchistring, qry) || []
           inchikey = dl_s.positive? && search_by_field.call(Molecule, :inchikey, qry) || []
@@ -129,7 +161,10 @@ module Chemotion
           screen_name = dl_sc > -1 && search_by_field.call(Screen, :name, qry) || []
           conditions = dl_sc > -1 && search_by_field.call(Screen, :conditions, qry) || []
           requirements = dl_sc > -1 && search_by_field.call(Screen, :requirements, qry) || []
+
           {
+            element_short_label: element_short_label,
+            chemotion_id: chemotion_id,
             sample_name: sample_name,
             sample_short_label: sample_short_label,
             sample_external_label: sample_external_label,
@@ -166,8 +201,14 @@ module Chemotion
         end
         get do
           params[:element_type]
-          search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
-          { suggestions: search_possibilities_to_suggestions(search_possibilities) }
+          if params[:element_type] == 'embargo'
+            cols = Collection.all_embargos(current_user.id).where("label like '#{params[:query]}%'").order(:label)
+            suggestions = cols.map { |col| { name: col.label, search_by_method: 'embargo' } }
+            { suggestions: suggestions }
+          else
+            search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
+            { suggestions: search_possibilities_to_suggestions(search_possibilities) }
+          end
         end
       end
     end

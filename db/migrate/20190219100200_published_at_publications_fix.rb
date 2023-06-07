@@ -1,4 +1,4 @@
-class PublishedAtPublicationsFix < ActiveRecord::Migration
+class PublishedAtPublicationsFix < ActiveRecord::Migration[4.2]
 def change
   list = Publication.where(published_at: nil)
   list.each do |p|

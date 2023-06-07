@@ -32,14 +32,16 @@ describe Chemotion::ReactionSvgAPI do
       end
 
       before do
-        post '/api/v1/reaction_svg', params.to_json,
-             'HTTP_ACCEPT' => 'application/json',
-             'CONTENT_TYPE' => 'application/json'
+        post '/api/v1/reaction_svg',
+          params: params.to_json,
+          headers: {
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json'
+          }
       end
 
       it 'returns svg with correct temperature, duration, solvents' do
-        reaction_svg_path = JSON.parse(response.body)['reaction_svg']
-        output_svg = File.read(Rails.public_path.join('images', 'reactions', reaction_svg_path))
+        output_svg = JSON.parse(response.body)['reaction_svg']
         expect(output_svg).to include(solvent_1)
         expect(output_svg).to include(solvent_2)
         expect(output_svg).to include(temperature)

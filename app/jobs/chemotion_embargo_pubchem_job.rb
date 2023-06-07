@@ -1,10 +1,13 @@
 class ChemotionEmbargoPubchemJob < ActiveJob::Base
   attr_reader :embargo_collection, :publication, :element, :publications
 
+  def max_attempts
+    1
+  end
+
   def perform(embargo_col_id)
     @embargo_collection = Collection.find(embargo_col_id)
     @sync_emb_col = @embargo_collection.sync_collections_users&.first
-
     pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
     pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
     @pub_list = pub_samples + pub_reactions
@@ -35,18 +38,62 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
         pub.transition_from_completing_to_completed!
       end
     end
-    send_pubchem
-    remove_publish_pending
-    send_email
+
+    begin
+      pub_col = Publication.where(element_type: 'Collection', element_id: embargo_col_id)&.first
+      if pub_col.present? && pub_col.state == 'accepted'
+        pub_col.transition_from_start_to_metadata_uploading!
+        pub_col.transition_from_metadata_uploading_to_uploaded!
+        pub_col.transition_from_metadata_uploaded_to_doi_registering!
+        pub_col.transition_from_doi_registering_to_registered!
+        pub_col.transition_from_doi_registered_to_completing!
+        pub_col.transition_from_completing_to_completed!
+      end
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name} send collection DOI error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[publish collection DOI]" + e.to_s).deliver_now
+      raise e
+    end
+
+    begin
+      send_pubchem
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+      ---------  #{self.class.name} send_pubchem error ------------
+        Error Message:  #{e}
+      --------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[send_pubchem]" + e.to_s).deliver_now
+      raise e
+    end
+
+    begin
+      remove_publish_pending
+      send_email
+    rescue StandardError => e
+      Delayed::Worker.logger.error <<~TXT
+        --------- ChemotionEmbargoPubchemJob remove_publish_pending or send_message error ------------
+        Error Message:  #{e}
+        ----------------------------------------------------------------------------------------------
+      TXT
+      PublicationMailer.mail_job_error(self.class.name, @embargo_collection.id, "[remove_publish_pending or send_message error]" + e.to_s).deliver_now
+      raise e
+    end
+
   end
 
   def remove_publish_pending
     @pub_list.each do |embargo_pub|
       @publication = Publication.find(embargo_pub.id)
+      next if @publication.original_element.nil?
       ot = @publication.original_element&.tag&.taggable_data&.delete('publish_pending')
       @publication.original_element.tag.save! unless ot.nil?
       if @publication.element_type == 'Reaction'
-        @publication.original_element&.samples.each do |s|
+        @publication.original_element&.samples&.each do |s|
           t = s.tag&.taggable_data&.delete('publish_pending')
           s.tag.save! unless t.nil?
         end
@@ -56,7 +103,7 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
 
   def send_pubchem
     sdf = ""
-    pubchem_list = Publication.where(element: @embargo_collection.samples)
+    pubchem_list = Publication.where(element: @embargo_collection.samples, state: Publication::STATE_PUBCHEM_REGISTERING)
     pubchem_list.each do |pub|
       metadata_obj = OpenStruct.new(sample: pub.element)
       metadata_file = ERB.new(File.read(
@@ -104,7 +151,7 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
     Message.create_msg_notification(
       channel_subject: Channel::PUBLICATION_REVIEW,
       message_from: @sync_emb_col.user_id,
-      data_args: {subject: "Congratulations! Embargo Collection #{@embargo_collection.label} released and published"}
+      data_args: { subject: "Congratulations! Embargo Collection #{@embargo_collection.label} released and published" }
     )
   end
 end

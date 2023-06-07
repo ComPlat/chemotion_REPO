@@ -30,13 +30,22 @@ module Chemotion
             params[:element_id],
             [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id]
           ).presence
-          error!('401 Unauthorized', 401) unless allowed || @is_public
+          error!('401 Unauthorized', 401) unless allowed
           @cat = @is_public ? 'public' : 'detail'
         end
       end
 
-
-
+      desc "Update type of literals by element"
+      params do
+        requires :element_id, type: Integer
+        requires :element_type, type: String, values: %w[sample reaction research_plan]
+        requires :id, type: Integer
+        requires :litype, type: String, values: %w[citedOwn citedRef referTo]
+      end
+      put do
+        Literal.find(params[:id])&.update(litype: params[:litype])
+        { literatures: citation_for_elements(params[:element_id], @element_klass, @cat) }
+      end
 
       desc "Return the literature list for the given element"
       params do
@@ -69,7 +78,9 @@ module Chemotion
           optional :id, types: [Integer, String]
           optional :doi, type: String
           optional :url, type: String
+          optional :litype, type: String
           optional :title, type: String
+          optional :isbn, type: String
           optional :refs, type: Hash do
             optional :bibtex, type: String
           end
@@ -81,19 +92,20 @@ module Chemotion
                 Literature.find_or_create_by(
                   doi: params[:ref][:doi],
                   url: params[:ref][:url],
-                  title: params[:ref][:title]
+                  title: params[:ref][:title],
+                  isbn: params[:ref][:isbn]
                 )
               else
                 Literature.find_by(id: params[:ref][:id])
               end
 
         lit.update!(refs: (lit.refs || {}).merge(declared(params)[:ref][:refs])) if params[:ref][:refs]
-
         attributes = {
           literature_id: lit.id,
           user_id: current_user.id,
           element_type: @element_klass,
           element_id: params[:element_id],
+          litype: params[:ref][:litype],
           category: @cat
         }
         unless Literal.find_by(attributes)
@@ -171,6 +183,7 @@ module Chemotion
             optional :id, types: [Integer, String]
             optional :doi, type: String
             optional :url, type: String
+            optional :litype, type: String
             optional :title, type: String
             optional :refs, type: Hash do
               optional :bibtex, type: String
@@ -212,6 +225,7 @@ module Chemotion
                     user_id: current_user.id,
                     element_type: type,
                     element_id: id,
+                    litype: params[:ref][:litype],
                     category: @cat
                   )
                 end

@@ -4,9 +4,9 @@ module SampleLevelSerializable
   included do
     attributes *DetailLevels::Sample.new.base_attributes
     has_one :molecule
-    has_many :residues
-    has_many :elemental_compositions
-    has_one :container
+    has_many :residues, serializer: ResidueSerializer
+    has_many :elemental_compositions, serializer: ElementalCompositionSerializer
+    has_one :container, serializer: ContainerSerializer
     has_one :tag
 
     alias_method :policy_initialize, :initialize
@@ -22,6 +22,10 @@ module SampleLevelSerializable
     def is_restricted
       true
     end
+
+    def solvent
+      object.solvent
+    end
   end
 
   class_methods do
@@ -29,7 +33,7 @@ module SampleLevelSerializable
       (DetailLevels::Sample.new.base_attributes - DetailLevels::Sample.new.public_send("level#{level}_attributes")).each do |attr|
         define_method(attr) do
           case attr
-          when :analyses, :residues, :elemental_compositions, :molecule_computed_props
+          when :analyses, :residues, :elemental_compositions, :molecule_computed_props, :solvent
             []
           when :_contains_residues
             false

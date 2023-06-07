@@ -1,0 +1,11 @@
+class Matrice<%= @module_name.camelize%> < ActiveRecord::Migration[5.2]
+  def change
+    Matrice.create(
+      name: '<%= @module_name.camelize(:lower)%>',
+      enabled: false,
+      label: '<%= @module_name.camelize(:lower)%>',
+      include_ids: [],
+      exclude_ids: []
+    )
+  end
+end

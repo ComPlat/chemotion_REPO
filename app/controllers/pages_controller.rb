@@ -11,9 +11,27 @@ class PagesController < ApplicationController
 
   def docx; end
 
+  def welcome;
+    flash.clear
+  end
+
   def mydb; end
 
   def editor; end
+
+  def sfn_cb
+    code = params[:code]
+    sf_verifer = request.env.dig('action_dispatch.request.unsigned_session_cookie', 'omniauth.pkce.verifier')
+    begin
+      provider_authorize = Chemotion::ScifinderNService.provider_authorize(code, sf_verifer)
+      sfc = ScifinderNCredential.find_by(created_by: current_user.id)
+      ScifinderNCredential.create!(provider_authorize.merge(created_by: current_user.id)) if sfc.blank?
+      sfc.update!(provider_authorize) unless sfc.blank?
+      redirect_to root_path
+    rescue StandardError => e
+      redirect_to '/500.html'
+    end
+  end
 
   def root_page
     render layout: 'root_layout'
@@ -60,14 +78,38 @@ class PagesController < ApplicationController
     end
   end
 
-  def affiliations
+  def update_orcid
+    @profile = current_user.profile
+    orcid = params['data_orcid']
+    result = Chemotion::OrcidService.record_person(orcid)
 
+    if result.nil?
+      flash.now['danger'] = 'ORCID does not exist! Please check.'
+      return render 'settings'
+    elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
+          result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
+      data = @profile.data || {}
+      data['ORCID'] = orcid
+      if @profile.update(data: data)
+        flash['success'] = 'ORCID is successfully saved!'
+        redirect_to root_path
+      else
+        flash.now['danger'] = 'Not saved! Please check input fields.'
+        return render 'settings'
+      end
+    else
+      flash.now['danger'] = 'Name could not be matched to the name of this ORCID ' + orcid + ' (family_name: ' + result&.person&.family_name + ', given_name: ' + result&.person&.given_names + '). Please check.'
+      return render 'settings'
+    end
+  end
+
+  def affiliations
   end
 
   def create_affiliation
     @affiliation = Affiliation.find_or_create_by(sliced_affiliation_params)
     current_user.user_affiliations.build(
-      from: affiliation_params[:from_month],affiliation_id: @affiliation.id
+      from: affiliation_params[:from_month], affiliation_id: @affiliation.id
     )
     if current_user.save!
       flash['success'] = 'New affiliation added!'
@@ -76,13 +118,14 @@ class PagesController < ApplicationController
       flash.now['danger'] = 'Not saved! Please check input fields.'
       render 'affiliations'
     end
-    #redirect_to pages_affiliations_path
+    # redirect_to pages_affiliations_path
   end
 
   def update_affiliations
-    affiliations_params[:affiliations].each do |affiliation|
+    affiliations_params[:affiliations].presence&.each do |affiliation|
       u_affiliation = @affiliations.find_by(id: affiliation[:id])
       next unless u_affiliation
+
       if affiliation.delete(:_destroy).blank?
         unless u_affiliation.update(affiliation)
           messages = u_affiliation.errors.messages[:to]
@@ -94,6 +137,31 @@ class PagesController < ApplicationController
       end
     end
     redirect_to pages_affiliations_path
+  end
+
+  def update_orcid
+    @profile = current_user.profile
+    orcid = params['data_orcid']
+    result = Chemotion::OrcidService.record_person(orcid)
+
+    if result.nil?
+      flash.now['danger'] = 'ORCID does not exist! Please check.'
+      return render 'settings'
+    elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
+          result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
+      data = @profile.data || {}
+      data['ORCID'] = orcid
+      if @profile.update(data: data)
+        flash['success'] = 'ORCID is successfully saved!'
+        redirect_to root_path
+      else
+        flash.now['danger'] = 'Not saved! Please check input fields.'
+        return render 'settings'
+      end
+    else
+      flash.now['danger'] = 'Name could not be matched to the name of this ORCID ' + orcid + ' (family_name: ' + result.person.family_name + ', given_name: ' + result.person.given_names + '). Please check.'
+      return render 'settings'
+    end
   end
 
   private
@@ -133,6 +201,6 @@ class PagesController < ApplicationController
   end
 
   def profile_params
-    params.require(:profile).permit(:show_external_name, :curation)
+    params.require(:profile).permit(:show_external_name, :curation, :data_orcid)
   end
 end

@@ -10,6 +10,7 @@
 #  user_id       :integer
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
+#  litype        :string
 #
 # Indexes
 #
@@ -21,7 +22,7 @@
 #  fk_rails_...  (literature_id => literatures.id)
 #
 
-class Literal < ActiveRecord::Base
+class Literal < ApplicationRecord
   # acts_as_paranoid
   belongs_to :literature
   belongs_to :element, polymorphic: true

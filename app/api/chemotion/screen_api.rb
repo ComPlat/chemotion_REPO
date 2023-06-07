@@ -4,6 +4,7 @@ module Chemotion
     helpers ContainerHelpers
     helpers ParamsHelpers
     helpers CollectionHelpers
+    helpers ProfileHelpers
 
     resource :screens do
       desc "Return serialized screens"
@@ -34,7 +35,7 @@ module Chemotion
           end
         else
           # All collection of current_user
-          Screen.joins(:collections).where('collections.user_id = ?', current_user.id).uniq
+          Screen.joins(:collections).where('collections.user_id = ?', current_user.id).distinct
         end.includes(collections: :sync_collections_users).order("created_at DESC")
 
         from = params[:from_date]
@@ -77,6 +78,7 @@ module Chemotion
         optional :description, type: Hash
         requires :wellplate_ids, type: Array
         requires :container, type: Hash
+        optional :segments, type: Array, desc: 'Segments'
       end
       route_param :id do
         before do
@@ -84,13 +86,14 @@ module Chemotion
         end
 
         put do
-          update_datamodel(params[:container]);
-          params.delete(:container);
+          update_datamodel(params[:container])
+          params.delete(:container)
 
-          attributes = declared(params.except(:wellplate_ids), include_missing: false)
+          attributes = declared(params.except(:wellplate_ids, :segments), include_missing: false)
 
           screen = Screen.find(params[:id])
           screen.update(attributes)
+          screen.save_segments(segments: params[:segments], current_user_id: current_user.id)
           old_wellplate_ids = screen.wellplates.pluck(:id)
 
           #save to profile
@@ -119,6 +122,7 @@ module Chemotion
         optional :collection_id, type: Integer
         requires :wellplate_ids, type: Array
         requires :container, type: Hash
+        optional :segments, type: Array, desc: 'Segments'
       end
       post do
         attributes = {
@@ -134,14 +138,26 @@ module Chemotion
 
         screen.container = update_datamodel(params[:container])
         screen.save!
+        screen.save_segments(segments: params[:segments], current_user_id: current_user.id)
 
         #save to profile
         kinds = screen.container&.analyses&.pluck("extended_metadata->'kind'")
         recent_ols_term_update('chmo', kinds) if kinds&.length&.positive?
 
-        collection = Collection.find(params[:collection_id])
-        CollectionsScreen.create(screen: screen, collection: collection)
-        CollectionsScreen.create(screen: screen, collection: Collection.get_all_collection_for_user(current_user.id))
+        collection = current_user.collections.where(id: params[:collection_id]).take
+        CollectionsScreen.create(screen: screen, collection: collection) if collection.present?
+
+        is_shared_collection = false
+        unless collection.present?
+          sync_collection = current_user.all_sync_in_collections_users.where(id: params[:collection_id]).take
+          if sync_collection.present?
+            is_shared_collection = true
+            CollectionsScreen.create(screen: screen, collection: Collection.find(sync_collection['collection_id']))
+            CollectionsScreen.create(screen: screen, collection: Collection.get_all_collection_for_user(sync_collection['shared_by_id']))
+          end
+        end
+
+        CollectionsScreen.create(screen: screen, collection: Collection.get_all_collection_for_user(current_user.id)) unless is_shared_collection
 
         params[:wellplate_ids].each do |id|
           ScreensWellplate.find_or_create_by(wellplate_id: id, screen_id: screen.id)

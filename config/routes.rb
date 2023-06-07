@@ -9,7 +9,7 @@ Rails.application.routes.draw do
       put 'users' => 'devise/registrations#update', :as => 'user_registration'
     end
   else
-    devise_for :users, controllers: { registrations: 'users/registrations' }
+    devise_for :users, controllers: { registrations: 'users/registrations', omniauth_callbacks: 'users/omniauth' }
   end
 
   authenticated :user, lambda {|u| u.type == "Admin"} do
@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     get 'pages', to:  'pages#home'
     get 'pages/settings', to: 'pages#settings'
     get 'pages/profiles', to: 'pages#profiles'
+    patch 'pages/update_orcid', to: 'pages#update_orcid'
     patch 'pages/update_profiles', to: 'pages#update_profiles'
     patch 'pages/update_user', to: 'pages#update_user'
     get 'pages/affiliations', to: 'pages#affiliations'
@@ -45,7 +46,9 @@ Rails.application.routes.draw do
     # get 'command_n_control', to: 'pages#cnc'
     get 'mydb/*any', to: 'pages#mydb'
     get 'mydb', to: 'pages#mydb'
+    get 'sfn_cb', to: 'pages#sfn_cb'
     get 'molecule_moderator', to: 'pages#molecule_moderator'
+    get 'converter_admin', to: 'pages#converter_admin'
     get 'home/review', to: 'pages#home'
     get 'home/review/*any', to: 'pages#home'
     get 'home/embargo', to: 'pages#home'
@@ -64,9 +67,9 @@ Rails.application.routes.draw do
 #  get 'chemspectra', to: 'pages#chemspectra'
 #  get 'chemspectra-editor', to: 'pages#chemspectra_editor'
 
+  # get 'home', to: 'pages#home'
   get 'directive', to: 'pages#directive'
   get 'welcome', to: 'pages#home'
-  get 'home', to: 'pages#home'
   get 'about', to: 'pages#about'
   get 'command_n_control', to: 'pages#home'
   get 'admin', to: 'pages#home'
@@ -117,14 +120,15 @@ Rails.application.routes.draw do
     element = doi.doiable
 
     element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))
-
     case element.class.name
     when 'Sample'
-      url =  "#{url}molecules/#{element.molecule_id}"
+      url =  "#{url}molecules/#{element.molecule_id}/#{suffix}"
     when 'Reaction'
       url = "#{url}reactions/#{element.id}"
     when 'Container'
       url =  "#{url}datasets/#{element.id}"
+    when 'Collection'
+      url = "#{url}collections/#{element.id}"
     end
     url
   }
@@ -159,8 +163,18 @@ Rails.application.routes.draw do
     "/home/publications/datasets/#{params[:id]}"
   }
 
-  get '/molecules/:id' => redirect { |params, request|
-    "/home/publications/molecules/#{params[:id]}"
+  get '/molecules/:id(/*suffix)(.:version)' => redirect { |params, request|
+    suffix = params[:suffix]
+    if suffix.blank?
+      "/home/publications/molecules/#{params[:id]}"
+    else
+      suffix.concat('.', params[:version]) if params[:version].present?
+      "/home/publications/molecules/#{params[:id]}/#{suffix}"
+    end
+  }
+
+  get '/collections/:id' => redirect { |params, request|
+    "/home/collection/#{params[:id]}"
   }
 
   get '/reactions/:id' => redirect { |params, request|
@@ -169,7 +183,12 @@ Rails.application.routes.draw do
 
   mount API => '/'
 
-  root to: 'pages#root_page', as: :unauthenticated_root
+  # if Rails.env.development?
+  mount GrapeSwaggerRails::Engine => '/swagger_doc'
+  # end
+
+  #root to: redirect('home')
+  root to: 'pages#root_page' # , as: :unauthenticated_root
 
   get 'test', to: 'pages#test'
 end

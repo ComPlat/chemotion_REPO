@@ -1,0 +1,13 @@
+%p #{ENV['PUBLISH_MODE'] == 'staging' ? "TESTING MODE" : ""}
+%p Dear Chemotion Reviewer(s),
+%p Chemotion User [#{@current_user.name}] has left some comments:
+%p Type: #{@element_type}
+%p Chemotion Id: #{@pub_id}
+%p DOI: #{@doi}
+%br
+%p #{simple_format(@user_comment)}
+
+%br
+
+%p See it at:
+%a{ href: "#{@proto + @host}/home/publications/#{@pageType}/#{@pageId}"} #{@proto + @host}/home/publications/#{@pageType}/#{@pageId}

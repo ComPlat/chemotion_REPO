@@ -2,6 +2,11 @@
   height: 0px;
 }
 
+.ql-editor {
+  -webkit-user-select: text;
+          user-select: text;
+}
+
 .ql-disabled {
   .ql-hidden {
     display: none;

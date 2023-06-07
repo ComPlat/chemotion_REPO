@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
-  <identifier identifierType="DOI"><%= "#{dois[:analysis][:DOI]}"%></identifier>
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.4/metadata.xsd">
+  <identifier identifierType="DOI">https://dx.doi.org/<%= "#{dois[:analysis][:DOI]}"%></identifier>
   <creators>
     <% pub_tag['creators'].each do |creator| %>
     <creator>
@@ -21,8 +21,8 @@
     <title xml:lang="en-US"><%= (element.extended_metadata['kind'] || '').split('|').pop %> (<%= parent_element.molecule.iupac_name %>)</title>
     <title titleType="AlternativeTitle"><%= parent_element.molecule.inchistring %></title>
   </titles>
-  <publisher>chemotion.net</publisher>
-  <publicationYear><%= Time.now.strftime("%Y") %></publicationYear>
+  <publisher>chemotion-repository</publisher>
+  <publicationYear><%= pub.published_at&.strftime("%Y") || Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
     <contributor contributorType="Researcher">
@@ -39,21 +39,26 @@
     </contributor>
   </contributors>
   <% end %>
+  <dates>
+    <date dateType="Submitted"><%= pub.created_at %></date>
+    <date dateType="Accepted"><%= pub.accepted_at %></date>
+  </dates>
   <subjects>
     <subject>Chemistry</subject>
   </subjects>
   <language>en</language>
-
   <resourceType resourceTypeGeneral="Dataset">Dataset</resourceType>
   <version>1</version>
+  <% if rights[:rightsIdentifier].present? %>
   <rightsList>
     <rights xml:lang="en-US" schemeURI="<%= rights[:schemeURI] %>" rightsIdentifierScheme="<%= rights[:rightsIdentifierScheme] %>" rightsIdentifier="<%= rights[:rightsIdentifier] %>" rightsURI="<%= rights[:rightsURI] %>"><%= rights[:rightsName] %></rights>
   </rightsList>
+  <% end %>
   <descriptions>
     <description xml:lang="en-US" descriptionType="Abstract">
       dataset for <%= (element.extended_metadata['kind'] || '').split('|').pop %><br />
       <%= element.extended_metadata['description'] %>
-      <%= Chemotion::QuillToHtml.new.convert(element.extended_metadata['content']) %>
+      <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text, false, nil, false).to_s %>
     </description>
   </descriptions>
 
@@ -61,7 +66,6 @@
     <%# <% publication.sample.citations.each do |c| %1> %>
     <%#   <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo"><%= c.doi %1></relatedIdentifier> %>
     <%# <% end %1> %>
-    <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf"><%= "#{dois[:parent_element][:DOI]}" %></relatedIdentifier>
-
+    <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{dois[:parent_element][:DOI]}" %></relatedIdentifier>
   </relatedIdentifiers>
 </resource>

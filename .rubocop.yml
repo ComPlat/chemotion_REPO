@@ -3,7 +3,7 @@
 inherit_gem:
   gitlab-styles:
     - rubocop-metrics.yml
-    - rubocop-rspec.yml
+      #- rubocop-rspec.yml
 
 require:
   - rubocop-rspec

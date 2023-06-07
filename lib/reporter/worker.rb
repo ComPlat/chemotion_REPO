@@ -18,6 +18,7 @@ module Reporter
       @img_format = @report.img_format
       @template_path = args[:template_path]
       @mol_serials = @report.mol_serials
+      @std_rxn = args[:std_rxn] || false
       init_specific_variable
     end
 
@@ -52,11 +53,14 @@ module Reporter
           created_for: @author.id,
           content_type: @typ
         )
-        att.update!(storage: @primary_store)
+
+        TransferFileFromTmpJob.set(queue: "transfer_report_from_tmp_#{att.id}").perform_later([att.id]) unless att.nil?
+
         @report.update_attributes(
           generated_at: Time.zone.now
         )
       end
+
 
       message = Message.create_msg_notification(
         channel_subject: Channel::REPORT_GENERATOR_NOTIFICATION,
@@ -86,7 +90,8 @@ module Reporter
                       rxn_settings: @rxn_settings,
                       si_rxn_settings: @si_rxn_settings,
                       configs: @configs,
-                      img_format: @img_format
+                      img_format: @img_format,
+                      std_rxn: @std_rxn,
                     ).convert
     end
 

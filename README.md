@@ -2,10 +2,11 @@
 
 A repository for chemists based on chemotion ELN !
 
-## Funding
+---
 
-This project has been funded by the  ![DFG](http://www.dfg.de/includes/images/dfg_logo.gif)
+**⸢ [Installation] ⸥ ⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
 
+---
 
 ## License
 
@@ -27,10 +28,16 @@ Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruh
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+[![Badge JS]][JS Tests] <br>
+[![Badge Acceptance]][Acceptance Tests]  <br>
+[![Badge Ruby]][Ruby Tests]
 
-## Install
+---
 
-see [INSTALL.md][INSTALL]
+## Sponsors
 
+## User Documentation
+
+see online ![docs](https://www.chemotion.net/chemotionsaurus/docs/eln/about)
 
 [INSTALL]: INSTALL.md

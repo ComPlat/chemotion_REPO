@@ -16,7 +16,7 @@ module Chemotion
             # polymer_type
           #]
           optional :elementType, type: String, values: %w[
-            All Samples Reactions Wellplates Screens all samples reactions wellplates screens
+            All Samples Reactions Wellplates Screens all samples reactions wellplates screens elements embargo
           ]
           optional :molfile, type: String
           optional :search_type, type: String, values: %w[similar sub]
@@ -110,6 +110,7 @@ module Chemotion
           words = filter['value'].split(/,|(\r)?\n/).map!(&:strip)
           words = words.map { |e| "%#{ActiveRecord::Base.send(:sanitize_sql_like, e)}%" } unless filter['match'] == '='
 
+          field = "xref -> 'cas' ->> 'value'" if field == 'xref' && filter['field']['opt'] == 'cas'
           conditions = words.collect { "#{table}.#{field} #{filter['match']} ? " }.join(' OR ')
           query = "#{query} #{filter['link']} (#{conditions}) "
           cond_val += words
@@ -132,6 +133,31 @@ module Chemotion
         scope = scope.where([query] + cond_val)
 
         scope
+      end
+
+      def elements_search(c_id = @c_id, dl = @dl)
+        collection = Collection.belongs_to_or_shared_by(current_user.id, current_user.group_ids).find(c_id)
+        element_scope = Element.joins(:collections_elements).where('collections_elements.collection_id = ? and collections_elements.element_type = (?)', collection.id, params[:selection][:genericElName])
+        element_scope = element_scope.where("name like (?)", "%#{params[:selection][:searchName]}%") if params[:selection][:searchName].present?
+        element_scope = element_scope.where("short_label like (?)", "%#{params[:selection][:searchShowLabel]}%") if params[:selection][:searchShowLabel].present?
+        if params[:selection][:searchProperties].present?
+          params[:selection][:searchProperties] && params[:selection][:searchProperties][:layers] && params[:selection][:searchProperties][:layers].keys.each do |lk|
+            layer = params[:selection][:searchProperties][:layers][lk]
+            qs = layer[:fields].select{ |f| f[:value].present? || f[:type] == "input-group" }
+            qs.each do |f|
+              if f[:type] == "input-group"
+                sfs = f[:sub_fields].map{ |e| { "id": e[:id], "value": e[:value] } }
+                query = { "#{lk}": { "fields": [{ "field": f[:field].to_s, "sub_fields": sfs }] } } if sfs.length > 0
+              elsif f[:type] == "checkbox" || f[:type] == "integer" || f[:type] == "system-defined"
+                query = { "#{lk}": { "fields": [{ "field": f[:field].to_s, "value": f[:value] }] } }
+              else
+                query = { "#{lk}": { "fields": [{ "field": f[:field].to_s, "value": f[:value].to_s }] } }
+              end
+              element_scope = element_scope.where("properties @> ?", query.to_json)
+            end
+          end
+        end
+        element_scope
       end
 
       def serialize_samples samples, page, search_method, molecule_sort
@@ -200,34 +226,104 @@ module Chemotion
       end
 
       def serialization_by_elements_and_page(elements, page = 1, molecule_sort = false)
-        samples = elements.fetch(:samples, [])
-        reactions = elements.fetch(:reactions, [])
-        wellplates = elements.fetch(:wellplates, [])
-        screens = elements.fetch(:screens, [])
+        samples = elements.fetch(:samples, [0])
+        reactions = elements.fetch(:reactions, [0])
+        wellplates = elements.fetch(:wellplates, [0])
+        screens = elements.fetch(:screens, [0])
 
         if params[:is_public]
-          molecules = Molecule.joins(:samples).where("samples.id in (?)", samples).includes(:tag).select(
-            <<~SQL
-            molecules.*, max(samples.sample_svg_file) sample_svg_file
-            SQL
-          ).group('molecules.id').uniq
-          serialized_molecules = paginate(molecules).map { |m| MoleculeGuestListSerializer.new(m).serializable_hash }
-          filter_reactions = Reaction.where("id in (?)", reactions)
-          serialized_reactions = paginate(filter_reactions).map { |r| ReactionGuestListSerializer.new(r).serializable_hash }
+          com_config = Rails.configuration.compound_opendata
+          sample_join = <<~SQL
+            INNER JOIN (
+              SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
+              FROM (
+              SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
+              FROM samples, publications pub
+              WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
+                and samples.id IN (#{samples.join(',')})) s where rownum = 1
+            ) s on s.molecule_id = molecules.id
+          SQL
+
+          embargo_sql = <<~SQL
+            molecules.*, sample_svg_file, sid,
+            (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_samples cs on collections.id = cs.collection_id
+              and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
+              select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
+            (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
+            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
+            (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
+          SQL
+
+          ttl_mol = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          slist = paginate(ttl_mol)
+          sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
+#byebug
+          ssids = sentities.map { |e| e[:sid] }
+
+          xvial_count_ssql = <<~SQL
+            inner join element_tags e on e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          x_cnt_sids = Sample.joins(xvial_count_ssql).where(id: ssids).distinct.pluck(:id) || []
+
+          xvial_com_ssql = <<~SQL
+            inner join molecules m on m.id = samples.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          x_com_sids = Sample.joins(xvial_com_ssql).where(id: ssids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          sentities = sentities.each do |obj|
+            obj[:xvial_count] = 1 if x_cnt_sids.include?(obj[:sid])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_sids || []).include?(obj[:sid])
+          end
+
+          filter_reactions = Reaction.where("reactions.id in (?)", reactions)
+
+          embargo_rsql = <<~SQL
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
+            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
+            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+          SQL
+
+          reaction_list = paginate(filter_reactions.joins(:publication).select(embargo_rsql).order('publications.published_at desc'))
+          reaction_entities = Entities::ReactionPublicationListEntity.represent(reaction_list, serializable: true)
+          reaction_ids = reaction_entities.map { |e| e[:id] }
+
+
+          xvial_count_sql = <<~SQL
+            inner join element_tags e on e.taggable_id = reactions_samples.sample_id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          reaction_x_cnt_ids = ReactionsSample.joins(xvial_count_sql).where(type: 'ReactionsProductSample', reaction_id: reaction_ids).distinct.pluck(:reaction_id) || []
+
+          xvial_com_sql = <<~SQL
+            inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
+            inner join molecules m on m.id = s.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          reaction_x_com_ids = ReactionsSample.joins(xvial_com_sql).where(type: 'ReactionsProductSample', reaction_id: reaction_ids).distinct.pluck(:reaction_id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          reaction_entities = reaction_entities.each do |obj|
+            obj[:xvial_count] = 1 if reaction_x_cnt_ids.include?(obj[:id])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (reaction_x_com_ids || []).include?(obj[:id])
+          end
+
+
           return {
             publicMolecules: {
-              molecules: serialized_molecules,
-              totalElements: molecules.size,
+              molecules: sentities,
+              totalElements: ttl_mol.size,
               page: page,
               perPage: page_size,
-              ids: molecules.pluck(:id)
+              ids: ssids
             },
             publicReactions: {
-              reactions: serialized_reactions,
+              reactions: reaction_entities,
               totalElements: reactions.size,
               page: page,
               perPage: page_size,
-              ids: filter_reactions.pluck(:id)
+              ids: reaction_ids
             }
           }
         end
@@ -235,36 +331,37 @@ module Chemotion
         samples_data = serialize_samples(samples, page, search_by_method, molecule_sort)
         serialized_samples = samples_data[:data]
         samples_size = samples_data[:size]
+        samples.delete(0)
 
         ids = Kaminari.paginate_array(reactions).page(page).per(page_size)
         serialized_reactions = Reaction.includes(
-          :literatures, :tag,
+          :tag,
           reactions_starting_material_samples: :sample,
-          reactions_solvent_samples: :sample,
-          reactions_reactant_samples: :sample,
-          reactions_product_samples: :sample,
-          container: :attachments
+          reactions_product_samples: :sample
         ).find(ids).map {|s|
           ReactionSerializer.new(s).serializable_hash.deep_symbolize_keys
         }
+        reactions.delete(0)
 
         ids = Kaminari.paginate_array(wellplates).page(page).per(page_size)
-        klass = "WellplateListSerializer::Level#{@dl_wp}".constantize
+        klass = "WellplateListSerializer::Level#{@dl_wp || 0}".constantize
         serialized_wellplates = Wellplate.includes(
           collections: :sync_collections_users,
           wells: :sample
-        ).find(ids).map{ |s|
+        ).find_by(id: ids)&.map{ |s|
           klass.new(s,1).serializable_hash.deep_symbolize_keys
         }
+        wellplates.delete(0)
 
         ids = Kaminari.paginate_array(screens).page(page).per(page_size)
         serialized_screens = Screen.includes(
           collections: :sync_collections_users
-        ).find(ids).map{ |s|
+        ).find_by(id: ids)&.map{ |s|
           ScreenSerializer.new(s).serializable_hash.deep_symbolize_keys
         }
+        screens.delete(0)
 
-        {
+        result = {
           samples: {
             elements: serialized_samples,
             totalElements: samples_size,
@@ -298,15 +395,35 @@ module Chemotion
             ids: screens
           }
         }
+
+        klasses = ElementKlass.where(is_active: true, is_generic: true)
+        klasses.each do |klass|
+          element_list = Element.where(id: elements.fetch(:elements, []), element_klass_id: klass.id).pluck :id
+          ids = Kaminari.paginate_array(element_list).page(page).per(page_size)
+          serialized_elements = Element.includes(collections: :sync_collections_users).find(ids).map{ |s| ElementSerializer.new(s).serializable_hash.deep_symbolize_keys }
+
+          result["#{klass.name}s"] = {
+            elements: serialized_elements,
+            totalElements: element_list.size,
+            page: page,
+            pages: pages(element_list.size),
+            perPage: page_size,
+            ids: element_list
+          }
+        end
+        result
       end
 
       # Generate search query
       def search_elements(c_id = @c_id, dl = @dl)
         search_method = search_by_method
         molecule_sort = params[:molecule_sort]
-        arg = params[:selection][:name]
+        arg = params[:selection] && params[:selection][:name]
         return if !(search_method =~ /advanced|structure/) && !arg.presence
         dl_s = dl[:sample_detail_level] || 0
+
+        search_method = 'chemotion_id' if arg&.match(/(CRR|CRS|CRD)-\d+/)
+
         scope = case search_method
         when 'polymer_type'
           if dl_s > 0
@@ -349,30 +466,69 @@ module Chemotion
           sample_structure_search
         when 'advanced'
           advanced_search(c_id)
+        when 'elements'
+          elements_search(c_id)
+        when 'chemotion_id'
+          if arg.match(/(CRR|CRS|CRD)-\d+/) && arg.split('-').length == 2
+            case arg.split('-')[0]
+            when 'CRS'
+              Sample.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+            when 'CRR'
+              Reaction.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{arg.split('-')[1]}")
+            when 'CRD'
+              begin
+                parent_node = Publication.find(arg.split('-')[1])&.parent
+                parent_node && parent_node.element.class.by_collection_id(c_id).joins(:publication).where('publications.id = ?', "#{parent_node.id}")
+              rescue => e
+                Sample.none
+              end
+            end
+          else
+          end
         end
 
-        if search_method == 'advanced' && molecule_sort == false
-          arg_value_str = adv_params.first['value'].split(/(\r)?\n|,/).map(&:strip)
-                                    .select{ |s| !s.empty? }.join(',')
-          return scope.order(
-            "position(','||(#{adv_params.first['field']['column']}::text)||',' in ','||(#{ActiveRecord::Base.connection.quote(arg_value_str)}::text)||',')"
-          )
-        elsif search_method == 'advanced' && molecule_sort == true
-          return scope.order('samples.updated_at DESC')
-        elsif search_method != 'advanced' && molecule_sort == true
-          return scope.includes(:molecule)
-                      .joins(:molecule)
-                      .order(
-                        "LENGTH(SUBSTRING(molecules.sum_formular, 'C\\d+'))"
-                      ).order('molecules.sum_formular')
+        if ((c_id = Collection.public_collection_id) &&
+          (params[:selection] && params[:selection][:authors_params] && params[:selection][:authors_params][:type] && params[:selection][:authors_params][:value] && params[:selection][:authors_params][:value].length > 0))
+          if params[:selection][:authors_params][:type] == 'Authors'
+            author_sql = ActiveRecord::Base.send(:sanitize_sql_array, [" author_id in (?)", params[:selection][:authors_params][:value].join("','")])
+
+            adv_search = <<~SQL
+              INNER JOIN publication_authors pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
+              and #{author_sql}
+            SQL
+          elsif params[:selection][:authors_params][:type] == 'Contributors'
+            contributor_sql = ActiveRecord::Base.send(:sanitize_sql_array, [" published_by in (?)", params[:selection][:authors_params][:value].join("','")])
+            adv_search = <<~SQL
+              INNER JOIN publications pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
+              and #{contributor_sql}
+            SQL
+          end
         end
 
+        if adv_params && adv_params.length > 0
+          if search_method == 'advanced' && molecule_sort == false
+            arg_value_str = adv_params.first['value'].split(/(\r)?\n|,/).map(&:strip)
+                                      .select{ |s| !s.empty? }.join(',')
+            return scope.order(
+              "position(','||(#{adv_params.first['field']['column']}::text)||',' in ','||(#{ActiveRecord::Base.connection.quote(arg_value_str)}::text)||',')"
+            )
+          elsif search_method == 'advanced' && molecule_sort == true
+            return scope.order('samples.updated_at DESC')
+          elsif search_method != 'advanced' && molecule_sort == true
+            return scope.includes(:molecule)
+                        .joins(:molecule)
+                        .order(
+                          "LENGTH(SUBSTRING(molecules.sum_formular, 'C\\d+'))"
+                        ).order('molecules.sum_formular')
+          end
+        end
+
+        return scope.joins(adv_search) unless adv_search.nil?
         return scope
       end
 
       def elements_by_scope(scope, collection_id = @c_id)
         elements = {}
-
         user_samples = Sample.by_collection_id(collection_id)
           .includes(molecule: :tag)
         user_reactions = Reaction.by_collection_id(collection_id).includes(
@@ -394,11 +550,14 @@ module Chemotion
           ).uniq
           # elements[:wellplates] = user_wellplates.by_sample_ids(scope&.map(&:id)).uniq.pluck(:id)
           # elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
+          # elements[:elements] = (
+          #   user_elements.by_sample_ids(scope&.map(&:id)).pluck(:id)
+          # ).uniq
         when Reaction
           elements[:reactions] = scope&.pluck(:id)
           elements[:samples] = user_samples.by_reaction_ids(scope&.map(&:id)).pluck(:id).uniq
-          # elements[:wellplates] = user_wellplates.by_sample_ids(elements[:samples]).uniq.pluck(:id)
-          # elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
+        #   elements[:wellplates] = user_wellplates.by_sample_ids(elements[:samples]).uniq.pluck(:id)
+        #   elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
         # when Wellplate
         #   elements[:wellplates] = scope&.pluck(:id)
         #   elements[:screens] = user_screens.by_wellplate_ids(elements[:wellplates]).uniq.pluck(:id)
@@ -413,10 +572,13 @@ module Chemotion
         #   elements[:reactions] = (
         #     user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
         #   ).uniq.pluck(:id)
+        # when Element
+        #   elements[:elements] = scope&.pluck(:id)
+        #   sids = ElementsSample.where(element_id: elements[:elements]).pluck :sample_id
+        #   elements[:samples] = Sample.by_collection_id(collection_id).where(id: sids).uniq.pluck(:id)
         when AllElementSearch::Results
           # TODO check this samples_ids + molecules_ids ????
           elements[:samples] = (scope&.samples_ids + scope&.molecules_ids)
-
           elements[:reactions] = (
             scope&.reactions_ids +
             user_reactions.by_sample_ids(elements[:samples]).pluck(:id)
@@ -431,13 +593,36 @@ module Chemotion
           #   scope&.screens_ids +
           #   user_screens.by_wellplate_ids(elements[:wellplates]).pluck(:id)
           # ).uniq
+          # elements[:elements] = (scope&.element_ids).uniq
         end
-
         elements
       end
     end
 
     resource :search do
+      namespace :elements do
+        desc "Return all matched elements and associations for substring query"
+        params do
+          use :search_params
+        end
+
+        after_validation do
+          set_var
+        end
+
+        post do
+          scope = elements_search(@c_id)
+          return unless scope
+          elements_ids = elements_by_scope(scope)
+
+          serialization_by_elements_and_page(
+            elements_ids,
+            params[:page],
+            params[:molecule_sort]
+          )
+        end
+      end
+
       after_validation do
         check_params_collection_id
         set_var_for_unsigned_user unless current_user
@@ -456,9 +641,7 @@ module Chemotion
         post do
           scope = search_elements(@c_id, @dl)
           return unless scope
-
           elements_ids = elements_by_scope(scope)
-
           serialization_by_elements_and_page(
             elements_ids,
             params[:page],
@@ -578,6 +761,30 @@ module Chemotion
           serialization_by_elements_and_page(
             elements_by_scope(screens),
             params[:page]
+          )
+        end
+      end
+
+      namespace :embargo do
+        desc "Return samples and reactions by embargo"
+        params do
+          use :search_params
+        end
+        post do
+          col_id = Collection.find_by(label: params[:selection][:name], is_synchronized: true)&.id
+
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless col_id.present?
+
+          scope = Sample.by_collection_id(col_id).where.not(short_label: %w[solvent reactant])
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless scope
+
+          return serialization_by_elements_and_page({}, params[:page], params[:molecule_sort]) unless ElementsPolicy.new(current_user, scope).read?
+
+          elements_ids = elements_by_scope(scope, col_id)
+          serialization_by_elements_and_page(
+            elements_ids,
+            params[:page],
+            params[:molecule_sort]
           )
         end
       end

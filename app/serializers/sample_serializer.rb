@@ -1,12 +1,20 @@
 class SampleSerializer < ActiveModel::Serializer
   attributes *DetailLevels::Sample.new.base_attributes
 
-  has_one :molecule
+  has_one :molecule, :serializer => MoleculeListSerializer
   has_one :container, :serializer => ContainerSerializer
   has_one :tag
 
-  has_many :residues
-  has_many :elemental_compositions
+  has_many :residues, serializer: ResidueSerializer
+  has_many :elemental_compositions, serializer: ElementalCompositionSerializer
+  has_many :segments
+
+  def is_repo_public
+    cols = object.tag&.taggable_data['collection_labels']&.select do |c|
+      c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
+    end
+    cols.present? && cols.length.positive?
+  end
 
   def code_log
     CodeLogSerializer.new(object.code_log).serializable_hash
@@ -51,6 +59,10 @@ class SampleSerializer < ActiveModel::Serializer
   end
 
   def can_update
+    false
+  end
+
+  def can_copy
     false
   end
 

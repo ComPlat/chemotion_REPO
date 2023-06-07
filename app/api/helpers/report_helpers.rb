@@ -58,7 +58,7 @@ module ReportHelpers
   def reaction_smiles_hash(c_id, ids, all = false, u_ids = user_ids)
     result = db_exec_query_reaction_smiles(
       c_id, ids, all, u_ids
-    ).first.fetch('result', nil)
+    ).first&.fetch('result', nil)
     JSON.parse(result) if result
   end
 
@@ -206,10 +206,11 @@ module ReportHelpers
     <<~SQL
       select
       s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
-      , res.residue_type, s.molfile_version
+      , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
       , #{columns}
       , ets.taggable_data#>>'{publication,doi}' as "doi"
+      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
       from (
         select
           s.id as s_id
@@ -351,7 +352,7 @@ module ReportHelpers
       select
       s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
       , dl_wp
-      , res.residue_type, s.molfile_version
+      , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
       , #{columns}
       from (
@@ -407,7 +408,7 @@ module ReportHelpers
       select
       s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
       , dl_r
-      , res.residue_type, s.molfile_version
+      , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
       -- , r_s.type as "type"
       -- , r_s.position
@@ -417,6 +418,10 @@ module ReportHelpers
         when r_s.type = 'ReactionsReactantSample' then '2 reactant'
         when r_s.type = 'ReactionsSolventSample' then '3 solvent'
         when r_s.type = 'ReactionsProductSample' then '4 product' end as "type"
+      , ets.taggable_data#>>'{publication,doi}' as "doi"
+      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
+      , etr.taggable_data#>>'{publication,doi}' as "r doi"
+      , 'https://dx.doi.org/' || (etr.taggable_data#>>'{publication,doi}') as "r url"
       from (
         select
           s.id as s_id
@@ -444,6 +449,8 @@ module ReportHelpers
       left join molecules m on s.molecule_id = m.id
       left join molecule_names mn on s.molecule_name_id = mn.id
       left join residues res on res.sample_id = s.id
+      left join element_tags ets on ets.taggable_type = 'Sample' and ets.taggable_id = s.id
+      left join element_tags etr on etr.taggable_type = 'Reaction' and etr.taggable_id = r.id
       order by #{order}, "type" asc, r_s.position asc;
     SQL
   end
@@ -482,7 +489,8 @@ module ReportHelpers
         created_at: ['s.created_at', nil, 0],
         updated_at: ['s.updated_at', nil, 0],
         # deleted_at: ['wp.deleted_at', nil, 10],
-        molecule_name: ['mn."name"', '"molecule name"', 1]
+        molecule_name: ['mn."name"', '"molecule name"', 1],
+        molarity_value: ['s."molarity_value"', '"molarity_value"', 0]
       },
       sample_id: {
         external_label: ['s.external_label', '"sample external label"', 0],
@@ -560,11 +568,15 @@ module ReportHelpers
     }.freeze
 
   # desc: concatenate columns to be queried
-  def build_column_query(sel, attrs = EXP_MAP_ATTR)
+  def build_column_query(sel, user_id = 0, attrs = EXP_MAP_ATTR)
     selection = []
     attrs.keys.each do |table|
       sel.symbolize_keys.fetch(table, []).each do |col|
-        if (s = attrs[table][col.to_sym])
+        if col == 'user_labels'
+          selection << "labels_by_user_sample(#{user_id}, s_id) as user_labels"
+        elsif col == 'literature'
+          selection << "literatures_by_element('Sample', s_id) as literatures"
+        elsif (s = attrs[table][col.to_sym])
           selection << (s[1] && s[0] + ' as ' + s[1] || s[0])
         end
       end

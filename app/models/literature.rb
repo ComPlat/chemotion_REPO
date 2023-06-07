@@ -10,13 +10,14 @@
 #  deleted_at :datetime
 #  refs       :jsonb
 #  doi        :string
+#  isbn       :string
 #
 # Indexes
 #
 #  index_literatures_on_deleted_at  (deleted_at)
 #
 
-class Literature < ActiveRecord::Base
+class Literature < ApplicationRecord
   acts_as_paranoid
   has_many :literals
 
@@ -33,8 +34,7 @@ class Literature < ActiveRecord::Base
 
   scope :add_user_info, -> {
     joins("inner join users on users.id = literals.user_id")
-    .select("literatures.*, literals.id as literal_id, literals.element_type, literals.user_id,
-      (users.first_name || chr(32) || users.last_name) as user_name")
+    .select("literatures.*, literals.id as literal_id, literals.element_type, literals.user_id, literals.litype, (users.first_name || chr(32) || users.last_name) as user_name")
   }
 
   scope :add_element_and_user_info, -> {
@@ -48,7 +48,7 @@ class Literature < ActiveRecord::Base
       <<~SQL
       literatures.*
       , literals.id as literal_id
-      , literals.element_type, literals.element_id
+      , literals.element_type, literals.element_id, literals.litype
       , literals.user_id, (users.first_name || chr(32) || users.last_name) as user_name
       , coalesce(reactions.short_label, samples.short_label ) as short_label
       , coalesce(reactions.name, samples.name ) as name, samples.external_label

@@ -6,7 +6,7 @@ describe Chemotion::UserAPI do
   let(:json_options) do
     {
       only: %i[
-        id type reaction_name_prefix email
+        id type reaction_name_prefix email matrix
         last_name first_name
       ],
       methods: %i[name initials is_templates_moderator molecule_editor account_active]
@@ -107,7 +107,7 @@ describe Chemotion::UserAPI do
       end
 
       it 'Returns current user' do
-        expect(JSON.parse(response.body)['user'].except('confirmed_at', 'current_sign_in_at', 'locked_at')).to(
+        expect(JSON.parse(response.body)['user'].except('confirmed_at', 'current_sign_in_at', 'locked_at', 'unconfirmed_email','counters')).to(
           eq p1.as_json(json_options).merge(srlzr).merge('layout' => layout)
         )
       end
@@ -125,7 +125,7 @@ describe Chemotion::UserAPI do
       end
 
       before do
-        post '/api/v1/groups/create', params
+        post '/api/v1/groups/create', params: params
       end
 
       it 'Creates a group of persons' do
@@ -159,7 +159,7 @@ describe Chemotion::UserAPI do
       end
 
       before do
-        put "/api/v1/groups/upd/#{g2.id}", params
+        put "/api/v1/groups/upd/#{g2.id}", params: params
       end
 
       it 'Updates a group of persons' do
@@ -175,7 +175,7 @@ describe Chemotion::UserAPI do
       end
 
       before do
-        put "/api/v1/groups/upd/#{g3.id}", params
+        put "/api/v1/groups/upd/#{g3.id}", params: params, as: :json
       end
 
       it 'Deletes a group of persons' do
@@ -193,7 +193,7 @@ describe Chemotion::UserAPI do
       end
 
       before do
-        put "/api/v1/groups/upd/#{g4.id}", params
+        put "/api/v1/groups/upd/#{g4.id}", params: params, as: :json
       end
 
       it 'Does not update a group of persons' do

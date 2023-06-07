@@ -1,4 +1,4 @@
-class DefaultOlsProfile < ActiveRecord::Migration
+class DefaultOlsProfile < ActiveRecord::Migration[4.2]
   def change
     file = Rails.public_path.join('ontologies','chmo.default.profile.json')
     result = JSON.parse(File.read(file, encoding:  'bom|utf-8')) if File.exist?(file)

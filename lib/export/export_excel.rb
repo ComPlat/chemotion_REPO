@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'export_table'
 
 module Export
@@ -14,15 +16,20 @@ module Export
     def generate_sheet_with_samples(table, samples = nil)
       @samples = samples
       return if samples.nil? # || samples.count.zero?
+
       generate_headers(table)
-      sheet = @xfile.workbook.add_worksheet(name: table.to_s) #do |sheet|
-      grey = sheet.styles.add_style(sz: 12, :border => { :style => :thick, :color => "FF777777", :edges => [:bottom] })
-      light_grey = sheet.styles.add_style(bg_color: "FFCCCCCC",:border => { :style => :thin, :color => "FFCCCCCC", :edges => [:top] })
+      sheet = @xfile.workbook.add_worksheet(name: table.to_s) # do |sheet|
+      grey = sheet.styles.add_style(sz: 12, border: { style: :thick, color: 'FF777777', edges: [:bottom] })
       sheet.add_row(@headers, style: grey) # Add header
+      decoupled_style = sheet.styles.add_style(b: true, fg_color: 'CEECF5', bg_color: 'FF777777', border: { style: :thick, color: 'FF777777', edges: [:bottom] })
+      ['decoupled', 'molecular mass (decoupled)', 'sum formula (decoupled)'].each do |e|
+        s_idx = @headers.find_index(e)
+        sheet.rows[0].cells[s_idx].style = decoupled_style
+      end
       image_width = DEFAULT_ROW_WIDTH
       row_height = DEFAULT_ROW_HEIGHT
       row_image_width = DEFAULT_ROW_WIDTH
-      row_length = @headers.size
+      decouple_idx = @headers.find_index('decoupled')
       samples.each_with_index do |sample, row|
         filtered_sample = filter_with_permission_and_detail_level(sample)
         if @image_index && (svg_path = filtered_sample[@image_index].presence)
@@ -33,7 +40,12 @@ module Export
         end
         image_width = row_image_width if row_image_width > image_width
         # 3/4 -> The misterious ratio!
-        sheet.add_row(filtered_sample, sz: 12, height: row_height * 3 / 4)
+        if filtered_sample[decouple_idx].present?
+          filtered_sample[decouple_idx] = filtered_sample[decouple_idx].presence == 't' ? 'Yes' : 'No'
+        end
+
+        size = sheet.styles.add_style :sz => 12
+        sheet.add_row filtered_sample, :height => row_height * 3 / 4, :style=>[size]
       end
       sheet.column_info[@image_index].width = image_width / 8 if @image_index
       # end
@@ -88,11 +100,32 @@ module Export
       end
     end
 
+    def literatures_info(ids)
+      output = []
+      ids&.split(',')&.each do |id|
+        lit = Literature.find(id)
+        return '' if lit.nil?
+
+        bib = lit[:refs] && lit[:refs]['bibtex']
+        bb = DataCite::LiteraturePaser.parse_bibtex!(bib, id)
+        bb = DataCite::LiteraturePaser.get_metadata(bb, lit[:doi], id) unless bb.class == BibTeX::Entry
+        output.push(DataCite::LiteraturePaser.excel_string(lit, bb)) if bb.class == BibTeX::Entry
+      end
+      output = output.join("\n")
+      output
+    end
+    
     def filter_with_permission_and_detail_level(sample)
       # return all data if sample in own collection
       if sample['shared_sync'] == 'f' || sample['shared_sync'] == false
         headers = @headers
-        data = headers.map { |column| sample[column] }
+        data = headers.map do |column|
+          if column == 'literatures'
+            literatures_info(sample[column])
+          else
+            sample[column]
+          end
+        end
         data[@image_index] = svg_path(sample) if @image_index
       # elsif sample['ts'] == 't' || sample['ts'].equal?(true)
       #   return Array.new(@headers.size)data = headers.map { |column| sample[column] }

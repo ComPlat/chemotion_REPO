@@ -31,7 +31,7 @@ module Chemotion
           end
         else
           # All collection of current_user
-          ResearchPlan.joins(:collections).where('collections.user_id = ?', current_user.id).uniq
+          ResearchPlan.joins(:collections).where('collections.user_id = ?', current_user.id).distinct
         end.order("created_at DESC")
 
         from = params[:from_date]
@@ -52,7 +52,8 @@ module Chemotion
         requires :name, type: String, desc: 'Research plan name'
         optional :body, type: Array, desc: 'Research plan body'
         optional :collection_id, type: Integer, desc: 'Collection ID'
-        requires :container, type: Hash
+        requires :container, type: Hash, desc: 'Containers'
+        optional :segments, type: Array, desc: 'Segments'
       end
       post do
         attributes = {
@@ -64,13 +65,28 @@ module Chemotion
         research_plan.creator = current_user
         research_plan.container = update_datamodel(params[:container])
         research_plan.save!
+        research_plan.save_segments(segments: params[:segments], current_user_id: current_user.id)
 
-        if col_id = params[:collection_id]
-          research_plan.collections << current_user.collections.find(col_id)
+
+        if params[:collection_id]
+          collection = current_user.collections.where(id: params[:collection_id]).take
+          research_plan.collections << collection if collection.present?
         end
 
-        all_coll = Collection.get_all_collection_for_user(current_user.id)
-        research_plan.collections << all_coll
+        is_shared_collection = false
+        unless collection.present?
+          sync_collection = current_user.all_sync_in_collections_users.where(id: params[:collection_id]).take
+          if sync_collection.present?
+            is_shared_collection = true
+            research_plan.collections << Collection.find(sync_collection['collection_id'])
+            research_plan.collections << Collection.get_all_collection_for_user(sync_collection['shared_by_id'])
+          end
+        end
+
+        unless is_shared_collection
+          all_coll = Collection.get_all_collection_for_user(current_user.id)
+          research_plan.collections << all_coll
+        end
 
         research_plan
       end
@@ -120,9 +136,13 @@ module Chemotion
         end
         get do
           research_plan = ResearchPlan.find(params[:id])
+          research_plan.build_research_plan_metadata(
+            title: research_plan.name,
+            subject: ''
+          ) if research_plan.research_plan_metadata.nil?
           {
             research_plan: ElementPermissionProxy.new(current_user, research_plan, user_ids).serialized,
-            attachments: Entities::AttachmentEntity.represent(research_plan.attachments)
+            attachments: Entities::AttachmentEntity.represent(research_plan.attachments),
           }
         end
       end
@@ -133,6 +153,7 @@ module Chemotion
         optional :name, type: String, desc: 'Research plan name'
         optional :body, type: Array, desc: 'Research plan body'
         requires :container, type: Hash, desc: 'Research plan analyses'
+        optional :segments, type: Array, desc: 'Segments'
       end
       route_param :id do
         before do
@@ -140,12 +161,14 @@ module Chemotion
         end
 
         put do
-          attributes = declared(params, include_missing: false)
+          attributes = declared(params.except(:segments), include_missing: false)
           update_datamodel(attributes[:container])
           attributes.delete(:container)
 
           if research_plan = ResearchPlan.find(params[:id])
             research_plan.update!(attributes)
+            research_plan.save_segments(segments: params[:segments], current_user_id: current_user.id)
+
           end
           { research_plan: ElementPermissionProxy.new(current_user, research_plan, user_ids).serialized }
         end
@@ -250,7 +273,7 @@ module Chemotion
           # return the response "as is" and set the content type and the filename
           env['api.format'] = :binary
           content_type 'application/vnd.ms-excel'
-          header['Content-Disposition'] = 'attachment; filename=\"Table.xlsx\"'
+          header['Content-Disposition'] = 'attachment; filename="Table.xlsx"'
 
           export = Export::ExportResearchPlanTable.new
           export.generate_sheet(field['value']['columns'], field['value']['rows'])

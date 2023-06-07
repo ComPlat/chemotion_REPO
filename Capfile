@@ -3,14 +3,15 @@ require 'capistrano/setup'
 
 # Include default deployment tasks
 require 'capistrano/deploy'
+require 'capistrano/asdf'
 require "capistrano/scm/git"
 install_plugin Capistrano::SCM::Git
-require 'capistrano/rvm' # Ruby version manager
-require 'capistrano/nvm' # Node version manager
-require 'capistrano/npm' # Node package manager
+# require 'capistrano/rvm' # Ruby version manager
+# require 'capistrano/nvm' # Node version manager
 require 'capistrano/bundler'
 require 'capistrano/rails/migrations'
 require 'capistrano/rails/assets'
+require 'capistrano/yarn'
 #require 'capistrano/delayed_job'
 require 'whenever/capistrano'
 require 'slackistrano/capistrano'

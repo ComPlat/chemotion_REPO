@@ -41,6 +41,10 @@
     font-size: 12px !important;
     font-family: 'Helvetica'!important;
   }
+  .txt-predict-fail {
+    font-size: 18px !important;
+    font-family: 'Helvetica'!important;
+  }
 
   .icon-sv-bar-refint {
     height: 16px !important;
@@ -62,6 +66,10 @@
   .input-sv-bar-decimal fieldset legend,
   .input-sv-bar-operation fieldset legend {
     border: hidden !important;
+  }
+
+  .ql-container.ql-snow {
+    border: 0 !important;
   }
 }
 
@@ -96,4 +104,9 @@
 
 .qc-detail-panel-title{
   font-size: 12px !important;
+}
+
+#nmrium_wrapper {
+  width: 100%;
+  height: 80vh;
 }

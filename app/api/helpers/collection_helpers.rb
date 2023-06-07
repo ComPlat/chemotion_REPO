@@ -33,7 +33,7 @@ module CollectionHelpers
       :permission_level,
       :sample_detail_level, :reaction_detail_level,
       :wellplate_detail_level, :screen_detail_level,
-      :researchplan_detail_level
+      :researchplan_detail_level, :element_detail_level
     )&.symbolize_keys
     {
       permission_level: 0,
@@ -42,6 +42,7 @@ module CollectionHelpers
       wellplate_detail_level: 0,
       screen_detail_level: 0,
       researchplan_detail_level: 0,
+      element_detail_level: 0,
     }.merge(dl || {})
   end
 
@@ -56,7 +57,7 @@ module CollectionHelpers
       )
     elsif prms[:is_sync_to_me]
       c = Collection.joins(:sync_collections_users).where(
-        'sync_collections_users.id = ? and sync_collections_users.user_id in (?) and sync_collections_users.permission_level >= ?',
+        'sync_collections_users.id = ? and sync_collections_users.user_id in (?) and (sync_collections_users.permission_level = 1 or sync_collections_users.permission_level >= ?)',
         c_id,
         user_ids,
         pl
@@ -110,7 +111,7 @@ module CollectionHelpers
     end
     @c = Collection.find_by(id: @c_id)
     cu_id = current_user&.id
-    @is_owned = cu_id && ((@c.user_id == cu_id && !@c.is_shared) || @c.shared_by_id == cu_id)
+    @is_owned = cu_id && ((@c&.user_id == cu_id && !@c&.is_shared) || @c&.shared_by_id == cu_id)
 
     @dl ||= {
       permission_level: 10,
@@ -119,6 +120,7 @@ module CollectionHelpers
       wellplate_detail_level: 10,
       screen_detail_level: 10,
       researchplan_detail_level: 10,
+      element_detail_level: 10,
     }
 
     @dl = detail_level_for_collection(c_id, is_sync) unless @is_owned || [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(@c_id)
@@ -128,6 +130,53 @@ module CollectionHelpers
     @dl_wp = @dl[:wellplate_detail_level]
     @dl_sc = @dl[:screen_detail_level]
     @dl_rp = @dl[:researchplan_detail_level]
+    @dl_e = @dl[:element_detail_level]
+  end
+
+  def check_params_collection_id
+    params[:collection_id] = case params[:collection_id]
+                             when 'public'
+                               Collection.public_collection_id
+                             when 'schemeOnly'
+                               Collection.scheme_only_reactions_collection_id
+                             else
+                               params[:collection_id]
+                             end
+  end
+
+  def set_var_for_unsigned_user
+    params[:is_sync] = false
+    @dl = {
+      permission_level: 0,
+      sample_detail_level: 10,
+      reaction_detail_level: 10,
+      wellplate_detail_level: 0,
+      screen_detail_level: 0,
+      researchplan_detail_level: 0
+    }
+  end
+
+  def check_params_collection_id
+    params[:collection_id] = case params[:collection_id]
+                             when 'public'
+                               Collection.public_collection_id
+                             when 'schemeOnly'
+                               Collection.scheme_only_reactions_collection_id
+                             else
+                               params[:collection_id]
+                             end
+  end
+
+  def set_var_for_unsigned_user
+    params[:is_sync] = false
+    @dl = {
+      permission_level: 0,
+      sample_detail_level: 10,
+      reaction_detail_level: 10,
+      wellplate_detail_level: 0,
+      screen_detail_level: 0,
+      researchplan_detail_level: 0
+    }
   end
 
   def check_params_collection_id

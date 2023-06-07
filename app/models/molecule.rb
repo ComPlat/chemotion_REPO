@@ -29,7 +29,7 @@
 #  index_molecules_on_inchikey_and_is_partial  (inchikey,is_partial) UNIQUE
 #
 
-class Molecule < ActiveRecord::Base
+class Molecule < ApplicationRecord
   acts_as_paranoid
 
   attr_accessor :pcid, :ob_log
@@ -43,6 +43,8 @@ class Molecule < ActiveRecord::Base
   has_many :molecule_names
 
   has_many :computed_props
+
+  has_many :nmr_simulations, foreign_key: 'molecule_id', dependent: :destroy
 
   before_save :sanitize_molfile
   after_create :create_molecule_names
@@ -74,6 +76,10 @@ class Molecule < ActiveRecord::Base
   scope :with_wellplates, -> {
     joins(:samples).joins("inner join wells w on w.sample_id = samples.id" ).uniq
   }
+
+  def self.find_or_create_dummy
+    molecule = Molecule.find_or_create_by(inchikey: 'DUMMY')
+  end
 
   def self.find_or_create_by_molfile(molfile, **babel_info)
     unless babel_info && babel_info[:inchikey]
@@ -129,6 +135,8 @@ class Molecule < ActiveRecord::Base
     self.names = pubchem_info[:names]
     self.pcid = pubchem_info[:cid]
     self.check_sum_formular # correct exact and average MW for resins
+    svg = Molecule.svg_reprocess(babel_info[:svg], molfile)
+    attach_svg svg
 
     #self.attach_svg babel_info[:svg]
     svg = Chemotion::OpenBabelService.svg_from_molfile(self.molfile)
@@ -145,12 +153,12 @@ class Molecule < ActiveRecord::Base
     mol_tag = self.tag
     mol_tag_data = mol_tag.taggable_data || {}
     if mol_tag_data['pubchem_lcss'] && mol_tag_data['pubchem_lcss'].length > 0
-      mol_tag_data['pubchem_lcss'];
+      mol_tag_data['pubchem_lcss']
     else
       mol_tag_data['pubchem_lcss'] = Chemotion::PubchemService.lcss_from_cid(cid)
       # updated_at of element_tags(not molecule) is updated
       mol_tag.update_attributes taggable_data: mol_tag_data
-      mol_tag_data['pubchem_lcss'];
+      mol_tag_data['pubchem_lcss']
     end
   end
 
@@ -207,6 +215,8 @@ class Molecule < ActiveRecord::Base
   end
 
   def create_molecule_names
+    return if inchikey == 'DUMMY'
+
     if names.present?
       names.each do |nm|
         molecule_names.create(name: nm, description: 'iupac_name')
@@ -224,6 +234,20 @@ class Molecule < ActiveRecord::Base
   def unique_molecule_name(new_name)
     mns = molecule_names.map(&:name)
     !mns.include?(new_name)
+  end
+
+  def self.svg_reprocess(svg, molfile)
+    return svg unless Rails.configuration.try(:ketcher_service).try(:url).present?
+    return svg if svg.present? && !svg&.include?('Open Babel')
+
+    svg = KetcherService::RenderSvg.svg(molfile)
+
+    if svg&.present?
+      svg = Ketcherails::SVGProcessor.new(svg)
+      svg.centered_and_scaled_svg
+    else
+      Chemotion::OpenBabelService.svg_from_molfile(molfile)
+    end
   end
 
 private

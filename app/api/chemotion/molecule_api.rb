@@ -3,18 +3,35 @@ module Chemotion
     include Grape::Kaminari
 
     resource :molecules do
+      namespace :sf do
+        desc 'Return SciFinder-n API'
+        params do
+          requires :str, type: String, desc: 'escaped structure string'
+          requires :search, type: String, desc: 'search for'
+          requires :ctype, type: String, desc: 'content Type of structure being searched', values: %w[x-cdxml x-mdl-molfile x-mdl-rxnfile]
+        end
+        post do
+          sfc = ScifinderNCredential.find_by(created_by: current_user.id)
+          token = sfc&.issued_token
+          begin
+            Chemotion::ScifinderNService.provider_search(params[:search], params[:str], params[:ctype], token)
+          rescue StandardError => e
+            { errors: ["#{e}. Go to Account & Profile and try to get the token again."] }
+          end
+        end
+      end
+
       namespace :smiles do
         desc 'Return molecule by SMILES'
         params do
           requires :smiles, type: String, desc: 'Input SMILES'
           optional :svg_file, type: String, desc: 'Molecule svg file'
           optional :layout, type: String, desc: 'Molecule molfile layout'
+          optional :editor, type: String, desc: 'SVGProcessor', default: 'ketcher'
         end
-
         post do
           smiles = params[:smiles]
           svg = params[:svg_file]
-
           babel_info = OpenBabelService.molecule_info_from_structure(smiles, 'smi')
           inchikey = babel_info[:inchikey]
           return {} unless inchikey
@@ -24,55 +41,47 @@ module Chemotion
             molfile = babel_info[:molfile] if babel_info
             begin
               rw_mol = RDKitChem::RWMol.mol_from_smiles(smiles)
-              rd_mol = rw_mol.mol_to_mol_block  # molfile
-            rescue RuntimeError => e
-              rd_mol = rw_mol.mol_to_mol_block(true, -1, false)
+              rd_mol = rw_mol.mol_to_mol_block  unless rw_mol.nil?
+            rescue StandardError => e
+              Rails.logger.error ["with smiles: #{smiles}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+              rd_mol = rw_mol.mol_to_mol_block(true, -1, false) unless rw_mol.nil?
             end
             if rd_mol.nil?
               begin
                 pc_mol = Chemotion::PubchemService.molfile_from_smiles(smiles)
                 pc_mol = Chemotion::OpenBabelService.molfile_clear_hydrogens(pc_mol) unless pc_mol.nil?
                 molfile = pc_mol unless pc_mol.nil?
-              rescue StandardError
+              rescue StandardError => e
+                Rails.logger.error ["with smiles: #{smiles}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
               end
             else
               molfile = rd_mol
             end
-
             return {} unless molfile
-
             molecule = Molecule.find_or_create_by_molfile(molfile, babel_info)
           end
           return unless molecule
 
-          # write temporary SVG
-          digest = Digest::SHA256.hexdigest "#{molecule.inchikey}#{Time.now}"
-          digest = Digest::SHA256.hexdigest digest
-          svg_file_name = "TMPFILE#{digest}.svg"
-          svg_file_path = File.join('public','images', 'samples', svg_file_name)
-          if (svg)
-            processor = Chemotion::ChemdrawSvgProcessor.new svg
-            svg = processor.centered_and_scaled_svg
-            svg_file = File.new(svg_file_path, 'w+')
-            svg_file.write(svg)
-            svg_file.close
+          svg_digest = "#{molecule.inchikey}#{Time.now}"
+          if svg.present?
+            svg_process = SVG::Processor.new.structure_svg(params[:editor], svg, svg_digest)
           else
+            svg_process = SVG::Processor.new.generate_svg_info('samples', svg_digest)
             svg_file_src = Rails.public_path.join('images', 'molecules', molecule.molecule_svg_file)
             if File.exist?(svg_file_src)
               mol = molecule.molfile.lines[0..1]
-              if mol[1]&.strip&.match?('OpenBabel')
-                svg = File.read(svg_file_src)
-                ob_processor = Chemotion::OpenBabelSvgProcessor.new svg
-                svg = ob_processor.imitate_ketcher_svg
-                svg_file = File.new(svg_file_path, 'w+')
-                svg_file.write(svg.to_xml)
-                svg_file.close
+              if svg.nil? || svg&.include?('Open Babel')
+                svg = Molecule.svg_reprocess(svg, molecule.molfile)
+                svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true)
               else
-                FileUtils.cp(svg_file_src, svg_file_path)
+                FileUtils.cp(svg_file_src, svg_process[:svg_file_path])
               end
+            else
+              svg = Molecule.svg_reprocess(svg, molecule.molfile)
+              svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true)
             end
           end
-          molecule.attributes.merge({ temp_svg: File.exist?(svg_file_path) && svg_file_name, ob_log: babel_info[:ob_log] })
+          molecule.attributes.merge(temp_svg: File.exist?(svg_process[:svg_file_path]) && svg_process[:svg_file_name], ob_log: babel_info[:ob_log])
         end
       end
 
@@ -98,7 +107,7 @@ module Chemotion
           cp.creator = uid
           cp.save!
 
-          if cp.status == 'not_computed'
+          if cp.status == 'pending'
             options = {
               timeout: 10,
               headers: { 'Content-Type' => 'application/json' },
@@ -109,9 +118,11 @@ module Chemotion
               }.to_json
             }
 
-            HTTParty.post(cconfig.server, options)
-            cp.status = 'in_progress'
+            req = HTTParty.post(cconfig.server, options)
+            cp.task_id = req.parsed_response["taskID"] if req.created?
+            cp.status = 'pending'
           end
+
           cp.save!
 
           Message.create_msg_notification(
@@ -123,37 +134,64 @@ module Chemotion
         end
       end
 
-      desc "Return molecule by Molfile"
+      namespace :decouple do
+        desc 'decouple from molecule'
+        params do
+          optional :molfile, type: String, desc: 'molfile'
+          optional :svg_name, type: String, desc: 'original svg filename'
+          requires :decoupled, type: Boolean, desc: 'decouple from molecule'
+        end
+        post do
+          molfile = params[:molfile]
+          svg_name = params[:svg_name]
+          decoupled = params[:decoupled]
+
+          if decoupled && molfile.blank?
+            molecule = Molecule.find_or_create_dummy
+            ob = ''
+          else
+            molecule = Molecule.find_or_create_by_molfile(molfile)
+            ob = molecule&.ob_log
+          end
+          molecule&.attributes&.merge(temp_svg: svg_name, ob_log: ob)
+        end
+      end
+
+      desc 'Return molecule by Molfile'
       params do
-        requires :molfile, type: String, desc: "Molecule molfile"
-        optional :svg_file, type: String, desc: "Molecule svg file"
+        requires :molfile, type: String, desc: 'Molecule molfile'
+        optional :svg_file, type: String, desc: 'Molecule svg file'
+        optional :editor, type: String, desc: 'SVGProcessor'
+        optional :decoupled, type: Boolean, desc: 'decouple from molecule', default: false
       end
       post do
         svg = params[:svg_file]
         molfile = params[:molfile]
-
-        # write temporary SVG
-        processor = Ketcherails::SVGProcessor.new svg
-
-        svg = processor.centered_and_scaled_svg
-
-        digest = Digest::SHA256.hexdigest molfile
-        digest = Digest::SHA256.hexdigest digest
-        svg_file_name = "TMPFILE#{digest}.svg"
-        svg_file_path = "public/images/samples/#{svg_file_name}"
-
-        svg_file = File.new(svg_file_path, 'w+')
-        svg_file.write(svg)
-        svg_file.close
-
+        decoupled = params[:decoupled]
         molecule = Molecule.find_or_create_by_molfile(molfile)
-        ob = molecule.ob_log
-        molecule.attributes.merge({ temp_svg: svg_file_name, ob_log: ob })
+        molecule = Molecule.find_by(inchikey: 'DUMMY') if molecule.blank? && decoupled
+        ob = molecule&.ob_log
+        if params[:svg_file].present?
+          svg_process = SVG::Processor.new.structure_svg(params[:editor], svg, molfile)
+        else
+          svg_file_src = Rails.public_path.join('images', 'molecules', molecule.molecule_svg_file)
+          if File.exist?(svg_file_src)
+            mol = molecule.molfile.lines[0..1]
+            if mol[1]&.strip&.match?('OpenBabel')
+              svg = File.read(svg_file_src)
+              svg_process = SVG::Processor.new.structure_svg('openbabel', svg, molfile)
+            else
+              svg_process = SVG::Processor.new.generate_svg_info('samples', molfile)
+              FileUtils.cp(svg_file_src, svg_process[:svg_file_path])
+            end
+          end
+        end
+        molecule&.attributes&.merge(temp_svg: svg_process[:svg_file_name], ob_log: ob)
       end
 
-      desc "return CAS of the molecule"
+      desc 'return CAS of the molecule'
       params do
-        requires :inchikey, type: String, desc: "Molecule inchikey"
+        requires :inchikey, type: String, desc: 'Molecule inchikey'
       end
       get :cas do
         inchikey = params[:inchikey]
@@ -191,7 +229,40 @@ module Chemotion
       end
       post :inchikey do
         molecule = Molecule.find_by(inchikey: params[:inchikey])
-        molecule
+        present molecule, with: Entities::MoleculeEntity, root: 'molecule'
+      rescue StandardError => e
+        return {}
+      end
+
+      desc 'delete a molecule name'
+      params do
+        requires :id, type: Integer, desc: 'id of molecule name'
+      end
+      post :delete_name do
+        error!('Unauthorized to delete molecule name!', 401) unless current_user&.molecule_editor
+        mn = MoleculeName.find(params[:id])
+        mn.destroy! if mn.present?
+      rescue StandardError => e
+        return {}
+      end
+
+      desc 'create or update a molecule name'
+      params do
+        requires :id, type: Integer, desc: 'id of molecule'
+        requires :name_id, type: Integer, desc: 'id of molecule name'
+        requires :name, type: String, desc: 'name of molecule name'
+        requires :description, type: String, desc: 'description of molecule name'
+      end
+      post :save_name do
+        error!('Unauthorized to delete molecule name!', 401) unless current_user&.molecule_editor
+
+        if params[:name_id] == -1
+          mn = MoleculeName.create(molecule_id: params[:id], user_id: current_user.id, description: "#{params[:description]} #{current_user.id}", name: params[:name])
+        else
+          mn = MoleculeName.find(params[:name_id])
+          mn.update!(name: params[:name]) if mn.present?
+        end
+        mn
       rescue StandardError => e
         return {}
       end

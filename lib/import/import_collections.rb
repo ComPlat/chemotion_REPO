@@ -95,24 +95,44 @@ module Import
     private
 
     def import_collections
-      @data.fetch('Collection', {}).each do |uuid, fields|
-        # create the collection
-        collection = Collection.create!(fields.slice(
-          'label',
-          'sample_detail_level',
-          'reaction_detail_level',
-          'wellplate_detail_level',
-          'screen_detail_level',
-          'researchplan_detail_level',
-          'created_at',
-          'updated_at'
-        ).merge(
-          user_id: @current_user_id,
-          parent: fetch_ancestry('Collection', fields.fetch('ancestry'))
-        ))
+      # collection = Collection.find(@col_id)
+      collection = Collection.find_or_create_by(user_id: @current_user_id, label: 'Imported Data', is_locked: true, position: 3)
 
+      @uuid = nil
+
+      @data.fetch('Collection', {}).each do |uuid, fields|
+        @uuid = uuid
+      end
+
+      # @data.fetch('Collection', {}).each do |uuid, fields|
+      #   # create the collection
+      #   collection = Collection.create!(fields.slice(
+      #     'label',
+      #     'sample_detail_level',
+      #     'reaction_detail_level',
+      #     'wellplate_detail_level',
+      #     'screen_detail_level',
+      #     'researchplan_detail_level',
+      #     'created_at',
+      #     'updated_at'
+      #   ).merge(
+      #     user_id: @current_user_id,
+      #     parent: fetch_ancestry('Collection', fields.fetch('ancestry'))
+      #   ))
         # add collection to @instances map
-        update_instances!(uuid, collection)
+      # update_instances!(uuid, collection)
+      # end
+      update_instances!(@uuid, collection)
+    end
+
+    def fetch_bound(value)
+      bounds = value.to_s.split(/\.{2,3}/)
+      lower = BigDecimal(bounds[0])
+      upper = BigDecimal(bounds[1])
+      if lower == -Float::INFINITY && upper == Float::INFINITY
+        Range.new(-Float::INFINITY, Float::INFINITY, '()')
+      else
+        Range.new(lower, upper)
       end
     end
 
@@ -120,17 +140,17 @@ module Import
       @data.fetch('Sample', {}).each do |uuid, fields|
         # look for the molecule_name
         molecule_name_uuid = fields.fetch('molecule_name_id')
-        molecule_name_name = @data.fetch('MoleculeName').fetch(molecule_name_uuid).fetch('name')
+        molecule_name_name = @data.fetch('MoleculeName').fetch(molecule_name_uuid).fetch('name') if molecule_name_uuid.present?
 
         # look for the molecule for this sample and add the molecule name
         # neither the Molecule or the MoleculeName are created if they already exist
         molfile = fields.fetch('molfile')
-        molecule = Molecule.find_or_create_by_molfile(molfile)
-        molecule.create_molecule_name_by_user(molecule_name_name, @current_user_id)
+        molecule = fields.fetch('decoupled', nil) && molfile.blank? ? Molecule.find_or_create_dummy : Molecule.find_or_create_by_molfile(molfile)
+        molecule.create_molecule_name_by_user(molecule_name_name, @current_user_id) unless (fields.fetch('decoupled', nil) && molfile.blank?) || molecule_name_name.blank?
 
         # get the molecule_name from the list of molecule names in molecule
         # this seems a bit cumbersome, but fits in with the methods of Molecule and MoleculeName
-        molecule_name = molecule.molecule_names.find_by(name: molecule_name_name)
+        molecule_name = molecule.molecule_names.find_by(name: molecule_name_name) unless fields.fetch('decoupled', nil) && molfile.blank?
 
         # create the sample
         sample = Sample.create!(fields.slice(
@@ -152,12 +172,13 @@ module Import
           'imported_readout',
           'identifier',
           'density',
-          'melting_point',
-          'boiling_point',
           'xref',
           'stereo',
           'created_at',
-          'updated_at'
+          'updated_at',
+          'decoupled',
+          'molecular_mass',
+          'sum_formula'
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
@@ -165,8 +186,17 @@ module Import
           ),
           molecule_name: molecule_name,
           sample_svg_file: fetch_image('samples', fields.fetch('sample_svg_file')),
-          parent: fetch_ancestry('Sample', fields.fetch('ancestry'))
+          parent: fetch_ancestry('Sample', fields.fetch('ancestry')),
+          melting_point: fetch_bound(fields.fetch('melting_point')),
+          boiling_point: fetch_bound(fields.fetch('boiling_point')),
+          molecule_id: molecule&.id
         ))
+
+        solvent_value = fields.slice('solvent')['solvent']
+        if solvent_value.is_a? String
+          solvent = Chemotion::SampleConst.solvents_smiles_options.find { |s| s[:label].include?(solvent_value) }
+          sample['solvent'] = [{ label: solvent[:value][:external_label], smiles: solvent[:value][:smiles], ratio: '100' }] if solvent.present?
+        end
 
         # for same sample_svg_file case
         s_svg_file = @svg_files.select { |s| s[:sample_svg_file] == fields.fetch('sample_svg_file') }.first
@@ -348,16 +378,14 @@ module Import
         research_plan = ResearchPlan.create!(fields.slice(
           'name',
           'description',
-          'sdf_file',
-          'svg_file',
+          'body',
           'created_at',
           'updated_at'
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
             'Collection', 'CollectionsResearchPlan', 'research_plan_id', 'collection_id', uuid
-          ),
-          svg_file: fetch_image('research_plans', fields.fetch('svg_file'))
+          )
         ))
 
         # add reaction to the @instances map

@@ -10,7 +10,8 @@ module Export
       'sample external label', 'sample name', 'target amount', 'target unit',
       'real amount', 'real unit', 'description', 'purity', 'solvent', 'location',
       'secret', 'short label', 'density', 'melting pt', 'boiling pt', 'created_at',
-      'updated_at', 'MW', 'doi'
+      'updated_at', 'MW', 'user_labels', 'decoupled', 'molecular mass (decoupled)', 'sum formula (decoupled)',
+      'doi', 'url'
     ].freeze
 
     # allowed sample/molecule headers for sample detail level 10
@@ -40,7 +41,7 @@ module Export
     ].freeze
     # allowed reaction/reaction-sample headers for reaction detail level 10
     HEADERS_REACTION_10 = HEADERS_REACTION_0 + [
-      'r ref', 'r eq'
+      'r ref', 'r eq', 'r doi', 'r url'
     ].freeze
 
 

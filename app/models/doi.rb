@@ -28,12 +28,11 @@
 #  fk_rails_...  (molecule_id => molecules.id)
 #
 
-class Doi < ActiveRecord::Base
+class Doi < ApplicationRecord
 
-  belongs_to :doiable, polymorphic: true
-  belongs_to :molecule
-  belongs_to :analysis, class_name: 'Container'
-
+  belongs_to :doiable, polymorphic: true, optional: true
+  belongs_to :molecule, class_name: 'Molecule', optional: true
+  belongs_to :analysis, class_name: 'Container', optional: true
 
   before_save :align_suffix
 
@@ -102,6 +101,8 @@ class Doi < ActiveRecord::Base
     ik ||= case klass
            when 'Sample'
              element.molecule.inchikey
+           when 'Collection'
+             "collection/" + element.label
            when 'Reaction'
              "reaction/" + element.products_short_rinchikey_trimmed
            end

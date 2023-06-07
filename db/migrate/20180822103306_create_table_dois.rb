@@ -1,11 +1,11 @@
-class CreateTableDois < ActiveRecord::Migration
+class CreateTableDois < ActiveRecord::Migration[4.2]
   def change
     create_table :dois do |t|
       t.integer :molecule_id
       t.string :inchikey
       t.integer :molecule_count
       t.integer :analysis_id
-      t.string :analysis_type 
+      t.string :analysis_type
       t.integer :analysis_count
       t.jsonb :metadata, default: {}
       t.boolean :minted, default: false

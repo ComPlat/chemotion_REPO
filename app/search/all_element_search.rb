@@ -1,5 +1,5 @@
 class AllElementSearch
-  PG_ELEMENTS = %w[Sample Reaction] # Screen Wellplate]
+  PG_ELEMENTS = %w[Sample Reaction] # Screen Wellplate Element]
 
   def initialize(term)
     @term = term
@@ -30,6 +30,7 @@ class AllElementSearch
               else
                 PG_ELEMENTS
               end
+      # types.push('Element')
       sample_filter =
         # <<~SQL
           " searchable_id in ( " \
@@ -97,6 +98,10 @@ class AllElementSearch
       filter_results_by_type('Screen')
     end
 
+    def elements
+      filter_results_by_type('Element')
+    end
+
     def molecules_ids
       filter_results_ids_by_type('Molecule')
     end
@@ -115,6 +120,10 @@ class AllElementSearch
 
     def screens_ids
       filter_results_ids_by_type('Screen')
+    end
+
+    def element_ids
+      filter_results_ids_by_type('Element')
     end
 
     private

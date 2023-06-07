@@ -6,10 +6,11 @@ class ReactionSerializer < ActiveModel::Serializer
   has_many :solvents, serializer: MaterialSerializer
   has_many :purification_solvents, serializer: MaterialSerializer
   has_many :products, serializer: MaterialSerializer
+  has_many :segments
 
   # has_many :literatures
 
-  has_one :container
+  has_one :container, serializer: ContainerSerializer
   has_one :tag
 
   def code_log
@@ -48,6 +49,10 @@ class ReactionSerializer < ActiveModel::Serializer
     'reaction'
   end
 
+  def can_update
+    false
+  end
+
   class Level0 < ActiveModel::Serializer
     include ReactionLevelSerializable
     define_restricted_methods_for_level(0)
@@ -69,6 +74,14 @@ class ReactionSerializer::Level10 < ReactionSerializer
     @nested_dl = is_hash_opt ? options[:nested_dl] : options
     @policy = is_hash_opt ? options[:policy] : nil
     @current_user = is_hash_opt ? options[:current_user] : nil
+  end
+
+  def can_copy
+    true
+  end
+
+  def can_update
+    @policy&.try(:update?)
   end
 
   def starting_materials

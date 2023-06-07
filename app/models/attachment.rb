@@ -20,6 +20,7 @@
 #  folder          :string
 #  attachable_type :string
 #  aasm_state      :string
+#  filesize        :bigint
 #
 # Indexes
 #
@@ -28,9 +29,10 @@
 #
 
 
-class Attachment < ActiveRecord::Base
+class Attachment < ApplicationRecord
   include AttachmentJcampAasm
   include AttachmentJcampProcess
+  include AttachmentConverter
 
   attr_accessor :file_data, :file_path, :thumb_path, :thumb_data, :duplicated, :transferred
 
@@ -38,6 +40,7 @@ class Attachment < ActiveRecord::Base
   before_create :store_tmp_file_and_thumbnail, if: :new_upload
   before_create :add_checksum, if: :new_upload
   before_create :add_content_type
+  before_save :update_filesize
 
   before_save  :move_from_store, if: :store_changed, on: :update
 
@@ -47,7 +50,9 @@ class Attachment < ActiveRecord::Base
 
   after_destroy :delete_file_and_thumbnail
 
-  belongs_to :attachable, polymorphic: true
+  belongs_to :attachable, polymorphic: true, optional: true
+  has_one :report_template
+  
 
   scope :where_research_plan, lambda { |c_id|
     where(attachable_id: c_id, attachable_type: 'ResearchPlan')
@@ -59,6 +64,10 @@ class Attachment < ActiveRecord::Base
 
   scope :where_report, lambda { |r_id|
     where(attachable_id: r_id, attachable_type: 'Report')
+  }
+
+  scope :where_template, lambda { 
+    where(attachable_type: 'Template')
   }
 
   def copy(**args)
@@ -94,7 +103,7 @@ class Attachment < ActiveRecord::Base
   end
 
   def old_store(old_store = self.storage_was)
-    Storage.old_store(self,old_store)
+    Storage.old_store(self, old_store)
   end
 
   def add_checksum
@@ -107,8 +116,10 @@ class Attachment < ActiveRecord::Base
   end
 
   def regenerate_thumbnail
+    return unless filesize <= 50 * 1024 * 1024
+
     store.regenerate_thumbnail
-    save! if self.thumb
+    update_column('thumb', thumb) if thumb_changed?
   end
 
   def for_research_plan?
@@ -121,6 +132,10 @@ class Attachment < ActiveRecord::Base
 
   def for_report?
     attachable_type == 'Report'
+  end
+
+  def for_template?
+    attachable_type == 'Template'
   end
 
   def research_plan_id
@@ -162,6 +177,11 @@ class Attachment < ActiveRecord::Base
     self
   end
 
+  def update_filesize
+    self.filesize = File.size(self.file_path) if self.file_path.present?
+    self.filesize = self.file_data.bytesize if self.file_data && self.filesize.nil?
+  end
+
   def add_content_type
     return unless self.content_type.present?
     self.content_type = begin
@@ -197,6 +217,8 @@ class Attachment < ActiveRecord::Base
 
   def store_file_and_thumbnail_for_dup
     #TODO have copy function inside store
+    return unless self.filesize <= 50 * 1024 * 1024
+
     self.duplicated = nil
     if store.respond_to?(:path)
       self.file_path = store.path
@@ -215,7 +237,7 @@ class Attachment < ActiveRecord::Base
       generate_key
     end
     stored = store.store_file
-    self.thumb = store.store_thumb if stored
+    self.thumb = store.store_thumb if stored 
     self.save if stored
     stored
   end

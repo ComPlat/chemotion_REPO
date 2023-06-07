@@ -14,6 +14,10 @@ module SamplePolicySerializable
       @policy && @policy.try(:update?)
     end
 
+    def can_copy
+      @policy && @policy.try(:copy?)
+    end
+
     def can_publish
       cp = @policy && @policy.try(:destroy?)
       # return false if !%w[Sample Reaction].include?(@element.class.name)      ####

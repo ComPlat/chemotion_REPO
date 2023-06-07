@@ -8,6 +8,7 @@ module Reporter
         @index = args[:index] || 0
         @template = args[:template]
         @mol_serials = args[:mol_serials] || []
+        @std_rxn = args[:std_rxn]
       end
 
       def content
@@ -37,7 +38,6 @@ module Reporter
           is_reaction: true,
           gp_title_html: gp_title_html,
           synthesis_title_html: synthesis_title_html,
-          products_html: is_disable_all ? nil : products_html,
           synthesis_html: synthesis_html,
         }
       end
@@ -79,11 +79,12 @@ module Reporter
 
       def synthesis_title_delta
         font_size = 13
-        delta = [{ 'attributes' => { 'font-size' => font_size },
-                   'insert' => "4.#{@index + 1} " }]
-        obj.products.each do |p|
+        # delta = [{ 'attributes' => { 'font-size' => font_size },
+        #            'insert' => "4.#{@index + 1} " }]
+        delta = []
+        obj.products.each_with_index do |p, idx|
           delta = delta +
-                  sample_molecule_name_delta(p, font_size) +
+                  sample_molecule_name_delta(p, font_size, true, idx, @std_rxn) +
                   [{ 'attributes' => { 'font-size' => font_size },
                      'insert' => ' (' }] +
                   mol_serial_delta(p[:molecule][:id], font_size) +
@@ -94,13 +95,6 @@ module Reporter
         end
         delta.pop
         delta
-      end
-
-      def products_html
-        Sablon.content(
-          :html,
-          Delta.new({ "ops" => products_delta }, @font_family).getHTML
-        )
       end
 
       def products_delta
@@ -147,7 +141,7 @@ module Reporter
       end
 
       def sum_formular_delta(m)
-        delta = m[:sum_formular].scan(/\d+|\W+|[a-zA-Z]+/).map do |e|
+        delta = m[:sum_formular]&.scan(/\d+|\W+|[a-zA-Z]+/)&.map do |e|
           if e.match(/\d+/).present?
             {"attributes"=>{"script"=>"sub"}, "insert"=>e}
           elsif e.match(/\W+/).present?
@@ -156,7 +150,7 @@ module Reporter
             {"insert"=>e}
           end
         end
-        delta = [{"insert"=>"Formula: "}] + delta + [{"insert"=>"; "}]
+        [{"insert"=>"Formula: "}] + (delta || [{"insert"=>"; "}]) + [{"insert"=>"; "}]
       end
 
       def cas_delta(cas)
@@ -234,9 +228,10 @@ module Reporter
         liters = obj.literatures
         return [] if !liters
         liters.each do |l|
-          output.push({ title: l[:title],
-                        url: l[:url]
-          })
+          bib = l[:refs] && l[:refs]['bibtex']
+          bb = DataCite::LiteraturePaser.parse_bibtex!(bib, id)
+          bb = DataCite::LiteraturePaser.get_metadata(bb, l[:doi], id) unless bb.class == BibTeX::Entry
+          output.push(DataCite::LiteraturePaser.report_hash(l, bb)) if bb.class == BibTeX::Entry
         end
         return output
       end
@@ -276,7 +271,7 @@ module Reporter
           name: s.name,
           iupac_name: s.molecule_name_hash[:label].presence || m[:iupac_name],
           short_label: s.name.presence || s.external_label.presence || s.short_label.presence,
-          formular: m[:sum_formular],
+          formular: s.decoupled ? s.sum_formula : m[:sum_formular],
           mol_w: valid_digit(m[:molecular_weight], digit),
           mass: valid_digit(mass, digit),
           vol: valid_digit(vol, digit),
@@ -388,29 +383,62 @@ module Reporter
       def synthesis_html
         Sablon.content(
           :html,
-          Delta.new({"ops" => synthesis_delta}, @font_family).getHTML()
+          Delta.new({"ops" => products_synthesis_delta}, @font_family).getHTML()
         )
+      end
+
+      def products_synthesis_delta
+        pd = is_disable_all ? [] : products_delta
+        sd = synthesis_delta
+        if pd.length == 0
+          sd
+        else
+          pd + sd
+        end
       end
 
       def synthesis_delta
         synthesis_name_delta +
           single_description_delta +
-          materials_table_delta +
+          (@std_rxn ? [{"insert"=>"\n"}] : materials_table_delta) +
           obsv_tlc_delta +
+          (@std_rxn ? [{"insert"=>"\n"}] : []) +
           product_analyses_delta +
           dangerous_delta +
+          doi_delta +
           bib_delta
       end
 
+      def doi_delta
+        dd = []
+        rdoi = obj.dig(:tag, :taggable_data, :publication, :doi)
+        pdois = (obj.dig(:products) || []).map {|p| p.dig(:tag, :taggable_data, :publication, :doi)}.compact
+        if rdoi.present?
+          dd = [{
+           "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://doi.org/#{rdoi}\n"
+          }]
+        end
+        if pdois.present?
+          dd += [{
+           "insert" => "Additional information on the analysis of the target compound is available via Chemotion repository:  \n"
+          }]
+          pdois.each do |d|
+            dd += [{ "insert" => "https://doi.org/#{d}\n" }]
+          end
+        end
+        dd
+      end
+
       def synthesis_name_delta
+        return [] if @std_rxn && !["gp", "parts"].include?(obj.role)
         [{"insert"=>"#{title}: "}]
       end
 
       def single_description_delta
-        return [] if obj.role != "single"
+        return [] if ["gp", "parts"].include?(obj.role)
         delta_desc = obj.description.deep_stringify_keys["ops"]
         clean_desc = remove_redundant_space_break(delta_desc)
-        return [{"insert"=>"\n"}] + clean_desc + [{"insert"=>"\n"}]
+        return (@std_rxn ? [] : [{"insert"=>"\n"}]) + clean_desc + (@std_rxn ? [] : [{"insert"=>"\n"}])
       end
 
       def observation_delta
@@ -421,16 +449,30 @@ module Reporter
 
       def obsv_tlc_delta
         tlc_delta_arr = tlc_delta
-        return [] if obsv_blank && tlc_delta_arr.blank?
-        observation_delta + [{"insert"=>"."}] +
-          [{"insert"=>" "}] + tlc_delta_arr + [{"insert"=>"\n"}]
+        is_obsv_blank = obsv_blank
+        return [] if is_obsv_blank && tlc_delta_arr.blank?
+        target = is_obsv_blank ? [] : (observation_delta + [{"insert"=>". "}])
+        target + tlc_delta_arr + [{"insert"=>"\n"}]
+      end
+
+      def subscripts_to_quill(input)
+        input.split(/([₀-₉])/).map do |t|
+          if not t.match(/[₀-₉]/)
+            { "insert" => t }
+          else
+            num = '₀₁₂₃₄₅₆₇₈₉'.index(t)
+            {"attributes"=>{"script"=>"sub"}, "insert"=> num }
+          end
+        end
       end
 
       def tlc_delta
         return [] if obj.tlc_solvents.blank?
-        [{"attributes"=>{"italic"=> "true"}, "insert"=>"R"},
+        [
+          {"attributes"=>{"italic"=> "true"}, "insert"=>"R"},
           {"attributes"=>{"italic"=> "true", "script"=>"sub"}, "insert"=>"f"},
-          {"insert"=>" = #{obj.rf_value} (#{obj.tlc_solvents})."}]
+          {"insert"=>" = #{obj.rf_value} ("}
+        ] + subscripts_to_quill(obj.tlc_solvents) + [{"insert"=>")."}]
       end
 
       def obsv_blank
@@ -441,13 +483,18 @@ module Reporter
       def product_analyses_delta
         delta = []
         obj.products.each do |product|
+          current = []
           valid_analyses = keep_report(product[:analyses])
           sorted_analyses = sort_by_index(valid_analyses)
-          delta = merge_items_symbols(delta, sorted_analyses, '; ')
+          current = merge_items_symbols(current, sorted_analyses, '; ')
+          if !current.length.zero?
+            current = remove_redundant_space_break(current)[0..-2] +
+              [{ 'insert' => '.' }, { 'insert' => "\n\n" }]
+            delta += current
+          end
         end
         return [] if delta.length.zero?
-        remove_redundant_space_break(delta)[0..-2] +
-          [{ 'insert' => '.' }, { 'insert' => "\n" }]
+        delta[0..-2] + [{ 'insert' => "\n" }]
       end
 
       def materials_table_delta
@@ -540,17 +587,33 @@ module Reporter
         delta
       end
 
-      def sample_molecule_name_delta(sample, font_size = 12)
+      def capitalize_first_letter(snm)
+        if snm && snm.length > 0
+          char_idxs = []
+          snm.split('').each_with_index do |m, idx|
+            char_idxs += [idx] if m.match(/^[a-zA-Z]$/)
+          end
+          char_idx = char_idxs[0]
+          if char_idx >= 0
+            return snm.slice(0, char_idx) + snm.slice(char_idx, 1).capitalize + snm.slice(char_idx + 1..-1)
+          end
+        end
+        snm
+      end
+
+      def sample_molecule_name_delta(sample, font_size = 12, bold = false, idx = 1, std_rxn = false)
         showed_nm = sample[:showed_name] || sample[:iupac_name] || nil
         if showed_nm.present?
-          [{ 'attributes' => { 'font-size' => font_size },
-             'insert' => showed_nm.to_s }]
+          snm = showed_nm.to_s
+          snm = capitalize_first_letter(snm) if std_rxn && idx == 0 && snm
+          [{ 'attributes' => { 'bold' => bold, 'font-size' => font_size },
+             'insert' => snm }]
         else
-          [{ 'attributes' => { 'font-size' => font_size },
+          [{ 'attributes' => { 'bold' => bold, 'font-size' => font_size },
              'insert' => '"' },
            { 'attributes' => { 'bold' => 'true', 'font-size' => font_size },
              'insert' => 'NAME' },
-           { 'attributes' => { 'font-size' => font_size },
+           { 'attributes' => { 'bold' => bold, 'font-size' => font_size },
              'insert' => '"' }]
         end
       end

@@ -30,6 +30,9 @@ module Entities
     expose :wellplate_detail_level do |obj|
         obj['wellplate_detail_level']
     end
+    expose :element_detail_level do |obj|
+        obj['element_detail_level']
+    end
     expose :shared_to do |obj|
         obj['shared_to']
     end
@@ -46,5 +49,9 @@ module Entities
       obj['shared_by'] && obj['shared_by']['initials'] == 'CI'
     end
     expose :children, as: 'children', using: Entities::CollectionSyncEntity
+
+    expose :is_sync_to_me do |obj|
+        true
+    end
   end
 end

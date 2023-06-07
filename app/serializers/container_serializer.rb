@@ -34,7 +34,7 @@ class ContainerSerializer < ActiveModel::Serializer
         att.content_type = att.content_type || MimeMagic.by_path(att.filename)&.type
         att.for_container? && att.attachable_id == container.id
       end
-      {
+      j_s = {
         id: container.id,
         name: container.name,
         attachments: current_attachments,
@@ -44,6 +44,9 @@ class ContainerSerializer < ActiveModel::Serializer
         extended_metadata: get_extended_metadata(container),
         preview_img: preview_img(container)
       }
+      gds = Dataset.find_by(element_type: 'Container', element_id: container.id)
+      j_s['dataset'] = Entities::DatasetEntity.represent(gds) if gds.present?
+      j_s
     end
   end
 
@@ -55,12 +58,15 @@ class ContainerSerializer < ActiveModel::Serializer
     unless ext_mdata['content'].blank?
       ext_mdata['content'] = JSON.parse(container.extended_metadata['content'])
     end
+    unless ext_mdata['hyperlinks'].blank?
+      ext_mdata['hyperlinks'] = JSON.parse(container.extended_metadata['hyperlinks'])
+    end
     ext_mdata
   end
 
   def preview_img(container = object)
     dataset_ids = (container && container.children.map { |ds| ds.container_type == 'dataset' && ds.id }) || {}
-    return 'not available' if dataset_ids.empty?
+    return { preview: 'not available', id: nil, filename: nil } if dataset_ids.empty?
     attachments = Attachment.where_container(dataset_ids).to_a
     attachments = attachments.select do |a|
       a.thumb == true && a.attachable_type == 'Container' && dataset_ids.include?(a.attachable_id)
@@ -69,11 +75,13 @@ class ContainerSerializer < ActiveModel::Serializer
       a_img&.content_type&.match(Regexp.union(%w[jpg jpeg png tiff]))
     end
 
-    attachment = image_atts.find(&:non_jcamp?).presence || image_atts[0]
-    attachment ||= attachments.find(&:non_jcamp?).presence || attachments[0]
-
+    attachment = image_atts[0] || attachments[0]
     preview = attachment.read_thumbnail if attachment
-    preview && Base64.encode64(preview) || 'not available'
-
+    result = if preview
+      { preview: Base64.encode64(preview), id: attachment.id, filename: attachment.filename }
+    else
+      { preview: 'not available', id: nil, filename: nil }
+    end
+    result
   end
 end

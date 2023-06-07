@@ -41,8 +41,7 @@
 #  index_reactions_on_role            (role)
 #
 
-
-class Reaction < ActiveRecord::Base
+class Reaction < ApplicationRecord
   acts_as_paranoid
   include ElementUIStateScopes
   include PgSearch
@@ -50,12 +49,15 @@ class Reaction < ActiveRecord::Base
   include ElementCodes
   include Taggable
   include ReactionRinchi
+  include Segmentable
   include Publishing
 
   serialize :description, Hash
   serialize :observation, Hash
 
   multisearchable against: %i[name short_label rinchi_string]
+
+  attr_accessor :can_copy
 
   # search scopes for exact matching
   pg_search_scope :search_by_reaction_name, against: :name
@@ -81,7 +83,7 @@ class Reaction < ActiveRecord::Base
   pg_search_scope :search_by_substring, against: :name, associated_against: {
     samples: :name,
     sample_molecules: :iupac_name
-  }, using: { trigram: { threshold:  0.0001 } }
+  }, using: { trigram: { threshold: 0.0001 } }
 
   # scopes for suggestions
   scope :by_name, ->(query) { where('name ILIKE ?', "%#{sanitize_sql_like(query)}%") }
@@ -91,8 +93,8 @@ class Reaction < ActiveRecord::Base
   scope :by_solvent_ids, ->(ids) { joins(:solvents).where('samples.id IN (?)', ids) }
   scope :by_reactant_ids, ->(ids) { joins(:reactants).where('samples.id IN (?)', ids) }
   scope :by_product_ids,  ->(ids) { joins(:products).where('samples.id IN (?)', ids) }
-  scope :by_sample_ids,  ->(ids) { joins(:reactions_samples).where('samples.id IN (?)', ids) }
-  scope :by_status,  ->(query) { where('reactions.status ILIKE ?', "%#{sanitize_sql_like(query)}%") }
+  scope :by_sample_ids, ->(ids) { joins(:reactions_samples).where('samples.id IN (?)', ids) }
+  scope :by_status, ->(query) { where('reactions.status ILIKE ?', "%#{sanitize_sql_like(query)}%") }
   scope :search_by_reaction_status, ->(query) { where(status: query) }
   scope :search_by_reaction_rinchi_string, ->(query) { where(rinchi_string: query) }
 
@@ -134,6 +136,7 @@ class Reaction < ActiveRecord::Base
 
   has_many :sync_collections_users, through: :collections
 
+  has_many :private_notes, as: :noteable, dependent: :destroy
   has_one :doi, as: :doiable
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
@@ -159,13 +162,13 @@ class Reaction < ActiveRecord::Base
   end
 
   def auto_format_temperature!
-    valueUnitCheck = (temperature["valueUnit"] =~ /^(°C|°F|K)$/).present?
-    temperature["valueUnit"] = "°C" if (!valueUnitCheck)
+    valueUnitCheck = (temperature['valueUnit'] =~ /^(°C|°F|K)$/).present?
+    temperature['valueUnit'] = '°C' if (!valueUnitCheck)
 
-    temperature["data"].each do |t|
-      valid_time = (t["time"] =~ /^((?:\d\d):[0-5]\d:[0-5]\d$)/i).present?
-      t["time"] = "00:00:00" if (!valid_time)
-      t["value"] = t["value"].gsub(/[^0-9.-]/, '')
+    temperature['data'].each do |t|
+      valid_time = (t['time'] =~ /^((?:\d\d):[0-5]\d:[0-5]\d$)/i).present?
+      t['time'] = '00:00:00' if (!valid_time)
+      t['value'] = t['value'].gsub(/[^0-9.-]/, '')
     end
   end
 
@@ -173,7 +176,7 @@ class Reaction < ActiveRecord::Base
     userText = temperature["userText"]
     return userText if (userText != "")
 
-    return "" if (temperature["data"].length == 0)
+    return '' if (temperature["data"].length == 0)
 
     arrayData = temperature["data"]
     maxTemp = (arrayData.max_by { |x| x["value"] })["value"]
@@ -197,25 +200,32 @@ class Reaction < ActiveRecord::Base
   end
 
   def update_svg_file!
-    svg = self.reaction_svg_file
+    svg = reaction_svg_file
     if svg.present? && svg.end_with?('</svg>')
-        svg_file_name = "#{SecureRandom.hex(64)}.svg"
-        svg_path = "#{Rails.root}/public/images/reactions/#{svg_file_name}"
-
-        svg_file = File.new(svg_path, 'w+')
-        svg_file.write(svg)
-        svg_file.close
-
-        self.reaction_svg_file = svg_file_name
+      svg_file_name = "#{SecureRandom.hex(64)}.svg"
+      svg_path = File.join(Rails.public_path, 'images', 'reactions', svg_file_name)
+      svg_file = File.new(svg_path, 'w+')
+      svg_file.write(svg)
+      svg_file.close
+      self.reaction_svg_file = svg_file_name
     else
       paths = {}
-      %i(starting_materials reactants products).each do |prop|
-        d = self.send(prop).includes(:molecule)
-        paths[prop]= d.pluck(:id, :sample_svg_file, :'molecules.molecule_svg_file').map do |item|
-          prop == :products ? [svg_path(item[1], item[2]), yield_amount(item[0])] : svg_path(item[1], item[2])
+      {
+        starting_materials: :reactions_starting_material_samples,
+        reactants: :reactions_reactant_samples,
+        products: :reactions_product_samples
+      }.each do |prop, resource|
+        collection = public_send(resource).includes(sample: :molecule)
+        paths[prop] = collection.map do |reactions_sample|
+          sample = reactions_sample.sample
+          params = [
+            svg_path(sample&.sample_svg_file, sample&.molecule&.molecule_svg_file)
+          ]
+          params[0] = sample.svg_text_path if reactions_sample.show_label
+          params.append(yield_amount(sample.id)) if prop == :products
+          params
         end
       end
-
       begin
         composer = SVG::ReactionComposer.new(paths, temperature: temperature_display_with_unit,
                                                     duration: duration,
@@ -223,10 +233,15 @@ class Reaction < ActiveRecord::Base
                                                     conditions: conditions,
                                                     show_yield: true)
         self.reaction_svg_file = composer.compose_reaction_svg_and_save
-      rescue Exception => e
-        Rails.logger.info("**** SVG::ReactionComposer failed ***")
+      rescue StandardError => _e
+        Rails.logger.info('**** SVG::ReactionComposer failed ***')
       end
     end
+    if reaction_svg_file_changed? && reaction_svg_file_was.present?
+      file_was = File.join(Rails.public_path, 'images', 'reactions', reaction_svg_file_was)
+      File.delete(file_was) if Reaction.where(reaction_svg_file: reaction_svg_file_was).length < 2 && File.exist?(file_was)
+    end
+    reaction_svg_file
   end
 
   def svg_path(sample_svg, molecule_svg)
@@ -239,7 +254,7 @@ class Reaction < ActiveRecord::Base
   end
 
   def solvents_in_svg
-    names = solvents.map{ |s| s.preferred_tag }
+    names = solvents.map{ |s| s.preferred_label }
     return names && names.length > 0 ? names : [solvent]
   end
 

@@ -1,4 +1,4 @@
-class MapProfileChmoTitle < ActiveRecord::Migration
+class MapProfileChmoTitle < ActiveRecord::Migration[4.2]
   def change
     Person.find_each do |u|
       profile = u.profile

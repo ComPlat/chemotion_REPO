@@ -1,39 +1,218 @@
+$searchcolor: #dddddd;
+$statisticcolor: #3a9fd3;
+$topbgcolor: #f5f5f5;
+$bs-primarycolor: #337ab7;
+$bs-defaultcolor: #777777;
+$bs-infocolor: #5bc0de;
+$bs-warningcolor: #f0ad4e;
+$bs-successcolor: #5cb85c;
+
+@mixin viewer-modal {
+  height: 95%;
+  top: 52% !important;
+  margin: unset !important;
+}
+
+.file-viewer-modal {
+  @include viewer-modal;
+  width: 98vw !important;
+  .modal-content {
+    height: 95%;
+  }
+}
+
+.structure-viewer-modal {
+  @include viewer-modal;
+  width: 60vw !important;
+  .modal-content {
+    height: calc(100% - 60px);
+  }
+}
+
+.repo-xvial-info {
+  .env {
+    padding: 0px 2px 0px 2px;
+    background-color: white;
+    color: $bs-primarycolor;
+  }
+  .youtube {
+    color: red;
+    font-size: 150%;
+  }
+}
+
+.author-modal-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 40% !important;
+  width: 80vw !important;
+}
+
+.aff-line {
+  .form-group {
+    margin-bottom: unset !important;
+  }
+}
+
+.repo-pub-sample-header {
+  display: flex;
+  align-items: center;
+  .repo-pub-title {
+    font-size: 150%;
+  }
+  .repo-public-user-comment {
+    margin-left: auto;
+  }
+}
+
+.repo-pub-list-icons {
+  display: inline-flex;
+  align-items: center;
+}
+
+@mixin xvial-elem-base {
+  margin: 0px 4px 0px 0px;
+}
+
+.xvial-pub-elem {
+  display: inline-block;
+  span {
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    color: $bs-primarycolor;
+    padding: 2px 0px 2px 6px;
+    border: 2px solid $bs-primarycolor;
+    background-color: white;
+    div {
+      font-size: 50%;
+      display: contents;
+    }
+    button {
+      @include xvial-elem-base;
+      padding: 0px;
+    }
+    a {
+      @include xvial-elem-base;
+      cursor: pointer;
+    }
+  }
+  span i {
+    @include xvial-elem-base;
+  }
+}
+
+@mixin xvial-span-base {
+  justify-content: center;
+  font-size: 80%;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border-radius: 3px;
+  background-color: white;
+  color: orange; // $bs-defaultcolor;
+  border: 2px solid orange; // $bs-defaultcolor;
+}
+
+.xvial-span {
+  @include xvial-span-base;
+  display: none;
+}
+
+.xvial {
+  display: flex;
+  color: $bs-primarycolor;
+}
+
+.xvial-com {
+  display: inline-flex;
+  border: 2px solid $bs-primarycolor;
+}
+
+.repo-registed-compound-desc {
+  color: $bs-primarycolor;
+  font-style: italic;
+  i { color: black; cursor: pointer; }
+}
+
 .repo-home {
    display: block;
    max-width: 1200px;
    margin: auto;
-  // height: calc(100vh - 80px);
-  // overflow-y: scroll;
 }
 
 .card-well {
   background-color: #f5f5f5;
-  border: 1px solid #e3e3e3;
   border-radius: 6px;
-   height: 50vh;//auto; //calc(80vh - 190px);
-  // overflow-x: auto;
-  padding: 20px;
+  height: 36vh;//auto; //calc(80vh - 190px);
+  padding: 10px 0px;
 
+}
+
+.card-nfdi4chem {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  > h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+  > h4 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+}
+
+.card-latest {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
 }
 
 .card-well-competition {
   @extend .card-well;
-  padding: 30px 15px;
-
+  display: flex;
+  margin: 40px 20px 20px 20px;
+  border-radius: 0px;
   .carl-spt{
-    background-color: white;
+    flex: 1;
+    display: flex;
+    .carousel-inner .active.left { top: 0%; }
+    .carousel-inner .next        { top: 0%; }
+    .carousel-inner .prev        { top: 0%; }
   }
 
   .carl-spt-item {
-    height: 360px;
     text-align: center;
+    height: 100%;
+    width: 100%;
+    a {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+  }
+
+  .carl-spt-item .img {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 480px;
+    height: 100%;
   }
 
   .carl-spt-item .caption {
-    left: 15%;
-    right: 15%;
-    padding-top: 0px;
-    bottom: 0px;
+    position: sticky;
+    font-size: 1vmax;
+    color: black;
+    text-shadow: unset;
+    padding-bottom: unset;
+    left: 0px;
   }
 
   .carl-spt-item-s {
@@ -62,6 +241,7 @@
 
   .carousel-control.left, .carousel-control.right {
     background-image: none !important;
+    color: #e7e7e7;
   }
 
   .italic-desc {
@@ -75,18 +255,27 @@
 }
 
 .icon-chemotion {
-  margin: 30px;
-  width: 90%;
+  width: 20%;
 }
 
-.repository-for {
-  margin: 30px;
-  line-height: 45px;
+.icon-nfdi4chem {
+  width: 80% !important;
 }
 
 .visibility-impact {
   left: 30px;
   width: 300px !important;
+}
+
+.icon-molecule-archive {
+  margin: 10px;
+  background-color: rgb(12, 61, 118);
+}
+
+.icon-molecule-archive2 {
+  width: 3vw;
+  height: auto;
+  background-color: rgb(12, 61, 118);
 }
 
 .chem-finder {
@@ -108,12 +297,9 @@
 
 .card-partners {
   background-color: #f5f5f5;
-  // height: calc(50vh - 134px);
   .partner-heading {
     background-color: #f5f5f5;
-    // border: 1px solid #e3e3e3;
      border-radius: 6px;
-    // height: 80px;
     margin: 20px 5px 0;
     padding: 5px;
     text-align: center;
@@ -128,11 +314,8 @@
 
   .partners-info {
     height: 250px;
-    // height: auto;
-    // width: 250px;
     position: relative;
     display: table-cell;
-    // display: inline-flex;
     margin: 5px;
     border: 0px;
     background-color: #f5f5f5;
@@ -144,8 +327,6 @@
       max-width: 90%;
       opacity: 1.0;
       z-index: 1;
-      // position: absolute;
-      // top: 0%;
     }
 
     &:hover img {
@@ -172,11 +353,8 @@
   }
 }
 
-
 .repo-about {
   display: block;
-  // height: calc(100vh - 80px);
-  // overflow-y: scroll;
 }
 
 .card-icons {
@@ -201,10 +379,8 @@
   background-color: #f5f5f5;
   border: 1px solid #e3e3e3;
   border-radius: 6px;
-  //overflow: auto;
   padding: 30px;
   text-align: center;
-  // height: 80vh;
 }
 
 .panel-analyses-public {
@@ -214,13 +390,13 @@
 .carl-sample svg {
   max-width: 100%;
   max-height: 500px;
-  height: 300px;
+  height: 220px;
   width: 100%;
 }
 
 .reaction-scheme-word {
   font-size: smaller;
-  color: #337ab7;
+  color: $bs-primarycolor;
 }
 
 .move-embargo-dialog {
@@ -228,4 +404,560 @@
   padding-left: 0px;
   top: 45% !important;
   width: 40vw !important;
+}
+
+.table-scroll {
+  overflow: auto;
+  max-height: calc(25vh);
+  table {
+    width: 100%;
+    thead tr th {
+      position: sticky;
+      top: 0;
+      background: #eee;
+    }
+    tbody {
+      white-space: pre-line;
+    }
+  }
+}
+
+.home-adv-search {
+  display: flex;
+  align-items: center;
+  div {
+    .o-author {
+      min-width: 120px;
+    }
+    .o-name {
+      min-width: 200px;
+    }
+    .Select-control {
+      border-radius: unset;
+    }
+  }
+  .btns-grp {
+    background-color: $searchcolor;
+    border: thin solid $searchcolor;
+    button {
+      background-color: $searchcolor;
+      border-color: $searchcolor;
+      border-radius: unset;
+    }
+  }
+}
+
+.home-search {
+  margin-left: unset !important;
+  background-color: $searchcolor;
+  button {
+    background-color: $searchcolor;
+  }
+}
+
+.clip-copy {
+  display: inline;
+  word-break: break-all;
+}
+
+.repo-top-row {
+  display: flex;
+  align-items: stretch;
+  background-color: $topbgcolor;
+  border-radius: 6px;
+}
+
+.repo-welcome {
+  max-width: 2000px;
+  margin: auto !important;
+  > div:nth-child(2) {
+    background-color: $topbgcolor;
+    > h2 { text-align: center; }
+  }
+}
+
+.repo-molecule-archive {
+  @extend .card-well;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+  border-radius: 0px;
+  > div {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+  }
+  > div:nth-child(2) {
+    background-color: white;
+    padding: 10px;
+    border: 1px solid $statisticcolor;
+    border-bottom-width: 6px;
+  }
+  > div:not(:last-child) {
+    flex: 1;
+    justify-content: center;
+    div {
+      width: 100%;
+      .rl {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+      .rr {
+        button {
+          padding: unset;
+        }
+        .cnt {
+          font-size: 2.5rem;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+  > div:last-child {
+    flex: 2;
+    div:first-child {
+      display: flex;
+      justify-content: center;
+    }
+    div:last-child {
+      font-size: 1.5rem;
+      display: block;
+    }
+  }
+}
+
+.repo-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  h1 {
+    text-align: center;
+  }
+  .row-bottom {
+    display: flex;
+    align-items: center;
+    div:first-child {
+      padding-right: unset;
+    }
+    div:last-child {
+      padding-left: unset;
+    }
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    .row {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      .heading {
+        font-size: 1.8vmax;
+      }
+      .list {
+        font-size: 1vmax;
+      }
+    }
+    .row .even {
+      flex: 1;
+    }
+    .row .even .row {
+      border: 1px solid #e7e7e7;
+      background-color: #e7e7e7;
+      h2 {
+        font-weight: bolder;
+        text-align: center;
+      }
+      .info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        .cnt {
+          font-size: 180%;
+        }
+      }
+    }
+  }
+}
+
+.repo-statistic {
+  @extend .card-well;
+  padding-bottom: 10px;
+  > div {
+    flex: 1;
+    h3 {
+      text-align: center;
+    }
+  }
+  .elem-info {
+    border-bottom-width: 6px;
+    padding: unset;
+    border-color: $statisticcolor;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    border-radius: 0px;
+    .dtl {
+      background-color: unset;
+      color: unset;
+      border: none;
+      text-align: center;
+      padding: 0px;
+    }
+    .dtl .rl {
+      line-height: normal;
+      font-weight: bolder;
+      display: inline;
+      i {
+        font-size: 5vmin;
+      }
+      .tit {
+        font-size: 1.8vmin;
+      }
+      .i-ext {
+        font-size: 4vmin;
+        margin-bottom: 6px;
+      }
+    }
+    .dtl .rr {
+      text-align: left;
+      font-size: 1.5vmin;
+      .tit {
+        font-size: 14px;
+        font-weight: 400;
+        button {
+          padding: unset;
+        }
+      }
+      .cnt {
+        font-size: 3vmin;
+        font-weight: bolder;
+      }
+      .italic-desc {
+        font-style: italic;
+        font-size: 90%;
+      }
+    }
+  }
+}
+
+.repo-analysis-header {
+  display: inline-block;
+  width: 100%;
+  .preview {
+    vertical-align: top;
+    width: 125px;
+    float: right;
+    position: relative;
+    img {
+      height: 100%;
+      width: 100%;
+    }
+    .preview-table {
+      border: 1px solid transparent;
+    }
+    .preview-table:hover {
+      border: 1px solid $statisticcolor;
+    }
+    .spectra {
+      position: absolute;
+      top: 80%;
+      left: 76%;
+    }
+  }
+  .abstract {
+    display: inline-block;
+    width: calc(100% - 125px);
+    .lower-text {
+      .sub-title {
+        font-size: 14px;
+      }
+    }
+    .desc {
+      margin-bottom: 4px;
+      .clip-copy {
+        word-break: normal;
+      }
+    }
+  }
+}
+
+.repo-analysis-listgroup {
+  border: none !important;
+  background-color: transparent !important;
+  padding-left: unset !important;
+}
+
+.pub-info-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 45% !important;
+  height: 40vh !important;
+  width: 40vw !important;
+}
+
+.max_tooltip {
+  .tooltip-inner {
+    max-width: 30vw;
+  }
+}
+
+.tooltip_list {
+  padding-inline-start: 20px;
+  margin-bottom: unset;
+}
+
+.tooltip_list_paragraph {
+  ul {
+    padding-inline-start: 20px;
+  }
+  p {
+    margin-bottom: unset;
+  }
+}
+
+@mixin btn-xvial-base {
+  border: none !important;
+  padding: 0px 0px 0px 5px !important;
+  font-size: 80% !important;
+}
+
+.btn-xvial-none {
+  i { color: unset; }
+}
+
+.btn-xvial-data {
+  display: flex;
+  i { color: $bs-primarycolor; }
+  span {
+    border: 1px solid $bs-primarycolor;
+    background-color: white;
+    color: $bs-primarycolor;
+    border-radius: 3px;
+    .base { @include btn-xvial-base; }
+  }
+}
+
+.label-xvial-data {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.label-xvial-data span {
+  border: 1px solid $bs-primarycolor;
+  background-color: white;
+  color: $bs-primarycolor;
+}
+
+.wrap-ring {
+  font-size: 1.6em;
+}
+
+.animation-ring {
+  position: relative;
+  z-index: 0;
+  padding: 0px 8px 0px 8px !important;
+  font-size: 1.6em !important;
+  border: none !important;
+  background-color: unset !important;
+  margin: 3px;
+}
+
+.animation-ring::before {
+  content: '';
+  border-radius: 100%;
+  border: 0px solid $bs-primarycolor;
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ring 2s linear 30 both;
+}
+
+@keyframes ring {
+  from {
+    border-width: unset;
+    width: 0px;
+    height: 0px;
+    opacity: 1;
+  }
+  to {
+    border-width: 3px;
+    width: 150%;
+    height: 150%;
+    opacity: 0;
+  }
+}
+
+.bs_tooltip {
+  .tooltip-inner {
+    max-width: 200px;
+  }
+}
+
+@mixin home-list-layout {
+  background-color: white;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  margin-top: 15px;
+  padding: 5px;
+}
+
+.home_reaction {
+  @include home-list-layout;
+  border-radius: 8px;
+}
+
+.home_archive {
+  @include home-list-layout;
+  display: inline-flex;
+  width: 100%;
+  .svg_border {
+    border-right: 1px lightgrey solid;
+  }
+  .content {
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    .info {
+      max-height: 100%;
+      height: 100%;
+      .border {
+        display: flex;
+        padding: 0px 15px 5px 15px;
+        .dl {
+          font-weight: bold;
+          width: 25%;
+        }
+        .dr {
+          width: 75%;
+        }
+      }
+    }
+  }
+}
+
+.home_wrapper {
+  display: flex;
+  div:last-child {
+    border: none;
+  }
+}
+
+.home_wrapper_item {
+  flex: 1 20%;
+  text-align: center;
+  border-right: 1px lightgrey dashed;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  div:first-child {
+    color: rgb(141, 140, 140);
+    max-height: 20px;
+  }
+  .item_xvial {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.home_wrapper_item > div {
+  flex: 1 100%;
+  text-align: center;
+  align-items: center;
+}
+
+.list_focus_off {
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.list_focus_on {
+  cursor: pointer;
+  border: 1px #337ab7 solid;
+  background-color: #f0f8ff !important;
+}
+
+.layout_svg_reaction > svg {
+  height: 120px;
+  max-height: unset;
+  width: 90%;
+  margin-left: 10px;
+}
+
+.layout_svg_molecule > svg {
+  height: 90px;
+  width: 90px;
+}
+
+.archive_svg_molecule > svg {
+  height: 140px;
+  width: 140px;
+}
+
+.panel-cite {
+  border-color: white !important;
+  .panel-heading {
+    background-color: unset !important;
+    padding: unset !important;
+    border-color: white !important;
+  }
+}
+
+.date_info {
+  display: inline-flex;
+  flex-direction: column;
+  margin-right: 8px;
+  .updated {
+    font-size: 0.6em;
+    text-align: right;
+  }
+}
+
+.repo-quill-viewer {
+  .ql-editor {
+    cursor: inherit;
+    padding: unset;
+  }
+}
+
+.repo-ma-panel {
+  span {
+    display: flex;
+    justify-content: center;
+    margin-right: 4px;
+  }
+  a {
+    @include xvial-elem-base;
+    cursor: pointer;
+    background-color: white;
+    padding: 0px 6px;
+  }
+  span i {
+    @include xvial-elem-base;
+  }
+}
+
+.repo-public-sample-info {
+  h5 {
+    margin-top: 4px;
+    margin-bottom: unset;
+    display: flex;
+    align-items: center;
+  }
+  h5 .btn-link {
+    padding: unset;
+  }
+}
+
+.repo-public-sample-rel {
+  button {
+    padding: 0px 0px;
+  }
+  button i {
+    font-size: 1.5em;
+  }
 }

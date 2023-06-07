@@ -15,6 +15,10 @@
   font-size: small;
 }
 
+.expand-p .ql-editor > p {
+  margin-bottom: unset;
+}
+
 iframe#home-tos {
   width: 100%;
   min-height: 80vh;

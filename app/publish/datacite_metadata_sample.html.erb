@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
-  <identifier identifierType="DOI"><%= "#{dois[:sample][:DOI]}" %></identifier>
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.4/metadata.xsd">
+  <identifier identifierType="DOI">https://dx.doi.org/<%= "#{dois[:sample][:DOI]}" %></identifier>
   <creators>
     <% pub_tag['creators'].each do |creator| %>
     <creator>
@@ -8,7 +8,7 @@
       <givenName><%= creator['givenName'] %></givenName>
       <familyName><%= creator['familyName'] %></familyName>
       <% if creator['ORCID'].present? %>
-      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
+      <nameIdentifier schemeURI="https://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
       <% end %>
       <% if (aff_ids = creator['affiliationIds']).present? then aff_ids.each do |aff_id| %>
       <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
@@ -18,11 +18,11 @@
     <% end %>
   </creators>
   <titles>
-    <title xml:lang="en-US"><%= element.molecule_name.name %></title>
+    <title xml:lang="en-US"><%= element.molecule_name&.name %></title>
     <title titleType="AlternativeTitle"><%= element.molecule.inchistring %></title>
   </titles>
-  <publisher>chemotion.net</publisher>
-  <publicationYear><%= element.created_at.strftime("%Y") %></publicationYear>
+  <publisher>chemotion-repository</publisher>
+  <publicationYear><%= pub.published_at&.strftime("%Y") || Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
     <contributor contributorType="Researcher">
@@ -30,7 +30,7 @@
       <givenName><%= pub_tag['contributors']['givenName'] %></givenName>
       <familyName><%= pub_tag['contributors']['familyName'] %></familyName>
       <% if pub_tag['contributors']['ORCID'].present? %>
-      <nameIdentifier schemeURI="http://orcid.org/" nameIdentifierScheme="ORCID"><%=pub_tag['contributors']['ORCID']%></nameIdentifier>
+      <nameIdentifier schemeURI="https://orcid.org/" nameIdentifierScheme="ORCID"><%=pub_tag['contributors']['ORCID']%></nameIdentifier>
       <% end %>
       <% if pub_tag['contributors'] && pub_tag['contributors']['affiliations'].present? then pub_tag['contributors']['affiliations'].each do |aff| %>
       <affiliation><%= aff %></affiliation>
@@ -40,32 +40,66 @@
   </contributors>
   <% end %>
   <dates>
-  <date dateType="Created"><%= element.created_at %></date>
+    <date dateType="Submitted"><%= pub.created_at %></date>
+    <date dateType="Accepted"><%= pub.accepted_at %></date>
   </dates>
-
   <subjects>
     <subject>Chemistry</subject>
   </subjects>
   <language>en</language>
-
-  <resourceType resourceTypeGeneral="Dataset">Molecule</resourceType>
+  <resourceType resourceTypeGeneral="Dataset">Sample</resourceType>
   <version>1</version>
   <descriptions>
     <description xml:lang="en-US" descriptionType="Abstract">
-      This dataset contains experimental data from a sample (<%= element.molecule.iupac_name.present? ? "#{element.molecule.iupac_name}, " : '' %><%= element.molecule.inchistring %>).<br />
-      The datasets from the following experiments are available:<br />
-      <% element.analyses.each do |analysis| %>
-      <%= (analysis.extended_metadata['kind'] || '').split('|').pop %><br />
+      <% if cust_sample[:type] == 'coupled_sample_structure' %>
+      This is a physical chemical entity[CHEBI_24431] associated with a molecule[CHEBI_25367].
+      The molecule[CHEBI_25367] can be described by the following structural desciptors[cheminf_000085]:
+      InChI descriptor[cheminf_000113]: <%= "#{element.molecule_inchistring}" %>, and canonical SMILES descriptor[cheminf_000007]: <%= "#{element.molecule_cano_smiles}" %>, and by the IUPAC name[cheminf_000107]: <%= "#{element.molecule_iupac_name}" %>.
+      <% elsif cust_sample[:type] == 'decoupled_sample_structure' %>
+      This is a physical chemical entity[CHEBI_24431] associated with a molecule[CHEBI_25367], while the molecule[CHEBI_25367] is only part of the composition and does not describe the chemical entity[CHEBI_24431] sufficiently.
+      The molecule[CHEBI_25367] can be described by the following structural desciptors[cheminf_000085]:
+      InChI descriptor[cheminf_000113]: <%= "#{element.molecule_inchistring}" %>, and canonical SMILES descriptor[cheminf_000007]: <%= "#{element.molecule_cano_smiles}" %>, and by the IUPAC name[cheminf_000107]: <%= "#{element.molecule_iupac_name}" %>.
+      <% elsif cust_sample[:type] == 'decoupled_sample' %>
+      This is a physical chemical entity[CHEBI_24431] which was not directly associated with a molecule[CHEBI_25367].
+      The physical chemical entity[CHEBI_24431] can be described by the molecular mass descriptor [cheminf_000088]: <%= "#{element.molecular_mass}" %>.
       <% end %>
+      The physical chemical entity[CHEBI_24431] has a component solvent[CHEBI_46787] which is described by the canonical SMILES descriptor[cheminf_000007]:
+      <% element.solvent&.each do |solvent| %>
+        <%= solvent['smiles'] %>
+      <% end %>
+      The physical chemical entity[CHEBI_24431] has the following Sample ID as registered in the research data repository chemotion (www.chemotion-repository.net, https://doi.org/10.25504/FAIRsharing.iagXcR): CRS-<%= "#{pub.id}" %>
+
+      The physical chemical entity[CHEBI_24431] can be described by the physical descriptors [CHEMINF_000025]:
+      Melting point descriptor[CHEMINF_000256]: <%= cust_sample[:melting_point] %>
+      Boiling point descriptor[CHEMINF_000257]: <%= cust_sample[:boiling_point] %>
+      Refractive index descriptor[CHEMINF_000253]:
+
+      The physical chemical entity[CHEBI_24431] can be further described by the following assays[OBI:0000070][CHMO:0001133]:
+      <% element.analyses&.each do |analysis| %>
+        <%= (analysis.extended_metadata['kind'] || '') %>
+      <% end %>
+      The physical chemical entity[CHEBI_24431] was deposited to the Molecule Archive of the Karlsruhe Insitute of Technology (KIT) with the following Sample ID: <%= cust_sample[:x_id] %>
+
+      Used ontologies:
+      CHEBI - Chemical Entities of Biological Interest
+      CHEMINF - chemical information ontology (information entities about chemical entities)
+      CHMO - Chemical Methods Ontology
+      OBI - Ontology for Biomedical Investigations
     </description>
   </descriptions>
 
   <relatedIdentifiers>
     <% dois[:analyses_dois].each do |_, ds| %>
-      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart"><%= "#{ds[:DOI]}" %></relatedIdentifier>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>
     <% end %>
     <% if parent_element.presence %>
-      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf"><%= "#{parent_element.full_doi}" %></relatedIdentifier>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{parent_element.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if col_doi.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{col_doi}" %></relatedIdentifier>
+    <% end %>
+    <% lits.each do |ref| %>
+      <relatedIdentifier relatedIdentifierType="<%=ref['relatedidentifiertype'].split(' {|} ').shift%>" relationType="<%=ref['relationtype']%>"><%=ref['relatedidentifiertype'].split(' {|} ').pop%></relatedIdentifier>
     <% end %>
   </relatedIdentifiers>
 </resource>

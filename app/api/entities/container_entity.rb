@@ -48,9 +48,11 @@ module Entities
         analysis['pub_id'] = analysis.publication&.id if analysis.respond_to? :publication
         analysis['preview_img'] = preview_img(dataset_ids[analysis['id']], attachments)
         analysis['code_log'] = code_logs.find { |cl| cl.source_id == analysis['id'] }.attributes
-        analysis['children'].each do |dataset|
-          atts = attachments.select { |a| a.attachable_id == dataset['id'] }
-          dataset['attachments'] = Entities::AttachmentEntity.represent(atts)
+        analysis['children'].each do |ds_entity|
+          atts = attachments.select { |a| a.attachable_id == ds_entity['id'] }
+          ds_entity['attachments'] = Entities::AttachmentEntity.represent(atts)
+          gds = Dataset.find_by(element_type: 'Container', element_id: ds_entity['id'])
+          ds_entity['dataset'] = Entities::DatasetEntity.represent(gds) if gds.present?
         end
       end
       bt
@@ -62,23 +64,29 @@ module Entities
       attachments = attachments.select do |a|
         a.thumb == true && a.attachable_type == 'Container' && container_ids.include?(a.attachable_id)
       end
+      
       image_atts = attachments.select do |a_img|
         a_img&.content_type&.match(Regexp.union(%w[jpg jpeg png tiff]))
       end
 
-      attachment = image_atts.find(&:non_jcamp?).presence || image_atts[0]
-      attachment ||= attachments.find(&:non_jcamp?).presence || attachments[0]
+      image_atts = image_atts.sort_by{ |a_img| a_img[:id] }.reverse
+
+      attachment = image_atts[0] || attachments[0]
 
       preview = attachment.read_thumbnail if attachment
-      preview && Base64.encode64(preview) || 'not available'
+      result = if preview
+        { preview: Base64.encode64(preview), id: attachment.id, filename: attachment.filename }
+      else
+        { preview: 'not available', id: nil, filename: nil }
+      end
+      result
     end
 
     def get_extended_metadata(container)
       ext_mdata = container.extended_metadata || {}
       ext_mdata['report'] = (ext_mdata['report'] == 'true') || (ext_mdata == true)
-      if ext_mdata['content'].present?
-        ext_mdata['content'] = JSON.parse(ext_mdata['content'])
-      end
+      ext_mdata['content'] = JSON.parse(ext_mdata['content'])  if ext_mdata['content'].present?
+      ext_mdata['hyperlinks'] = JSON.parse(ext_mdata['hyperlinks']) if ext_mdata['hyperlinks'].present?
       ext_mdata
     end
   end

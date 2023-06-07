@@ -22,6 +22,10 @@ class ElementPermissionProxy
     ).deep_symbolize_keys
   end
 
+  def can_copy?
+    @policy&.try(:copy?)
+  end
+
   def read_dataset?
     detail_level >= 3
   end
@@ -89,6 +93,8 @@ class ElementPermissionProxy
       10
     when ResearchPlan
       10
+    when Element
+      10
     end
   end
 
@@ -116,6 +122,8 @@ class ElementPermissionProxy
       ScreenSerializer
     when ResearchPlan
       ResearchPlanSerializer
+    when Element
+      ElementSerializer
     end
   end
 

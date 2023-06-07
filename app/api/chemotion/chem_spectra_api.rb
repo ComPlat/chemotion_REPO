@@ -28,10 +28,18 @@ module Chemotion
         end
       end
 
+      def get_molfile(params)
+        if params[:molfile].is_a? String
+          params[:molfile] = { tempfile: Tempfile.new }
+        end
+        params[:molfile][:tempfile]
+      end
+
       def conversion(params)
         file = params[:file][:tempfile]
+        molfile = get_molfile(params)
         tmp_jcamp, tmp_img = Chemotion::Jcamp::Create.spectrum(
-          file.path, false, params
+          file.path, molfile.path, false, params
         ) # abs_path, is_regen, peaks, shift
         jcamp = encode64(tmp_jcamp.path)
         img = encode64(tmp_img.path)
@@ -42,13 +50,35 @@ module Chemotion
 
       def convert_to_zip(params)
         file = params[:dst][:tempfile]
+        molfile = get_molfile(params)
         jcamp, img = Chemotion::Jcamp::Create.spectrum(
-          file.path, false, params
+          file.path, molfile.path, false, params
         )
         predict = JSON.parse(params['predict'])
         to_zip_file(params[:filename], params[:src], jcamp, img, predict)
       rescue
         error!('Save files error!', 500)
+      end
+
+      def convert_for_refresh(params)
+        file = params[:dst][:tempfile]
+        molfile = get_molfile(params)
+        tmp_jcamp, tmp_img = Chemotion::Jcamp::Create.spectrum(
+          file.path, molfile.path, false, params
+        )
+        jcamp = encode64(tmp_jcamp.path)
+        img = encode64(tmp_img.path)
+        { status: true, jcamp: jcamp, img: img }
+      rescue
+        { status: false }
+      end
+
+      def raw_file(att)
+        begin
+          Base64.encode64(att.read_file)
+        rescue StandardError
+          nil
+        end
       end
     end
 
@@ -58,6 +88,7 @@ module Chemotion
         params do
           requires :file, type: Hash
           requires :mass, type: String
+          optional :molfile
         end
         post 'convert' do
           conversion(params)
@@ -78,6 +109,10 @@ module Chemotion
           optional :scan, type: String
           optional :thres, type: String
           optional :predict, type: String
+          optional :molfile
+          optional :waveLength, type: String
+          optional :cyclicvolta, type: String
+          optional :curveIdx, type: Integer
         end
         post 'save' do
           env['api.format'] = :binary
@@ -88,6 +123,27 @@ module Chemotion
           zip_io = convert_to_zip(params)
           zip_io.rewind
           zip_io.read
+        end
+
+        desc 'Refresh files'
+        params do
+          requires :src, type: Hash
+          requires :dst, type: Hash
+          requires :molfile, type: Hash
+          requires :filename, type: String
+          requires :peaks_str, type: String
+          requires :shift_select_x, type: String
+          requires :shift_ref_name, type: String
+          requires :shift_ref_value, type: String
+          optional :integration, type: String
+          optional :multiplicity, type: String
+          optional :mass, type: String
+          optional :scan, type: String
+          optional :thres, type: String
+          optional :predict, type: String
+        end
+        post 'refresh' do
+          convert_for_refresh(params)
         end
       end
 
@@ -102,7 +158,7 @@ module Chemotion
         post 'nmr_peaks_form' do
           molfile = params['molfile']['tempfile']
           rsp = Chemotion::Jcamp::Predict::NmrPeaksForm.exec(
-            molfile, params[:layout], params[:peaks], params[:shift]
+            molfile, params[:layout], params[:peaks], params[:shift], false
           )
 
           content_type('application/json')
@@ -137,6 +193,24 @@ module Chemotion
 
           content_type('application/json')
           { smi: m[:smiles], mass: m[:mass], svg: m[:svg], status: true }
+        end
+      end
+
+      resource :nmrium_wrapper do
+        desc 'Return url of nmrium wrapper'
+        route_param :host_name do
+          get do
+            if Rails.configuration.spectra.nmriumwrapper.blank?
+              { protocol: '', host: '', port: '' }
+            else
+              nmrium_url = Rails.configuration.spectra.nmriumwrapper.url
+              nmrium_uri = URI(nmrium_url)
+              protocol = nmrium_uri.scheme
+              host = nmrium_uri.host
+              port = nmrium_uri.port == 443 ? '' : nmrium_uri.port
+              { protocol: protocol, host: host, port: port }
+            end
+          end
         end
       end
     end

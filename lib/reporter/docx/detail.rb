@@ -33,13 +33,13 @@ module Reporter
         items.reduce(init) do |sum, i|
           ops = parse_ops(i)
           ops = rm_head_tail_space(ops)
-          return sum if ops.blank?
-
           sum + ops_tail_with_symbol(ops, symbol)
         end
       end
 
       def ops_tail_with_symbol(ops, symbol)
+        return [] if ops.blank?
+
         ops + [{ 'insert' => symbol }]
       end
 
@@ -51,7 +51,7 @@ module Reporter
       def rm_head_space(ops = [])
         head = nil
         ops.each do |op|
-          head = op['insert'].gsub(/^[\u00A0\s]+/, '')
+          head = op["insert"] && op["insert"]['image'].blank? ? op['insert'].gsub(/^[\u00A0\s]+/, '') : op['insert']
           break if head.present?
           ops = ops[1..-1]
         end
@@ -63,7 +63,7 @@ module Reporter
       def rm_tail_space(ops = [])
         tail = nil
         ops.reverse.each do |op|
-          tail = op['insert'].gsub(/[\u00A0\s]*[,.;]*[\u00A0\s]*$/, '')
+          tail = op["insert"] && op["insert"]['image'].blank? ? op['insert'].gsub(/[\u00A0\s]*[,.;]*[\u00A0\s]*$/, '') : op['insert']
           break if tail.present?
           ops = ops[0..-2]
         end
@@ -85,7 +85,7 @@ module Reporter
       def remove_redundant_space_break(ops) # ensure one line
         return [{ 'insert' => '' }] unless ops
         ops.map.with_index do |op, i|
-          if op["insert"]
+          if op["insert"] && op["insert"]['image'].blank?
             op["insert"] = op["insert"].gsub(/[\u00A0\s]{2,}/, " ")
             op["insert"] = op["insert"].lstrip if i == 0
             op["insert"] = op["insert"].gsub(/\n/, " ")

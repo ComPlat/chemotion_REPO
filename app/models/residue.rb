@@ -14,9 +14,9 @@
 #  index_residues_on_sample_id  (sample_id)
 #
 
-class Residue < ActiveRecord::Base
+class Residue < ApplicationRecord
 
-  belongs_to :sample
+  belongs_to :sample, optional: true
   validate :loading_present
 
   TYPES = Hash[*%i(polymer residue).collect { |v| [ v, v ] }.flatten]

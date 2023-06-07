@@ -147,7 +147,7 @@ describe Chemotion::SyncCollectionAPI do
       end
 
       before do
-        post '/api/v1/syncCollections', params
+        post '/api/v1/syncCollections', params: params
       end
 
       it 'creates a new sync_collections_user' do
@@ -162,13 +162,14 @@ describe Chemotion::SyncCollectionAPI do
             sample_detail_level: 5,
             reaction_detail_level: 2,
             wellplate_detail_level: 1,
-            screen_detail_level: 5
+            screen_detail_level: 5,
+            element_detail_level: 10
           }
         }
       end
 
       before do
-        put "/api/v1/syncCollections/#{sc1_2.id}", params
+        put "/api/v1/syncCollections/#{sc1_2.id}", params: params
         sc1_2.reload
       end
 

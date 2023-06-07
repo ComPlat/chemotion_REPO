@@ -1,3 +1,5 @@
+require 'resolv-replace'
+
 module PubChem
   include HTTParty
 
@@ -24,13 +26,18 @@ module PubChem
     options = { :timeout => 10,  :headers => {'Content-Type' => 'application/x-www-form-urlencoded'}, :body => { 'sdf' => molfile } }
 
     HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/compound/sdf/record/JSON', options)
+  rescue StandardError => e
+    Rails.logger.error ["with molfile: #{molfile}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_record_from_inchikey(inchikey)
     @auth = {:username => '', :password => ''}
     options = { :timeout => 10,  :headers => {'Content-Type' => 'text/json'}  }
-
     HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/'+inchikey+'/record/JSON', options)
+  rescue StandardError => e
+    Rails.logger.error ["with inchikey: #{inchikey}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_cids_from_inchikeys(inchikeys)
@@ -46,6 +53,9 @@ module PubChem
       :body => { "inchikey"=>"#{inchikeys.join(',')}" },
     }
     HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/property/InChIKey/JSON', options).body
+  rescue StandardError => e
+    Rails.logger.error ["with inchikey: #{inchikeys}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_records_from_inchikeys(inchikeys)
@@ -61,6 +71,9 @@ module PubChem
       :body => { "inchikey"=>"#{inchikeys.join(',')}" },
     }
     HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/record/JSON', options).body
+  rescue StandardError => e
+    Rails.logger.error ["with inchikey: #{inchikeys}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_molfile_by_inchikey(inchikey)
@@ -68,6 +81,9 @@ module PubChem
     options = { :timeout => 10,  :headers => {'Content-Type' => 'text/json'}  }
 
     HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/'+inchikey+'/record/SDF', options).body
+  rescue StandardError => e
+    Rails.logger.error ["with inchikey: #{inchikey}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_molfiles_by_inchikeys(inchikeys)
@@ -83,6 +99,41 @@ module PubChem
       :body => { "inchikey"=>"#{inchikeys.join(',')}" },
     }
     HTTParty.post(http_s+'/rest/pug/compound/inchikey/record/SDF', options).body
+  rescue StandardError => e
+    Rails.logger.error "[PubChemError] of [get_molfiles_by_inchikeys] with inchikey [#{inchikeys}], exception [#{e.backtrace}]"
+    return nil
+  end
+
+  def self.get_sid_from_doi(doi)
+    options = {
+      :timeout => 10,
+      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
+      :body => { 'sourceid' => doi }
+    }
+    begin
+      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
+      return nil unless resp.success?
+      resp.body.presence&.strip
+    rescue => e
+      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
+      return nil
+    end
+  end
+
+  def self.get_sid_from_doi(doi)
+    options = {
+      :timeout => 10,
+      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
+      :body => { 'sourceid' => doi }
+    }
+    begin
+      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
+      return nil unless resp.success?
+      resp.body.presence&.strip
+    rescue => e
+      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
+      return nil
+    end
   end
 
   def self.get_sid_from_doi(doi)
@@ -106,6 +157,9 @@ module PubChem
     options = { :timeout => 10,  :headers => {'Content-Type' => 'text/json'}  }
     encoded_smiles = URI::encode(smiles, '[]/()+-.@#=\\')
     HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/smiles/'+encoded_smiles+'/record/SDF', options).body
+  rescue StandardError => e
+    Rails.logger.error ["with smiles: #{smiles}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_xref_by_inchikey(inchikey)
@@ -113,6 +167,9 @@ module PubChem
     options = { :timeout => 10,  :headers => {'Content-Type' => 'text/json'}  }
 
     HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/'+inchikey+'/xrefs/RN/JSON', options).body
+  rescue StandardError => e
+    Rails.logger.error ["with inchikey: #{inchikey}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
   def self.get_cid_from_inchikey(inchikey)
@@ -124,9 +181,9 @@ module PubChem
       resp = HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/' + inchikey + '/cids/TXT', options)
       return nil unless resp.success?
       resp.body.presence&.strip
-    rescue => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [get_cid_from_inchikey] with inchikey [#{inchikey}], exception [#{e.inspect}]"
-      return nil
+    rescue StandardError => e
+      Rails.logger.error ["with inchikey: #{inchikey}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+      nil
     end
   end
 
@@ -156,9 +213,9 @@ module PubChem
       resp = HTTParty.get(page, options)
       return nil unless resp.success?
       JSON.parse resp, symbolize_names: true
-    rescue => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [get_lcss_from_cid] with cid [#{cid}], exception [#{e.inspect}]"
-      return nil
+    rescue StandardError => e
+      Rails.logger.error ["with cid: #{cid}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+      nil
     end
   end
 

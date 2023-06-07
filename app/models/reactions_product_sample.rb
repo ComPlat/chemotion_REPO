@@ -13,6 +13,7 @@
 #  waste        :boolean          default(FALSE)
 #  coefficient  :float            default(1.0)
 #  scheme_yield :float
+#  show_label   :boolean          default(FALSE), not null
 #
 # Indexes
 #

@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 require 'securerandom'
 module Chemotion
+  # Repository API
   class RepositoryAPI < Grape::API
     include Grape::Kaminari
     helpers ContainerHelpers
@@ -7,26 +10,10 @@ module Chemotion
     helpers CollectionHelpers
     helpers SampleHelpers
     helpers SubmissionHelpers
+    helpers EmbargoHelpers
 
     namespace :repository do
       helpers do
-        def fetch_embargo_collection(cid)
-          if (cid == 0)
-            chemotion_user = User.chemotion_user
-            new_col_label = current_user.initials + '_' + Time.now.strftime("%Y-%m-%d")
-            col_check = Collection.where([" label like ? ", new_col_label+'%'])
-            new_col_label = new_col_label << '_' << (col_check&.length+1)&.to_s if col_check&.length > 0
-            new_embargo_col = Collection.create!(user: chemotion_user,
-            label: new_col_label, ancestry: current_user.publication_embargo_collection.id)
-            SyncCollectionsUser.find_or_create_by(user: current_user, shared_by_id: chemotion_user.id, collection_id: new_embargo_col.id,
-            permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10,
-            fake_ancestry: current_user.publication_embargo_collection.sync_collections_users.first.id.to_s)
-            new_embargo_col
-          else
-            Collection.find(cid)
-          end
-        end
-
         def duplicate_analyses(new_element, analyses_arr, ik = nil)
           unless new_element.container
             Container.create_root_container(containable: new_element)
@@ -34,7 +21,7 @@ module Chemotion
           end
           analyses = Container.analyses_container(new_element.container.id).first
           parent_publication = new_element.publication
-          analyses_arr && analyses_arr.each do |ana|
+          analyses_arr&.each do |ana|
             new_ana = analyses.children.create(
               name: ana.name,
               container_type: ana.container_type,
@@ -62,20 +49,19 @@ module Chemotion
             )
             # duplicate datasets and copy attachments
             ana.children.where(container_type: 'dataset').each do |ds|
-              new_dataset = new_ana.children.create(container_type: "dataset")
+              new_dataset = new_ana.children.create(container_type: 'dataset')
               ds.attachments.each do |att|
                 copied_att = att.copy(attachable_type: 'Container', attachable_id: new_dataset.id, transferred: true)
                 copied_att.save!
                 new_dataset.attachments << copied_att
 
                 # copy publication image file to public/images/publications/{attachment.id}/{attachment.filename}
-                if MimeMagic.by_path(copied_att.filename)&.type&.start_with?("image")
+                if MimeMagic.by_path(copied_att.filename)&.type&.start_with?('image')
                   file_path = File.join('public/images/publications/', copied_att.id.to_s, '/', copied_att.filename)
                   public_path = File.join('public/images/publications/', copied_att.id.to_s)
                   FileUtils.mkdir_p(public_path)
-                  File.write(file_path, copied_att.store.read_file.force_encoding("utf-8")) if copied_att.store.file_exist?
+                  File.write(file_path, copied_att.store.read_file.force_encoding('utf-8')) if copied_att.store.file_exist?
                 end
-
               end
 
               new_dataset.name = ds.name
@@ -95,7 +81,7 @@ module Chemotion
               permission_level: 3,
               sample_detail_level: 10,
               reaction_detail_level: 10,
-              label: "REVIEWING",
+              label: 'REVIEWING'
             )
           end
         end
@@ -107,8 +93,9 @@ module Chemotion
           new_sample.collections << Collection.element_to_review_collection
           new_sample.collections << @embargo_collection unless @embargo_collection.nil?
           new_sample.save!
+          new_sample.save_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
           unless @literals.nil?
-            lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id}
+            lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
             duplicate_literals(new_sample, lits)
           end
           duplicate_analyses(new_sample, analyses, new_sample.molecule.inchikey)
@@ -141,9 +128,10 @@ module Chemotion
 
         def concat_author_ids(coauthors = params[:coauthors])
           coauthor_ids = coauthors.map do |coa|
-           val = coa.strip
-           next val.to_i if val =~ /^\d+$/
-           User.where(type: %w(Person Collaborator)).where.not(confirmed_at: nil).find_by(email: val)&.id if val =~ /^\S+@\S+$/
+            val = coa.strip
+            next val.to_i if val =~ /^\d+$/
+
+            User.where(type: %w(Person Collaborator)).where.not(confirmed_at: nil).find_by(email: val)&.id if val =~ /^\S+@\S+$/
           end.compact
           [current_user.id] + coauthor_ids
         end
@@ -164,15 +152,16 @@ module Chemotion
           #                                             solvents: solvents_in_svg,
           #                                             show_yield: true)
           # new_reaction.reaction_svg_file = composer.compose_reaction_svg_and_save(prefix: Time.now)
-          dir = File.join(Rails.root, 'public','images','reactions')
+          dir = File.join(Rails.root, 'public', 'images', 'reactions')
           rsf = reaction.reaction_svg_file
           path = File.join(dir, rsf)
           new_rsf = "#{Time.now.to_i}-#{rsf}"
           dest = File.join(dir, new_rsf)
 
           new_reaction.save!
+          new_reaction.save_segments(segments: reaction.segments, current_user_id: current_user.id)
           unless @literals.nil?
-            lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id}
+            lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id }
             duplicate_literals(new_reaction, lits)
           end
           if File.exists? path
@@ -195,7 +184,7 @@ module Chemotion
           else
             # NB: the reaction has still no sample, so it cannot get a proper rinchi needed for the doi
             # => use the one from original reaction
-            d = Doi.create_for_element!(new_reaction, "reaction/" + reaction.products_short_rinchikey_trimmed)
+            d = Doi.create_for_element!(new_reaction, 'reaction/' + reaction.products_short_rinchikey_trimmed)
           end
 
           pub = Publication.create!(
@@ -211,11 +200,12 @@ module Chemotion
                 rinchi_string: princhi_string,
                 rinchi_long_key: princhi_long_key,
                 rinchi_short_key: princhi_short_key,
-                rinchi_web_key:  princhi_web_key
-              })
+                rinchi_web_key: princhi_web_key
+              }
+            )
           )
 
-          duplicate_analyses(new_reaction, reaction_analysis_set, "reaction/" + reaction.products_short_rinchikey_trimmed)
+          duplicate_analyses(new_reaction, reaction_analysis_set, 'reaction/' + reaction.products_short_rinchikey_trimmed)
           reaction.reactions_samples.each  do |rs|
             new_rs = rs.dup
             sample = current_user.samples.find_by(id: rs.sample_id)
@@ -240,9 +230,9 @@ module Chemotion
         end
 
         def create_publication_tag(contributor, author_ids, license)
-          authors = User.where(type: %w(Person Collaborator), id: author_ids)
-                          .includes(:affiliations)
-                          .order("position(users.id::text in '#{author_ids}')")
+          authors = User.where(type: %w[Person Collaborator], id: author_ids)
+                        .includes(:affiliations)
+                        .order("position(users.id::text in '#{author_ids}')")
           affiliations = authors.map(&:current_affiliations)
           affiliations_output = {}
           affiliations.flatten.each do |aff|
@@ -251,7 +241,7 @@ module Chemotion
           {
             published_by: author_ids[0],
             author_ids: author_ids,
-            creators: authors.map { |author|
+            creators: authors.map do |author|
               {
                 'givenName' => author.first_name,
                 'familyName' => author.last_name,
@@ -260,13 +250,13 @@ module Chemotion
                 'affiliationIds' => author.current_affiliations.map(&:id),
                 'id' => author.id
               }
-            },
+            end,
             contributors: {
               'givenName' => contributor.first_name,
               'familyName' => contributor.last_name,
               'name' => contributor.name,
               'ORCID' => contributor.orcid,
-              'affiliations' => contributor.current_affiliations.map{ |aff| aff.output_full },
+              'affiliations' => contributor.current_affiliations.map(&:output_full),
               'id' => contributor.id
             },
             affiliations: affiliations_output,
@@ -286,19 +276,22 @@ module Chemotion
           new_reaction.samples.each do |new_sample|
             new_sample.create_publication_tag(current_user, @author_ids, @license)
           end
-          Publication.where(element: new_reaction).first
+          pub = Publication.where(element: new_reaction).first
+          add_submission_history(pub)
+          pub
         end
 
-        def duplicate_literals(element,literals)
+        def duplicate_literals(element, literals)
           literals&.each do |lit|
             attributes = {
-             literature_id: lit.literature_id,
-             element_id: element.id,
-             element_type: lit.element_type,
-             category: 'detail',
-             user_id: lit.user_id
-           }
-           Literal.create(attributes)
+              literature_id: lit.literature_id,
+              element_id: element.id,
+              element_type: lit.element_type,
+              category: 'detail',
+              user_id: lit.user_id,
+              litype: lit.litype
+            }
+            Literal.create(attributes)
           end
         end
 
@@ -308,34 +301,80 @@ module Chemotion
           @sample.tag_as_published(new_sample, @analyses)
           new_sample.create_publication_tag(current_user, @author_ids, @license)
           @sample.untag_reserved_suffix
-          Publication.where(element: new_sample).first
+          pub = Publication.where(element: new_sample).first
+          add_submission_history(pub)
+          pub
         end
 
+        def add_submission_history(root)
+          init_node = {
+            state: 'submission',
+            action: 'submission',
+            timestamp: Time.now.strftime('%d-%m-%Y %H:%M:%S'),
+            username: current_user.name,
+            user_id: current_user.id,
+            type: 'submit'
+          }
+          review = root.review || {}
+          history = review['history'] || []
+          history << init_node
 
-        def find_embargo_collection(root_publication)
-          has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.find(root_publication.published_by).publication_embargo_collection.id }
-          has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first.label : ''
-       end
+          current_node = {
+            action: 'reviewing',
+            type: 'reviewed',
+            state: 'pending'
+          }
+          history << current_node
+          review['history'] = history
+          review['reviewers'] = @group_reviewers if @group_reviewers.present?
+          root.update!(review: review)
+        end
       end
 
       desc 'Get review list'
       params do
-        optional :type, type: String, desc: "Type"
-        optional :state, type: String, desc: "State"
-        optional :page, type: Integer, desc: "page"
-        optional :pages, type: Integer, desc: "pages"
-        optional :per_page, type: Integer, desc: "per page"
-
+        optional :type, type: String, desc: 'Type'
+        optional :state, type: String, desc: 'State'
+        optional :search_type, type: String, desc: 'search type', values: %w[All Name Embargo Submitter]
+        optional :search_value, type: String, desc: 'search value'
+        optional :page, type: Integer, desc: 'page'
+        optional :pages, type: Integer, desc: 'pages'
+        optional :per_page, type: Integer, desc: 'per page'
       end
       paginate per_page: 10, offset: 0, max_per_page: 100
       get 'list' do
-        type = (params[:type].empty? || params[:type] == 'All') ? ['Sample','Reaction'] : params[:type].chop!
-        state = (params[:state].empty? || params[:state] == 'All') ? [Publication::STATE_PENDING, Publication::STATE_REVIEWED, Publication::STATE_ACCEPTED] : params[:state]
-        list = if User.reviewer_ids.include?(current_user.id)
-                 Publication.where(state: state, ancestry: nil, element_type: type)
-               else
-                 Publication.where(state: state, ancestry: nil, element_type: type, published_by: current_user.id)
-               end.order(updated_at: :desc)
+        type = params[:type].blank? || params[:type] == 'All' ? %w[Sample Reaction] : params[:type].chop!
+        state = params[:state].empty? || params[:state] == 'All' ? [Publication::STATE_PENDING, Publication::STATE_REVIEWED, Publication::STATE_ACCEPTED] : params[:state]
+        pub_scope = if User.reviewer_ids.include?(current_user.id)
+                      Publication.where(state: state, ancestry: nil, element_type: type)
+                    else
+                      Publication.where(state: state, ancestry: nil, element_type: type).where("published_by = ? OR (review -> 'reviewers')::jsonb @> '?'", current_user.id, current_user.id)
+                    end
+        unless params[:search_value].blank? || params[:search_value] == 'All'
+          case params[:search_type]
+          when 'Submitter'
+            pub_scope = pub_scope.where(published_by: params[:search_value])
+          when 'Embargo'
+            embargo_search = <<~SQL
+              (element_type = 'Reaction' and element_id in (select reaction_id from collections_reactions cr where cr.deleted_at is null and cr.collection_id = ?))
+              or
+              (element_type = 'Sample' and element_id in (select sample_id from collections_samples cs where cs.deleted_at is null and cs.collection_id = ?))
+            SQL
+            embargo_search = ActiveRecord::Base.send(:sanitize_sql_array, [embargo_search, params[:search_value], params[:search_value]])
+            pub_scope = pub_scope.where(embargo_search)
+          when 'Name'
+            r_name_sql = " r.short_label like '%#{ActiveRecord::Base.send(:sanitize_sql_like, params[:search_value])}%' "
+            s_name_sql = " s.short_label like '%#{ActiveRecord::Base.send(:sanitize_sql_like, params[:search_value])}%' "
+            name_search = <<~SQL
+              (element_type = 'Reaction' and element_id in (select id from reactions r where #{r_name_sql}))
+              or
+              (element_type = 'Sample' and element_id in (select id from samples s where #{s_name_sql}))
+            SQL
+            pub_scope = pub_scope.where(name_search)
+          end
+        end
+
+        list = pub_scope.order('publications.updated_at desc')
         elements = []
         paginate(list).each do |e|
           element_type = e.element&.class&.name
@@ -347,92 +386,240 @@ module Chemotion
 
           svg_file = e.element.sample_svg_file if element_type == 'Sample'
           title = e.element.short_label if element_type == 'Sample'
-
+          review_info = repo_review_info(e, current_user&.id, true)
+          checklist = e.review['checklist'] if User.reviewer_ids.include?(current_user&.id) || review_info[:groupleader] == true
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
+
+
           elements.push(
-            id: e.element_id, svg: svg_file, type: element_type, title: title,
-            published_by: u&.name, submit_at: e.updated_at, state: e.state, embargo: find_embargo_collection(e), scheme_only: scheme_only
+            id: e.element_id, svg: svg_file, type: element_type, title: title, checklist: checklist || {}, review_info: review_info, isReviewer: User.reviewer_ids.include?(current_user&.id) || false,
+            published_by: u&.name, submitter_id: u&.id, submit_at: e.created_at, state: e.state, embargo: find_embargo_collection(e).label, scheme_only: scheme_only
           )
         end
         { elements: elements }
       end
 
       desc 'Get embargo list'
-      get 'embargo_list' do
-        if (current_user.type == 'Anonymous')
-          cols = Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion').order('label ASC')
-        else
-          cols = Collection.where(ancestry: current_user.publication_embargo_collection.id).order('label ASC')
+      helpers RepositoryHelpers
+      post 'embargo_list' do
+        params do
+          optional :is_submit, type: Boolean, default: false, desc: 'Publication submission'
         end
-        { repository: cols, current_user: {id: current_user.id, type: current_user.type} }
+
+        if User.reviewer_ids.include?(current_user.id) && params[:is_submit] == false
+          es = Publication.where(element_type: 'Collection', state: 'pending').order("taggable_data->>'label' ASC")
+        else
+          cols = if current_user.type == 'Anonymous'
+                   Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
+                 else
+                   Collection.where(ancestry: current_user.publication_embargo_collection.id)
+                 end
+          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order("taggable_data->>'label' ASC") unless cols.empty?
+        end
+
+        { repository: es, current_user: { id: current_user.id, type: current_user.type } }
+      end
+
+      namespace :assign_embargo do
+        desc 'assign to an embargo bundle'
+        params do
+          requires :new_embargo, type: Integer, desc: 'Collection id'
+          requires :element, type: Hash, desc: 'Element'
+        end
+        after_validation do
+          declared_params = declared(params, include_missing: false)
+          @p_element = declared_params[:element]
+          @p_embargo = declared_params[:new_embargo]
+          pub = Publication.find_by(element_type: @p_element['type'].classify, element_id: @p_element['id'])
+          error!('404 Publication not found', 404) unless pub
+          error!("404 Publication state must be #{Publication::STATE_REVIEWED}", 404) unless pub.state == Publication::STATE_REVIEWED
+          error!('401 Unauthorized', 401) unless pub.published_by == current_user.id
+          if @p_embargo.to_i.positive?
+            e_col = Collection.find(@p_embargo.to_i)
+            error!('404 This embargo has been released.', 404) unless e_col.ancestry.to_i == current_user.publication_embargo_collection.id
+          end
+        end
+        post do
+          embargo_collection = fetch_embargo_collection(@p_embargo.to_i, current_user) if @p_embargo.to_i >= 0
+          case @p_element['type'].classify
+          when 'Sample'
+            CollectionsSample
+          when 'Reaction'
+            CollectionsReaction
+          end.create_in_collection(@p_element['id'], [embargo_collection.id])
+          { element: @p_element,
+            new_embargo: embargo_collection,
+            is_new_embargo: @p_embargo.to_i.zero?,
+            message: "#{@p_element['type']} [#{@p_element['title']}] has been moved to Embargo Bundle [#{embargo_collection.label}]" }
+        rescue StandardError => e
+          { error: e.message }
+        end
+      end
+
+      resource :compound do
+        desc 'compound'
+        params do
+          requires :id, type: Integer, desc: 'Element id'
+          optional :data, type: String
+        end
+        resource :request do
+          post do
+            PublicationMailer.mail_request_compound(current_user, params[:id], params[:data], 'request').deliver_now
+            PublicationMailer.mail_request_compound(current_user, params[:id], params[:data], 'confirmation').deliver_now
+          end
+        end
+        resource :update do
+          after_validation do
+            @pub = ElementTag.find_by(taggable_type: 'Sample', taggable_id: params[:id])
+            error!('404 No data found', 404) unless @pub
+            element_policy = ElementPolicy.new(current_user, @pub.taggable)
+            error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
+          end
+          post do
+            data = @pub.taggable_data || {}
+            xvail = data['xvial'] || {}
+            xvail['num'] = params[:data]
+            xvail['username'] = current_user.name
+            xvail['userid'] = current_user.id
+            xvail['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+            data['xvial'] = xvail
+            @pub.update!(taggable_data: data)
+          end
+        end
+      end
+
+      resource :comment do
+        desc 'User comment'
+        params do
+          requires :id, type: Integer, desc: 'Element id'
+          optional :type, type: String, values: %w[Reaction Sample Container]
+          requires :pageId, type: Integer, desc: 'Page Element id'
+          optional :pageType, type: String, values: %w[reactions molecules]
+          optional :comment, type: String
+        end
+        after_validation do
+          @pub = Publication.find_by(element_type: params[:type], element_id: params[:id])
+          error!('404 No data found', 404) unless @pub
+          element_policy = ElementPolicy.new(current_user, @pub.element)
+          error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
+        end
+        post 'user_comment' do
+          PublicationMailer.mail_user_comment(current_user, params[:id], params[:type], params[:pageId], params[:pageType], params[:comment]).deliver_now
+        end
+        post 'reviewer' do
+          pub = Publication.find_by(element_type: params[:type], element_id: params[:id])
+          review = pub.review || {}
+          review_info = review['info'] || {}
+          review_info['comment'] = params[:comment]
+          review_info['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+          review_info['username'] = current_user.name
+          review_info['userid'] = current_user.id
+
+          review['info'] = review_info
+          pub.update!(review: review)
+        end
       end
 
       resource :reaction do
         helpers RepositoryHelpers
-        desc "Return PUBLISHED serialized reaction"
+        desc 'Return PUBLISHED serialized reaction'
         params do
-          requires :id, type: Integer, desc: "Reaction id"
+          requires :id, type: Integer, desc: 'Reaction id'
           optional :is_public, type: Boolean, default: true
+        end
+        after_validation do
+          element = Reaction.find_by(id: params[:id])
+          error!('404 No data found', 404) unless element
+          element_policy = ElementPolicy.new(current_user, element)
+          error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
         end
         get do
           reaction = Reaction.where(id: params[:id])
-          .select(
-            <<~SQL
-            reactions.id, reactions.name, reactions.description, reactions.reaction_svg_file, reactions.short_label,
-            reactions.status, reactions.tlc_description, reactions.tlc_solvents, reactions.rf_value,
-            reactions.temperature, reactions.timestamp_start,reactions.timestamp_stop,reactions.observation,
-            reactions.rinchi_string, reactions.rinchi_long_key, reactions.rinchi_short_key,reactions.rinchi_web_key,
-            (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
-            reactions.duration
-            SQL
-          ).includes(container: :attachments).last
+                             .select(
+                               <<~SQL
+                                 reactions.id, reactions.name, reactions.description, reactions.reaction_svg_file, reactions.short_label,
+                                 reactions.status, reactions.tlc_description, reactions.tlc_solvents, reactions.rf_value,
+                                 reactions.temperature, reactions.timestamp_start,reactions.timestamp_stop,reactions.observation,
+                                 reactions.rinchi_string, reactions.rinchi_long_key, reactions.rinchi_short_key,reactions.rinchi_web_key,
+                                 (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
+                                 reactions.duration
+                               SQL
+                             ).includes(container: :attachments).last
           literatures = get_literature(params[:id], 'Reaction', params[:is_public] ? 'public' : 'detail') || []
           reaction.products.each do |p|
-            literatures += get_literature(p.id,'Sample', params[:is_public]? 'public' : 'detail')
+            literatures += get_literature(p.id, 'Sample', params[:is_public] ? 'public' : 'detail')
           end
           schemeList = get_reaction_table(params[:id])
           publication = Publication.find_by(element_id: params[:id], element_type: 'Reaction')
+          review_info = repo_review_info(publication, current_user&.id, false)
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
           published_user = User.find(publication.published_by) unless publication.nil?
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
-          { reaction: entities, reviewLevel: repo_review_level(params[:id], 'Reaction'), pub_name: published_user&.name || '' }
+          entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
+          embargo = find_embargo_collection(publication)
+          entities[:embargo] = embargo&.label
+          entities[:embargoId] = embargo&.id
+          {
+            reaction: entities,
+            selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
+            pub_name: published_user&.name || '',
+            review_info: review_info
+          }
         end
       end
 
       resource :sample do
         helpers RepositoryHelpers
-        desc "Return Review serialized Sample"
+        desc 'Return Review serialized Sample'
         params do
-          requires :id, type: Integer, desc: "Sample id"
+          requires :id, type: Integer, desc: 'Sample id'
           optional :is_public, type: Boolean, default: true
         end
+        after_validation do
+          element = Sample.find_by(id: params[:id])
+          error!('401 No data found', 401) unless element
+          element_policy = ElementPolicy.new(current_user, element)
+          error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
+        end
         get do
-          sample = Sample.where(id: params[:id])
-          .includes(:molecule,:tag).last
+          sample = Sample.where(id: params[:id]).includes(:molecule, :tag).last
+          review_sample = { **sample.serializable_hash.deep_symbolize_keys }
+          review_sample[:segments] = sample.segments.present? ? Entities::SegmentEntity.represent(sample.segments) : []
           molecule = Molecule.find(sample.molecule_id) unless sample.nil?
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
+          review_info = repo_review_info(publication, current_user&.id, false)
+          # preapproved = publication.review.dig('checklist', 'glr', 'status') == true
+          # is_leader = publication.review.dig('reviewers')&.include?(current_user&.id)
+          publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
           published_user = User.find(publication.published_by) unless publication.nil?
-          literatures = get_literature(params[:id], 'Sample', params[:is_public]? 'public' : 'detail')
+          literatures = get_literature(params[:id], 'Sample', params[:is_public] ? 'public' : 'detail')
+          # embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{sample.id}")&.first&.label
+          embargo = find_embargo_collection(publication)
+          review_sample[:embargo] = embargo&.label
+          review_sample[:embargoId] = embargo&.id
+
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
-            sample: sample,
+            sample: review_sample,
             publication: publication,
             literatures: literatures,
             analyses: containers,
+            selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
             doi: Entities::DoiEntity.represent(sample.doi, serializable: true),
             pub_name: published_user&.name,
-            reviewLevel: repo_review_level(params[:id], 'Sample')
+            review_info: review_info
           }
         end
       end
 
       resource :metadata do
-        desc "metadata of publication"
+        desc 'metadata of publication'
         params do
-          requires :id, type: Integer, desc: "Id"
-          requires :type, type: String, desc: "Type", values: %w[sample reaction]
+          requires :id, type: Integer, desc: 'Id'
+          requires :type, type: String, desc: 'Type', values: %w[sample reaction]
         end
         after_validation do
           @root_publication = Publication.find_by(
@@ -440,14 +627,14 @@ module Chemotion
             element_id: params['id']
           ).root
           error!('404 Publication not found', 404) unless @root_publication
-          error!('401 Unauthorized', 401) unless (User.reviewer_ids.include?(current_user.id) || @root_publication.published_by == current_user.id)
+          error!('401 Unauthorized', 401) unless User.reviewer_ids.include?(current_user.id) || @root_publication.published_by == current_user.id || @root_publication.review['reviewers'].include?(current_user.id)
         end
         post :preview do
           mt = []
           root_publication = @root_publication
           publications = [root_publication] + root_publication.descendants
           publications.each do |pub|
-            mt.push({element_type: pub.element_type, metadata_xml: pub.datacite_metadata_xml})
+            mt.push(element_type: pub.element_type, metadata_xml: pub.datacite_metadata_xml)
           end
           { metadata: mt }
         end
@@ -456,11 +643,11 @@ module Chemotion
           content_type('application/zip, application/octet-stream')
           root_publication = @root_publication
           publications = [root_publication] + root_publication.descendants
-          filename = URI.escape("metadata_#{root_publication.element_type}_#{root_publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.zip")
+          filename = URI.escape("metadata_#{root_publication.element_type}_#{root_publication.element_id}-#{Time.new.strftime('%Y%m%d%H%M%S')}.zip")
           header('Content-Disposition', "attachment; filename=\"#{filename}\"")
           zip = Zip::OutputStream.write_buffer do |zip|
             publications.each do |pub|
-              el_type = pub.element_type == "Container" ? "analysis" : pub.element_type.downcase
+              el_type = pub.element_type == 'Container' ? 'analysis' : pub.element_type.downcase
               zip.put_next_entry URI.escape("metadata_#{el_type}_#{pub.element_id}.xml")
               zip.write pub.datacite_metadata_xml
             end
@@ -469,128 +656,143 @@ module Chemotion
           zip.read
         end
       end
+      namespace :review_search_options do
+        helpers do
+          def query_submitter(element_type, state)
+            if User.reviewer_ids.include?(current_user.id)
+              state_sql = state == 'All' || state.empty? ? " state in ('pending', 'reviewed', 'accepted')" : ActiveRecord::Base.send(:sanitize_sql_array, [' state=? ', state])
+              type_sql = element_type == 'All' || element_type.empty? ? " element_type in ('Sample', 'Reaction')" : ActiveRecord::Base.send(:sanitize_sql_array, [' element_type=? ', element_type.chop])
+              search_scope = User.where(type: 'Person').where(
+                <<~SQL
+                  users.id in (
+                    select published_by from publications pub where ancestry is null and deleted_at is null
+                    and #{state_sql} and #{type_sql})
+                SQL
+              )
+                                 .order('first_name ASC')
+            else
+              search_scope = User.where(id: current_user.id)
+            end
+            result = search_scope.select(
+              <<~SQL
+                id as key, first_name, last_name, first_name || chr(32) || last_name as name, first_name || chr(32) || last_name || chr(32) || '(' || name_abbreviation || ')' as label
+              SQL
+            )
+          end
+
+          def query_embargo
+            search_scope = if User.reviewer_ids.include?(current_user.id)
+                             Collection.where(
+                               <<~SQL
+                                 ancestry::integer in (select id from collections cx where label = 'Embargoed Publications')
+                               SQL
+                             )
+                           else
+                             Collection.where(ancestry: current_user.publication_embargo_collection.id)
+                           end
+            result = search_scope.select(
+              <<~SQL
+                id as key, label as name, label as label
+              SQL
+            )
+                                 .order('label ASC')
+          end
+        end
+        desc 'Find matched review values'
+        params do
+          requires :type, type: String, allow_blank: false, desc: 'Type', values: %w[All Submitter Embargo]
+          optional :element_type, type: String, desc: 'Type', values: %w[All Samples Reactions]
+          optional :state, type: String, desc: 'Type', values: %w[All reviewed accepted pending]
+        end
+        get do
+          result = case params[:type]
+                   when 'Submitter'
+                     query_submitter(params[:element_type], params[:state])
+                   when 'Embargo'
+                     query_embargo
+                   else
+                     []
+          end
+          { result: result }
+        end
+      end
 
       namespace :reviewing do
         helpers do
-          # TODO: mv to model
-          def save_comments(root, comments, summary, feedback)
+          def approve_comments(root, comment, _checklist, _reviewComments, _action, _his = true)
             review = root.review || {}
-            review['summary'] = summary
-            review['feedback'] = feedback
+            review_history = review['history'] || []
+            current = review_history.last
+            current['username'] = current_user.name
+            current['userid'] = current_user.id
+            current['action'] = 'pre-approved'
+            current['comment'] = comment unless comment.nil?
+            current['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+            review_history[review_history.length - 1] = current
+            next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' }
+            review_history << next_node
+            review['history'] = review_history
+            revst = review['checklist'] || {}
+            revst['glr'] = { status: true, user: current_user.name, updated_at: Time.now.strftime('%d-%m-%Y %H:%M:%S') }
+            review['checklist'] = revst
+
+            root.update!(review: review)
+          end
+
+          def save_comments(root, comment, checklist, reviewComments, action, his = true)
+            review = root.review || {}
+            review_history = review['history'] || []
+            current = review_history.last
+
+            current['state'] = %w[accepted declined].include?(action) ? action : root.state
+            current['action'] = action unless action.nil?
+            current['username'] = current_user.name
+            current['userid'] = current_user.id
+            current['comment'] = comment unless comment.nil?
+            current['type'] = root.state == Publication::STATE_PENDING ? 'reviewed' : 'submit'
+            current['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+
+            review_history[review_history.length - 1] = current
+            if his ## add next_node
+              next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if root.state == Publication::STATE_PENDING
+              next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if root.state == Publication::STATE_REVIEWED
+              review_history << next_node
+              review['history'] = review_history
+            end
+            if checklist&.length&.positive?
+              revst = review['checklist'] || {}
+              checklist.each do |k, v|
+                revst[k] = v['status'] == true ? { status: v['status'], user: current_user.name, updated_at: Time.now.strftime('%d-%m-%Y %H:%M:%S') } : { status: false } unless revst[k] && revst[k]['status'] == v['status']
+              end
+              review['checklist'] = revst
+            end
+            review['reviewComments'] = reviewComments if reviewComments.present?
             root.update!(review: review)
           end
 
           # TODO: mv to model
           def save_comment(root, comment)
             review = root.review || {}
-            if review.empty?
-              root.update_column(:review, { comments: comment })
-            else
-              comments = review['comments'] || {}
-              review['comments'] = comments.deep_merge(comment || {})
-              root.update!(review: review)
-              root.review
-            end
+            review_history = review['history'] || []
+            current = review_history.last
+            comments = current['comments'] || {}
+            comment[comment.keys[0]]['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S') unless comment.keys.empty?
+            comment[comment.keys[0]]['username'] = current_user.name
+            comment[comment.keys[0]]['userid'] = current_user.id
+
+            current['comments'] = comments.deep_merge(comment || {})
+            review['history'] = review_history
+            root.update!(review: review)
           end
-
-          def accept_new_sample(root, sample)
-            ap = Publication.create!(
-              state: Publication::STATE_PENDING,
-              element: sample,
-              doi: sample.doi,
-              published_by: root.published_by,
-              parent: root,
-              taggable_data: root.taggable_data
-            )
-            sample.analyses.each do |a|
-              accept_new_analysis(ap, a)
-            end
-          end
-
-          def accept_new_analysis(root, analysis)
-            ap = Publication.create!(
-              state: Publication::STATE_PENDING,
-              element: analysis,
-              doi: analysis.doi,
-              published_by: root.published_by,
-              parent: root,
-              taggable_data: root.taggable_data
-            )
-            atag = ap.taggable_data
-            aids = atag&.delete('analysis_ids')
-            aoids = atag&.delete('original_analysis_ids')
-            ap.save! if aids || aoids
-
-            analysis.children.where(container_type: "dataset").each do |ds|
-              ds.attachments.each do |att|
-                if MimeMagic.by_path(att.filename)&.type&.start_with?("image") && att.store.file_exist?
-                  file_path = File.join('public/images/publications/', att.id.to_s, '/', att.filename)
-                  public_path = File.join('public/images/publications/', att.id.to_s)
-                  FileUtils.mkdir_p(public_path)
-                  File.write(file_path, att.store.read_file.force_encoding("utf-8")) if att.store.file_exist?
-                end
-              end
-            end
-          end
-
-          def element_submit(root)
-            root.descendants.each { |np| np.destroy! if np.element.nil? }
-            root.element.reserve_suffix
-            root.element.reserve_suffix_analyses(root.element.analyses) if root.element.analyses&.length > 0
-            root.element.analyses&.each do |a|
-              accept_new_analysis(root, a) if Publication.find_by(element: a).nil?
-            end
-
-            case root.element_type
-            when 'Sample'
-              analyses_ids = root.element.analyses.pluck(:id)
-              root.update!(taggable_data: root.taggable_data.merge(analysis_ids: analyses_ids))
-              root.element.analyses.each do |sa|
-                accept_new_analysis(root,ana) if Publication.find_by(element: sa).nil?
-              end
-
-            when 'Reaction'
-              root.element.products.each do |p|
-                Publication.find_by(element_type:'Sample', element_id: p.id)&.destroy! if p.analyses&.length == 0
-                next if p.analyses&.length == 0
-                p.reserve_suffix
-                p.reserve_suffix_analyses(p.analyses)
-                prod_pub = Publication.find_by(element: p);
-                if prod_pub.nil?
-                  accept_new_sample(root, p)
-                else
-                  p.analyses.each do |rpa|
-                    accept_new_analysis(prod_pub,rpa) if Publication.find_by(element: rpa).nil?
-                  end
-                end
-              end
-            end
-            root.reload
-            root.update_columns(doi_id: root.element.doi.id) unless root.doi_id == root.element.doi.id
-            root.descendants.each { |pub_a|
-              next if pub_a.element.nil?
-              pub_a.update_columns(doi_id: pub_a.element.doi.id) unless pub_a.doi_id == pub_a.element&.doi&.id
-            }
-          end
-
-          def public_literature(root_publication)
-            publications = [root_publication] + root_publication.descendants
-            publications.each do |pub|
-              next unless pub.element_type=='Reaction' || pub.element_type =='Sample'
-              literals = Literal.where(element_type: pub.element_type, element_id: pub.element_id)
-              literals&.each { |l| l.update_columns(category: 'public') } unless literals.nil?
-            end
-          end
-
         end
 
-        desc "process reviewed publication"
+        desc 'process reviewed publication'
         params do
-          requires :id, type: Integer, desc: "Id"
-          requires :type, type: String, desc: "Type", values: %w[sample reaction]
+          requires :id, type: Integer, desc: 'Id'
+          requires :type, type: String, desc: 'Type', values: %w[sample reaction]
           optional :comments, type: Hash
-          optional :summary, type: String
-          optional :feedback, type: String
+          optional :comment, type: String
+          optional :checklist, type: Hash
         end
 
         after_validation do
@@ -598,44 +800,61 @@ module Chemotion
             element_type: params['type'].classify,
             element_id: params['id']
           ).root
-          error!('401 Unauthorized', 401) unless ((User.reviewer_ids.include?(current_user.id) && @root_publication.state == Publication::STATE_PENDING) || (@root_publication.published_by == current_user.id && @root_publication.state == Publication::STATE_REVIEWED ))
+          error!('401 Unauthorized', 401) unless (User.reviewer_ids.include?(current_user.id) && @root_publication.state == Publication::STATE_PENDING) || (@root_publication.review.dig('reviewers')&.include?(current_user&.id)) || (@root_publication.published_by == current_user.id && @root_publication.state == Publication::STATE_REVIEWED)
         end
 
         post :comments do
-          save_comments(
-            @root_publication,
-            params[:comments],
-            params[:summary],
-            params[:feedback]
-          ) unless params[:comments].nil? && params[:summary].nil? && params[:feedback].nil?
-          @root_publication.element
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], nil, false)
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
         end
 
         post :comment do
           save_comment(@root_publication, params[:comments]) unless params[:comments].nil?
-          @root_publication.review
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { review: his || @root_publication.review }
         end
 
         post :reviewed do
-          save_comments(@root_publication, params[:comments], params[:summary], params[:feedback]) unless params[:comments].nil? && params[:summary].nil? && params[:feedback].nil?
-          element_submit(@root_publication)
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'review')
+          # element_submit(@root_publication)
           @root_publication.update_state(Publication::STATE_REVIEWED)
           @root_publication.process_element(Publication::STATE_REVIEWED)
           @root_publication.inform_users(Publication::STATE_REVIEWED)
-          @root_publication.element
+          # @root_publication.element
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: @root_publication.review, review_info: review_info }
         end
 
         post :submit do
-          save_comments(@root_publication, params[:comments], params[:summary], params[:feedback]) unless params[:comments].nil? && params[:summary].nil? && params[:feedback].nil?
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'revision')
           element_submit(@root_publication)
           @root_publication.update_state(Publication::STATE_PENDING)
           @root_publication.process_element(Publication::STATE_PENDING)
           @root_publication.inform_users(Publication::STATE_PENDING)
-          @root_publication.element
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
+        end
+
+        post :approved do
+          approve_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'approved', false)
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
         end
 
         post :accepted do
-          save_comments(@root_publication, params[:comments], params[:summary], params[:feedback]) unless params[:comments].nil? && params[:summary].nil? && params[:feedback].nil?
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'accepted', false)
           element_submit(@root_publication)
           public_literature(@root_publication)
           # element_accepted(@root_publication)
@@ -643,60 +862,59 @@ module Chemotion
           @root_publication.update_state(Publication::STATE_ACCEPTED)
           @root_publication.process_element(Publication::STATE_ACCEPTED)
           @root_publication.inform_users(Publication::STATE_ACCEPTED)
-          @root_publication.element
-          if params['type'] == 'sample'
-            {
-              sample: SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys,
-              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
-            }
-          elsif params['type'] == 'reaction'
-            {
-              reaction: ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys,
-              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
-            }
-          end
+
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          review_info = repo_review_info(@root_publication, current_user&.id, false)
+          { "#{params[:type]}": element, review: @root_publication.review, message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off', review_info: review_info }
         end
         post :declined do
-          save_comments(@root_publication, params[:comments], params[:summary], params[:feedback]) unless params[:comments].nil? && params[:summary].nil? && params[:feedback].nil?
+          save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'declined', false)
           @root_publication.update_state('declined')
           @root_publication.process_element('declined')
           @root_publication.inform_users(Publication::STATE_DECLINED, current_user.id)
-          @root_publication.element
+          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
+          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
+          { "#{params[:type]}": element, review: his || @root_publication.review }
         end
       end
 
       namespace :publishSample do
-        desc "Publish Samples with chosen Dataset"
+        desc 'Publish Samples with chosen Dataset'
         params do
-          requires :sampleId, type: Integer, desc: "Sample Id"
-          requires :analysesIds, type: Array[Integer], desc: "Selected analyses ids"
-          optional :coauthors, type: Array[String], default: [], desc: "Co-author (User)"
-          optional :refs, type: Array[Integer], desc: "Selected references"
-          optional :embargo, type: Integer, desc: "Embargo collection"
-          requires :license, type: String, desc: "Creative Common License"
-          requires :addMe, type: Boolean, desc: "add me as author"
+          requires :sampleId, type: Integer, desc: 'Sample Id'
+          requires :analysesIds, type: Array[Integer], desc: 'Selected analyses ids'
+          optional :coauthors, type: Array[String], default: [], desc: 'Co-author (User)'
+          optional :reviewers, type: Array[String], default: [], desc: 'reviewers (User)'
+          optional :refs, type: Array[Integer], desc: 'Selected references'
+          optional :embargo, type: Integer, desc: 'Embargo collection'
+          requires :license, type: String, desc: 'Creative Common License'
+          requires :addMe, type: Boolean, desc: 'add me as author'
         end
 
         after_validation do
           @sample = current_user.samples.find_by(id: params[:sampleId])
-          @analyses = @sample && @sample.analyses.where(id: params[:analysesIds])
+          @analyses = @sample&.analyses&.where(id: params[:analysesIds])
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
           ols_validation(@analyses)
-          if params[:addMe]
-            @author_ids = [current_user.id] + coauthor_validation(params[:coauthors])
-          else
-            @author_ids = coauthor_validation(params[:coauthors])
-          end
+          @author_ids = if params[:addMe]
+                          [current_user.id] + coauthor_validation(params[:coauthors])
+                        else
+                          coauthor_validation(params[:coauthors])
+                        end
           error!('401 Unauthorized', 401) unless @sample
           error!('404 analyses not found', 404) if @analyses.empty?
+          @group_reviewers = coauthor_validation(params[:reviewers])
         end
 
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_sample_data
           pub.process_element
+          update_tag_doi(pub.element)
           pub.inform_users
 
           @sample.reload
@@ -717,31 +935,33 @@ module Chemotion
 
       # desc: submit reaction data for publication
       namespace :publishReaction do
-        desc "Publish Reaction with chosen Dataset"
+        desc 'Publish Reaction with chosen Dataset'
         params do
-          requires :reactionId, type: Integer, desc: "Reaction Id"
-          requires :analysesIds, type: Array[Integer], desc: "Selected analyses ids"
-          optional :coauthors, type: Array[String], default: [], desc: "Co-author (User)"
-          optional :refs, type: Array[Integer], desc: "Selected references"
-          optional :embargo, type: Integer, desc: "Embargo collection"
-          requires :license, type: String, desc: "Creative Common License"
-          requires :addMe, type: Boolean, desc: "add me as author"
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+          requires :analysesIds, type: Array[Integer], desc: 'Selected analyses ids'
+          optional :coauthors, type: Array[String], default: [], desc: 'Co-author (User)'
+          optional :reviewers, type: Array[String], default: [], desc: 'reviewers (User)'
+          optional :refs, type: Array[Integer], desc: 'Selected references'
+          optional :embargo, type: Integer, desc: 'Embargo collection'
+          requires :license, type: String, desc: 'Creative Common License'
+          requires :addMe, type: Boolean, desc: 'add me as author'
         end
 
         after_validation do
           @scheme_only = false
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
-          error!('404 found no reaction to publish', 401) unless @reaction
+          error!('404 found no reaction to publish', 404) unless @reaction
           @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
           ols_validation(@analysis_set)
-          if params[:addMe]
-            @author_ids = [current_user.id] + coauthor_validation(params[:coauthors])
-          else
-            @author_ids = coauthor_validation(params[:coauthors])
-          end
+          @author_ids = if params[:addMe]
+                          [current_user.id] + coauthor_validation(params[:coauthors])
+                        else
+                          coauthor_validation(params[:coauthors])
+                        end
           error!('404 found no analysis to publish', 404) unless @analysis_set.present?
 
-          #error!('Reaction Publication not authorized', 401)
+          @group_reviewers = coauthor_validation(params[:reviewers])
+          # error!('Reaction Publication not authorized', 401)
           @analysis_set_ids = @analysis_set.map(&:id)
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
         end
@@ -749,9 +969,10 @@ module Chemotion
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_reaction_data
           pub.process_element
+          update_tag_doi(pub.element)
           pub.inform_users
 
           @reaction.reload
@@ -762,7 +983,7 @@ module Chemotion
         end
 
         put :dois do
-          reaction_products = @reaction.products.select { |s| s.analyses.select { |a| a.id.in?@analysis_set_ids }.count > 0 }
+          reaction_products = @reaction.products.select { |s| s.analyses.select { |a| a.id.in? @analysis_set_ids }.count > 0 }
           @reaction.reserve_suffix
           reaction_products.each do |p|
             d = p.reserve_suffix
@@ -782,6 +1003,48 @@ module Chemotion
         end
       end
 
+      namespace :save_repo_authors do
+        desc 'Save REPO authors'
+        params do
+          requires :elementId, type: Integer, desc: 'Element Id'
+          requires :elementType, type: String, desc: 'Element Type'
+          requires :taggData, type: Hash do
+            requires :creators, type: Array[Hash]
+            requires :affiliations, type: Hash
+            requires :contributors, type: Hash
+          end
+        end
+
+        after_validation do
+          unless User.reviewer_ids.include?(current_user.id)
+            @pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType], published_by: current_user.id)
+            error!('404 No publication found', 404) unless @pub
+          end
+        end
+
+        post do
+          pub = Publication.find_by(element_id: params[:elementId], element_type: params[:elementType])
+          declared_params = declared(params, include_missing: false)
+
+          et = ElementTag.find_or_create_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
+          tagg_data = declared_params[:taggData] || {}
+
+          tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
+          tagg_data['affiliation_ids'] = tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq
+          tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].include?(k.to_i) }
+
+          pub_taggable_data = pub.taggable_data || {}
+          pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
+          pub.update(taggable_data: pub_taggable_data)
+
+          et_taggable_data = et.taggable_data || {}
+          pub_tag = et_taggable_data['publication'] || {}
+          pub_tag = pub_tag.deep_merge(tagg_data || {})
+          et_taggable_data['publication'] = pub_tag
+          et.update(taggable_data: et_taggable_data)
+        end
+      end
+
       # desc: submit reaction data (scheme only) for publication
       namespace :publishReactionScheme do
         desc 'Publish Reaction Scheme only'
@@ -793,31 +1056,29 @@ module Chemotion
           optional :coauthors, type: Array[String], default: [], desc: 'Co-author (User)'
           optional :embargo, type: Integer, desc: 'Embargo collection'
           requires :license, type: String, desc: 'Creative Common License'
-          requires :addMe, type: Boolean, desc: "add me as author"
-          requires :schemeDesc, type: Boolean, desc: "publish scheme"
+          requires :addMe, type: Boolean, desc: 'add me as author'
+          requires :schemeDesc, type: Boolean, desc: 'publish scheme'
         end
 
         after_validation do
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
           @scheme_only = true
-          error!('404 found no reaction to publish', 401) unless @reaction
-          schemeYield = params[:products] && params[:products].map{|v| v.slice(:id, :_equivalent)}
-          @reaction.reactions_samples.select{|rs| rs.type == 'ReactionsProductSample'}.map do |p|
-            py = schemeYield.select{ |o| o['id'] == p.sample_id }
-            p.equivalent = py[0]['_equivalent'] if py && py.length > 0
-            p.scheme_yield = py[0]['_equivalent'] if py && py.length > 0
+          error!('404 found no reaction to publish', 404) unless @reaction
+          schemeYield = params[:products]&.map { |v| v.slice(:id, :_equivalent) }
+          @reaction.reactions_samples.select { |rs| rs.type == 'ReactionsProductSample' }.map do |p|
+            py = schemeYield.select { |o| o['id'] == p.sample_id }
+            p.equivalent = py[0]['_equivalent'] if py && !py.empty?
+            p.scheme_yield = py[0]['_equivalent'] if py && !py.empty?
           end
 
-          @reaction.reactions_samples.select{|rs| rs.type != 'ReactionsProductSample'}.map do |p|
+          @reaction.reactions_samples.select{ |rs| rs.type != 'ReactionsProductSample' }.map do |p|
             p.equivalent = 0
           end
           @reaction.name = ''
           @reaction.purification = '{}'
           @reaction.dangerous_products = '{}'
-          unless params[:schemeDesc]
-            @reaction.description = {"ops"=>[{"insert"=>""}]}
-          end
-          @reaction.observation = {"ops"=>[{"insert"=>""}]}
+          @reaction.description = { 'ops' => [{ 'insert' => '' }] } unless params[:schemeDesc]
+          @reaction.observation = { 'ops' => [{ 'insert' => '' }] }
           @reaction.tlc_solvents = ''
           @reaction.tlc_description = ''
           @reaction.rf_value = 0
@@ -825,17 +1086,17 @@ module Chemotion
           @reaction.role = ''
           @reaction.temperature = params[:temperature]
           @reaction.duration = "#{params[:duration][:dispValue]} #{params[:duration][:dispUnit]}" unless params[:duration].nil?
-          if params[:addMe]
-            @author_ids = [current_user.id] + coauthor_validation(params[:coauthors])
-          else
-            @author_ids = coauthor_validation(params[:coauthors])
-          end
+          @author_ids = if params[:addMe]
+                          [current_user.id] + coauthor_validation(params[:coauthors])
+                        else
+                          coauthor_validation(params[:coauthors])
+                        end
         end
 
         post do
           @license = params[:license]
           @publication_tag = create_publication_tag(current_user, @author_ids, @license)
-          @embargo_collection = fetch_embargo_collection(params[:embargo]) if params[:embargo].present? && params[:embargo] >= 0
+          @embargo_collection = fetch_embargo_collection(params[:embargo], current_user) if params[:embargo].present? && params[:embargo] >= 0
           pub = prepare_reaction_data
           pub.process_element
           pub.inform_users
@@ -854,8 +1115,8 @@ module Chemotion
             col.update_columns(ancestry: current_user.published_collection.id)
             sync_emb_col = col.sync_collections_users.where(user_id: current_user.id)&.first
             sync_published_col = SyncCollectionsUser.joins("INNER JOIN collections ON collections.id = sync_collections_users.collection_id ")
-            .where("collections.label='Published Elements'")
-            .where("sync_collections_users.user_id = #{current_user.id}").first
+                                                    .where("collections.label='Published Elements'")
+                                                    .where("sync_collections_users.user_id = #{current_user.id}").first
             sync_emb_col.update_columns(fake_ancestry: sync_published_col.id)
           end
 
@@ -871,19 +1132,23 @@ module Chemotion
           end
 
           def remove_embargo_collection(col)
-           col.sync_collections_users.destroy_all
-           col.really_destroy!
+            col&.publication.really_destroy!
+            col.sync_collections_users.destroy_all
+            col.really_destroy!
           end
         end
-        desc "Generate account with chosen Embargo"
+        desc 'Generate account with chosen Embargo'
         params do
-          requires :collection_id, type: Integer, desc: "Embargo Collection Id"
+          requires :collection_id, type: Integer, desc: 'Embargo Collection Id'
         end
 
         after_validation do
-          @embargo_collection = Collection.find(params[:collection_id])
-          @sync_emb_col = @embargo_collection.sync_collections_users.where(user_id: current_user.id)&.first
-          error!('404 found no collection', 401) unless @sync_emb_col
+          @embargo_collection = Collection.find_by(id: params[:collection_id])
+          error!('404 collection not found', 404) unless @embargo_collection
+          unless User.reviewer_ids.include?(current_user.id)
+            @sync_emb_col = @embargo_collection.sync_collections_users.where(user_id: current_user.id)&.first
+            error!('404 found no collection', 404) unless @sync_emb_col
+          end
         end
 
         get :list do
@@ -903,7 +1168,7 @@ module Chemotion
             scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
             elements.push(
               id: e.element_id, svg: svg_file, type: element_type, title: title,
-              published_by: u&.name, submit_at: e.updated_at, state: e.state, scheme_only: scheme_only
+              published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only
             )
           end
           { elements: elements, embargo_id: params[:collection_id], current_user: { id: current_user.id, type: current_user.type } }
@@ -915,8 +1180,8 @@ module Chemotion
             name_abbreviation = "e#{SecureRandom.random_number(9999)}"
             email = "#{@embargo_collection.id}.#{name_abbreviation}@chemotion.net"
             pwd = Devise.friendly_token.first(8)
-            first_name = "External"
-            last_name = "Chemotion"
+            first_name = 'External'
+            last_name = 'Chemotion'
             type = 'Anonymous'
 
             params = { email: email, password: pwd, first_name: first_name, last_name: last_name, type: type, name_abbreviation: name_abbreviation, confirmed_at: Time.now }
@@ -924,7 +1189,7 @@ module Chemotion
             new_obj.profile.update!({data: {}})
             # sync collection with Anonymous user
             chemotion_user = User.chemotion_user
-            root_label = "with %s" %chemotion_user.name_abbreviation
+            root_label = 'with %s' %chemotion_user.name_abbreviation
             rc = Collection.find_or_create_by(user: new_obj, shared_by_id: chemotion_user.id, is_locked: true, is_shared: true, label: root_label)
 
             # Chemotion Collection
@@ -948,30 +1213,45 @@ module Chemotion
 
         post :release do
           begin
-            pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
-            pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
-            pub_list = pub_samples + pub_reactions
-            check_state = pub_list.select { |pub| pub.state != Publication::STATE_ACCEPTED }
-            if check_state.present?
-              { error: "Embargo #{@embargo_collection.label} release failed, because not all elements have been 'accepted'."}
+            col_pub = @embargo_collection.publication
+            if col_pub.nil? ||  col_pub.published_by != current_user.id
+              { error: "only the owner of embargo #{@embargo_collection.label} can perform the release."}
             else
-              remove_anonymous(@embargo_collection)
-              handle_embargo_collections(@embargo_collection)
-              case ENV['PUBLISH_MODE']
-              when 'production'
-                if Rails.env.production?
-                  ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_later(@embargo_collection.id)
+              col_pub.update(accepted_at: Time.now.utc)
+              refresh_embargo_metadata(params[:collection_id])
+              pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
+              pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
+              pub_list = pub_samples + pub_reactions
+
+              check_state = pub_list.select { |pub| pub.state != Publication::STATE_ACCEPTED }
+              if check_state.present?
+                { error: "Embargo #{@embargo_collection.label} release failed, because not all elements have been 'accepted'."}
+              else
+                scheme_only_list = pub_list.select { |pub| pub.taggable_data['scheme_only']  == true }
+                if pub_list.flatten.length == scheme_only_list.flatten.length
+                  col_pub.update(state: 'scheme_only')
+                else
+                  col_pub.update(state: 'accepted')
                 end
-              when 'staging'
-                ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_later(@embargo_collection.id)
-                #ChemotionEmbargoPubchemJob.perform_now(@embargo_collection.id)
-              else 'development'
+
+                pub_list.each { |pub| element_submit(pub) }
+                remove_anonymous(@embargo_collection)
+                handle_embargo_collections(@embargo_collection)
+                case ENV['PUBLISH_MODE']
+                when 'production'
+                  if Rails.env.production?
+                    ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
+                  end
+                when 'staging'
+                  # ChemotionEmbargoPubchemJob.set(queue: "publishing_embargo_#{@embargo_collection.id}").perform_now(@embargo_collection.id)
+                  ChemotionEmbargoPubchemJob.perform_now(@embargo_collection.id)
+                else 'development'
+                end
+
+
+                { message: "Embargo #{@embargo_collection.label} has been released" }
               end
-
-
-              { message: "Embargo #{@embargo_collection.label} has been released" }
             end
-
           rescue StandardError => e
             { error: e.message }
           end
@@ -992,11 +1272,16 @@ module Chemotion
           end
         end
 
+        post :refresh do
+          @id = params[:id]
+          refresh_embargo_metadata(params[:collection_id])
+        end
+
         post :move do
           begin
-            #@new_embargo = params[:new_embargo]
+            # @new_embargo = params[:new_embargo]
             @element = params[:element]
-            @new_embargo_collection = fetch_embargo_collection(params[:new_embargo]&.to_i) if params[:new_embargo].present? && params[:new_embargo]&.to_i >= 0
+            @new_embargo_collection = fetch_embargo_collection(params[:new_embargo]&.to_i, current_user) if params[:new_embargo].present? && params[:new_embargo]&.to_i >= 0
             case @element['type']
             when 'Sample'
               CollectionsSample
@@ -1012,7 +1297,7 @@ module Chemotion
             end.create_in_collection(@element['id'], [@new_embargo_collection.id])
 
             { col_id: @embargo_collection.id,
-              new_embargo: @new_embargo_collection,
+              new_embargo: @new_embargo_collection.publication,
               is_new_embargo: params[:new_embargo]&.to_i == 0,
               message: "#{@element['type']} [#{@element['title']}] has been moved from Embargo Bundle [#{@embargo_collection.label}] to Embargo Bundle [#{@new_embargo_collection.label}]" }
           rescue StandardError => e

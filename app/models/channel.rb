@@ -14,7 +14,7 @@
 
 
 # Publish-Subscription Model
-class Channel < ActiveRecord::Base
+class Channel < ApplicationRecord
   has_many :subscriptions
   SYSTEM_UPGRADE = 'System Upgrade'
   SYSTEM_NOTIFICATION = 'System Notification'
@@ -27,10 +27,13 @@ class Channel < ActiveRecord::Base
   SEND_IMPORT_NOTIFICATION = 'Import Notification'
   COMPUTED_PROPS_NOTIFICATION = 'Computed Prop Notification'
   GATE_TRANSFER_NOTIFICATION = 'Gate Transfer Completed'
+  CHEMSCANNER_NOTIFICATION = 'ChemScanner Notification'
   COLLECTION_TAKE_OWNERSHIP = 'Collection Take Ownership'
   EDITOR_CALLBACK = 'EditorCallback'
   COLLECTION_ZIP = 'Collection Import and Export'
   COLLECTION_ZIP_FAIL = 'Collection Import and Export Failure'
+  CHEM_SPECTRA_NOTIFICATION = 'Chem Spectra Notification'
+  ASSIGN_INBOX_TO_SAMPLE = 'Assign Inbox Attachment to Sample'
   # REPOSITORY ONLY
   PUBLICATION_REVIEW = 'Publication Review'
   PUBLICATION_PUBLISHED = 'Publication Published'

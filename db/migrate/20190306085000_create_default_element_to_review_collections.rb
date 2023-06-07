@@ -1,4 +1,4 @@
-class CreateDefaultElementToReviewCollections < ActiveRecord::Migration
+class CreateDefaultElementToReviewCollections < ActiveRecord::Migration[4.2]
  def change
    # Update the Reviewing Ancestry to is_locked = true
    reviewing_ancestry_col = Collection.find_by(id: 1198, label: 'Reviewing Publication from')

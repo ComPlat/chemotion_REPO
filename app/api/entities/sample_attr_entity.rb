@@ -1,6 +1,7 @@
 module Entities
   class SampleAttrEntity < Grape::Entity
     expose :id, documentation: { type: "Integer", desc: "Sample's unique id"}
+    expose :molecule, using: Entities::MoleculeEntity
     expose :type, :name, :short_label, :description, :created_at, :updated_at,
     :target_amount_value, :target_amount_unit, :real_amount_value, :location,
     :real_amount_unit, :molfile, :solvent, :molarity_value, :molarity_unit,
@@ -9,8 +10,11 @@ module Entities
     :sample_svg_file, :density, :boiling_point, :melting_point, :stereo,
     :reaction_description, :container, :metrics,
     :pubchem_tag, :xref, :code_log,
-    :can_update, :can_publish, :molecule_name_hash, #:molecule_computed_props,
-    :showed_name
+
+    :can_update, :can_copy, :can_publish, :molecule_name_hash, #:molecule_computed_props,
+    :showed_name, :user_labels, :decoupled,
+    :molecular_mass, :sum_formula,
+    :created_by
 
     def created_at
       object.created_at.strftime("%d.%m.%Y, %H:%M")
@@ -54,8 +58,20 @@ module Entities
       false
     end
 
+    def can_copy
+      false
+    end
+
+    def molfile
+      object.molfile&.encode('utf-8', universal_newline: true, invalid: :replace, undef: :replace) if object.respond_to? :molfile
+    end
+
     def can_publish
       false
+    end
+
+    def solvent
+      object.solvent
     end
 
   end

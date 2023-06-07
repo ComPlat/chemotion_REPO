@@ -14,7 +14,7 @@ module Chemotion
                        .by_name(params[:name]).limit(3).joins(:affiliations)
                        .select(
                          'first_name', 'last_name', 'name', 'id', 'name_abbreviation',
-                         'name_abbreviation as abb',
+                         'name_abbreviation as abb', 'type as user_type',
                          'jsonb_object_agg(affiliations.id, affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country) as aff'
                        ).group('first_name', 'last_name', 'name', 'id', 'name_abbreviation')
           }
@@ -26,6 +26,74 @@ module Chemotion
       desc 'Return current_user'
       get 'current' do
         present current_user, with: Entities::UserEntity, root: 'user'
+      end
+
+      desc 'list user labels'
+      get 'list_labels' do
+        labels = UserLabel.where('user_id = ? or access_level >= 1', current_user.id)
+                          .order('access_level desc, position, title')
+        present labels || [], with: Entities::UserLabelEntity, root: 'labels'
+      end
+
+      desc 'list structure editors'
+      get 'list_editors' do
+        editors = []
+        %w[chemdrawEditor marvinjsEditor ketcher2Editor].each { |str| editors.push(str) if current_user.matrix_check_by_name(str) }
+        present Matrice.where(name: editors).order('name'), with: Entities::MatriceEntity, root: 'matrices'
+      end
+
+      namespace :omniauth_providers do
+        desc "get omniauth providers"
+        get do
+          { providers: Devise.omniauth_configs.keys, current_user: current_user }
+        end
+      end
+
+      namespace :save_label do
+        desc 'create or update user labels'
+        params do
+          optional :id, type: Integer
+          optional :title, type: String
+          optional :description, type: String
+          optional :color, type: String
+          optional :access_level, type: Integer
+        end
+        put do
+          attr = {
+            id: params[:id],
+            user_id: current_user.id,
+            access_level: params[:access_level] || 0,
+            title: params[:title],
+            description: params[:description],
+            color: params[:color]
+          }
+          if params[:id].present?
+            label = UserLabel.find(params[:id])
+            label.update!(attr)
+          else
+            UserLabel.create!(attr)
+          end
+        end
+      end
+
+      namespace :update_counter do
+        desc 'create or update user labels'
+        params do
+          optional :type, type: String
+          optional :counter, type: Integer
+        end
+        put do
+          counters = current_user.counters
+          counters[params[:type]] = params[:counter]
+          current_user.update(counters: counters)
+        end
+      end
+
+      namespace :scifinder do
+        desc 'scifinder-n credential'
+        get do
+          ScifinderNCredential.find_by(created_by: current_user.id) || {}
+        end
       end
 
       desc 'Log out current_user'
@@ -150,9 +218,9 @@ module Chemotion
 
     resource :groups do
       rescue_from ActiveRecord::RecordInvalid do |error|
-        message = error.record.errors.messages.map { |attr, msg|
+        message = error.record.errors.messages.map do |attr, msg|
           "%s %s" % [attr, msg.first]
-        }
+        end
         error!(message.join(', '), 404)
       end
 
@@ -187,9 +255,28 @@ module Chemotion
       namespace :qrycurrent do
         desc 'fetch groups of current user'
         get do
-          data = current_user.groups | current_user.administrated_accounts
-                                              .where(type: 'Group').uniq
+          data = current_user.groups | current_user.administrated_accounts.where(type: 'Group').distinct
           present data, with: Entities::GroupEntity, root: 'currentGroups'
+        end
+      end
+
+      namespace :queryCurrentDevices do
+        desc 'fetch devices of current user'
+        get do
+          data = [current_user.devices + current_user.groups.map(&:devices)].flatten.uniq
+          present data, with: Entities::DeviceEntity, root: 'currentDevices'
+        end
+      end
+
+      namespace :deviceMetadata do
+        desc 'Get deviceMetadata by device id'
+        params do
+          requires :device_id, type: Integer, desc: 'device id'
+        end
+        route_param :device_id do
+          get do
+            present DeviceMetadata.find_by(device_id: params[:device_id]), with: Entities::DeviceMetadataEntity, root: 'device_metadata'
+          end
         end
       end
 
@@ -212,6 +299,7 @@ module Chemotion
         put ':id' do
           group = Group.find(params[:id])
           if params[:destroy_group]
+            User.find_by(id: params[:id])&.remove_from_matrices
             { destroyed_id: params[:id] } if group.destroy!
           else
             new_users =
@@ -220,7 +308,7 @@ module Chemotion
             group.users << Person.where(id: new_users)
             group.save!
             group.users.delete(User.where(id: rm_users))
-            group
+            User.gen_matrix(rm_users) if rm_users&.length&.positive?
             present group, with: Entities::GroupEntity, root: 'group'
           end
         end

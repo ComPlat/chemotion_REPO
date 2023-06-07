@@ -1,4 +1,4 @@
-# Delayed::Worker.destroy_failed_jobs = false
+Delayed::Worker.destroy_failed_jobs = false
 # Delayed::Worker.sleep_delay = 60
 # Delayed::Worker.max_attempts = 3
 # Delayed::Worker.max_run_time = 5.minutes
@@ -9,7 +9,7 @@
 Delayed::Worker.logger = Logger.new(File.join(Rails.root, 'log', 'delayed_job.log'))
 
 begin
-  if ActiveRecord::Base.connection.table_exists?('delayed_jobs') && Delayed::Job.column_names.include?('cron')
+  if defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.data_source_exists?('delayed_jobs') && Delayed::Job.column_names.include?('cron')
     Delayed::Job.where("handler like ?", "%CollectDataFrom%").destroy_all
     Delayed::Job.where("handler like ?", "%CollectFileFrom%").destroy_all
     if Rails.configuration.datacollectors && Rails.configuration.datacollectors.services
@@ -47,7 +47,7 @@ begin
     Delayed::Job.where("handler like ?", "%RefreshElementTagJob%").destroy_all
     cron_config = ENV['CRON_CONFIG_ELEMENT_TAG'].presence
     cron_config ||= "#{rand(0..59)} #{rand(20..23)} * * #{rand(6..7)}"
-    RefreshElementTagJob.set(cron: cron_config ).perform_later
+    RefreshElementTagJob.set(cron: cron_config).perform_later
     # Delayed::Job.where("handler like ?", "%ChemrepoIdJob%").destroy_all
     # cron_config = ENV['CRON_CONFIG_CHEM_REPO_ID'].presence
     # cron_config ||= "#{rand(0..59)} #{rand(17..19)} * * #{rand(6..7)}"
@@ -57,6 +57,6 @@ begin
     cron_config ||= "#{rand(0..59)} #{rand(0..23)} * * #{rand(6..7)}"
     PubchemSidJob.set(cron: cron_config ).perform_later
   end
-rescue PG::ConnectionBad => e
+rescue PG::ConnectionBad, ActiveRecord::NoDatabaseError => e
   puts e.message
 end

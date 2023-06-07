@@ -1,4 +1,4 @@
-class CreateEmbargoedPublicationCollections < ActiveRecord::Migration
+class CreateEmbargoedPublicationCollections < ActiveRecord::Migration[4.2]
   def change
     chemotion_user = User.chemotion_user
     user_ids = User.where(type: 'Person').pluck(:id)

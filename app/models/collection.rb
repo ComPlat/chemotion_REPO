@@ -20,6 +20,7 @@
 #  deleted_at                :datetime
 #  is_synchronized           :boolean          default(FALSE), not null
 #  researchplan_detail_level :integer          default(10)
+#  element_detail_level      :integer          default(10)
 #
 # Indexes
 #
@@ -28,25 +29,30 @@
 #  index_collections_on_user_id     (user_id)
 #
 
-class Collection < ActiveRecord::Base
+class Collection < ApplicationRecord
   acts_as_paranoid
-  belongs_to :user
+  belongs_to :user, optional: true
   has_ancestry
+  include Publishing
 
   has_many :collections_samples, dependent: :destroy
   has_many :collections_reactions, dependent: :destroy
   has_many :collections_wellplates, dependent: :destroy
   has_many :collections_screens, dependent: :destroy
   has_many :collections_research_plans, dependent: :destroy
+  has_many :collections_elements, dependent: :destroy
 
   has_many :samples, through: :collections_samples
   has_many :reactions, through: :collections_reactions
   has_many :wellplates, through: :collections_wellplates
   has_many :screens, through: :collections_screens
   has_many :research_plans, through: :collections_research_plans
+  has_many :elements, through: :collections_elements
 
   has_many :sync_collections_users,  foreign_key: :collection_id, dependent: :destroy
   has_many :shared_users, through: :sync_collections_users, source: :user
+
+  has_one :doi, as: :doiable
 
   # A collection is locked if it is not allowed to rename or rearrange it
   scope :unlocked, -> { where(is_locked: false) }
@@ -94,6 +100,14 @@ class Collection < ActiveRecord::Base
     ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
   end
 
+  def self.embargo_accepted_collection
+    find_by(
+      user_id: User.chemotion_user.id,
+      label: 'Embargo Accepted',
+      is_synchronized: true
+    )
+  end
+
   def self.element_to_review_collection
     where(
       user_id: User.chemotion_user.id,
@@ -115,7 +129,7 @@ class Collection < ActiveRecord::Base
   end
 
   def self.bulk_update(user_id, collection_attributes, deleted_ids)
-    ActiveRecord::Base.transaction do
+    ApplicationRecord.transaction do
       update_or_create(user_id, collection_attributes)
       update_parent_child_associations(user_id, collection_attributes)
       delete_set(user_id, deleted_ids)
@@ -178,5 +192,24 @@ class Collection < ActiveRecord::Base
   def self.reject_shared(user_id, collection_id)
     Collection.where(id: collection_id, user_id: user_id, is_shared: true)
               .each(&:destroy)
+  end
+
+  def self.all_embargos(user_id)
+    if user_id.nil?
+        Collection.where(
+          <<~SQL
+            id in (select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements'))
+          SQL
+        )
+      else
+        Collection.where(
+          <<~SQL
+            id in (
+              select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements') union
+              select co.id from collections co where co.ancestry in (select c.id::text from collections c, sync_collections_users scu
+              where c.label = 'Embargoed Publications' and scu.collection_id = c.id and scu.user_id = #{user_id}))
+          SQL
+        )
+      end
   end
 end

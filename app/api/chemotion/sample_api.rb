@@ -9,6 +9,7 @@ module Chemotion
     helpers CollectionHelpers
     helpers SampleHelpers
     helpers ProfileHelpers
+    helpers UserLabelHelpers
 
     resource :samples do
 
@@ -73,6 +74,17 @@ module Chemotion
                 name: {field: "name", displayName: "Name"},
                 external_label: {field: "external_label", displayName: "External label"},
                 purity: {field: "purity", displayName: "Purity"},
+
+                molecule_name: { field: 'molecule_name', displayName: 'Molecule Name' },
+                short_label: { field: 'short_label', displayName: 'Short Label' },
+                real_amount: { field: 'real_amount', displayName: 'Real Amount' },
+                real_amount_unit: { field: 'real_amount_unit', displayName: 'Real Amount Unit' },
+                target_amount: { field: 'target_amount', displayName: 'Target Amount' },
+                target_amount_unit: { field: 'target_amount_unit', displayName: 'Target Amount Unit' },
+                molarity: { field: 'molarity', displayName: 'Molarity' },
+                density: { field: 'density', displayName: 'Density' },
+                melting_point: { field: 'melting_point', displayName: 'Melting Point' },
+                boiling_point: { field: 'boiling_point', displayName: 'Boiling Point' },
               },
               current_user_id: current_user.id)
             sdf_import.find_or_create_mol_by_batch
@@ -108,11 +120,11 @@ module Chemotion
             current_user_id: current_user.id,
             rows: params[:rows],
             mapped_keys: params[:mapped_keys]
-
           )
+
           sdf_import.create_samples
           return {
-            sdf: true, message: sdf_import.message, status: sdf_import.status,
+            sdf: true, message: sdf_import.message, status: sdf_import.status, error_messages: sdf_import.error_messages
           }
         end
       end
@@ -162,7 +174,7 @@ module Chemotion
         else
           # All collection
           own_collection = true
-          scope = Sample.for_user(current_user.id).uniq
+          scope = Sample.for_user(current_user.id).distinct
         end
         scope = scope.includes(
           :residues, :tag, :molecule_name,
@@ -173,7 +185,7 @@ module Chemotion
         scope = if prod_only
                   scope.product_only
                 else
-                  scope.uniq.sample_or_startmat_or_products
+                  scope.distinct.sample_or_startmat_or_products
                 end
         from = params[:from_date]
         to = params[:to_date]
@@ -187,7 +199,7 @@ module Chemotion
         reset_pagination_page(scope)
         sample_serializer_selector =
           if own_collection
-            ->(s) { SampleListSerializer::Level10.new(s, 10).serializable_hash }
+            ->(s) { Entities::SampleEntity::Level10.represent(s) }
           else
             lambda do |s|
               ElementListPermissionProxy.new(current_user, s, user_ids).serialized
@@ -235,10 +247,10 @@ module Chemotion
         end
 
         get do
-          sample= Sample.includes(:molecule, :residues, :elemental_compositions, :container)
+          sample = Sample.includes(:molecule, :residues, :elemental_compositions, :container)
                         .find(params[:id])
 
-          var_detail_level = db_exec_detail_level_for_sample(current_user.id, sample.id);
+          var_detail_level = db_exec_detail_level_for_sample(current_user.id, sample.id)
           nested_detail_levels = {}
           nested_detail_levels[:sample] = var_detail_level[0]['detail_level_sample'].to_i
           nested_detail_levels[:wellplate] = [ var_detail_level[0]['detail_level_wellplate'].to_i ]
@@ -265,7 +277,7 @@ module Chemotion
         optional :molarity_unit, type: String, desc: "Sample real amount_unit"
         optional :description, type: String, desc: "Sample description"
         optional :purity, type: Float, desc: "Sample purity"
-        optional :solvent, type: String, desc: "Sample solvent"
+        optional :solvent, type: Array[Hash], desc: "Sample solvent"
         optional :location, type: String, desc: "Sample location"
         optional :molfile, type: String, desc: "Sample molfile"
         optional :sample_svg_file, type: String, desc: "Sample SVG file"
@@ -275,9 +287,12 @@ module Chemotion
         optional :molecule_id, type: Integer
         optional :is_top_secret, type: Boolean, desc: "Sample is marked as top secret?"
         optional :density, type: Float, desc: "Sample density"
-        optional :boiling_point, type: Float, desc: "Sample boiling point"
-        optional :melting_point, type: Float, desc: "Sample melting point"
+        optional :boiling_point_upperbound, type: Float, desc: 'upper bound of sample boiling point'
+        optional :boiling_point_lowerbound, type: Float, desc: 'lower bound of sample boiling point'
+        optional :melting_point_upperbound, type: Float, desc: 'upper bound of sample melting point'
+        optional :melting_point_lowerbound, type: Float, desc: 'lower bound of sample melting point'
         optional :residues, type: Array
+        optional :segments, type: Array
         optional :elemental_compositions, type: Array
         optional :xref, type: Hash
         optional :stereo, type: Hash do
@@ -286,6 +301,10 @@ module Chemotion
         end
         optional :molecule_name_id, type: Integer
         requires :container, type: Hash
+        optional :user_labels, type: Array
+        optional :decoupled, type: Boolean, desc: 'Sample is decoupled from structure?', default: false
+        optional :molecular_mass, type: Float
+        optional :sum_formula, type: String
         #use :root_container_params
       end
 
@@ -297,10 +316,15 @@ module Chemotion
         end
         put do
           attributes = declared(params, include_missing: false)
+          # attributes[:solvent] = params[:solvent].to_json
+          attributes[:solvent] = params[:solvent]
 
-          update_datamodel(attributes[:container]);
-          attributes.delete(:container);
+          update_datamodel(attributes[:container])
+          attributes.delete(:container)
 
+          update_element_labels(@sample,attributes[:user_labels], current_user.id)
+          attributes.delete(:user_labels)
+          attributes.delete(:segments)
 
           # otherwise ActiveRecord::UnknownAttributeError appears
           attributes[:elemental_compositions].each do |i|
@@ -315,10 +339,31 @@ module Chemotion
             ) unless prop_value.blank?
           end
 
+          boiling_point_lowerbound = params['boiling_point_lowerbound'].blank? ? -Float::INFINITY : params['boiling_point_lowerbound']
+          boiling_point_upperbound = params['boiling_point_upperbound'].blank? ? Float::INFINITY : params['boiling_point_upperbound']
+          melting_point_lowerbound = params['melting_point_lowerbound'].blank? ? -Float::INFINITY : params['melting_point_lowerbound']
+          melting_point_upperbound = params['melting_point_upperbound'].blank? ? Float::INFINITY : params['melting_point_upperbound']
+          attributes['boiling_point'] = Range.new(boiling_point_lowerbound, boiling_point_upperbound)
+          attributes['melting_point'] = Range.new(melting_point_lowerbound, melting_point_upperbound)
+          attributes.delete(:boiling_point_lowerbound)
+          attributes.delete(:boiling_point_upperbound)
+          attributes.delete(:melting_point_lowerbound)
+          attributes.delete(:melting_point_upperbound)
+
           @sample.update!(attributes)
+          @sample.save_segments(segments: params[:segments], current_user_id: current_user.id)
+
+          # params[:segments].each do |seg|
+          #   segment = Segment.find_by(element_type: Sample.name, element_id: @sample.id, segment_klass_id: seg["segment_klass_id"])
+          #   if segment.present?
+          #     segment.update!(properties: seg["properties"])
+          #   else
+          #     Segment.create!(segment_klass_id: seg["segment_klass_id"], element_type: Sample.name, element_id: @sample.id, properties: seg["properties"], created_by: current_user.id)
+          #   end
+          # end
 
           #save to profile
-          kinds = @sample.container&.analyses&.pluck("extended_metadata->'kind'")
+          kinds = @sample.container&.analyses&.pluck(Arel.sql("extended_metadata->'kind'"))
           recent_ols_term_update('chmo', kinds) if kinds&.length&.positive?
 
           var_detail_level = db_exec_detail_level_for_sample(current_user.id, @sample.id)
@@ -352,7 +397,8 @@ module Chemotion
         optional :molarity_unit, type: String, desc: "Sample real amount_unit"
         requires :description, type: String, desc: "Sample description"
         requires :purity, type: Float, desc: "Sample purity"
-        requires :solvent, type: String, desc: "Sample solvent"
+        # requires :solvent, type: String, desc: "Sample solvent"
+        optional :solvent, type: Array[Hash], desc: "Sample solvent"
         requires :location, type: String, desc: "Sample location"
         optional :molfile, type: String, desc: "Sample molfile"
         optional :sample_svg_file, type: String, desc: "Sample SVG file"
@@ -360,9 +406,12 @@ module Chemotion
         optional :collection_id, type: Integer, desc: "Collection id"
         requires :is_top_secret, type: Boolean, desc: "Sample is marked as top secret?"
         optional :density, type: Float, desc: "Sample density"
-        optional :boiling_point, type: Float, desc: "Sample boiling point"
-        optional :melting_point, type: Float, desc: "Sample melting point"
+        optional :boiling_point_upperbound, type: Float, desc: 'upper bound of sample boiling point'
+        optional :boiling_point_lowerbound, type: Float, desc: 'lower bound of sample boiling point'
+        optional :melting_point_upperbound, type: Float, desc: 'upper bound of sample melting point'
+        optional :melting_point_lowerbound, type: Float, desc: 'lower bound of sample melting point'
         optional :residues, type: Array
+        optional :segments, type: Array
         optional :elemental_compositions, type: Array
         optional :xref, type: Hash
         optional :stereo, type: Hash do
@@ -372,9 +421,12 @@ module Chemotion
         optional :molecule_name_id, type: Integer
         optional :molecule_id, type: Integer
         requires :container, type: Hash
+        optional :decoupled, type: Boolean, desc: 'Sample is decoupled from structure?', default: false
+        optional :molecular_mass, type: Float
+        optional :sum_formula, type: String
       end
       post do
-
+        molecule_id = params[:decoupled] && params[:molfile].blank? ? Molecule.find_or_create_dummy&.id : params[:molecule_id]
         attributes = {
           name: params[:name],
           short_label: params[:short_label],
@@ -390,19 +442,27 @@ module Chemotion
           solvent: params[:solvent],
           location: params[:location],
           molfile: params[:molfile],
-          molecule_id: params[:molecule_id],
+          molecule_id: molecule_id,
           sample_svg_file: params[:sample_svg_file],
           is_top_secret: params[:is_top_secret],
           density: params[:density],
-          boiling_point: params[:boiling_point],
-          melting_point: params[:melting_point],
           residues: params[:residues],
           elemental_compositions: params[:elemental_compositions],
           created_by: current_user.id,
           xref: params[:xref],
           stereo: params[:stereo],
-          molecule_name_id: params[:molecule_name_id]
+          molecule_name_id: params[:molecule_name_id],
+          decoupled: params[:decoupled],
+          molecular_mass: params[:molecular_mass],
+          sum_formula: params[:sum_formula]
         }
+
+        boiling_point_lowerbound = params['boiling_point_lowerbound'].blank? ? -Float::INFINITY : params['boiling_point_lowerbound']
+        boiling_point_upperbound = params['boiling_point_upperbound'].blank? ? Float::INFINITY : params['boiling_point_upperbound']
+        melting_point_lowerbound = params['melting_point_lowerbound'].blank? ? -Float::INFINITY : params['melting_point_lowerbound']
+        melting_point_upperbound = params['melting_point_upperbound'].blank? ? Float::INFINITY : params['melting_point_upperbound']
+        attributes['boiling_point'] = Range.new(boiling_point_lowerbound, boiling_point_upperbound)
+        attributes['melting_point'] = Range.new(melting_point_lowerbound, melting_point_upperbound)
 
         # otherwise ActiveRecord::UnknownAttributeError appears
         # TODO should be in params validation
@@ -422,23 +482,45 @@ module Chemotion
             "#{prop}_attributes".to_sym => prop_value
           ) unless prop_value.blank?
         end
+        attributes.delete(:segments)
 
         sample = Sample.new(attributes)
 
         if params[:collection_id]
-          collection = current_user.collections.find(params[:collection_id])
-          sample.collections << collection
+          collection = current_user.collections.where(id: params[:collection_id]).take
+          sample.collections << collection if collection.present?
         end
 
-        all_coll = Collection.get_all_collection_for_user(current_user.id)
-        sample.collections << all_coll
-        
-        sample.container = update_datamodel(params[:container])
+        is_shared_collection = false
+        unless collection.present?
+          sync_collection = current_user.all_sync_in_collections_users.where(id: params[:collection_id]).take
+          if sync_collection.present?
+            is_shared_collection = true
+            sample.collections << Collection.find(sync_collection['collection_id'])
+            sample.collections << Collection.get_all_collection_for_user(sync_collection['shared_by_id'])
+          end
+        end
 
+        unless is_shared_collection
+          all_coll = Collection.get_all_collection_for_user(current_user.id)
+          sample.collections << all_coll
+        end
+
+        sample.container = update_datamodel(params[:container])
         sample.save!
 
+        sample.save_segments(segments: params[:segments], current_user_id: current_user.id)
+        # params[:segments].each do |seg|
+        #   segment = Segment.find_by(element_type: Sample.name, element_id: @sample.id, segment_klass_id: seg["segment_klass_id"])
+        #   if segment.present?
+        #     segment.update!(properties: seg["properties"])
+        #   else
+        #     Segment.create!(segment_klass_id: seg["segment_klass_id"], element_type: Sample.name, element_id: @sample.id, properties: seg["properties"], created_by: current_user.id)
+        #   end
+        # end
+
         #save to profile
-        kinds = sample.container&.analyses&.pluck("extended_metadata->'kind'")
+        kinds = sample.container&.analyses&.pluck(Arel.sql("extended_metadata->'kind'"))
         recent_ols_term_update('chmo', kinds) if kinds&.length&.positive?
 
         sample

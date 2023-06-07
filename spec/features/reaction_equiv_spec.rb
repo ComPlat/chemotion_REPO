@@ -28,7 +28,7 @@ describe 'Reaction Equiv Spec' do
   let!(:mr2) { create(:molecule, molecular_weight: 330.2360496) }
 
   let(:material) { create(:sample, name: 'Material', target_amount_value: 7.15, collections: user.collections, molecule: m1) }
-  let(:reactant1) { create(:sample, name: 'Reactant1', target_amount_value: 5.435, collections: user.collections) }
+  let(:reactant1) { create(:sample, name: 'Reactant1', target_amount_value: 7.15, collections: user.collections, molecule: m1) }
   let(:reactant2) { create(:sample, name: 'Reactant2', target_amount_value: 3.123, collections: user.collections) }
   let(:solvent) { create(:sample, name: 'Solvent', collections: user.collections) }
   let(:product) { create(:sample, name: 'Product', real_amount_value: 4.671, collections: user.collections, molecule: m2) }
@@ -59,18 +59,20 @@ describe 'Reaction Equiv Spec' do
       ReactionsStartingMaterialSample.create!(
         reaction: reaction, sample: material, reference: true, equivalent: 1
       )
-      ReactionsReactantSample.create!(reaction: reaction, sample: reactant1, equivalent: 2)
+      ReactionsReactantSample.create!(reaction: reaction, sample: reactant1, equivalent: 1)
       ReactionsSolventSample.create!(reaction: reaction, sample: solvent, equivalent: 1)
       ReactionsProductSample.create!(reaction: reaction, sample: product, equivalent: 1)
     end
 
     it 'change material amount', js: true do
-      material_new_amount = 5000
-      find('.tree-view', text: 'chemotion.net').click
+      material_new_amount = 4000
+      find('.tree-view', text: 'chemotion-repository.net').click
       first('i.icon-reaction').click
-      first('i.c-bs-success').click
-      find('div#reaction-detail-tab a#reaction-detail-tab-tab-0').click
+      first('span.isvg.loaded.reaction').click
+      find('div#reaction-detail-tab').click
+      find('a#reaction-detail-tab-tab-scheme').click
       tab_scheme = find('div#reaction-detail-tab div.tab-content')
+      tab_scheme.all('span.input-group')[0].find_all('input').first.click
       tab_scheme.first('button#lock_equiv_column_btn').click
       material_field = tab_scheme.first('span.input-group').find_all('input').first
       reactants_table = find('th', text: 'Reactants').find(:xpath, '../../../..')
@@ -81,7 +83,7 @@ describe 'Reaction Equiv Spec' do
       material_field.click
       reactants_field.click
       reactants_new_amount = reactants_field.value.to_i
-      expect_result = material_new_amount / material.molecule.molecular_weight * 2
+      expect_result = material_new_amount / material.molecule.molecular_weight
       expect_result *= reactant1.molecule.molecular_weight
       expect(reactants_new_amount).to eq(expect_result.to_i)
     end

@@ -1,7 +1,11 @@
+#module API
+require 'grape-entity'
+require 'grape-swagger'
+
 class API < Grape::API
-  prefix 'api'
-  version 'v1'
   format :json
+  prefix :api
+  version 'v1'
   formatter :json, Grape::Formatter::ActiveModelSerializers
 
   # TODO needs to be tested,
@@ -23,7 +27,7 @@ class API < Grape::API
     def is_public_request?
       request.path.start_with?(
         '/api/v1/public/',
-        '/api/v1/chemscanner/',
+        '/api/v1/public_chemscanner/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
@@ -87,12 +91,13 @@ class API < Grape::API
 
   # desc: whitelisted tables and columns for advanced_search
   WL_TABLES = {
-    'samples' => %w(name short_label external_label),
-    'molecules' => %w(cas)
+    'samples' => %w(name short_label external_label xref)
   }
   TARGET = Rails.env.production? ? 'https://www.chemotion-repository.net/' : 'http://localhost:3000/'
 
-  ELEMENTS = %w[research_plan screen wellplate reaction sample]
+  ELEMENTS = %w[research_plan reaction sample]
+
+  TEXT_TEMPLATE = %w[SampleTextTemplate ReactionTextTemplate WellplateTextTemplate ScreenTextTemplate ResearchPlanTextTemplate ReactionDescriptionTextTemplate ElementTextTemplate ]
 
   mount Chemotion::LiteratureAPI
   mount Chemotion::ContainerAPI
@@ -103,6 +108,7 @@ class API < Grape::API
   mount Chemotion::ReactionAPI
   mount Chemotion::WellplateAPI
   mount Chemotion::ResearchPlanAPI
+  mount Chemotion::ResearchPlanMetadataAPI
   mount Chemotion::ScreenAPI
   mount Chemotion::UserAPI
   mount Chemotion::ReactionSvgAPI
@@ -115,11 +121,13 @@ class API < Grape::API
   mount Chemotion::ProfileAPI
   mount Chemotion::CodeLogAPI
   mount Chemotion::DeviceAPI
+  mount Chemotion::InboxAPI
   mount Chemotion::IconNmrAPI
   mount Chemotion::DevicesAnalysisAPI
   mount Chemotion::GateAPI
   mount Chemotion::ElementAPI
-  mount Chemotion::ChemScannerAPI
+  mount Chemotion::PublicChemscannerAPI
+  mount Chemotion::ChemscannerAPI
   mount Chemotion::ChemSpectraAPI
   mount Chemotion::InstrumentAPI
   mount Chemotion::MessageAPI
@@ -127,6 +135,22 @@ class API < Grape::API
   mount Chemotion::EditorAPI
   mount Chemotion::UiAPI
   mount Chemotion::OlsTermsAPI
+  mount Chemotion::PredictionAPI
+  mount Chemotion::ComputeTaskAPI
+  mount Chemotion::TextTemplateAPI
+  mount Chemotion::GenericElementAPI
+  mount Chemotion::SegmentAPI
+  mount Chemotion::GenericDatasetAPI
+  mount Chemotion::ReportTemplateAPI
+  mount Chemotion::PrivateNoteAPI
+  mount Chemotion::NmrdbAPI
+  mount Chemotion::ConverterAPI
   mount Chemotion::RepositoryAPI
   mount Chemotion::ArticleAPI
+  mount Chemotion::CollaborationAPI
+
+  add_swagger_documentation(info: {
+    "title": "Chemotion Repository",
+    "version": "1.0"
+  }) if Rails.env.development?
 end

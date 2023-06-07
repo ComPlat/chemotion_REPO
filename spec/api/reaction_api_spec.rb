@@ -105,7 +105,7 @@ describe Chemotion::ReactionAPI do
 
         before do
           CollectionsReaction.create(reaction_id: r1.id, collection_id: c1.id)
-          delete "/api/v1/reactions/#{r1.id}", params
+          delete "/api/v1/reactions/#{r1.id}", params: params
         end
 
         it 'is able to delete a reaction' do
@@ -209,7 +209,7 @@ describe Chemotion::ReactionAPI do
         end
 
         before do
-          put "/api/v1/reactions/#{reaction_1.id}", params
+          put "/api/v1/reactions/#{reaction_1.id}", params: params, as: :json
         end
 
         let(:r) { Reaction.find(reaction_1.id) }
@@ -234,12 +234,12 @@ describe Chemotion::ReactionAPI do
                  .find_by(sample_id: sample_1.id)
           sa2 = r.reactions_starting_material_samples
                  .find_by(sample_id: sample_2.id)
+          sa2_eq = (sa2.sample.amount_mmol / sa1.sample.amount_mmol).round(14)
           expect(sa1.attributes).to include(
             'reference' => true, 'equivalent' => 1.0
           )
-          expect(sa2.attributes).to include(
-            'reference' => false, 'equivalent' => 5.5
-          )
+          expect(sa2.attributes).to include('reference' => false)
+          expect(sa2.equivalent.round(14)).to eq(sa2_eq)
           expect(r.reactions_reactant_samples).to be_empty
         end
 
@@ -296,9 +296,9 @@ describe Chemotion::ReactionAPI do
         end
 
         before do
-          put(
-            "/api/v1/reactions/#{reaction_1.id}.json", params.to_json,
-            'CONTENT_TYPE' => 'application/json'
+          put("/api/v1/reactions/#{reaction_1.id}.json",
+            params: params.to_json,
+            headers: { 'CONTENT_TYPE' => 'application/json' }
           )
         end
 
@@ -354,10 +354,9 @@ describe Chemotion::ReactionAPI do
               'reactants' => [
                 'id' => 'd4ca4ec0-6d8e-11e5-b2f1-c9913eb3e336',
                 'name' => 'Copied Sample',
-                'solvent' => 'solvent1',
+                'solvent' => [{:label=>'Acetone', :smiles=>'CC(C)=O', :ratio=>'100'}],
                 'target_amount_unit' => 'mg',
                 'target_amount_value' => 86.09596,
-                'parent_id' => sample_1.id,
                 'reference' => false,
                 'equivalent' => 2,
                 'is_new' => true,
@@ -371,9 +370,9 @@ describe Chemotion::ReactionAPI do
         end
 
         before do
-          post(
-            '/api/v1/reactions.json', params.to_json,
-            'CONTENT_TYPE' => 'application/json'
+          post('/api/v1/reactions.json',
+            params: params.to_json,
+            headers: { 'CONTENT_TYPE' => 'application/json' }
           )
         end
 
@@ -396,13 +395,13 @@ describe Chemotion::ReactionAPI do
           )
         end
 
-        it 'createds a copied sample' do
+        it 'creates a copied sample' do
           reactant = r.reactants.last
           expect(reactant.attributes).to include(
             'name' => 'Copied Sample',
             'target_amount_value' => 86.09596,
             'target_amount_unit' => 'mg',
-            'solvent' => 'solvent1'
+            'solvent' => [{ 'label' => 'Acetone', 'smiles' => 'CC(C)=O', 'ratio' => '100' }]
           )
           reactant_association = r.reactions_reactant_samples
                                   .find_by(sample_id: reactant.id)
@@ -452,7 +451,7 @@ describe Chemotion::ReactionAPI do
         end
 
         before do
-          post '/api/v1/reactions', params
+          post '/api/v1/reactions', params: params, as: :json
         end
 
         let(:r) { Reaction.last }

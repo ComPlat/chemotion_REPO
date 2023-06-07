@@ -37,6 +37,13 @@ th.drag {
   margin-top: 11px;
 }
 
+.decoupled-icon span {
+  border: 1px solid grey;
+  background-color: white;
+  color: black;
+  cursor: auto;
+}
+
 .collection-label {
   display: inline-block;
   cursor: pointer;
@@ -68,6 +75,13 @@ th.drag {
 
 .pubchem-logo {
   max-height: 22px;
+}
+
+.orcid-logo {
+  height: 16px;
+  width: 16px;
+  margin-bottom: 2px;
+  margin-right: 1px;
 }
 
 .sample-list-from-date, .sample-list-to-date {

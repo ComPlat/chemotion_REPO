@@ -20,12 +20,14 @@
 #  published_by          :integer
 #  published_at          :datetime
 #  review                :jsonb
+#  accepted_at           :datetime
+#  oai_metadata_xml      :text
 #
 # Indexes
 #
 #  index_publications_on_ancestry  (ancestry)
+#  publications_element_idx        (element_type,element_id,deleted_at)
 #
-
 class Publication < ActiveRecord::Base
   class Net::FTP
     def puttextcontent(content, remotefile, &block)
@@ -39,9 +41,10 @@ class Publication < ActiveRecord::Base
   end
 
   acts_as_paranoid
+  include MetadataJsonld
   has_ancestry
   belongs_to :element, polymorphic: true
-  belongs_to :original_element, polymorphic: true
+  belongs_to :original_element, polymorphic: true, optional: true
   belongs_to :doi
 
   STATE_START = 'start'
@@ -82,6 +85,9 @@ class Publication < ActiveRecord::Base
   def update_state(new_state)
     update_columns(state: new_state)
     descendants.each { |d| d.update_columns(state: new_state) }
+    update_columns(accepted_at: Time.now.utc) if new_state == Publication::STATE_ACCEPTED
+    descendants.each { |d| d.update_columns(accepted_at: Time.now.utc) } if new_state == Publication::STATE_ACCEPTED
+
     process_element(new_state)
   end
 
@@ -89,13 +95,17 @@ class Publication < ActiveRecord::Base
     case new_state
     when Publication::STATE_PENDING
       move_to_pending_collection
+      group_review_collection
     when Publication::STATE_REVIEWED
       move_to_review_collection
+      group_review_collection
     when Publication::STATE_ACCEPTED
       move_to_accepted_collection
+      group_review_collection
     when Publication::STATE_DECLINED
       declined_reverse_original_element
       declined_move_collections
+      group_review_collection
     end
   end
 
@@ -134,11 +144,12 @@ class Publication < ActiveRecord::Base
       CollectionsSample
     when 'Reaction'
       CollectionsReaction
-    end.remove_in_collection(
+    end.move_to_collection(
       element.id,
       element.collections.where(
         id: [pub_user.pending_collection.id, pub_user.reviewing_collection.id]
-      ).pluck(:id) + Collection.element_to_review_collection.pluck(:id)
+      ).pluck(:id) + Collection.element_to_review_collection.pluck(:id),
+      [Collection.embargo_accepted_collection&.id]
     )
   end
 
@@ -188,6 +199,27 @@ class Publication < ActiveRecord::Base
       a.extended_metadata&.delete('public_analysis') && a.save!
     end
     declined_reverse_original_reaction_elements
+  end
+
+  def group_review_collection
+    pub_user = User.find(published_by)
+    return false unless pub_user && element
+
+    group_reviewers = review['reviewers']
+    reviewers = User.where(id: group_reviewers) if group_reviewers.present?
+    return false if reviewers&.empty?
+
+    reviewers&.each do |user|
+      ## user = User.find(gl_id)
+      col = user.find_or_create_grouplead_collection
+      case element_type
+      when 'Sample'
+        CollectionsSample
+      when 'Reaction'
+        CollectionsReaction
+      end.create_in_collection([element.id], [col.id])
+    end
+
   end
 
   def declined_reverse_original_reaction_elements
@@ -255,6 +287,27 @@ class Publication < ActiveRecord::Base
   def doi_bag
     d = doi
     case element_type
+    when 'Collection'
+      dois = {
+        collection: {
+          DOI: d.full_doi,
+          suffix: d.suffix,
+          inchikey: d.inchikey,
+          count: d.molecule_count
+        },
+        element_dois: {}
+      }
+      eids = taggable_data["eids"]
+      eids.each do |eid|
+        sp = Publication.find(eid)
+        sd = sp.doi
+        dois[:element_dois][sp.element_id.to_s] = {
+          DOI: sd.full_doi,
+          suffix: sd.suffix,
+          type: sd.analysis_type,
+          count: sd.analysis_count
+        }
+      end
     when 'Sample'
       dois = {
         sample: {
@@ -350,15 +403,29 @@ class Publication < ActiveRecord::Base
         rights[:rightsIdentifier] = 'CC0-1.0'
         rights[:rightsURI] = 'http://creativecommons.org/publicdomain/zero/1.0/'
         rights[:rightsName] = 'CC0 1.0 Universal'
+      when 'No License'
+        rights[:rightsIdentifier] = ''
+        rights[:rightsURI] = ''
+        rights[:rightsName] = ''
+        rights[:schemeURI] = ''
+        rights[:rightsIdentifierScheme] = ''
       end
     end
     rights
   end
 
   def datacite_metadata_xml
+    if parent.nil? && %w[Sample Reaction].include?(element_type)
+      coly = element.collections.where(
+        <<~SQL
+          collections.id in (select element_id from publications pub where element_type = 'Collection' and element_id = collections.id)
+        SQL
+      ).last
+      cdoi = coly.publication&.doi&.full_doi if coly.present?
+    end
     parent_element = parent&.element
-
-    metadata_obj = OpenStruct.new(element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data)
+    literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
+    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi, cust_sample: cust_sample)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -373,14 +440,20 @@ class Publication < ActiveRecord::Base
 
   def persit_datacite_metadata_xml!
     mt = datacite_metadata_xml
-    self.update!(metadata_xml: mt)
+    self.update!(metadata_xml: mt, oai_metadata_xml: mt)
+    mt
+  end
+
+  def persit_oai_metadata_xml!
+    mt = datacite_metadata_xml
+    self.update_columns(oai_metadata_xml: mt)
     mt
   end
 
   def transition_from_start_to_metadata_uploading!
     return unless valid_transition(STATE_DC_METADATA_UPLOADING)
     mt = datacite_metadata_xml
-    self.update!(metadata_xml: mt, state: STATE_DC_METADATA_UPLOADING)
+    self.update!(metadata_xml: mt, oai_metadata_xml: mt, state: STATE_DC_METADATA_UPLOADING)
   end
 
   def transition_from_metadata_uploading_to_uploaded!
@@ -449,6 +522,11 @@ class Publication < ActiveRecord::Base
         doi: short_doi
       }
       element.update_publication_tag(tag_data)
+    when 'Collection'
+      tag_data = {
+        doi_reg_at: doi_date,
+        doi: short_doi
+      }
     end
 
     pd = taggable_data.merge(tag_data)
@@ -496,37 +574,42 @@ class Publication < ActiveRecord::Base
   def transition_from_completing_to_completed!
     return unless valid_transition(STATE_COMPLETED)
     pd = {}
-    if element_type != 'Container'
+    time = DateTime.now
+    if element_type != 'Container' && element_type != 'Collection'
       creator_ids = taggable_data['author_ids']
       su_id = User.chemotion_user.id
 
       pending_collection_ids = Collection.joins(
         "INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id"
       ).where("sync_collections_users.shared_by_id = ?", su_id)
-       .where("sync_collections_users.user_id in (?)", creator_ids)
+       .where("sync_collections_users.user_id in (?)", published_by)
        .where("collections.label = 'Pending Publications'").pluck(:id)
 
        my_published_collection_ids = Collection.joins(
         "INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id"
       ).where("sync_collections_users.shared_by_id = ?", User.chemotion_user.id)
-       .where("sync_collections_users.user_id in (?)", creator_ids)
+       .where("sync_collections_users.user_id in (?)", [published_by] + creator_ids)
        .where("collections.label = 'Published Elements'")
        .pluck(:id)
-
 
       if element_type == 'Reaction' && scheme_only
         published_collection_ids = my_published_collection_ids + [Collection.scheme_only_reactions_collection.id]
       else
         published_collection_ids = my_published_collection_ids + [Collection.public_collection_id]
       end
-
-
       collections_klass = "Collections#{element_type}".constantize
+      if element_type == 'Sample'
+        gl_col_ids = collections_klass.joins(:collection).where(sample_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
+      end
+      if element_type == 'Reaction'
+        gl_col_ids = collections_klass.joins(:collection).where(reaction_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
+      end
+      collections_klass.remove_in_collection([element_id], gl_col_ids ) if gl_col_ids.present?
       collections_klass.remove_in_collection([element_id], pending_collection_ids)
       collections_klass.remove_in_collection([element_id], Collection.element_to_review_collection.pluck(:id))
+      collections_klass.remove_in_collection([element_id], [Collection.embargo_accepted_collection&.id])
       collections_klass.create_in_collection([element_id], published_collection_ids)
 
-      time = DateTime.now
       element.update_publication_tag(published_at: time)
       pd = taggable_data.merge(published_at: time)
       logger(['moved to collections'])
@@ -577,6 +660,55 @@ class Publication < ActiveRecord::Base
 
     log_invalid_transition(to_state) unless valid
     valid
+  end
+
+  def literals_sql(e_id, e_type)
+    <<~SQL
+    select l.*,
+    case l.litype
+    when 'citedOwn' then 'IsCitedBy'
+    when 'citedRef' then 'Continues'
+    when 'referTo' then 'References'
+    end relationtype,
+    case
+    when nullif(l2.doi,'') is not null then 'DOI' || ' {|} ' || 'https://dx.doi.org/' || doi
+    when nullif(l2.isbn,'') is not null then 'ISBN' || ' {|} ' || isbn
+    when nullif(l2.url,'') is not null then 'URL' || ' {|} ' || url
+    end relatedIdentifiertype,
+    l2.title, l2.url, l2.refs, l2.doi, l2.isbn
+    from literals l
+    join literatures l2 on l.literature_id = l2.id
+    where l.element_id = #{e_id} and l.element_type = '#{e_type}' and l.litype in ('citedOwn', 'citedRef', 'referTo')
+    SQL
+  end
+
+  def get_xvial(xvial)
+    com_config = Rails.configuration.compound_opendata
+    return nil unless com_config.present? && xvial.present?
+
+    CompoundOpenData.where("x_data ->> 'xid' = ?", xvial)
+  end
+
+  def cust_sample
+    if element_type == 'Sample'
+      desc_type = "#{element.decoupled ? 'de' : ''}coupled_sample#{element.molecule_inchikey == 'DUMMY' ? '' : '_structure'}"
+      melting_point = range_to_s(element.melting_point)
+      boiling_point = range_to_s(element.boiling_point)
+
+      { type: desc_type, melting_point: melting_point, boiling_point: boiling_point, x_id: get_xvial(element.tag&.taggable_data&.dig('xvial','num'))&.first&.x_short_label  }
+    else
+      {}
+    end
+  end
+
+  def range_to_s(val)
+    if val.begin == -Float::INFINITY && val.end == Float::INFINITY
+      ''
+    else
+      start = val.begin == -Float::INFINITY ? '' : val.begin.to_f
+      finish = val.end == Float::INFINITY ? '' : val.end.to_f
+      "#{start}#{start == '' || finish == '' ? '' : ' - '}#{finish} (°C)"
+    end
   end
 
   def log_invalid_transition(to_state)

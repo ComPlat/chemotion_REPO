@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+DatabaseCleaner.allow_remote_database_url = (ENV['DOCKER'] == 'true')
+
 RSpec.configure do |config|
   config.before(:suite) do
     DatabaseCleaner.clean_with(:truncation)
@@ -17,7 +19,10 @@ RSpec.configure do |config|
     DatabaseCleaner.start
   end
 
-  config.after do
+  config.append_after do
+    DatabaseCleaner.clean
+  rescue Exception => e
+    sleep 2
     DatabaseCleaner.clean
   end
 end

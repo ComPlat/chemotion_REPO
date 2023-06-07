@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 # migration for prediction table
-class CreatePredictions < ActiveRecord::Migration
+class CreatePredictions < ActiveRecord::Migration[4.2]
   def change
     create_table :predictions do |t|
       t.references :predictable, polymorphic: true, index: true
 
-      t.jsonb :decision, null: false, default: '{}'
+      t.jsonb :decision, null: false, default: {}
 
       t.timestamps
     end

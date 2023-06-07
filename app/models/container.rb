@@ -19,9 +19,11 @@
 #  index_containers_on_containable  (containable_type,containable_id)
 #
 
-class Container < ActiveRecord::Base
+class Container < ApplicationRecord
   include ElementCodes
-  belongs_to :containable, polymorphic: true
+  include Datasetable
+
+  belongs_to :containable, polymorphic: true, optional: true
   has_many :attachments, as: :attachable
   has_one :publication, as: :element
   include Taggable
@@ -29,6 +31,7 @@ class Container < ActiveRecord::Base
   has_one :doi, as: :doiable
   # TODO: dependent destroy for attachments should be implemented when attachment get paranoidized instead of this DJ
   before_destroy :delete_attachment
+  before_destroy :destroy_datasetable
   has_closure_tree order: "extended_metadata->'index' asc"
 
   scope :analyses_for_root, ->(root_id) {
@@ -102,7 +105,7 @@ class Container < ActiveRecord::Base
 
   def check_doi
     # unassoicate doi if type has changed
-    if (d = self.doi) && self.container_type == 'analysis'
+    if (d = self.doi) && self.container_type == 'analysis' && self.publication&.state != 'completed'
       if self.extended_metadata['kind']&.delete(' ') != d.analysis_type
         unassociate_doi(d)
       end
