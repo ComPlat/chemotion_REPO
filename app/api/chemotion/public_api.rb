@@ -1017,7 +1017,7 @@ module Chemotion
         pub_coll = Collection.public_collection
         if current_user
           coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll.id)
-          { id: coll.id, is_sync_to_me: true  }
+          { id: coll&.id, is_sync_to_me: true  }
         else
           { id: nil }
         end
@@ -1087,20 +1087,22 @@ module Chemotion
       end
 
       resource :molecules do
-        desc "Return PUBLIC serialized molecules"
+        desc 'Return PUBLIC serialized molecules'
         params do
-          optional :page, type: Integer, desc: "page"
-          optional :pages, type: Integer, desc: "pages"
-          optional :per_page, type: Integer, desc: "per page"
+          optional :page, type: Integer, desc: 'page'
+          optional :pages, type: Integer, desc: 'pages'
+          optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
+          optional :req_xvial, type: Boolean, default: false, desc: 'xvial is required or not'
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
-        get '/', each_serializer: MoleculeGuestListSerializer do
+        get '/' do
           public_collection_id = Collection.public_collection_id
           params[:adv_val]
           adv_search = ' '
+          req_xvial = params[:req_xvial]
           if params[:adv_flag] == true && params[:adv_type].present? && params[:adv_val].present?
             case params[:adv_type]
             when 'Authors'
@@ -1113,11 +1115,17 @@ module Chemotion
                 INNER JOIN publication_ontologies pub on pub.element_id = samples.id and pub.element_type = 'Sample'
                 and term_id in ('#{params[:adv_val].join("','")}')
               SQL
+            when 'Embargo'
+              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' css.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              adv_search = <<~SQL
+                INNER JOIN collections_samples css on css.sample_id = samples.id and css.deleted_at ISNULL
+                and #{param_sql}
+              SQL
             end
           end
           sample_join = <<~SQL
             INNER JOIN (
-              SELECT molecule_id, published_at max_published_at, sample_svg_file
+              SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
               FROM (
               SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
               FROM samples, publications pub
@@ -1126,15 +1134,41 @@ module Chemotion
                 SELECT samples.id FROM samples
                 INNER JOIN collections_samples cs on cs.collection_id = #{public_collection_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
                 #{adv_search}
+                #{join_xvial_sql(req_xvial)}
               )) s where rownum = 1
             ) s on s.molecule_id = molecules.id
           SQL
 
-          paginate(Molecule.joins(sample_join).order("s.max_published_at desc").select(
-            <<~SQL
-              molecules.*, sample_svg_file
-            SQL
-          ))
+          embargo_sql = <<~SQL
+            molecules.*, sample_svg_file, sid,
+            (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_samples cs on collections.id = cs.collection_id
+              and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
+              select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
+            (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
+            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
+            (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
+          SQL
+
+          list = paginate(Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql))
+
+          entities = Entities::MoleculePublicationListEntity.represent(list, serializable: true)
+          sids = entities.map { |e| e[:sid] }
+
+          com_config = Rails.configuration.compound_opendata
+          xvial_count_sql = <<~SQL
+            inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          x_cnt_ids = req_xvial ? sids.uniq : (Sample.joins(xvial_count_sql).where(id: sids).distinct.pluck(:id) || [])
+          xvial_com_sql = get_xvial_sql(req_xvial)
+          x_com_ids = Sample.joins(xvial_com_sql).where(id: sids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          entities = entities.each do |obj|
+            obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:sid])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
+            obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], req_xvial)
+          end
+          entities
         end
       end
 
@@ -1145,13 +1179,12 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'is it advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :scheme_only, type: Boolean, desc: 'is it a scheme-only reaction?', default: false
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
-        get '/', each_serializer: ReactionGuestListSerializer do
-
+        get '/' do
           if params[:adv_flag] === true && params[:adv_type].present? && params[:adv_val].present?
             case params[:adv_type]
             when 'Authors'
@@ -1160,10 +1193,15 @@ module Chemotion
                 and author_id in ('#{params[:adv_val].join("','")}')
               SQL
             when 'Ontologies'
-              str_term_id = params[:adv_val].split(',').map { |val| val}.to_s
               adv_search = <<~SQL
                 INNER JOIN publication_ontologies pub on pub.element_id = reactions.id and pub.element_type = 'Reaction'
                 and term_id in ('#{params[:adv_val].join("','")}')
+              SQL
+            when 'Embargo'
+              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' cr.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              adv_search = <<~SQL
+                INNER JOIN collections_reactions cr on cr.reaction_id = reactions.id and cr.deleted_at is null
+                and #{param_sql}
               SQL
             else
               adv_search = ' '
@@ -1171,12 +1209,43 @@ module Chemotion
           else
             adv_search = ' '
           end
+          com_config = Rails.configuration.compound_opendata
+          embargo_sql = <<~SQL
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
+            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
+            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
+            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+          SQL
 
           if params[:scheme_only]
-            paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).includes(:publication).references(:publication).order('publications.published_at desc').uniq)
+            list = paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
           else
-            paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).includes(:publication).references(:publication).order('publications.published_at desc').uniq)
+            list = paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
           end
+
+          entities = Entities::ReactionPublicationListEntity.represent(list, serializable: true)
+
+          ids = entities.map { |e| e[:id] }
+
+          xvial_count_sql = <<~SQL
+            inner join element_tags e on e.taggable_id = reactions_samples.sample_id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+          SQL
+          x_cnt_ids = ReactionsSample.joins(xvial_count_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) || []
+
+          xvial_com_sql = <<~SQL
+            inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
+            inner join molecules m on m.id = s.molecule_id
+            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+          SQL
+          x_com_ids = ReactionsSample.joins(xvial_com_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          entities = entities.each do |obj|
+            obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:id])
+            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:id])
+          end
+
+          entities
         end
       end
 
@@ -1232,7 +1301,7 @@ module Chemotion
           sample = dataset.root.containable
           cids = sample.collections.pluck :id
           if cids.include?(Collection.public_collection_id)
-            molecule = sample.molecule
+            molecule = sample.molecule if sample.class.name == 'Sample'
 
             ds_json = ContainerSerializer.new(dataset).serializable_hash.deep_symbolize_keys
             ds_json[:dataset_doi] = dataset.full_doi
@@ -1240,15 +1309,15 @@ module Chemotion
 
             res = {
               dataset: ds_json,
-              sample_svg_file: sample.sample_svg_file,
+              sample_svg_file: sample.class.name == 'Sample' ? sample.sample_svg_file : sample.reaction_svg_file,
               molecule: {
-                sum_formular: molecule.sum_formular,
-                molecular_weight: molecule.molecular_weight,
-                cano_smiles: molecule.cano_smiles,
-                inchistring: molecule.inchistring,
-                inchikey: molecule.inchikey,
-                molecule_svg_file: molecule.molecule_svg_file,
-                pubchem_cid: molecule.tag.taggable_data["pubchem_cid"]
+                sum_formular: molecule&.sum_formular,
+                molecular_weight: molecule&.molecular_weight,
+                cano_smiles: molecule&.cano_smiles,
+                inchistring: molecule&.inchistring,
+                inchikey: molecule&.inchikey,
+                molecule_svg_file: molecule&.molecule_svg_file,
+                pubchem_cid: molecule&.tag&.taggable_data && molecule&.tag&.taggable_data["pubchem_cid"]
               },
               license: dataset.tag.taggable_data["publication"]["license"] || 'CC BY-SA',
               publication: {
@@ -1267,6 +1336,83 @@ module Chemotion
         end
       end
 
+      resource :embargo do
+        helpers RepositoryHelpers
+        desc "Return PUBLISHED serialized collection"
+        params do
+          requires :id, type: Integer, desc: "collection id"
+        end
+        get do
+          pub = Publication.find_by(element_type: 'Collection', element_id: params[:id])
+          { col: pub }
+        end
+      end
+
+
+      resource :col_list do
+        helpers RepositoryHelpers
+        after_validation do
+          @embargo_collection = Collection.find(params[:collection_id])
+          @pub = @embargo_collection.publication
+          error!('401 Unauthorized', 401) if @pub.nil?
+
+          if @pub.state != 'completed'
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || @pub.published_by == current_user.id || current_user.type == 'Anonymous')
+          end
+        end
+        get do
+          anasql = <<~SQL
+            publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
+          SQL
+          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
+          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
+          list = sample_list + reaction_list
+          elements = []
+          list.each do |e|
+            element_type = e.element&.class&.name
+            u = User.find(e.published_by) unless e.published_by.nil?
+            svg_file = e.element.sample_svg_file if element_type == 'Sample'
+            title = e.element.short_label if element_type == 'Sample'
+
+            svg_file = e.element.reaction_svg_file if element_type == 'Reaction'
+            title = e.element.short_label if element_type == 'Reaction'
+
+            scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
+            elements.push(
+              id: e.element_id, pub_id: e.id, svg: svg_file, type: element_type, title: title, published_at: e.published_at&.strftime('%d-%m-%Y'),
+              published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
+            )
+          end
+          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
+        end
+      end
+
+      resource :col_element do
+        helpers RepositoryHelpers
+        params do
+          requires :collection_id, type: Integer, desc: "collection id"
+          requires :el_id, type: Integer, desc: "element id"
+        end
+        after_validation do
+          @embargo_collection = Collection.find(params[:collection_id])
+          pub = @embargo_collection.publication
+          error!('401 Unauthorized', 401) if pub.nil?
+
+          if pub.state != 'completed'
+            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
+          end
+
+        end
+        get do
+          if params[:el_type] == 'Reaction'
+            return get_pub_reaction(params[:el_id])
+          elsif params[:el_type] == 'Sample'
+            sample = Sample.find(params[:el_id])
+            return get_pub_molecule(sample.molecule_id)
+          end
+        end
+      end
+
       resource :reaction do
         helpers RepositoryHelpers
         desc "Return PUBLISHED serialized reaction"
@@ -1277,125 +1423,143 @@ module Chemotion
           r = CollectionsReaction.where(reaction_id: params[:id], collection_id: [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id])
           return nil unless r.present?
 
-          reaction = Reaction.where('id = ?', params[:id])
-          .select(
-            <<~SQL
-            reactions.id, reactions.name, reactions.description, reactions.reaction_svg_file, reactions.short_label,
-            reactions.status, reactions.tlc_description, reactions.tlc_solvents, reactions.rf_value,
-            reactions.temperature, reactions.timestamp_start,reactions.timestamp_stop,reactions.observation,
-            reactions.rinchi_string, reactions.rinchi_long_key, reactions.rinchi_short_key,reactions.rinchi_web_key,
-            (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
-            reactions.duration
-            SQL
-          )
-          .includes(
-                container: :attachments
-          ).last
-          literatures = get_literature(params[:id],'Reaction') || []
-          reaction.products.each do |p|
-            literatures += get_literature(p.id,'Sample')
-          end
-          schemeList = get_reaction_table(params[:id])
-          entities = Entities::ReactionEntity.represent(reaction, serializable: true)
-          entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
-          entities[:schemes] = schemeList unless entities.nil? || schemeList.nil? || schemeList.length == 0
-          entities[:isLogin] = current_user.present?
-          entities
+          return get_pub_reaction(params[:id])
         end
       end
 
       resource :molecule do
-        desc "Return serialized molecule with list of PUBLISHED dataset"
+        helpers RepositoryHelpers
+        desc 'Return serialized molecule with list of PUBLISHED dataset'
         params do
-          requires :id, type: Integer, desc: "Molecule id"
-          optional :adv_flag, type: Boolean, desc: "advanced search flag"
-          optional :adv_type, type: String, desc: "advanced search type", allow_blank: true, values: %w[Authors Ontologies]
+          requires :id, type: Integer, desc: 'Molecule id'
+          optional :adv_flag, type: Boolean, desc: 'advanced search flag'
+          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
         end
         get do
-          molecule = Molecule.find(params[:id])
-          pub_id = Collection.public_collection_id
-          if params[:adv_flag].present? && params[:adv_flag] == true && params[:adv_type].present? && params[:adv_type] == 'Authors' && params[:adv_val].present?
-            adv = <<~SQL
-              INNER JOIN publication_authors rs on rs.element_id = samples.id and rs.element_type = 'Sample' and rs.state = 'completed'
-              and rs.author_id in ('#{params[:adv_val].join("','")}')
-            SQL
-          else
-            adv = ''
+          get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val])
+        end
+      end
+
+      resource :download do
+        desc 'download publication file'
+        params do
+          requires :id, type: Integer, desc: 'Id'
+        end
+        resource :attachment do
+          desc 'download publication attachment'
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
           end
-
-          pub_samples = Collection.public_collection.samples
-            .includes(:molecule,:tag).where("samples.molecule_id = ?", molecule.id)
-            .where(
-              <<~SQL
-                samples.id in (
-                  SELECT samples.id FROM samples
-                  INNER JOIN collections_samples cs on cs.collection_id = #{pub_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
-                  INNER JOIN publications pub on pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
-                  #{adv}
-                )
-              SQL
-            )
-            .select(
-              <<~SQL
-              samples.*, (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at
-              SQL
-            )
-            .order('published_at desc')
-          published_samples = pub_samples.map do |s|
-            containers = Entities::ContainerEntity.represent(s.container)
-            tag = s.tag.taggable_data['publication']
-            #u = User.find(s.tag.taggable_data['publication']['published_by'].to_i)
-            #time = DateTime.parse(s.tag.taggable_data['publication']['published_at'])
-            #published_time = time.strftime("%A, %B #{time.day.ordinalize} %Y %H:%M")
-            #aff = u.affiliations.first
-            next unless tag
-            literatures = Literature.by_element_attributes_and_cat(s.id, 'Sample', 'public')
-              .joins("inner join users on literals.user_id = users.id")
-              .select(
-                <<~SQL
-                literatures.*,
-                json_object_agg(users.name_abbreviation, users.first_name || chr(32) || users.last_name) as ref_added_by
-                SQL
-              ).group('literatures.id').as_json
-            reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
-            pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
-            sid = pub.taggable_data["sid"] unless pub.nil? || pub.taggable_data.nil?
-
-            tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file,
-              sample_id: s.id, reaction_ids: reaction_ids, sid: sid, showed_name: s.showed_name, pub_id: pub.id)
+          get do
+            content_type 'application/octet-stream'
+            header['Content-Disposition'] = "attachment; filename=#{@attachment.filename}"
+            env['api.format'] = :binary
+            @attachment.read_file
           end
-          published_samples = published_samples.flatten.compact
+        end
+        resource :dataset do
+          desc 'download publication dataset as zip'
+          after_validation do
+            @container = Container.find_by(id: params[:id])
+            error!('404 Dataset not found', 404) unless @container
+            @publication = @container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            content_type 'application/zip, application/octet-stream'
+            filename = URI.escape("#{@container.parent&.name.gsub(/\s+/, '_')}-#{@container.name.gsub(/\s+/, '_')}.zip")
+            header['Content-Disposition'] = "attachment; filename=#{filename}"
+            env['api.format'] = :binary
+            zip_f = Zip::OutputStream.write_buffer do |zip|
+              @container.attachments.each do |att|
+                zip.put_next_entry att.filename
+                zip.write att.read_file
+              end
+              zip.put_next_entry 'dataset_description.txt'
+              zip.write <<~DESC
+                dataset name: #{@container.name}
+                instrument: #{@container.extended_metadata.fetch('instrument', nil)}
+                description:
+                #{@container.description}
 
-          {
-            molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
-            published_samples: published_samples,
-            isLogin: current_user.nil? ? false : true
-          }
+                Files:
+              DESC
+              @container.attachments.each do |att|
+                zip.write "#{att.filename} #{att.checksum}\n"
+              end
+            end
+            zip_f.rewind
+            zip_f.read
+          end
         end
       end
 
       resource :metadata do
+        desc "batch download metadata"
+        params do
+          requires :type, type: String, desc: 'Type', values: %w[Sample Reaction Container Collection]
+          requires :offset, type: Integer, desc: 'Offset', default: 0
+          requires :limit, type: Integer, desc: 'Limit', default: 100
+          optional :date_from, type: String, desc: 'Published date from'
+          optional :date_to, type: String, desc: 'Published date to'
+        end
+        get :publications do
+          service_url = Rails.env.production? ? 'https://www.chemotion-repository.net' : 'http://localhost:3000'
+          api_url = '/api/v1/public/metadata/download_json?inchikey='
+
+          result = declared(params, include_missing: false)
+          list = []
+          limit = params[:limit] - params[:offset] > 1000 ? params[:offset] + 1000 : params[:limit]
+          scope = Publication.where(element_type: params[:type])
+          scope = scope.where('published_at >= ?', params[:date_from]) if params[:date_from].present?
+          scope = scope.where('published_at <= ?', params[:date_to]) if params[:date_to].present?
+          publications = scope.order(:published_at).offset(params[:offset]).limit(limit)
+          publications.map do |publication|
+            inchikey = publication&.doi&.suffix
+            list.push("#{service_url}#{api_url}#{inchikey}") if inchikey.present?
+          end
+          result[:publications] = list
+          result[:limit] = limit
+          result
+        end
+
         desc "metadata of publication"
         params do
-          requires :id, type: Integer, desc: "Id"
-          requires :type, type: String, desc: "Type", values: %w[sample reaction container]
+          optional :id, type: Integer, desc: "Id"
+          optional :type, type: String, desc: "Type", values: %w[sample reaction container collection]
+          optional :inchikey, type: String, desc: "inchikey"
         end
         after_validation do
-          @publication = Publication.find_by(
-            element_type: params['type'].classify,
-            element_id: params['id']
-          )
-          error!('404 Publication not found', 404) unless @publication && @publication.state.include?("completed")
+          @type = params['type']&.classify
+          @publication = Publication.find_by(element_type: @type, element_id: params['id'], state: 'completed') if params['id'].present?
+          if params['inchikey'].present? && @publication.nil?
+            doi = Doi.find_by(suffix: params['inchikey'])
+            @publication = Publication.find_by(doi_id: doi.id, state: 'completed') if doi.present?
+            @type = @publication&.element_type
+          end
+          @type = @type == "Container" ? "Analysis" : @type
+          error!('404 Publication not found', 404) unless @publication.present?
         end
         desc "Download metadata_xml"
         get :download do
-          el_type = params['type'] == "container" ? "analysis" : params['type']
-          filename = URI.escape("metadata_#{el_type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+          filename = URI.escape("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
           content_type('application/octet-stream')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
           @publication.metadata_xml
+        end
+
+        desc "Download JSON-Link Data"
+        get :download_json do
+          filename = URI.escape("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+          content_type('application/json')
+          header['Content-Disposition'] = "attachment; filename=" + filename
+          env['api.format'] = :binary
+          @publication.json_ld
         end
       end
 

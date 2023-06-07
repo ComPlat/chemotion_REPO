@@ -3,7 +3,6 @@ FactoryBot.define do
     type { 'Person' }
     first_name { 'John' }
     last_name { 'Doe' }
-
     counters do
       {
         samples: 0,

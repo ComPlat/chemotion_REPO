@@ -20,7 +20,7 @@ export default class SvgWithPopover extends Component {
       >
         {
           previewObject.isSVG
-          ? 
+          ?
           <div style={{ height: popObject.height, width: popObject.width }}>
             <SvgFileZoomPan
               svgPath={popObject.src}

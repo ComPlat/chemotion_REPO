@@ -82,6 +82,10 @@ class Import::ImportSdf < Import::ImportSamples
     @message[:error_messages]
   end
 
+  def error_messages
+    @message[:error_messages]
+  end
+
   def status
     @message[:error].empty? && 'ok' || 'error'
   end

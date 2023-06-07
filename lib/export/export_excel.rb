@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'export_table'
 
 module Export
@@ -112,7 +114,6 @@ module Export
       output = output.join("\n")
       output
     end
-
     def filter_with_permission_and_detail_level(sample)
       # return all data if sample/chemical in own collection
       if sample['shared_sync'] == 'f' || sample['shared_sync'] == false

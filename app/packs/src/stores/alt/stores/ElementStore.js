@@ -216,6 +216,9 @@ class ElementStore {
       handleCreatePrivateNote: ElementActions.createPrivateNote,
       handleUpdatePrivateNote: ElementActions.updatePrivateNote,
 
+      handleCreatePrivateNote: ElementActions.createPrivateNote,
+      handleUpdatePrivateNote: ElementActions.updatePrivateNote,
+
       // FIXME ElementStore listens to UIActions?
       handleUnselectCurrentElement: UIActions.deselectAllElements,
       handleSetPagination: UIActions.setPagination,

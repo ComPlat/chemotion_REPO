@@ -60,6 +60,20 @@ module Reporter
         output
       end
 
+      def literatures
+        output = []
+        liters = obj.literatures
+        return [] if liters.empty?
+
+        liters.each do |l|
+          bib = l[:refs] && l[:refs]['bibtex']
+          bb = DataCite::LiteraturePaser.parse_bibtex!(bib, id)
+          bb = DataCite::LiteraturePaser.get_metadata(bb, l[:doi], id) unless bb.class == BibTeX::Entry
+          output.push(DataCite::LiteraturePaser.report_hash(l, bb)) if bb.class == BibTeX::Entry
+        end
+        output
+      end
+      
       def init_item
         item = []
         need_rxn_desc = @spl_settings[:reaction_description]

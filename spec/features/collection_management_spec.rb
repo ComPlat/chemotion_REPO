@@ -16,6 +16,7 @@ describe 'Collection management' do
 
       find_by_id('add-new-collection-button').click
 
+      find('div.root-actions').find(:xpath, '..').all('button')[0].click
       # input collection name
       new_collection = all('input.collection-label.form-control').last
       new_collection.click

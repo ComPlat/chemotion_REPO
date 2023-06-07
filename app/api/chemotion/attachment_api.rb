@@ -52,6 +52,13 @@ module Chemotion
 
         old_att&.destroy
       end
+
+      def validate_uuid_format(uuid)
+        uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        return true if uuid_regex.match?(uuid.to_s.downcase)
+
+        return false
+      end
     end
 
     rescue_from ActiveRecord::RecordNotFound do |_error|
@@ -112,6 +119,13 @@ module Chemotion
 
             if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
               element = Labimotion::Segment.find(@attachment.attachable_id)&.element
+              can_dwnld = @attachment.created_for == current_user.id ||
+                          (ElementPolicy.new(current_user, element).read? &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
+            end
+
+            if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
+              element = Segment.find(@attachment.attachable_id)&.element
               can_dwnld = @attachment.created_for == current_user.id ||
                           (ElementPolicy.new(current_user, element).read? &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)

@@ -234,7 +234,6 @@ module Chemotion
           reset_pagination_page(ttl_mol)
           slist = paginate(ttl_mol)
           sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
-
           ssids = sentities.map { |e| e[:sid] }
 
           xvial_count_ssql = <<~SQL

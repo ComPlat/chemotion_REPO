@@ -180,7 +180,7 @@ class Report < ApplicationRecord
       diagram: true,
       collection: true,
       analyses: true,
-      reaction_description: true,
+      reaction_description: true
     }
   end
 
@@ -202,7 +202,7 @@ class Report < ApplicationRecord
   def self.all_configs
     {
       page_break: true,
-      whole_diagram: true,
+      whole_diagram: true
     }
   end
 

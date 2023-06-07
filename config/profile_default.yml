@@ -87,7 +87,6 @@ production:
         3
       :references:
         4
-
     :layout_detail_wellplate:
       :properties:
         1

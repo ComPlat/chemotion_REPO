@@ -231,6 +231,11 @@ export default class AutoCompleteInput extends React.Component {
       this.setState({ value })
     }
 
+    if (!isString(value)) {
+      value = value.name;
+      this.setState({ value });
+    }
+
     if (!value || value.trim() === '') {
       this.setState({
         value: ''
@@ -259,7 +264,6 @@ export default class AutoCompleteInput extends React.Component {
       if (selectedName && selectedName.trim() != '' && this.state.value == selectedName)
         if (selectedSuggestion.search_by_method == 'element_short_label') {
           selection = {name: selectedSuggestion.name.name, search_by_method: `element_short_label_${selectedSuggestion.name.klass}`}
-
         } else {
           selection = selectedSuggestion
         }

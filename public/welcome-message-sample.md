@@ -8,6 +8,10 @@
 ##### Chemotion-ELN is an electronic lab notebook that allows you to document your research. To help you get started with the ELN, we have summarised important links and information here.
 
 * Subscribe to our [Mailing List](#link goes here) to receive all updates on the Chemotion-ELN instance.
+<<<<<<< HEAD
 * Visit our documentation and user manual [Chemotion Docs](https://chemotion.net/docs) to inform yourself about ELN functions and features.
+=======
+* Visit our documentation and user manual [Chemotionsaurus](https://eln.chemotion.net/chemotionsaurus/docs/eln/videos_eln) to inform yourself about ELN functions and features.
+>>>>>>> Repo update (#45)
 * If you face any issue with the ELN or have any queries, please contact our [Helpdesk](https://helpdesk.nfdi4chem.de/).
 * You can report bugs or raise wishes for new features by adding a new issue to our [Github Repository](https://github.com/ComPlat/chemotion_ELN).

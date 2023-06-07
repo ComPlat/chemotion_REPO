@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 ## package.json postinstall script
 
 set -euo pipefail

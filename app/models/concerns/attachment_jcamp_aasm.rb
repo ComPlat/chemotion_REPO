@@ -314,7 +314,7 @@ module AttachmentJcampProcess
     end
 
     set_backup
-    delete_tmps([tmp_jcamp, tmp_img])
+    delete_tmps(tmp_files_to_be_deleted)
     delete_related_imgs(img_att)
     delete_related_edit_peak(jcamp_att)
     jcamp_att
