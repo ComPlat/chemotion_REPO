@@ -141,6 +141,10 @@ export default class ElementDetails extends Component {
     this.setState({ fullScreen: t });
   }
 
+  toggleCommentScreen(t) {
+    this.setState({ fullScreen: t });
+  }
+
   toggleFullScreen() {
     const { fullScreen } = this.state;
     this.setState({ fullScreen: !fullScreen });

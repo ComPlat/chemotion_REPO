@@ -42,6 +42,7 @@
 !/config/data_collector_keys/.keep
 
 /config/database.yml
+/config/repository_database.yml
 /config/storage.yml
 /config/spectra.yml
 /config/editors.yml

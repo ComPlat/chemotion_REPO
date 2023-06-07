@@ -25,6 +25,9 @@ import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
 import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 
+import { PublishedTag } from './PublishCommon';
+import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
+
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
     &nbsp;
