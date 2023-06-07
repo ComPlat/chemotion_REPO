@@ -3,9 +3,9 @@ import _ from 'lodash';
 import PropTypes from 'prop-types';
 import { Dropdown, MenuItem } from 'react-bootstrap';
 
-import ElementActions from 'src/stores/alt/actions/ElementActions';
-import UserStore from 'src/stores/alt/stores/UserStore';
-import MatrixCheck from 'src/components/common/MatrixCheck';
+import ElementActions from '../actions/ElementActions';
+import UserStore from '../stores/UserStore';
+import MatrixCheck from '../common/MatrixCheck';
 
 const showReportContainer = () => {
   ElementActions.showReportContainer();
@@ -74,10 +74,10 @@ const ReportUtilButton = ({ customClass, isDisabled=false  }) => {
           Format Analyses
         </MenuItem>
         <MenuItem onSelect={ElementActions.showLiteratureDetail} title="Reference Manager">
-          Reference Manager
+          Literature
         </MenuItem>
-        {/* {graph}
-        {task} */}
+        {graph}
+        {task}
         {divider}
         {predDiv}
       </Dropdown.Menu>

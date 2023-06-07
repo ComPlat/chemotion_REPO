@@ -8,8 +8,8 @@ class CreateReportTemplates < ActiveRecord::Migration[4.2]
       t.references :attachment, index: true, foreign_key: true
     end
 
-    add_reference :reports, :report_templates, index: true 
-    change_column_null :report_templates, :name, false 
+    add_reference :reports, :report_templates, index: true
+    change_column_null :report_templates, :name, false
     change_column_null :report_templates, :report_type, false
   end
 end

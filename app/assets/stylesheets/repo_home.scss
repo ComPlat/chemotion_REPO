@@ -175,6 +175,30 @@ $bs-successcolor: #5cb85c;
   background-color: white;
 }
 
+.card-nfdi4chem {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  > h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+  > h4 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+}
+
+.card-latest {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+}
+
 .card-well-competition {
   @extend .card-well;
   display: flex;

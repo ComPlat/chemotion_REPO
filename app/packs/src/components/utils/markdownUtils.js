@@ -1,0 +1,18 @@
+const searchAndReplace = (md, pattern, regexReplace) => {
+  const regexMatch = new RegExp(pattern, 'g');
+
+  const match = md.match(regexMatch);
+  if (typeof regexReplace === 'function' && match != null) {
+    const funcOutput = regexReplace(match[0]);
+    md = md.replace(match, funcOutput);
+  } else {
+    md = md.replace(regexMatch, regexReplace);
+  }
+
+  return md;
+};
+
+export {
+  searchAndReplace,
+};
+

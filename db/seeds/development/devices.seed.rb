@@ -57,7 +57,6 @@ def touch_files
     # create dummy data file for Dv1 - file collection
 	  file = Pathname.new(DIR1).join("#{na}-#{Time.now.to_i}")
     FileUtils.touch(file)
-
     # create dummy folder with 1 file for Dv1 - folder collection
     dir = Pathname.new(DIR2).join("#{na}-#{Time.now.to_i}")
     file = dir.join('dummy')

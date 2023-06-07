@@ -27,7 +27,11 @@ describe Chemotion::InboxAPI do
 
         before { get "/api/v1/inbox/samples?search_string=#{search_string}" }
 
+<<<<<<< HEAD
         it 'return fitting samples' do
+=======
+        it 'return fitting samples' do 
+>>>>>>> Repo update (#45)
           expect(JSON.parse(response.body)['samples'].size).to eq(2)
         end
       end
@@ -46,12 +50,17 @@ describe Chemotion::InboxAPI do
           before { post "/api/v1/inbox/samples/#{sample_2.id}", params: params, as: :json }
 
           it 'return moved samples' do
+<<<<<<< HEAD
+=======
+            puts response.body
+>>>>>>> Repo update (#45)
             expect(JSON.parse(response.body)['container']['container_type']).to eq('dataset')
             expect(JSON.parse(response.body)['container']['attachments'].count).to eq(1)
           end
         end
       end
     end
+<<<<<<< HEAD
 
     describe 'GET /api/v1/inbox' do
       context 'when fetching the inbox' do
@@ -97,5 +106,7 @@ describe Chemotion::InboxAPI do
         end
       end
     end
+=======
+>>>>>>> Repo update (#45)
   end
 end

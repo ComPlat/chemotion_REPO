@@ -48,7 +48,10 @@ describe Chemotion::ReportAPI do
     describe 'GET /api/v1/reports/docx' do
       before do
         params = { id: r1.id.to_s }
+<<<<<<< HEAD
 
+=======
+>>>>>>> Repo update (#45)
         get '/api/v1/reports/docx', params: params
       end
 
@@ -75,7 +78,10 @@ describe Chemotion::ReportAPI do
           checkedAll: false
         }
       end
+<<<<<<< HEAD
 
+=======
+>>>>>>> Repo update (#45)
       let(:params) do
         {
           exportType: 2,
@@ -94,9 +100,13 @@ describe Chemotion::ReportAPI do
             analyses: [],
             molecule: %w[cano_smiles],
             reaction: %w[name short_label],
+<<<<<<< HEAD
             sample: %w[name external_label real_amount_value real_amount_unit created_at],
             sample_analyses: [],
             wellplate: []
+=======
+            sample: %w[name external_label real_amount_value real_amount_unit created_at]
+>>>>>>> Repo update (#45)
           }
         }
       end
@@ -114,19 +124,30 @@ describe Chemotion::ReportAPI do
           post(
             '/api/v1/reports/export_samples_from_selections',
             params: params.to_json,
+<<<<<<< HEAD
             headers: { 'CONTENT-TYPE' => 'application/json' }
+=======
+            headers: { 'CONTENT_TYPE' => 'application/json' }
+>>>>>>> Repo update (#45)
           )
         end
 
         it 'returns correct sdf' do
+<<<<<<< HEAD
 
+=======
+>>>>>>> Repo update (#45)
           expect(response['Content-Type']).to eq('chemical/x-mdl-sdfile')
           expect(response['Content-Disposition']).to include('.sdf')
           msdf = IO.read(Rails.root.join('spec', 'fixtures', 'mof_v2000_1.sdf'))
           sdf = response.body
           sdf = sdf.gsub(/<CREATED_AT>.+?</ms, '<')
           msdf = msdf.gsub(/<CREATED_AT>.+?</ms, '<')
+<<<<<<< HEAD
           expect(sdf.squish).to eq(msdf.squish)
+=======
+          expect(sdf).to eq(msdf)
+>>>>>>> Repo update (#45)
         end
       end
 
@@ -136,7 +157,11 @@ describe Chemotion::ReportAPI do
           post(
             '/api/v1/reports/export_samples_from_selections',
             params: params.to_json,
+<<<<<<< HEAD
             headers: { 'CONTENT-TYPE' => 'application/json' }
+=======
+            headers: { 'CONTENT_TYPE' => 'application/json' }
+>>>>>>> Repo update (#45)
           )
         end
 
@@ -147,7 +172,11 @@ describe Chemotion::ReportAPI do
           sdf = response.body
           sdf = sdf.gsub(/<CREATED_AT>.+?</ms, '<')
           msdf = msdf.gsub(/<CREATED_AT>.+?</ms, '<')
+<<<<<<< HEAD
           expect(sdf.squish).to eq(msdf.squish)
+=======
+          expect(sdf).to eq(msdf)
+>>>>>>> Repo update (#45)
         end
       end
 
@@ -156,7 +185,11 @@ describe Chemotion::ReportAPI do
           params[:uiState][:sample][:checkedIds] = [sample_3.id]
           post('/api/v1/reports/export_samples_from_selections',
             params: params.to_json,
+<<<<<<< HEAD
             headers: { 'CONTENT-TYPE' => 'application/json' }
+=======
+            headers: { 'CONTENT_TYPE' => 'application/json' }
+>>>>>>> Repo update (#45)
           )
         end
 
@@ -167,7 +200,11 @@ describe Chemotion::ReportAPI do
           sdf = response.body
           sdf = sdf.gsub(/<CREATED_AT>.+?</ms, '<')
           msdf = msdf.gsub(/<CREATED_AT>.+?</ms, '<')
+<<<<<<< HEAD
           expect(sdf.squish).to eq(msdf.squish)
+=======
+          expect(sdf).to eq(msdf)
+>>>>>>> Repo update (#45)
         end
       end
 
@@ -176,7 +213,11 @@ describe Chemotion::ReportAPI do
           params[:uiState][:sample][:checkedIds] = [sample_4.id]
           post('/api/v1/reports/export_samples_from_selections',
             params: params.to_json,
+<<<<<<< HEAD
             headers: { 'CONTENT-TYPE' => 'application/json' }
+=======
+            headers: { 'CONTENT_TYPE' => 'application/json' }
+>>>>>>> Repo update (#45)
           )
         end
 
@@ -187,7 +228,11 @@ describe Chemotion::ReportAPI do
           sdf = response.body
           sdf = sdf.gsub(/<CREATED_AT>.+?</ms, '<')
           msdf = msdf.gsub(/<CREATED_AT>.+?</ms, '<')
+<<<<<<< HEAD
           expect(sdf.squish).to eq(msdf.squish)
+=======
+          expect(sdf).to eq(msdf)
+>>>>>>> Repo update (#45)
         end
       end
     end
@@ -236,10 +281,17 @@ describe Chemotion::ReportAPI do
         }
         post(
            '/api/v1/reports/export_samples_from_selections',
+<<<<<<< HEAD
            params: params, as: :json,
            headers: {
              'HTTP-ACCEPT' => 'application/vnd.ms-excel, chemical/x-mdl-sdfile',
              'CONTENT-TYPE' => 'application/json'
+=======
+           params: params.to_json, 
+           headers: {
+             'HTTP_ACCEPT' => 'application/vnd.ms-excel, chemical/x-mdl-sdfile',
+             'CONTENT_TYPE' => 'application/json'
+>>>>>>> Repo update (#45)
            }
         )
       end
@@ -346,7 +398,11 @@ describe Chemotion::ReportAPI do
           params: params.to_json,
           headers: {
             'HTTP_ACCEPT' => 'text/plain, text/csv',
+<<<<<<< HEAD
             'CONTENT-TYPE' => 'application/json'
+=======
+            'CONTENT_TYPE' => 'application/json'
+>>>>>>> Repo update (#45)
           }
         )
         expect(response['Content-Type']).to eq('text/csv')
@@ -489,6 +545,7 @@ describe Chemotion::ReportAPI do
           ],
           imgFormat: 'png',
           fileName: fileName,
+<<<<<<< HEAD
           molSerials: [
             { mol: { id: 1, svgPath: "1a.svg", sumFormula: "C6H6", iupacName: "benzene" }, value: "1a" }
           ],
@@ -514,20 +571,57 @@ describe Chemotion::ReportAPI do
               kind: "GCMS"
             }
           ],
+=======
+          molSerials: "[{\"mol\":{\"id\":1, \"svgPath\":\"1a.svg\", \
+            \"sumFormula\":\"C6H6\", \"iupacName\":\"benzene\"}, \
+            \"value\":\"1a\"}]",
+          prdAtts: "{\"atts\": \
+                      [ \
+                        { \
+                          \"id\":2, \
+                          \"attachable_id\":121, \
+                          \"attachable_type\":\"Report\", \
+                          \"filename\":\"kit_logo.png\", \
+                          \"identifier\":\"123\", \
+                          \"checksum\":\"456\", \
+                          \"storage\":\"local\", \
+                          \"created_by\":1, \
+                          \"created_for\":1, \
+                          \"version\":0, \
+                          \"created_at\":\"2018-01-03T15:24:19.751Z\", \
+                          \"updated_at\":\"2018-01-03T15:24:28.686Z\", \
+                          \"content_type\":\"image/png\", \
+                          \"bucket\":\"1\", \
+                          \"key\":\"987\", \
+                          \"thumb\":true, \
+                          \"folder\":\"\", \
+                          \"kind\":\"GCMS\" \
+                        } \
+                      ] \
+                    }",
+>>>>>>> Repo update (#45)
           templateId: 1
         }
       end
 
       it 'returns a created -standard- report' do
         params[:template] = 'standard'
+<<<<<<< HEAD
         post '/api/v1/reports', params: params, as: :json
+=======
+        post '/api/v1/reports', params: params
+>>>>>>> Repo update (#45)
 
         expect(response.body).to include(fileName)
       end
 
       it 'returns a created -supporting_information- report' do
         params[:template] = 'supporting_information'
+<<<<<<< HEAD
         post '/api/v1/reports', params: params, as: :json
+=======
+        post '/api/v1/reports', params: params
+>>>>>>> Repo update (#45)
         expect(response.body).to include(fileName)
       end
     end

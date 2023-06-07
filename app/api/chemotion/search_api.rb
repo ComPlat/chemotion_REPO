@@ -217,7 +217,6 @@ module Chemotion
           ttl_mol = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
           slist = paginate(ttl_mol)
           sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
-
           ssids = sentities.map { |e| e[:sid] }
 
           xvial_count_ssql = <<~SQL

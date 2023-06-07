@@ -3,7 +3,6 @@ FactoryBot.define do
     type { 'Group' }
     first_name { 'gro' }
     last_name { 'up' }
-
     counters do
       {
         samples: 0,
