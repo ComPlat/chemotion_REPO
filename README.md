@@ -4,10 +4,6 @@ A repository for chemists based on chemotion ELN !
 
 ---
 
-**⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
-
----
-
 ## License
 
 Chemotion_REPOSITORY for Chemists.
