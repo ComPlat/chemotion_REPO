@@ -26,10 +26,6 @@ import { ShowUserLabels } from './UserLabels';
 
 import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
 
-import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
-
-import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
-
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
   const flattenSamplesId = [];
