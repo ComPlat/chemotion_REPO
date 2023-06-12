@@ -1,6 +1,7 @@
-# Chemotion REPOSITORY
+# Chemotion REPOSITORY [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755759.svg)](https://doi.org/10.5281/zenodo.3755759)
 
-A repository for chemists based on chemotion ELN !
+A repository for chemists based on chemotion ELN ! 
+
 
 ---
 
