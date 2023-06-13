@@ -5,8 +5,6 @@ import DragDropItemTypes from '../../components/DragDropItemTypes';
 
 const listSource = {
   beginDrag(props) {
-    console.log('begin Drag');
-    console.log(props.field);
     return { field: props.field, layerKey: props.layerKey };
   },
 };
