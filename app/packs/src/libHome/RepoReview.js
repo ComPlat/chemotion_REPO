@@ -11,8 +11,8 @@ import ReviewStore from '../components/stores/ReviewStore';
 import UserStore from '../components/stores/UserStore';
 import RepositoryFetcher from '../components/fetchers/RepositoryFetcher';
 import LoadingActions from '../components/actions/LoadingActions';
-
-import { SvgPath, ElStateLabel, ElSubmitTime, SchemeWord, ChecklistPanel } from './RepoCommon';
+import { getFormattedISODateTime } from '../components/chemrepo/date-utils';
+import { SvgPath, ElStateLabel, SchemeWord, ChecklistPanel } from './RepoCommon';
 // import RepoReviewModal from '../components/common/RepoReviewModal';
 
 const renderElement = (e, currentElement, embargoBtn) => {
@@ -30,7 +30,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
             <i className="icon-reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;{e.title}
           </span>
           &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-          {ElSubmitTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+          {getFormattedISODateTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
           &nbsp;{embargoBtn}
           <div>
             <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
@@ -52,7 +52,7 @@ const renderElement = (e, currentElement, embargoBtn) => {
           <i className="icon-sample" />&nbsp;{e.title}
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-        {ElSubmitTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+        {getFormattedISODateTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
         &nbsp;{embargoBtn}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />

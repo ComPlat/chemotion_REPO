@@ -10,6 +10,7 @@ import Sample from './models/Sample';
 import { sampleShowOrNew, reactionShow } from './routesUtils';
 import Reaction from './models/Reaction';
 import { isNmrPass, isDatasetPass } from './utils/ElementUtils';
+import { getFormattedISODate } from './chemrepo/date-utils';
 
 const labelStyle = {
   display: 'inline-block',
@@ -261,12 +262,10 @@ const LabelPublication = ({ element }) => {
 
   if (!publication) { return null; }
 
-  const time = new Date(publication.published_at || publication.doi_reg_at);
-  const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
   const contributor = publication.contributors && publication.contributors.name;
   const publishedBy = publication.creators && publication.creators[0] &&
     publication.creators[0].name;
-  let tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${formattedTime}`;
+  let tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${getFormattedISODate(publication.published_at || publication.doi_reg_at)}`;
   const schemeOnly = (element && element.publication && element.publication.taggable_data &&
     element.publication.taggable_data.scheme_only === true) || false;
   let openUrl = (element.type === 'reaction' && schemeOnly === true) ? `/home/publications/reactions/${element.id}` : `https://dx.doi.org/${publication.doi}`;
@@ -305,33 +304,24 @@ const ChemotionTag = ({ tagData, firstOnly = false }) => {
   if (!chemotionTag) { return null; }
   const { chemotion_first, last_published_at, doi } = chemotionTag;
   if (firstOnly && !chemotion_first) { return null; }
-  const time = new Date(chemotion_first || last_published_at);
-  const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
+  const formattedTime = getFormattedISODate(chemotion_first || last_published_at);
   const tooltipText = chemotion_first ? `Published First Here on ${formattedTime}`
     : `Last published on ${formattedTime}`;
   const first = chemotion_first ? <span>1<sup>st</sup></span> : null;
-
 
   return (
     <OverlayTrigger placement="bottom" overlay={<Tooltip id="printCode">{tooltipText}</Tooltip>}>
       <a
         style={labelStyle}
-        // bsSize="xsmall"
-        // bsStyle="default"
         target="_blank"
         href={`https://dx.doi.org/${doi}`}
       >
         <img alt="chemotion_first" src="/favicon.ico" className="pubchem-logo" />
         {first}
-        {/* <i className="fa fa-trophy fa-lg" aria-hidden="true" /> */}
       </a>
-
-
-
     </OverlayTrigger>
   );
 };
-
 
 ChemotionTag.propTypes = {
   tagData: PropTypes.object,
