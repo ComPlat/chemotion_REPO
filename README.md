@@ -28,6 +28,10 @@ of the **[Karlsruhe Institute of Technology]**.
 
 ## User Documentation
 
+This project has been funded by the **[DFG]**.
+
+[![DFG Logo]][DFG]
+
 ## User Documentation
 
 see online **⸢ [Documentation] ⸥**
