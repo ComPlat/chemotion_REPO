@@ -58,6 +58,7 @@ import RepoSegment from './RepoSegment';
 import RepoMolViewerBtn from './RepoMolViewerBtn';
 import RepoMolViewerListBtn from './RepoMolViewerListBtn';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
+import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -496,11 +497,6 @@ const MoveEmbargoedBundle = (element, onMoveClick) => {
   );
 };
 
-const ElSubmitTime = (submitAt) => {
-  const time = new Date(submitAt);
-  return `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} ${time.getHours()}:${time.getMinutes()} `;
-};
-
 const SvgPath = (svg, type) => {
   if (svg && svg !== '***') {
     if (type === 'Reaction') {
@@ -533,7 +529,7 @@ const ElAspect = (e, onClick, user = null, owner, currentElement = null, onMoveC
           <i className={`icon-${e.type.toLowerCase()}`} />{schemeOnly ? <SchemeWord /> : ''}&nbsp;{e.title}
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-        {ElSubmitTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
+        {getFormattedISODateTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
         &nbsp;{user !== null && user.id != owner ? '' : MoveEmbargoedBundle(e, onMoveClick)}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
@@ -1882,7 +1878,7 @@ class RenderPublishAnalyses extends Component {
   }
 
   render() {
-    const { analysis, expanded, elementType } = this.props;
+    const { analysis, expanded, elementType, publication } = this.props;
     const kind = (analysis.extended_metadata['kind'] || '').split('|').pop().trim();
     const AffiliationMap = (affiliationIds) => {
       const aId = affiliationIds.length > 0 ? ([].concat.apply(...affiliationIds)) : [];
@@ -1896,13 +1892,11 @@ class RenderPublishAnalyses extends Component {
       });
       return affiliationMap;
     };
-    const affiliationMap = AffiliationMap(this.props.publication.affiliation_ids || []);
-    const time = new Date(this.props.publication && this.props.publication.published_at);
-    const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
+    const affiliationMap = AffiliationMap(publication.affiliation_ids || []);
     return (
       <Panel key={`analysis-${analysis.id}`} expanded={expanded} className="panel-analyses-public" onToggle={() => { }}>
         <Panel.Heading style={{ border: 'unset' }}>
-          <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{formattedTime}</i>
+          <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{getFormattedISODate(publication.published_at)}</i>
             <LicenseIcon
               license={this.props.license}
               hasCoAuthors={(this.props.publication.author_ids.length > 1)}
@@ -2354,7 +2348,6 @@ export {
   EditorTips,
   ElementIcon,
   ElStateLabel,
-  ElSubmitTime,
   ElAspect,
   EmbargoCom,
   IconToMyDB,
