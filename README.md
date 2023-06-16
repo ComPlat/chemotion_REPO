@@ -1,18 +1,13 @@
-# Chemotion REPOSITORY
+# Chemotion Repository [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755759.svg)](https://doi.org/10.5281/zenodo.3755759)
 
-A repository for chemists based on chemotion ELN !
-
----
-
-**⸢ [Installation] ⸥ ⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
+Empowering chemists with a comprehensive solution for storing, managing, and analyzing samples, reactions, and research data.
 
 ---
 
 ## License
 
-Chemotion_REPOSITORY for Chemists.
-
-Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruhe Institute of Technology.
+**Copyright © `2015` - `2023` [Nicole Jung]** <br>
+of the **[Karlsruhe Institute of Technology]**.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -28,16 +23,21 @@ Copyright (C) 2015-current  Nicole Jung (nicole.jung(at)kit.edu) of the Karlsruh
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-[![Badge JS]][JS Tests] <br>
-[![Badge Acceptance]][Acceptance Tests]  <br>
-[![Badge Ruby]][Ruby Tests]
-
 ---
 
 ## Sponsors
 
+This project has been funded by the **[DFG]**.
+
+[![DFG Logo]][DFG]
+
 ## User Documentation
 
-see online ![docs](https://www.chemotion.net/chemotionsaurus/docs/eln/about)
+see online **⸢ [Documentation] ⸥**
 
-[INSTALL]: INSTALL.md
+<!----------------------------------------------------------------------------->
+[Documentation]: https://www.chemotion.net/docs/repo/
+[DFG]: https://www.dfg.de/en/
+[DFG Logo]: https://www.dfg.de/zentralablage/bilder/service/logos_corporate_design/logo_negativ_267.png
+[Nicole Jung]: mailto:nicole.jung@kit.edu
+[Karlsruhe Institute of Technology]: https://www.kit.edu/english/
