@@ -6,6 +6,7 @@ import RepoCollectionDetails from './RepoCollectionDetails';
 import PublicStore from '../components/stores/PublicStore';
 import { MetadataModal, InfoModal } from './RepoEmbargoModal';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
+import { getFormattedISODate } from '../components/chemrepo/date-utils';
 
 const SvgPath = (svg, type) => {
   if (svg && svg !== '***') {
@@ -34,7 +35,7 @@ const infoTag = (el, la) => {
       </OverlayTrigger>
       {authorInfo}
       <div className="home_wrapper_item">
-        <div>Published on</div><div className="item_xvial">{el.published_at}</div>
+        <div>Published on</div><div className="item_xvial">{getFormattedISODate(el.published_at)}</div>
       </div>
       <div className="home_wrapper_item">
         <div>Analyses</div><div className="item_xvial">{el.ana_cnt || 0}</div>
