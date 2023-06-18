@@ -7,6 +7,7 @@ import PublicActions from '../components/actions/PublicActions';
 import Formula from '../components/common/Formula';
 import PubchemLabels from '../components/PubchemLabels';
 import { xvialTag, svgTag } from './RepoPubCommon';
+import { getFormattedISODate } from '../components/chemrepo/date-utils';
 
 const pubchemTag = (molecule) => {
   if (molecule && molecule.tag &&
@@ -36,7 +37,7 @@ const infoTag = (molecule) => {
         <div>Author</div><div className="item_xvial">{molecule.author_name}</div>
       </div>
       <div className="home_wrapper_item">
-        <div>Published on</div><div className="item_xvial">{molecule.published_at}</div>
+        <div>Published on</div><div className="item_xvial">{getFormattedISODate(molecule.published_at)}</div>
       </div>
       <div className="home_wrapper_item">
         <div>Analyses</div><div className="item_xvial">{molecule.ana_cnt || 0}</div>
