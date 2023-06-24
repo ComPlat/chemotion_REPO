@@ -77,7 +77,6 @@ module MetadataJsonld
       json = {}
       json['@type'] = "DefinedTerm"
       json['name'] = name
-      json['alternateName'] = alternate_name
       json['url'] = url
       json['inDefinedTermSet'] = defined_term_set
       json['id'] = id
