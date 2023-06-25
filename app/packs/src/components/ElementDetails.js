@@ -19,6 +19,7 @@ import LiteratureDetails from './LiteratureDetails';
 import PredictionContainer from './prediction/PredictionContainer';
 import GenericElDetails from './generic/GenericElDetails';
 import UserStore from './stores/UserStore';
+import { getPublicationId } from './chemrepo/publication-utils';
 
 const tabInfoHash = {
   report: {
@@ -161,7 +162,10 @@ export default class ElementDetails extends Component {
     }
   }
 
-  content(el) {
+  content(_el) {
+    const el = _el;
+    el.sealed = getPublicationId(el) ? true : false;
+
     if (el && el.klassType === 'GenericEl' && el.type != null) {
       return <GenericElDetails genericEl={el} toggleFullScreen={this.toggleFullScreen} />;
     }

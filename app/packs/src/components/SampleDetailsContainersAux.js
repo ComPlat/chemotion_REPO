@@ -17,7 +17,6 @@ import UIStore from './stores/UIStore';
 import { chmoConversions } from './OlsComponent';
 import { previewContainerImage } from './utils/imageHelper';
 
-import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 
 import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
