@@ -95,6 +95,18 @@ export default class ReactionDetails extends Component {
     this.handleValidation = this.handleValidation.bind(this);
     this.handleResetValidation = this.handleResetValidation.bind(this);
     this.handleModalAnalysesCheck = this.handleModalAnalysesCheck.bind(this);
+    this.unseal = this.unseal.bind(this);
+    if (!reaction.reaction_svg_file) {
+      this.updateReactionSvg();
+    }
+  }
+
+  onUIStoreChange(state) {
+    if (state.reaction.activeTab != this.state.activeTab){
+      this.setState({
+        activeTab: state.reaction.activeTab
+      })
+    }
   }
 
   componentDidMount() {
@@ -129,6 +141,7 @@ export default class ReactionDetails extends Component {
     const nextVisible = nextState.visible;
     const { reaction, activeTab, visible } = this.state;
     return (
+      nextState.sealed !== reaction.sealed ||
       nextReaction.can_publish !== reaction.can_publish ||
       nextReaction.can_update !== reaction.can_update ||
       nextReaction.id !== reaction.id ||
@@ -158,6 +171,12 @@ export default class ReactionDetails extends Component {
   forcePublishRefreshClose(reaction, show) {
     this.setState({ reaction, showPublishReactionModal: show });
     this.forceUpdate();
+  }
+
+  unseal() {
+    const { reaction } = this.state;
+    reaction.sealed = false;
+    this.setState({ reaction });
   }
 
   handleModalAnalysesCheck(reaction) {
@@ -446,19 +465,27 @@ export default class ReactionDetails extends Component {
             bsSize="xsmall"
             className="button-right"
             onClick={() => this.handleSubmit(true)}
-            disabled={!permitOn(reaction) || !this.reactionIsValid() || reaction.isNew}
+            disabled={
+              !permitOn(reaction) || !this.reactionIsValid() || reaction.isNew
+            }
             style={{ display: hasChanged }}
           >
             <i className="fa fa-floppy-o" />
             <i className="fa fa-times" />
           </Button>
         </OverlayTrigger>
-        <OverlayTrigger placement="bottom"
-          overlay={<Tooltip id="saveReaction">Save Reaction</Tooltip>}>
-          <Button bsStyle="warning" bsSize="xsmall" className="button-right"
+        <OverlayTrigger
+          placement="bottom"
+          overlay={<Tooltip id="saveReaction">Save Reaction</Tooltip>}
+        >
+          <Button
+            bsStyle="warning"
+            bsSize="xsmall"
+            className="button-right"
             onClick={() => this.handleSubmit()}
             disabled={!permitOn(reaction) || !this.reactionIsValid()}
-            style={{ display: hasChanged }} >
+            style={{ display: hasChanged }}
+          >
             <i className="fa fa-floppy-o "></i>
           </Button>
         </OverlayTrigger>
@@ -514,7 +541,7 @@ export default class ReactionDetails extends Component {
         <ReviewPublishBtn element={reaction} showComment={this.handleCommentScreen} validation={this.handleValidation} />
         <div style={{ display: "inline-block", marginLeft: "10px" }}>
           <OrigElnTag element={reaction} />
-          <PublishedTag element={reaction} />
+          <PublishedTag element={reaction} fnUnseal={this.unseal} />
           <LabelPublication element={reaction} />
         </div>
       </div>

@@ -19,6 +19,8 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import WellplateDetails from 'src/apps/mydb/elements/details/wellplates/WellplateDetails';
 import { Tabs, Tab, Label, Button } from 'react-bootstrap';
 
+import { getPublicationId } from './chemrepo/publication-utils';
+
 const tabInfoHash = {
   metadata: {
     title: 'Metadata',
@@ -160,7 +162,10 @@ export default class ElementDetails extends Component {
     }
   }
 
-  content(el) {
+  content(_el) {
+    const el = _el;
+    el.sealed = getPublicationId(el) ? true : false;
+
     if (el && el.klassType === 'GenericEl' && el.type != null) {
       return <GenericElDetails genericEl={el} toggleFullScreen={this.toggleFullScreen} />;
     }

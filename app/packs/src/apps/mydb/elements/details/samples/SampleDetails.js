@@ -88,6 +88,7 @@ import {
   validateMolecule,
 } from './PublishCommon';
 import SampleDetailsRepoComment from './SampleDetailsRepoComment';
+import { permitOn } from './common/uis';
 
 const MWPrecision = 6;
 
@@ -184,6 +185,7 @@ export default class SampleDetails extends React.Component {
     this.handleResetValidation = this.handleResetValidation.bind(this);
     this.handleAssociateClick = this.handleAssociateClick.bind(this);
     this.handleRepoXvial = this.handleRepoXvial.bind(this);
+    this.unseal = this.unseal.bind(this);
   }
 
   componentDidMount() {
@@ -487,6 +489,13 @@ export default class SampleDetails extends React.Component {
     this.setState({ sample });
   }
 
+  unseal() {
+    console.log('unseal');
+    const { sample } = this.state;
+    sample.sealed = false;
+    this.setState({ sample });
+  }
+
   handleElementalSectionToggle() {
     this.setState({
       showElementalComposition: !this.state.showElementalComposition
@@ -577,7 +586,18 @@ export default class SampleDetails extends React.Component {
       </Button>
     );
 
-    const saveAndCloseBtn = belongToReaction && !sample.isNew ? this.saveBtn(sample, true) : null;
+    const decoupleCb =
+    permitOn(sample) && this.enableSampleDecoupled ? (
+        <Checkbox
+          className="sample-header-decouple"
+          checked={sample.decoupled}
+          onChange={(e) => this.decoupleChanged(e)}
+        >
+          Decoupled
+        </Checkbox>
+      ) : null;
+
+    const isPub = !!((sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.publication && sample.tag.taggable_data.publication.published_at));
     return (
       <div>
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
@@ -594,7 +614,7 @@ export default class SampleDetails extends React.Component {
             className="button-right"
             onClick={() => this.handleSubmit(true)}
             style={{ display: saveBtnDisplay }}
-            disabled={!this.sampleIsValid() || !sample.can_update}
+            disabled={!this.sampleIsValid() || !permitOn(sample)}
           >
             <i className="fa fa-floppy-o" />
             <i className="fa fa-times" />
@@ -610,7 +630,7 @@ export default class SampleDetails extends React.Component {
             className="button-right"
             onClick={() => this.handleSubmit()}
             style={{ display: saveBtnDisplay }}
-            disabled={!this.sampleIsValid() || !sample.can_update}
+            disabled={!this.sampleIsValid() || !permitOn(sample)}
           >
             <i className="fa fa-floppy-o" />
           </Button>
@@ -641,7 +661,7 @@ export default class SampleDetails extends React.Component {
           <PubchemLabels element={sample} />
           <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} xvialCom={{ xvialCom: false }} />
           <OrigElnTag element={sample} />
-          <PublishedTag element={sample} />
+          <PublishedTag element={sample} fnUnseal={this.unseal} />
           <LabelPublication element={sample} />
           {this.extraLabels().map((Lab, i) => <Lab key={i} element={sample} />)}
         </div>
@@ -1595,10 +1615,21 @@ export default class SampleDetails extends React.Component {
     }
   }
 
-  showStructureEditor() {
-    this.setState({
-      showStructureEditor: true
-    });
+  saveBtn(sample, closeView = false) {
+    let submitLabel = sample && sample.isNew ? 'Create' : 'Save';
+    const isDisabled = !permitOn(sample);
+    if (closeView) submitLabel += ' and close';
+
+    return (
+      <Button
+        id="submit-sample-btn"
+        bsStyle="warning"
+        onClick={() => this.handleSubmit(closeView)}
+        disabled={!this.sampleIsValid() || isDisabled}
+      >
+        {submitLabel}
+      </Button>
+    );
   }
 
   hideStructureEditor() {
@@ -1662,7 +1693,6 @@ export default class SampleDetails extends React.Component {
           dialogClassName="importChemDrawModal"
           onHide={this.handleMolfileClose}
         >
-
           <Modal.Header closeButton>
             <Modal.Title>Molfile</Modal.Title>
           </Modal.Header>

@@ -18,7 +18,6 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import { chmoConversions } from 'src/components/OlsComponent';
 import { previewContainerImage } from 'src/utilities/imageHelper';
 
-import { PublishedTag } from './PublishCommon';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 
 import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';

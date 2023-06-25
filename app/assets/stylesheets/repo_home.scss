@@ -132,21 +132,23 @@ $bs-successcolor: #5cb85c;
 .repo-registed-compound-desc {
   color: $bs-primarycolor;
   font-style: italic;
-  i { color: black; cursor: pointer; }
+  i {
+    color: black;
+    cursor: pointer;
+  }
 }
 
 .repo-home {
-   display: block;
-   max-width: 1200px;
-   margin: auto;
+  display: block;
+  max-width: 1200px;
+  margin: auto;
 }
 
 .card-well {
   background-color: #f5f5f5;
   border-radius: 6px;
-  height: 36vh;//auto; //calc(80vh - 190px);
+  height: 36vh; //auto; //calc(80vh - 190px);
   padding: 10px 0px;
-
 }
 
 .card-nfdi4chem {
@@ -178,12 +180,18 @@ $bs-successcolor: #5cb85c;
   display: flex;
   margin: 40px 20px 20px 20px;
   border-radius: 0px;
-  .carl-spt{
+  .carl-spt {
     flex: 1;
     display: flex;
-    .carousel-inner .active.left { top: 0%; }
-    .carousel-inner .next        { top: 0%; }
-    .carousel-inner .prev        { top: 0%; }
+    .carousel-inner .active.left {
+      top: 0%;
+    }
+    .carousel-inner .next {
+      top: 0%;
+    }
+    .carousel-inner .prev {
+      top: 0%;
+    }
   }
 
   .carl-spt-item {
@@ -239,7 +247,8 @@ $bs-successcolor: #5cb85c;
     text-shadow: none;
   }
 
-  .carousel-control.left, .carousel-control.right {
+  .carousel-control.left,
+  .carousel-control.right {
     background-image: none !important;
     color: #e7e7e7;
   }
@@ -299,7 +308,7 @@ $bs-successcolor: #5cb85c;
   background-color: #f5f5f5;
   .partner-heading {
     background-color: #f5f5f5;
-     border-radius: 6px;
+    border-radius: 6px;
     margin: 20px 5px 0;
     padding: 5px;
     text-align: center;
@@ -308,7 +317,7 @@ $bs-successcolor: #5cb85c;
   .partner-row {
     display: flex;
     justify-content: center;
-     overflow-x: auto;
+    overflow-x: auto;
     padding-top: 30px;
   }
 
@@ -325,7 +334,7 @@ $bs-successcolor: #5cb85c;
       margin: auto;
       max-height: 90%;
       max-width: 90%;
-      opacity: 1.0;
+      opacity: 1;
       z-index: 1;
     }
 
@@ -334,17 +343,17 @@ $bs-successcolor: #5cb85c;
     }
 
     &:hover {
-      border:2px solid #ddd;
+      border: 2px solid #ddd;
     }
 
     &:hover .info {
-      opacity: 1.0;
+      opacity: 1;
     }
 
     .info {
       top: 0%;
       left: 0%;
-      opacity: 0.0;
+      opacity: 0;
       position: absolute;
       padding: 5px;
       margin: 5px;
@@ -360,7 +369,7 @@ $bs-successcolor: #5cb85c;
 .card-icons {
   div {
     height: 100px;
-    position:relative;
+    position: relative;
   }
 
   img {
@@ -472,7 +481,9 @@ $bs-successcolor: #5cb85c;
   margin: auto !important;
   > div:nth-child(2) {
     background-color: $topbgcolor;
-    > h2 { text-align: center; }
+    > h2 {
+      text-align: center;
+    }
   }
 }
 
@@ -726,18 +737,24 @@ $bs-successcolor: #5cb85c;
 }
 
 .btn-xvial-none {
-  i { color: unset; }
+  i {
+    color: unset;
+  }
 }
 
 .btn-xvial-data {
   display: flex;
-  i { color: $bs-primarycolor; }
+  i {
+    color: $bs-primarycolor;
+  }
   span {
     border: 1px solid $bs-primarycolor;
     background-color: white;
     color: $bs-primarycolor;
     border-radius: 3px;
-    .base { @include btn-xvial-base; }
+    .base {
+      @include btn-xvial-base;
+    }
   }
 }
 
@@ -960,4 +977,14 @@ $bs-successcolor: #5cb85c;
   button i {
     font-size: 1.5em;
   }
+}
+
+.repo-btn-success span {
+  background-color: $bs-successcolor !important;
+  color: white !important;
+}
+
+.repo-btn-success span:hover {
+  background-color: #19b5fe !important;
+  color: black !important;
 }
