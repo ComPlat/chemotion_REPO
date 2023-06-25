@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Button,
-  Tooltip,
-  OverlayTrigger,
-} from 'react-bootstrap';
+import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
 import Sample from './models/Sample';
@@ -11,6 +7,8 @@ import { sampleShowOrNew, reactionShow } from './routesUtils';
 import Reaction from './models/Reaction';
 import { isNmrPass, isDatasetPass } from './utils/ElementUtils';
 import { getFormattedISODate } from './chemrepo/date-utils';
+import { getElementType, getPublicationId } from './chemrepo/publication-utils';
+import UnsealBtn from './chemrepo/UnsealButton';
 
 const labelStyle = {
   display: 'inline-block',
@@ -207,34 +205,19 @@ const OrigElnTag = ({ element }) => {
   );
 };
 
-const PublishedTag = ({ element }) => {
+const PublishedTag = ({ element, fnUnseal }) => {
   const tag = (element && element.tag) || {};
   const tagData = (tag && tag.taggable_data) || {};
-  const tagType = tag.taggable_type;
-  const isPending = (tagData && tagData.publish_pending && tagData.publish_pending === true) || false;
-  let tip = '';
-  let publishedId;
-  switch (tagType) {
-    case 'Reaction':
-      publishedId = tagData.public_reaction;
-      if (isPending) {
-        tip = 'Reaction is being reviewed';
-      } else {
-        tip = 'Reaction has been published';
-      }
-      break;
-
-    default:
-      publishedId = tagData.public_sample;
-      if (isPending) {
-        tip = 'Sample is being reviewed';
-      } else {
-        tip = 'Sample has been published';
-      }
-      break;
-  }
-  return (
-    publishedId ? (
+  const tagType = getElementType(element) || '';
+  const isPending =
+    (tagData && tagData.publish_pending && tagData.publish_pending === true) ||
+    false;
+  const tip = isPending
+    ? `${tagType} is being reviewed`
+    : `${tagType} has been published`;
+  const publishedId = getPublicationId(element);
+  return publishedId ? (
+    <ButtonGroup bsSize="xsmall">
       <OverlayTrigger
         placement="bottom"
         overlay={<Tooltip id="data public">{tip}</Tooltip>}
@@ -242,18 +225,19 @@ const PublishedTag = ({ element }) => {
         <Button
           bsSize="xsmall"
           bsStyle={isPending ? 'warning' : 'danger'}
-          style={labelStyle}
-          onClick={event => handleClick(event, publishedId, tagType)}
+          onClick={(event) => handleClick(event, publishedId, tagType)}
         >
           <i className="fa fa-newspaper-o" aria-hidden="true" />
         </Button>
       </OverlayTrigger>
-    ) : null
-  );
+      {fnUnseal ? <UnsealBtn element={element} fnUnseal={fnUnseal} /> : null}
+    </ButtonGroup>
+  ) : null;
 };
 
 PublishedTag.propTypes = {
   element: PropTypes.object,
+  fnUnseal: PropTypes.func,
 };
 
 const LabelPublication = ({ element }) => {
@@ -339,5 +323,5 @@ export {
   PublishBtnReaction,
   ReviewPublishBtn,
   validateMolecule,
-  validateYield
+  validateYield,
 };
