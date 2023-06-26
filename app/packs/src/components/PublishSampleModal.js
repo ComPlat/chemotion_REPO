@@ -42,7 +42,7 @@ export default class PublishSampleModal extends Component {
       literatures: new Immutable.Map(),
       sortedIds: [],
       selectedEmbargo: '-1',
-      selectedLicense: 'CC BY-SA',
+      selectedLicense: 'CC BY',
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noEmbargo: false
