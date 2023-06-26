@@ -186,8 +186,6 @@ module Import
           'density',
           'xref',
           'stereo',
-          'created_at',
-          'updated_at',
           'decoupled',
           'molecular_mass',
           'sum_formula'
@@ -240,8 +238,6 @@ module Import
         residue = Residue.create!(fields.slice(
           'residue_type',
           'custom_info',
-          'created_at',
-          'updated_at'
         ).merge(
           sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'))
         ))
@@ -273,8 +269,6 @@ module Import
           'role',
           'origin',
           'duration',
-          'created_at',
-          'updated_at'
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
@@ -349,8 +343,6 @@ module Import
         wellplate = Wellplate.create!(fields.slice(
           'name',
           'size',
-          'created_at',
-          'updated_at'
         ).merge(
           collections: fetch_many(
             'Collection', 'CollectionsWellplate', 'wellplate_id', 'collection_id', uuid
@@ -374,8 +366,6 @@ module Import
           'position_y',
           'readout',
           'additive',
-          'created_at',
-          'updated_at'
         ).merge(
           wellplate: @instances.fetch('Wellplate').fetch(fields.fetch('wellplate_id')),
           sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'), nil)
@@ -397,8 +387,6 @@ module Import
           'collaborator',
           'conditions',
           'requirements',
-          'created_at',
-          'updated_at'
         ).merge(
           collections: fetch_many(
             'Collection', 'CollectionsScreen', 'screen_id', 'collection_id', uuid
@@ -424,8 +412,6 @@ module Import
           'name',
           'description',
           'body',
-          'created_at',
-          'updated_at'
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
@@ -463,8 +449,6 @@ module Import
                                                   'container_type',
                                                   'description',
                                                   'extended_metadata',
-                                                  'created_at',
-                                                  'updated_at'
                                                 ))
           end
 
@@ -582,9 +566,7 @@ module Import
           ) if segment_klass.nil?
           segment = Segment.create!(
             fields.slice(
-              'properties',
-              'created_at',
-              'updated_at'
+              'properties'
             ).merge(
               created_by: @current_user_id,
               element: element,
@@ -668,9 +650,7 @@ module Import
                                             'title',
                                             'url',
                                             'refs',
-                                            'doi',
-                                            'created_at',
-                                            'updated_at'
+                                            'doi'
                                           ))
 
           # add literature to the @instances map
@@ -681,9 +661,7 @@ module Import
         literal = Literal.create!(
           fields.slice(
             'element_type',
-            'category',
-            'created_at',
-            'updated_at'
+            'category'
           ).merge(
             user_id: @current_user_id,
             element: element,
