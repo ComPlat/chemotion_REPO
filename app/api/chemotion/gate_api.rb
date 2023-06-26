@@ -218,7 +218,7 @@ module Chemotion
             Delayed::Worker.logger.error e
             Message.create_msg_notification(
               channel_subject: Channel::COLLECTION_ZIP_FAIL,
-              message_from: @user_id,
+              message_from: @user&.id,
               data_args: { col_labels: '', operation: 'import' },
               autoDismiss: 5
             )
