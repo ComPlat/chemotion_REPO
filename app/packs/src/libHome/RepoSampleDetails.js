@@ -132,7 +132,9 @@ export default class RepoSampleDetails extends Component {
         molecule_iupac: molecule.iupac_name || [],
         molecule_id: molecule.id,
         analyses: s.analyses || element.analyses || [],
-        segments: s.segments || []
+        segments: s.segments || [],
+        boiling_point: s.boiling_point || '',
+        melting_point: s.melting_point || '',
       };
 
       return (
