@@ -856,6 +856,11 @@ module Chemotion
           env['api.format'] = :binary
           @publication.json_ld
         end
+
+        desc "Get JSON-Link Data"
+        get :jsonld do
+          @publication.json_ld
+        end
       end
 
       resource :published_statics do
