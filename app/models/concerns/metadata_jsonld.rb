@@ -201,9 +201,9 @@ module MetadataJsonld
     bb = DataCite::LiteraturePaser.parse_bibtex!(bib, id)
     bb = DataCite::LiteraturePaser.get_metadata(bb, lit[:doi], id) unless bb.class == BibTeX::Entry
     dc_lit = DataCite::LiteraturePaser.report_hash(lit, bb) if bb.class == BibTeX::Entry
-    json['name'] = dc_lit[:title]
-    json['author'] = dc_lit[:author]
-    json['url'] = dc_lit[:url]
+    json['name'] = dc_lit[:title] unless dc_lit.blank?
+    json['author'] = dc_lit[:author] unless dc_lit.blank?
+    json['url'] = dc_lit[:url] unless dc_lit.blank?
     json
   end
 
