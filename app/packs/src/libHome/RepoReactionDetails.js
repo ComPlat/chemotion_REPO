@@ -6,7 +6,6 @@ import { RepoCommentModal } from 'repo-review-ui';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AuthorList,
-  AuthorTitle,
   AffiliationList,
   CalcDuration,
   ChemotionId,
@@ -44,6 +43,7 @@ import RepoReactionSchemeInfo from './RepoReactionSchemeInfo';
 import RepoReviewButtonBar from './RepoReviewButtonBar';
 import Sample from '../components/models/Sample';
 import RepoSegment from './RepoSegment';
+import { getAuthorLabel } from '../components/chemrepo/publication-utils';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
@@ -694,7 +694,7 @@ export default class RepoReactionDetails extends Component {
               showHelp={schemeOnly}
             />
             <h5>
-              <b>{AuthorTitle(taggData.author_ids)} </b>
+              <b>{getAuthorLabel(taggData.author_ids)} </b>
               <AuthorList
                 creators={taggData.creators}
                 affiliationMap={affiliationMap}

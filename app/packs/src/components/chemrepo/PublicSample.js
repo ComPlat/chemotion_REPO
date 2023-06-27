@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from 'react-bootstrap';
 import { Citation, literatureContent, RefByUserInfo } from '../LiteratureCommon';
 import { ChemotionId, CommentBtn, Doi } from '../../libHome/RepoCommon';
+import getFormattedRange from './range-utils';
 
 const PublicSample = (_props) => {
   const {
@@ -73,6 +74,12 @@ const PublicSample = (_props) => {
           <div><div>{references}</div></div>
         </span>
       </h5>
+      <br />
+      <div>
+        <b>Physical Properties:</b>
+        <div>Melting point: {getFormattedRange(sample.melting_point)}</div>
+        <div>Boiling point: {getFormattedRange(sample.boiling_point)}</div>
+      </div>
     </div>
   );
 };
