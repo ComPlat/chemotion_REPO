@@ -246,7 +246,6 @@ export default class RepoSample extends Component {
           handleMaterialLink={this.handleMaterialLink}
         />
         <br />
-        <br />
         <div ref={this.materialRef}>
           <MAPanel
             isEditable={isReviewer}
