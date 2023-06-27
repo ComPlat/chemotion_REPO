@@ -115,16 +115,6 @@ ChemotionId.propTypes = {
 const SchemeWord = () => <span className="reaction-scheme-word">(scheme)</span>;
 
 
-const AuthorTitle = (authorIds) => {
-  if (authorIds && authorIds.length > 1) {
-    return 'Authors:';
-  }
-  if (authorIds && authorIds.length === 1) {
-    return 'Author:';
-  }
-  return '';
-};
-
 const NewsroomTemplate = {
   title: '', content: {}, article: []
 };
@@ -603,16 +593,6 @@ const BackSoonPage = () => {
   );
 };
 
-const ShowIndicator = (show) => {
-  return show ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
-};
-
-const labelStyle = {
-  display: 'inline-block',
-  marginLeft: '2px',
-  marginRight: '2px'
-};
-
 const IconToMyDB = ({
   id, type, tooltipTitle = 'Link to My DB', isLogin = false, isPublished = true
 }) => {
@@ -1057,6 +1037,14 @@ const RenderAnalysisHeader = (props) => {
           <RepoSegment segments={element.segments} />
         </Col>
       </Row>
+      <Row>
+        <Col sm={12} md={12} lg={12}>
+          <h5><b>Physical Properties:</b></h5>
+          <div>Melting point: {getFormattedRange(element.melting_point)}</div>
+          <div>Boiling point: {getFormattedRange(element.boiling_point)}</div>
+        </Col>
+      </Row>
+      < br/>
     </div>
   );
 };
@@ -2335,7 +2323,6 @@ export {
   AnalysesTypeJoinLabel,
   AffiliationList,
   AuthorList,
-  AuthorTitle,
   BackSoonPage,
   CalcDuration,
   ChemotionId,
@@ -2379,7 +2366,6 @@ export {
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
-  ShowIndicator,
   SvgPath,
   ToggleIndicator,
   CollectionDesc
