@@ -60,6 +60,7 @@ import RepoMolViewerListBtn from './RepoMolViewerListBtn';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
 import getFormattedRange from '../components/chemrepo/range-utils';
+import LdData from '../components/chemrepo/LdData';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -263,20 +264,23 @@ const DownloadMetadataBtn = (l) => {
 const DownloadJsonBtn = (l) => {
   const contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
   return (
-    <OverlayTrigger
-      placement="bottom"
-      overlay={<Tooltip id={`tt_metadata__${uuid.v4()}`}>download JSON-LD</Tooltip>}
-    >
-      <Button
-        style={{ backgroundColor: 'grey', color:'white', marginLeft: '5px' }}
-        bsSize="xsmall"
-        onClick={() => Utils.downloadFile({
-          contents: contentUrl
-        })}
+    <>
+      <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip id={`tt_metadata__${uuid.v4()}`}>download JSON-LD</Tooltip>}
       >
-        JSON-LD
-      </Button>
-    </OverlayTrigger>
+        <Button
+          style={{ backgroundColor: 'grey', color:'white', marginLeft: '5px' }}
+          bsSize="xsmall"
+          onClick={() => Utils.downloadFile({
+            contents: contentUrl
+          })}
+        >
+          JSON-LD
+        </Button>
+      </OverlayTrigger>
+      <LdData type={l.type.toLowerCase()} id={l.id} />
+    </>
   );
 };
 
