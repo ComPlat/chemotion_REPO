@@ -13,6 +13,7 @@ import { solventOptions } from './staticDropdownOptions/options';
 import SampleDetailsSolvents from './SampleDetailsSolvents';
 import PrivateNoteElement from './PrivateNoteElement';
 import NotificationActions from './actions/NotificationActions';
+import { permitOn } from './common/uis';
 
 
 export default class SampleForm extends React.Component {
@@ -108,7 +109,7 @@ export default class SampleForm extends React.Component {
   // Input components of sample details should be disabled if detail level
   // does not allow to read their content
   topSecretCheckbox(sample) {
-    if (sample.can_update) {
+    if (permitOn(sample)) {
       return (
         <Checkbox
           inputRef={(ref) => { this.topSecretInput = ref; }}
@@ -124,7 +125,7 @@ export default class SampleForm extends React.Component {
   }
 
   decoupledCheckbox(sample) {
-    if (sample.can_update) {
+    if (permitOn(sample)) {
       return (
         <Checkbox
           inputRef={(ref) => { this.decoupledInput = ref; }}
@@ -194,7 +195,7 @@ export default class SampleForm extends React.Component {
         <Select
           name="stereoAbs"
           clearable={false}
-          disabled={!sample.can_update}
+          disabled={!permitOn(sample)}
           options={absOptions}
           onChange={this.updateStereoAbs}
           value={value}
@@ -228,7 +229,7 @@ export default class SampleForm extends React.Component {
         <Select
           name="stereoRel"
           clearable={false}
-          disabled={!sample.can_update}
+          disabled={!permitOn(sample)}
           options={relOptions}
           onChange={this.updateStereoRel}
           value={value}
@@ -252,7 +253,7 @@ export default class SampleForm extends React.Component {
           <Select.Creatable
             name="moleculeName"
             multi={false}
-            disabled={!sample.can_update}
+            disabled={!permitOn(sample)}
             options={moleculeNames}
             onOpen={onOpenMolName}
             onChange={this.updateMolName}
@@ -262,7 +263,7 @@ export default class SampleForm extends React.Component {
             clearable={false}
           />
           <InputGroup.Button>
-            {this.structureEditorButton(!sample.can_update)}
+            {this.structureEditorButton(!permitOn(sample))}
           </InputGroup.Button>
         </InputGroup>
       </FormGroup>
@@ -331,8 +332,8 @@ export default class SampleForm extends React.Component {
           type="text"
           value={(/^xref_/.test(field) ? sample.xref[field.split('xref_')[1]] : sample[field]) || ''}
           onChange={(e) => { this.handleFieldChanged(field, e.target.value); }}
-          disabled={disabled || !sample.can_update}
-          readOnly={disabled || !sample.can_update}
+          disabled={disabled || !permitOn(sample)}
+          readOnly={disabled || !permitOn(sample)}
         />
       </FormGroup>
     );
@@ -348,7 +349,7 @@ export default class SampleForm extends React.Component {
         multi={false}
         options={solventOptions}
         value={sample.solvent}
-        disabled={!sample.can_update}
+        disabled={!permitOn(sample)}
         onChange={e => this.handleFieldChanged('solvent', e)}
       />
     );
@@ -422,7 +423,7 @@ export default class SampleForm extends React.Component {
 
   sampleAmount(sample) {
     const content = [];
-    const isDisabled = !sample.can_update;
+    const isDisabled = !permitOn(sample);
     const volumeBlocked = !sample.has_density && !sample.has_molarity;
 
     if (sample.isMethodDisabled('amount_value') === false) {
@@ -474,7 +475,7 @@ export default class SampleForm extends React.Component {
           value={sample.description || ''}
           onChange={e => this.handleFieldChanged('description', e.target.value)}
           rows={2}
-          disabled={!sample.can_update}
+          disabled={!permitOn(sample)}
         />
       </FormGroup>
     );
@@ -483,7 +484,7 @@ export default class SampleForm extends React.Component {
   render() {
     const sample = this.props.sample || {};
     const isPolymer = (sample.molfile || '').indexOf(' R# ') !== -1;
-    const isDisabled = !sample.can_update;
+    const isDisabled = !permitOn(sample);
     const polyDisabled = isPolymer || isDisabled;
     const molarityBlocked = isDisabled ? true : this.state.molarityBlocked;
     const densityBlocked = isDisabled ? true : !molarityBlocked;
@@ -654,7 +655,7 @@ export default class SampleForm extends React.Component {
           </tr>
           <tr>
             <td colSpan="4">
-              <PrivateNoteElement element={sample} disabled={!sample.can_update} />
+              <PrivateNoteElement element={sample} disabled={!permitOn(sample)} />
             </td>
           </tr>
           {this.props.customizableField()}

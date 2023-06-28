@@ -5,6 +5,7 @@ import SVG from 'react-inlinesvg';
 import PropTypes from 'prop-types';
 import { Popover, OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
 import PublicActions from '../components/actions/PublicActions';
+import { getFormattedISODate } from '../components/chemrepo/date-utils';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -58,7 +59,7 @@ const infoTag = (reaction, schemeOnly) => {
       </OverlayTrigger>
       {authorInfo}
       <div className="home_wrapper_item">
-        <div>Published on</div><div className="item_xvial">{reaction.published_at}</div>
+        <div>Published on</div><div className="item_xvial">{getFormattedISODate(reaction.published_at)}</div>
       </div>
       <div className="home_wrapper_item">
         <div>Analyses</div><div className="item_xvial">{reaction.ana_cnt || 0}</div>

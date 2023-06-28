@@ -1,15 +1,14 @@
 import React from 'react';
-import {
-  Button,
-  Tooltip,
-  OverlayTrigger,
-} from 'react-bootstrap';
+import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
 import Sample from './models/Sample';
 import { sampleShowOrNew, reactionShow } from './routesUtils';
 import Reaction from './models/Reaction';
 import { isNmrPass, isDatasetPass } from './utils/ElementUtils';
+import { getFormattedISODate } from './chemrepo/date-utils';
+import { getElementType, getPublicationId } from './chemrepo/publication-utils';
+import UnsealBtn from './chemrepo/UnsealButton';
 
 const labelStyle = {
   display: 'inline-block',
@@ -181,35 +180,44 @@ const ReviewPublishBtn = ({ element, showComment, validation }) => {
   )
 };
 
-
-const PublishedTag = ({ element }) => {
+const OrigElnTag = ({ element }) => {
   const tag = (element && element.tag) || {};
   const tagData = (tag && tag.taggable_data) || {};
-  const tagType = tag.taggable_type;
-  const isPending = (tagData && tagData.publish_pending && tagData.publish_pending === true) || false;
-  let tip = '';
-  let publishedId;
-  switch (tagType) {
-    case 'Reaction':
-      publishedId = tagData.public_reaction;
-      if (isPending) {
-        tip = 'Reaction is being reviewed';
-      } else {
-        tip = 'Reaction has been published';
-      }
-      break;
+  const elnInfo = (tagData && tagData.eln_info) || {};
+  if (Object.keys(elnInfo).length === 0) return <div />;
 
-    default:
-      publishedId = tagData.public_sample;
-      if (isPending) {
-        tip = 'Sample is being reviewed';
-      } else {
-        tip = 'Sample has been published';
-      }
-      break;
-  }
+  const tip = `go to original ELN: ${elnInfo.short_label}`;
+
   return (
-    publishedId ? (
+    <OverlayTrigger
+      placement="bottom"
+      overlay={<Tooltip id="data public">{tip}</Tooltip>}
+    >
+      <Button
+        bsSize="xsmall"
+        style={labelStyle}
+        href={`${elnInfo.origin}mydb/collection/all/${element.type}/${elnInfo.id}`}
+        target="_blank"
+      >
+        <i className="fa fa-link" aria-hidden="true" />
+      </Button>
+    </OverlayTrigger>
+  );
+};
+
+const PublishedTag = ({ element, fnUnseal }) => {
+  const tag = (element && element.tag) || {};
+  const tagData = (tag && tag.taggable_data) || {};
+  const tagType = getElementType(element) || '';
+  const isPending =
+    (tagData && tagData.publish_pending && tagData.publish_pending === true) ||
+    false;
+  const tip = isPending
+    ? `${tagType} is being reviewed`
+    : `${tagType} has been published`;
+  const publishedId = getPublicationId(element);
+  return publishedId ? (
+    <ButtonGroup bsSize="xsmall">
       <OverlayTrigger
         placement="bottom"
         overlay={<Tooltip id="data public">{tip}</Tooltip>}
@@ -217,18 +225,19 @@ const PublishedTag = ({ element }) => {
         <Button
           bsSize="xsmall"
           bsStyle={isPending ? 'warning' : 'danger'}
-          style={labelStyle}
-          onClick={event => handleClick(event, publishedId, tagType)}
+          onClick={(event) => handleClick(event, publishedId, tagType)}
         >
           <i className="fa fa-newspaper-o" aria-hidden="true" />
         </Button>
       </OverlayTrigger>
-    ) : null
-  );
+      {fnUnseal ? <UnsealBtn element={element} fnUnseal={fnUnseal} /> : null}
+    </ButtonGroup>
+  ) : null;
 };
 
 PublishedTag.propTypes = {
   element: PropTypes.object,
+  fnUnseal: PropTypes.func,
 };
 
 const LabelPublication = ({ element }) => {
@@ -237,12 +246,10 @@ const LabelPublication = ({ element }) => {
 
   if (!publication) { return null; }
 
-  const time = new Date(publication.published_at || publication.doi_reg_at);
-  const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
   const contributor = publication.contributors && publication.contributors.name;
   const publishedBy = publication.creators && publication.creators[0] &&
     publication.creators[0].name;
-  let tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${formattedTime}`;
+  let tooltipText = `Published by ${contributor == null ? publishedBy : contributor} on ${getFormattedISODate(publication.published_at || publication.doi_reg_at)}`;
   const schemeOnly = (element && element.publication && element.publication.taggable_data &&
     element.publication.taggable_data.scheme_only === true) || false;
   let openUrl = (element.type === 'reaction' && schemeOnly === true) ? `/home/publications/reactions/${element.id}` : `https://dx.doi.org/${publication.doi}`;
@@ -281,33 +288,24 @@ const ChemotionTag = ({ tagData, firstOnly = false }) => {
   if (!chemotionTag) { return null; }
   const { chemotion_first, last_published_at, doi } = chemotionTag;
   if (firstOnly && !chemotion_first) { return null; }
-  const time = new Date(chemotion_first || last_published_at);
-  const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
+  const formattedTime = getFormattedISODate(chemotion_first || last_published_at);
   const tooltipText = chemotion_first ? `Published First Here on ${formattedTime}`
     : `Last published on ${formattedTime}`;
   const first = chemotion_first ? <span>1<sup>st</sup></span> : null;
-
 
   return (
     <OverlayTrigger placement="bottom" overlay={<Tooltip id="printCode">{tooltipText}</Tooltip>}>
       <a
         style={labelStyle}
-        // bsSize="xsmall"
-        // bsStyle="default"
         target="_blank"
         href={`https://dx.doi.org/${doi}`}
       >
         <img alt="chemotion_first" src="/favicon.ico" className="pubchem-logo" />
         {first}
-        {/* <i className="fa fa-trophy fa-lg" aria-hidden="true" /> */}
       </a>
-
-
-
     </OverlayTrigger>
   );
 };
-
 
 ChemotionTag.propTypes = {
   tagData: PropTypes.object,
@@ -318,11 +316,12 @@ ChemotionTag.defaultProps = {
 
 export {
   LabelPublication,
+  OrigElnTag,
   PublishedTag,
   ChemotionTag,
   PublishBtn,
   PublishBtnReaction,
   ReviewPublishBtn,
   validateMolecule,
-  validateYield
+  validateYield,
 };

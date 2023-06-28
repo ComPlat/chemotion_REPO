@@ -1,13 +1,10 @@
-# Chemotion REPOSITORY [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755759.svg)](https://doi.org/10.5281/zenodo.3755759)
+# Chemotion Repository [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755759.svg)](https://doi.org/10.5281/zenodo.3755759)
 
-A repository for chemists based on chemotion ELN ! 
-
+Empowering chemists with a comprehensive solution for storing, managing, and analyzing samples, reactions, and research data.
 
 ---
 
 ## License
-
-Chemotion_REPOSITORY for Chemists.
 
 **Copyright © `2015` - `2023` [Nicole Jung]** <br>
 of the **[Karlsruhe Institute of Technology]**.
@@ -29,6 +26,10 @@ of the **[Karlsruhe Institute of Technology]**.
 
 ## Sponsors
 
+---
+
+## Sponsors
+
 This project has been funded by the **[DFG]**.
 
 [![DFG Logo]][DFG]
@@ -37,19 +38,9 @@ This project has been funded by the **[DFG]**.
 
 see online **⸢ [Documentation] ⸥**
 
-[INSTALL]: INSTALL.md
-
-
 <!----------------------------------------------------------------------------->
-
-[Installation]: https://www.chemotion.net/docs/eln/install_configure/
 [Documentation]: https://www.chemotion.net/docs/repo/
-[Changelog]: CHANGELOG.md
-
 [DFG]: https://www.dfg.de/en/
 [DFG Logo]: https://www.dfg.de/zentralablage/bilder/service/logos_corporate_design/logo_negativ_267.png
-
 [Nicole Jung]: mailto:nicole.jung@kit.edu
 [Karlsruhe Institute of Technology]: https://www.kit.edu/english/
-
-

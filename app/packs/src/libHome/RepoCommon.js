@@ -58,6 +58,9 @@ import RepoSegment from './RepoSegment';
 import RepoMolViewerBtn from './RepoMolViewerBtn';
 import RepoMolViewerListBtn from './RepoMolViewerListBtn';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
+import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
+import getFormattedRange from '../components/chemrepo/range-utils';
+import LdData from '../components/chemrepo/LdData';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -115,16 +118,6 @@ ChemotionId.propTypes = {
 const SchemeWord = () => <span className="reaction-scheme-word">(scheme)</span>;
 
 
-const AuthorTitle = (authorIds) => {
-  if (authorIds && authorIds.length > 1) {
-    return 'Authors:';
-  }
-  if (authorIds && authorIds.length === 1) {
-    return 'Author:';
-  }
-  return '';
-};
-
 const NewsroomTemplate = {
   title: '', content: {}, article: []
 };
@@ -172,17 +165,17 @@ const LicenseLegalCode = (cp) => {
 
 const nmrMsg = (sample, container) => {
   if (sample.molecule && container.extended_metadata &&
-    (typeof container.extended_metadata.kind === 'undefined' ||
-      (container.extended_metadata.kind.split('|')[0].trim() !== chmoConversions.nmr_1h.termId && container.extended_metadata.kind.split('|')[0].trim() !== chmoConversions.nmr_13c.termId)
+    (typeof container.extended_metadata?.kind === 'undefined' ||
+      (container.extended_metadata?.kind?.split('|')[0].trim() !== chmoConversions.nmr_1h?.termId && container.extended_metadata.kind?.split('|')[0].trim() !== chmoConversions.nmr_13c?.termId)
     )) {
     return '';
   }
   const nmrStr = container.extended_metadata && contentToText(container.extended_metadata.content);
 
-  if (container.extended_metadata.kind.split('|')[0].trim() === chmoConversions.nmr_1h.termId) {
+  if (container.extended_metadata.kind?.split('|')[0].trim() === chmoConversions.nmr_1h?.termId) {
     const msg = hNmrCheckMsg(sample.molecule.sum_formular, nmrStr);
     return msg === '' ? (<div style={{ display: 'inline', color: 'green' }}>&nbsp;<i className="fa fa-check" /></div>) : (<div style={{ display: 'inline', color: 'red' }}>&nbsp;(<sup>1</sup>H {msg})</div>);
-  } else if (container.extended_metadata.kind.split('|')[0].trim() === chmoConversions.nmr_13c.termId) {
+  } else if (container.extended_metadata?.kind?.split('|')[0].trim() === chmoConversions.nmr_13c?.termId) {
     const msg = cNmrCheckMsg(sample.molecule.sum_formular, nmrStr);
     return msg === '' ? (<div style={{ display: 'inline', color: 'green' }}>&nbsp;<i className="fa fa-check" /></div>) : (<div style={{ display: 'inline', color: 'red' }}>&nbsp;(<sup>13</sup>C {msg})</div>);
   }
@@ -196,9 +189,9 @@ const isFileTypePass = (analysisType, attachments) => {
   let files = [];
   switch (analysisType) {
     case '1H NMR':
-    case chmoConversions.nmr_1h.termId:
+    case chmoConversions.nmr_1h?.termId:
     case '13C NMR':
-    case chmoConversions.nmr_13c.termId:
+    case chmoConversions.nmr_13c?.termId:
     case '15N NMR':
     case 'NMR':
     case 'IR':
@@ -239,10 +232,10 @@ const isDatasetPass = (analysis) => {
 const isNmrPass = (analysis, sample) => {
   const nmrStr = analysis.extended_metadata && contentToText(analysis.extended_metadata.content);
   const nmrType = analysis.extended_metadata && (analysis.extended_metadata.kind || '').split('|').shift().trim();
-  if (nmrType !== '1H NMR' && nmrType !== '13C NMR' && nmrType !== chmoConversions.nmr_1h.termId && nmrType !== chmoConversions.nmr_13c.termId) return true;
-  if (nmrType === '1H NMR' || nmrType === chmoConversions.nmr_1h.termId) {
+  if (nmrType !== '1H NMR' && nmrType !== '13C NMR' && nmrType !== chmoConversions.nmr_1h?.termId && nmrType !== chmoConversions.nmr_13c?.termId) return true;
+  if (nmrType === '1H NMR' || nmrType === chmoConversions.nmr_1h?.termId) {
     return hNmrCheckMsg(sample.molecule.sum_formular, nmrStr) === '';
-  } else if (nmrType === '13C NMR' || nmrType === chmoConversions.nmr_13c.termId) {
+  } else if (nmrType === '13C NMR' || nmrType === chmoConversions.nmr_13c?.termId) {
     return cNmrCheckMsg(sample.molecule.sum_formular, nmrStr) === '';
   }
   return true;
@@ -271,20 +264,23 @@ const DownloadMetadataBtn = (l) => {
 const DownloadJsonBtn = (l) => {
   const contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
   return (
-    <OverlayTrigger
-      placement="bottom"
-      overlay={<Tooltip id={`tt_metadata__${uuid.v4()}`}>download JSON-LD</Tooltip>}
-    >
-      <Button
-        style={{ backgroundColor: 'grey', color:'white', marginLeft: '5px' }}
-        bsSize="xsmall"
-        onClick={() => Utils.downloadFile({
-          contents: contentUrl
-        })}
+    <>
+      <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip id={`tt_metadata__${uuid.v4()}`}>download JSON-LD</Tooltip>}
       >
-        JSON-LD
-      </Button>
-    </OverlayTrigger>
+        <Button
+          style={{ backgroundColor: 'grey', color:'white', marginLeft: '5px' }}
+          bsSize="xsmall"
+          onClick={() => Utils.downloadFile({
+            contents: contentUrl
+          })}
+        >
+          JSON-LD
+        </Button>
+      </OverlayTrigger>
+      <LdData type={l.type.toLowerCase()} id={l.id} />
+    </>
   );
 };
 
@@ -496,11 +492,6 @@ const MoveEmbargoedBundle = (element, onMoveClick) => {
   );
 };
 
-const ElSubmitTime = (submitAt) => {
-  const time = new Date(submitAt);
-  return `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} ${time.getHours()}:${time.getMinutes()} `;
-};
-
 const SvgPath = (svg, type) => {
   if (svg && svg !== '***') {
     if (type === 'Reaction') {
@@ -533,7 +524,7 @@ const ElAspect = (e, onClick, user = null, owner, currentElement = null, onMoveC
           <i className={`icon-${e.type.toLowerCase()}`} />{schemeOnly ? <SchemeWord /> : ''}&nbsp;{e.title}
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-        {ElSubmitTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
+        {getFormattedISODateTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
         &nbsp;{user !== null && user.id != owner ? '' : MoveEmbargoedBundle(e, onMoveClick)}
         <div>
           <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
@@ -601,16 +592,6 @@ const BackSoonPage = () => {
       <h4>&mdash; ComPlat Team</h4>
     </div>
   );
-};
-
-const ShowIndicator = (show) => {
-  return show ? 'glyphicon-chevron-down' : 'glyphicon-chevron-right';
-};
-
-const labelStyle = {
-  display: 'inline-block',
-  marginLeft: '2px',
-  marginRight: '2px'
 };
 
 const IconToMyDB = ({
@@ -1057,6 +1038,14 @@ const RenderAnalysisHeader = (props) => {
           <RepoSegment segments={element.segments} />
         </Col>
       </Row>
+      <Row>
+        <Col sm={12} md={12} lg={12}>
+          <h5><b>Physical Properties:</b></h5>
+          <div>Melting point: {getFormattedRange(element.melting_point)}</div>
+          <div>Boiling point: {getFormattedRange(element.boiling_point)}</div>
+        </Col>
+      </Row>
+      < br/>
     </div>
   );
 };
@@ -1882,7 +1871,7 @@ class RenderPublishAnalyses extends Component {
   }
 
   render() {
-    const { analysis, expanded, elementType } = this.props;
+    const { analysis, expanded, elementType, publication } = this.props;
     const kind = (analysis.extended_metadata['kind'] || '').split('|').pop().trim();
     const AffiliationMap = (affiliationIds) => {
       const aId = affiliationIds.length > 0 ? ([].concat.apply(...affiliationIds)) : [];
@@ -1896,13 +1885,11 @@ class RenderPublishAnalyses extends Component {
       });
       return affiliationMap;
     };
-    const affiliationMap = AffiliationMap(this.props.publication.affiliation_ids || []);
-    const time = new Date(this.props.publication && this.props.publication.published_at);
-    const formattedTime = `${time.getDate()}-${time.getMonth() + 1}-${time.getFullYear()} `;
+    const affiliationMap = AffiliationMap(publication.affiliation_ids || []);
     return (
       <Panel key={`analysis-${analysis.id}`} expanded={expanded} className="panel-analyses-public" onToggle={() => { }}>
         <Panel.Heading style={{ border: 'unset' }}>
-          <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{formattedTime}</i>
+          <h4><i className="fa fa-area-chart" aria-hidden="true" style={{ fontSize: '1.5em' }} /><b> Published on </b> <i>{getFormattedISODate(publication.published_at)}</i>
             <LicenseIcon
               license={this.props.license}
               hasCoAuthors={(this.props.publication.author_ids.length > 1)}
@@ -2335,7 +2322,6 @@ export {
   AnalysesTypeJoinLabel,
   AffiliationList,
   AuthorList,
-  AuthorTitle,
   BackSoonPage,
   CalcDuration,
   ChemotionId,
@@ -2354,7 +2340,6 @@ export {
   EditorTips,
   ElementIcon,
   ElStateLabel,
-  ElSubmitTime,
   ElAspect,
   EmbargoCom,
   IconToMyDB,
@@ -2379,7 +2364,6 @@ export {
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
-  ShowIndicator,
   SvgPath,
   ToggleIndicator,
   CollectionDesc

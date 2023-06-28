@@ -9,7 +9,6 @@ export default class GenericBaseFetcher {
   }
 
   static execData(params, path, method = 'POST') {
-    console.log(`/api/v1/${path}`);
     return fetch(`/api/v1/${path}`, {
       credentials: 'same-origin', method, headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(params)
     }).then(response => response.json()).then(json => json).catch((errorMessage) => {

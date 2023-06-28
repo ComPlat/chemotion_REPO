@@ -19,6 +19,7 @@ import LiteratureDetails from './LiteratureDetails';
 import PredictionContainer from './prediction/PredictionContainer';
 import GenericElDetails from './generic/GenericElDetails';
 import UserStore from './stores/UserStore';
+import { getPublicationId } from './chemrepo/publication-utils';
 
 const tabInfoHash = {
   report: {
@@ -137,14 +138,6 @@ export default class ElementDetails extends Component {
     this.setState({ fullScreen: t });
   }
 
-  toggleCommentScreen(t) {
-    this.setState({ fullScreen: t });
-  }
-
-  toggleCommentScreen(t) {
-    this.setState({ fullScreen: t });
-  }
-
   toggleFullScreen() {
     const { fullScreen } = this.state;
     this.setState({ fullScreen: !fullScreen });
@@ -169,7 +162,10 @@ export default class ElementDetails extends Component {
     }
   }
 
-  content(el) {
+  content(_el) {
+    const el = _el;
+    el.sealed = getPublicationId(el) ? true : false;
+
     if (el && el.klassType === 'GenericEl' && el.type != null) {
       return <GenericElDetails genericEl={el} toggleFullScreen={this.toggleFullScreen} />;
     }

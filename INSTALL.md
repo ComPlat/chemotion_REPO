@@ -2,15 +2,18 @@
 
 ## On a Ubuntu server
 
-copy the installation script on a ubuntu server 18.04 (could work with another deb)
+Server requirement: the installation can fail if not enough memory is available. A minimum of 3GB memory is recommended.
+
+copy the installation script on a ubuntu server 18.04 or 20.04 (also works with debian buster)
 
 ```
-curl -o chemotion_ELN_install.sh -L https://git.scc.kit.edu/complat/chemotion_ELN_server/raw/development/scripts/install_production.sh
+curl -o chemotion_ELN_install.sh -L https://github.com/ComPlat/chemotion_ELN/raw/development-5/scripts/install_production.sh
 ```
 
-check the variables at the beginning of the file, but also check the whole script to see what it is doing.
 
-**TLDR**: it will ...
+Check the variables at the beginning of the file, but also check the whole script to see what it is doing.
+
+**TLDR**: the script will ...
 
 * install OS package dependencies
 * install passenger
@@ -23,79 +26,74 @@ check the variables at the beginning of the file, but also check the whole scrip
 
 When ready, make the script executable and run it as a non-root user (but in the sudo group):
 
-`chmod 700 chemotion_ELN_install.sh
+```
+chmod 700 chemotion_ELN_install.sh
 
-`sudo ./chemotion_ELN_install.sh`
+sudo ./chemotion_ELN_install.sh
+```
 
 After reboot the application should be up and running at the ip of the machine (http://...)
 An admin account should have been created (email: eln-admin@kit.edu, pw: PleaseChangeYourPassword)
 
 To update the application code for such an installation, use the update script:
+
 ```
-curl -o chemotion_ELN_update.sh -L https://git.scc.kit.edu/complat/chemotion_ELN_server/raw/development/scripts/update_production.sh
+curl -o chemotion_ELN_update.sh -L https://github.com/ComPlat/chemotion_ELN/raw/development-5/scripts/update_production.sh
 ```
+
 
 If needed, edit the file  (change the variables or comments out parts to disable), then
 
 ```
-chmod 700 chemotion_ELN_update.sh`
+chmod 700 chemotion_ELN_update.sh
 
 sudo ./chemotion_ELN_update.sh
 ```
+
+## Using Windows Subsytem for Linux 2
+
+The instalation script works with Ubuntu 20 under WSL2.
+
+NB:
+
+- openssh-server should be reinstalled.
+- services (postgres, nginx) needs to be started manually.
+- UFW should not be used and disabled.
 
 
 
 ## Using Docker
 
-This is a setup for a 'pseudo' production stage using passenger and aimed for user testing.
-(For the development environment, change 'RAILS_ENV' to 'development' in docker-compose.yml)
-**Make sure you have finished the BASIC SETUP FIRST**
+see online [docs](https://www.chemotion.net/chemotionsaurus/docs/eln/docker_installation)
 
-1. Build the image from Dockerfile `docker-compose build` or pull the image: `docker-compose pull`
-2. Initialize database FIRST:
-  * `docker-compose run app bundle exec rake db:create`
-  * `docker-compose run app bundle exec rake db:migrate`
-  * `docker-compose run app bundle exec rake db:seed` (optional). A "seed"
-    user will be inserted into the db with the information as below: template.moderator@eln.edu - password: "@eln.edu"
-  * `docker-compose run app rake ketcherails:import:common_templates` (optional)
-3. Precompile assets: `docker-compose run app bundle exec rake assets:precompile`
-4. To start the server: `docker-compose up` or start server and detach: `docker-compose up -d`
-
-* Start interactive shell with docker: `docker-compose run app /bin/bash`
-* NOTE: In this Docker image, we disabled the email verification progress
-
-* To enable email confirmation, uncomment ":confirmable" at line 5 of `app/models/user.rb`, stop the `docker-compose` by `docker-compose stop` and start `docker-compose`.
 
 
 # Basic Development Setup
 
-* Copy `config/database.yml.example` to `config/database.yml` and enter your database connection information.
-* Copy `config/storage.yml.example` to `config/storage.yml` and enter your database connection information.
-* Copy `.ruby-gemset.example` to `.ruby-gemset`.
+## Ubuntu native or under WSL-2
+
+See the scripts/install_development.sh for guidance or run it. Application should be all set up and ready to run.
+
+When using WLS-2:
+-  postgres service needs to be started (```sudo service postgresql start ```)
+-  you may want to move the application code somewhere to /mnt/...
+-  bind the WSL ip address  when starting the rails s (`rails s -b ip.ad.dr.ess`)
+
+
+## Using Docker
+
+see https://github.com/ptrxyz/chemotion/tree/main/client-chemotion-dev
+
+
+
+## Application Setup Notes
+
+* config/database.yml and config/storage.yml are needed to start the application.
 * Copy `.ruby-version.example` to `.ruby-version`. (Skip this step if you want to use Docker)
-* Reload directory to create rvm gemset.
-
-## Application Setup
-* Execute `bundle install`.
-* Execute `rake db:reset` (this creates and seeds the database).
-
-## Environment variables
-
-Production
-
-* `cp .env.production{.example,}  # optionally enter SFTP credentials`
-
-## Configure Data Collection
-
-* copy the config example file and edit the entries
-
-* create device entries and configure their profiles
-
-`cp db/datacollectors.yml.example db/datacollectors.yml`
+* Environment variables: see the corresponding .env files
 
 
-## Deployment notes
-
+### Resetting the db:
 If you like to reset the database, you have to execute the following commands (under the assumption your production database is called `chemotion`)
 
 ```
@@ -120,7 +118,7 @@ RAILS_ENV=production bundle exec rake db:migrate db:seed
 
 ## JS Setup & Testing
 
-* Install `nvm`: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/0.34.0/install.sh | bash` (see https://github.com/nvm-sh/nvm#installation)
+* Install `nvm`: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/0.35.0/install.sh | bash` (see https://github.com/nvm-sh/nvm#installation)
   or for OSX: `brew install nvm && echo "source $(brew --prefix nvm)/nvm.sh" >> ~/.profile`
 * Execute `nvm install 10.15.3`
 * Execute `npm install -g npm@6.11.3`

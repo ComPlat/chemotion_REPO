@@ -69,18 +69,6 @@ module Chemotion
         end
       end
 
-      namespace :search do
-        params do
-          requires :inchikey, type: String, desc: 'inchikey'
-        end
-        post do
-          molecule = Molecule.joins("inner join samples on molecules.id = samples.molecule_id and samples.deleted_at is null")
-                             .joins("inner join publications on samples.id = publications.element_id and  publications.state like '%completed%' and publications.element_type = 'Sample'")
-                             .find_by(inchikey: params[:inchikey])
-          { molecule_id: molecule&.id }
-        end
-      end
-
       namespace :article_init do
         get do
           { is_article_editor: current_user&.is_article_editor || false }
@@ -421,7 +409,7 @@ module Chemotion
               and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
               select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
             (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
-            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
+            (select to_char(published_at, 'YYYY-MM-DD') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
             (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
           SQL
 
@@ -486,7 +474,7 @@ module Chemotion
           end
           com_config = Rails.configuration.compound_opendata
           embargo_sql = <<~SQL
-            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'YYYY-MM-DD') as published_at, publications.taggable_data,
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
             (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
@@ -834,6 +822,11 @@ module Chemotion
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
+          @publication.json_ld
+        end
+
+        desc "Get JSON-Link Data"
+        get :jsonld do
           @publication.json_ld
         end
       end

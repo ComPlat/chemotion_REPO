@@ -992,12 +992,63 @@ ActiveRecord::Schema.define(version: 2023_04_04_112233) do
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "body"
+  end
+
+  create_table "residues", id: :serial, force: :cascade do |t|
+    t.integer "sample_id"
+    t.string "residue_type"
+    t.hstore "custom_info"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sample_id"], name: "index_residues_on_sample_id"
   end
 
   create_table "research_plans", id: :serial, force: :cascade do |t|
     t.string "name", null: false
     t.integer "created_by", null: false
     t.datetime "deleted_at"
+    t.string "sample_svg_file"
+    t.integer "user_id"
+    t.string "identifier"
+    t.float "density", default: 0.0
+    t.numrange "melting_point"
+    t.numrange "boiling_point"
+    t.integer "fingerprint_id"
+    t.jsonb "xref", default: {}
+    t.float "molarity_value", default: 0.0
+    t.string "molarity_unit", default: "M"
+    t.integer "molecule_name_id"
+    t.string "molfile_version", limit: 20
+    t.jsonb "stereo"
+    t.string "metrics", default: "mmm"
+    t.boolean "decoupled", default: false, null: false
+    t.float "molecular_mass"
+    t.string "sum_formula"
+    t.jsonb "solvent"
+    t.index ["deleted_at"], name: "index_samples_on_deleted_at"
+    t.index ["identifier"], name: "index_samples_on_identifier"
+    t.index ["molecule_id"], name: "index_samples_on_sample_id"
+    t.index ["molecule_name_id"], name: "index_samples_on_molecule_name_id"
+    t.index ["user_id"], name: "index_samples_on_user_id"
+  end
+
+  create_table "scifinder_n_credentials", force: :cascade do |t|
+    t.string "access_token", null: false
+    t.string "refresh_token"
+    t.datetime "expires_at", null: false
+    t.integer "created_by", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by"], name: "uni_scifinder_n_credentials", unique: true
+  end
+
+  create_table "screens", id: :serial, force: :cascade do |t|
+    t.string "description"
+    t.string "name"
+    t.string "result"
+    t.string "collaborator"
+    t.string "conditions"
+    t.string "requirements"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "body"

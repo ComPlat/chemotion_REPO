@@ -112,6 +112,9 @@
 /public/json/*
 !/public/json/schema.json
 
+/public/jsmol/*
+!/public/jsmol/.keep
+
 /public/zip/*
 !/public/zip/.keep
 
@@ -135,6 +138,7 @@
 /public/assets/*
 
 /public/cdjs/*
+/public/marvinjs/*
 
 /coverage/
 
