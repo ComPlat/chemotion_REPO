@@ -26,10 +26,6 @@ of the **[Karlsruhe Institute of Technology]**.
 
 ## Sponsors
 
----
-
-## Sponsors
-
 This project has been funded by the **[DFG]**.
 
 [![DFG Logo]][DFG]
