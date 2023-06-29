@@ -55,7 +55,7 @@ module MetadataJsonld
     json['name'] = 'Chemotion Repository'
     json['provider'] = data_catalog_provider
     json['url'] = 'https://www.chemotion-repository.net'
-    json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0001818']
+    json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'http://purl.obolibrary.org/obo/CHMO_0000630', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/OBI_0000011']
     json['isAccessibleForFree'] = true
     json
   end
@@ -102,8 +102,8 @@ module MetadataJsonld
   def data_catalog_provider
     {
       "@type": "Organization"
-      "name": "NFDI4Chem"
-      "url": "https://www.nfdi4chem.de/"
+      "name": "Karlsruhe Institute of Technology (KIT)"
+      "url": "https://www.kit.edu/"
     }
   
   def conforms_to
