@@ -258,4 +258,12 @@ export default class PublicFetcher {
       console.log(errorMessage);
     });
   }
+
+  static getLD(type, id) {
+    const api = `/api/v1/public/metadata/jsonld?type=${type}&id=${id}`;
+    return fetch(api, {
+      credentials: 'same-origin'
+    }).then(response => response.json())
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
 }

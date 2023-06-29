@@ -7,8 +7,6 @@ const fieldTarget = {
   drop(targetProps, monitor) {
     const targetTag = { field: targetProps.field, layerKey: targetProps.layerKey };
     const sourceProps = monitor.getItem();
-    console.log('drop--:', sourceProps);
-    console.log('drop--:', monitor);
     const sourceTag = { field: sourceProps.field, layerKey: sourceProps.layerKey };
     //if (targetTag.field !== sourceTag.field) {
       targetProps.onDrop({ sourceTag, targetTag });

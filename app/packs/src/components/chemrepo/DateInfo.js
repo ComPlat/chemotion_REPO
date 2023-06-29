@@ -1,24 +1,17 @@
 /* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
+import { getFormattedISODate, getFormattedTime } from './date-utils';
 
 const DateInfo = (props) => {
   const {
     isPublished, preText, pubData, tagData
   } = props;
 
-  const getTimeString = date => (date ? `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}` : '');
-  const getFormattedTime = date => (date ? `${getTimeString(date)} ${date.getHours()}:${date.getMinutes()}` : '');
-
-  const publishedTime = tagData?.published_at || tagData?.doi_reg_at;
-  const publishedDate = new Date(publishedTime);
-  const formattedPublishedDate = getTimeString(publishedDate);
-
-  const submittedDate = new Date(pubData?.created_at);
-  const formattedSubmittedDate = getTimeString(submittedDate);
-
-  const updatedDate = new Date(pubData?.updated_at);
-  const formattedUpdatedDate = getFormattedTime(updatedDate);
+  const formattedPublishedDate =
+  getFormattedISODate((tagData?.published_at || tagData?.doi_reg_at));
+  const formattedSubmittedDate = getFormattedISODate(pubData?.created_at);
+  const formattedUpdatedDate = getFormattedTime(pubData?.updated_at);
 
   if (isPublished) {
     return (<span><b>{preText} Published on </b> <i>{formattedPublishedDate}</i></span>);
