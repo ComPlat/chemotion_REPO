@@ -87,15 +87,16 @@ module MetadataJsonld
   def data_catalog_keywords
     sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
     ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
-    edam = json_ld_defined_term_set('Bioinformatics operations, data types, formats, identifiers and topics', 'http://edamontology.org')
+    chmo = json_ld_defined_term_set('Chemical Methods Ontology', 'http://purl.obolibrary.org/obo/chmo/releases/2022-04-19/chmo.owl')
 
     sample = json_ld_defined_term('sample', 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
     reaction = json_ld_defined_term('chemical reaction', 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
     analytical_chemistry = json_ld_defined_term('Analytical Chemistry', 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
-    nmr = json_ld_defined_term('NMR', 'http://edamontology.org/topic_0593', edam, 'topic:0593')
-    ms = json_ld_defined_term('Mass Spectrometry', 'http://purl.obolibrary.org/obo/NCIT_C17156', ncit, 'NCIT:C17156')
+    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
+    ms = json_ld_defined_term('mass spectrometry', 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
+    ir = json_ld_defined_term('infrared absorption spectroscopy', 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
 
-    arr = [sample, reaction, analytical_chemistry, nmr, ms]
+    arr = [sample, reaction, analytical_chemistry, nmr, ms, ir]
     arr
   end
 
