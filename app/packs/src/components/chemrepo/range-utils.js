@@ -2,17 +2,18 @@ const getFormattedRange = (data) => {
   if (!data || data === '-Infinity...Infinity') {
     return '';
   }
+  const result = _result => `${_result} °C`;
   const rangeRegex = /^([^.\s]+(?:\.[^.\s]+)?)\.{2,3}([^.\s]+(?:\.[^.\s]+)?)$/;
   if (rangeRegex.test(data)) {
     const [, startValue, endValue] = data.match(rangeRegex);
     if (startValue === endValue || endValue === 'Infinity') {
-      return startValue;
+      return result(startValue);
     } else if (startValue === '-Infinity') {
-      return endValue;
+      return result(endValue);
     }
-    return `${startValue} - ${endValue}`;
+    return result(`${startValue} - ${endValue}`);
   }
-  return data;
+  return result(data);
 };
 
 export default getFormattedRange;

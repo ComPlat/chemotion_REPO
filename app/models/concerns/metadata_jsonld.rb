@@ -70,7 +70,7 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_defined_term(name, alternate_name ,url,defined_term_set, id)
+  def json_ld_defined_term(name, alternate_name, url, defined_term_set, id)
     json = {}
     json['@type'] = 'DefinedTerm'
     json['name'] = name
@@ -95,8 +95,8 @@ module MetadataJsonld
     ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
     chmo = json_ld_defined_term_set('Chemical Methods Ontology', 'http://purl.obolibrary.org/obo/chmo/releases/2022-04-19/chmo.owl')
 
-    sample = json_ld_defined_term('sample', null, 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
-    reaction = json_ld_defined_term('chemical reaction', null, 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
+    sample = json_ld_defined_term('sample', nil, 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
+    reaction = json_ld_defined_term('chemical reaction', nil, 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
     analytical_chemistry = json_ld_defined_term('Analytical Chemistry',['Chemistry, Analytical'], 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
     nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
     ms = json_ld_defined_term('mass spectrometry', ['MS'], 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
