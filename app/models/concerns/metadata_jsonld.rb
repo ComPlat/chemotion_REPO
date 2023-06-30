@@ -13,7 +13,7 @@ module MetadataJsonld
       json_ld_reaction
     elsif element_type == 'Container'
       json_ld_container
-    end 
+    end
   end
 
   def json_ld_sample_root(pub = self)
@@ -47,66 +47,16 @@ module MetadataJsonld
     json['@type'] = 'DataCatalog'
     json['@id'] = 'https://www.chemotion-repository.net'
     json['dct:conformsTo'] = {
-      "@type": 'CreativeWork',
-      "@id": 'https://bioschemas.org/profiles/DataCatalog/0.3-RELEASE-2019_07_01'
+      "@id": 'https://bioschemas.org/profiles/DataCatalog/0.3-RELEASE-2019_07_01',
+      "@type": 'CreativeWork'
     }
-    json['description'] = 'Repository for samples, reactions and related research data.'
-    json['keywords'] = data_catalog_keywords
+    json['description'] = 'Chemotion Repository'
     json['name'] = 'Chemotion Repository'
-    json['provider'] = data_catalog_provider
     json['url'] = 'https://www.chemotion-repository.net'
-    json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0001818']
-    json['isAccessibleForFree'] = true
     json
+
   end
 
-  
-
-  def json_ld_defined_term_set(name,url)
-    {
-      json = {}
-      json['@type'] = "DefinedTermSet"
-      json['name'] = name
-      json['url'] = url
-      json
-    }
-  end
-
-  def json_ld_defined_term(name ,url,defined_term_set, id)
-    {
-      json = {}
-      json['@type'] = "DefinedTerm"
-      json['name'] = name
-      json['alternateName'] = alternate_name
-      json['url'] = url
-      json['inDefinedTermSet'] = defined_term_set
-      json['id'] = id
-      json
-    }
-  end
-
-  def data_catalog_keywords
-    sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
-    ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
-    edam = json_ld_defined_term_set('Bioinformatics operations, data types, formats, identifiers and topics', 'http://edamontology.org')
-
-    sample = json_ld_defined_term('sample', 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
-    reaction = json_ld_defined_term('chemical reaction', 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
-    analytical_chemistry = json_ld_defined_term('Analytical Chemistry', 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
-    nmr = json_ld_defined_term('NMR', 'http://edamontology.org/topic_0593', edam, 'topic:0593')
-    ms = json_ld_defined_term('Mass Spectrometry', 'http://purl.obolibrary.org/obo/NCIT_C17156', ncit, 'NCIT:C17156')
-
-    arr = [sample, reaction, analytical_chemistry, nmr, ms]
-    arr
-  end
-
-  def data_catalog_provider
-    {
-      "@type": "Organization"
-      "name": "NFDI4Chem"
-      "url": "https://www.nfdi4chem.de/"
-    }
-  
   def conforms_to
     {
       "@id": "https://bioschemas.org/profiles/Study/0.3-DRAFT",
