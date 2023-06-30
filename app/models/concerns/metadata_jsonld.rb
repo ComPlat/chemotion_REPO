@@ -13,7 +13,7 @@ module MetadataJsonld
       json_ld_reaction
     elsif element_type == 'Container'
       json_ld_container
-    end 
+    end
   end
 
   def json_ld_sample_root(pub = self)
@@ -63,37 +63,32 @@ module MetadataJsonld
   end
 
   def json_ld_defined_term_set(name,url)
-    {
-      json = {}
-      json['@type'] = "DefinedTermSet"
-      json['name'] = name
-      json['url'] = url
-      json
-    }
+    json = {}
+    json['@type'] = 'DefinedTermSet'
+    json['name'] = name
+    json['url'] = url
+    json
   end
 
   def json_ld_defined_term(name, alternate_name ,url,defined_term_set, id)
-    {
-      json = {}
-      json['@type'] = "DefinedTerm"
-      json['name'] = name
-      json['alternateName'] = alternate_name
-      json['url'] = url
-      json['inDefinedTermSet'] = defined_term_set
-      json['@id'] = id
-      json
-    }
+    json = {}
+    json['@type'] = 'DefinedTerm'
+    json['name'] = name
+    json['alternateName'] = alternate_name
+    json['url'] = url
+    json['inDefinedTermSet'] = defined_term_set
+    json['@id'] = id
+    json
   end
 
   def json_ld_person(id, given_name, family_name)
-  {
     json = {}
-    json['@type'] = "Person"
+    json['@type'] = 'Person'
     json['givenName'] = given_name
     json['familyName'] = family_name
     json['@id'] = id
     json
-  }
+  end
 
   def data_catalog_keywords
     sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
@@ -120,22 +115,23 @@ module MetadataJsonld
     pierre = json_ld_person('0000-0002-0487-3947', 'Pierre', 'Tremouilhac')
     stefan = json_ld_person('0000-0003-4845-3191', 'Stefan', 'Braese')
     yu_chieh = json_ld_person('0000-0002-4261-9886', 'Yu-Chieh', 'Huang')
-    
+
     arr = [an, chia_lin, felix, nicole, pei_chi, pierre, stefan, yu_chieh]
     arr
   end
 
   def data_catalog_provider
     {
-      "@type": "Organization"
-      "name": "Karlsruhe Institute of Technology (KIT)"
-      "url": "https://www.kit.edu/"
+      "@type": 'Organization',
+      "name": 'Karlsruhe Institute of Technology (KIT)',
+      "url": 'https://www.kit.edu/'
     }
-  
+  end
+
   def conforms_to
     {
-      "@id": "https://bioschemas.org/profiles/Study/0.3-DRAFT",
-      "@type": "CreativeWork"
+      "@id": 'https://bioschemas.org/profiles/Study/0.3-DRAFT',
+      "@type": 'CreativeWork'
     }
   end
 
