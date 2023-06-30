@@ -76,6 +76,7 @@ import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
+// For REPO
 import RepositoryActions from './actions/RepositoryActions';
 import PublishSampleModal from './PublishSampleModal';
 import RepoXvialButton from './common/RepoXvialButton';
@@ -659,7 +660,6 @@ export default class SampleDetails extends React.Component {
           {colLabel}
           <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
           <PubchemLabels element={sample} />
-          <RepoXvialButton isEditable={sample.can_update} isLogin elementId={sample.id} data={this.state.xvial} saveCallback={this.handleRepoXvial} xvialCom={{ xvialCom: false }} />
           <OrigElnTag element={sample} />
           <PublishedTag element={sample} fnUnseal={this.unseal} />
           <LabelPublication element={sample} />

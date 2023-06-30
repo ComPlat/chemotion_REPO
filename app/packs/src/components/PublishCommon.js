@@ -184,7 +184,7 @@ const OrigElnTag = ({ element }) => {
   const tag = (element && element.tag) || {};
   const tagData = (tag && tag.taggable_data) || {};
   const elnInfo = (tagData && tagData.eln_info) || {};
-  if (Object.keys(elnInfo).length === 0) return <div />;
+  if (Object.keys(elnInfo).length === 0) return null;
 
   const tip = `go to original ELN: ${elnInfo.short_label}`;
 
