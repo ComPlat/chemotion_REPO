@@ -48,7 +48,7 @@ module MetadataJsonld
     json['@id'] = 'https://www.chemotion-repository.net'
     json['dct:conformsTo'] = {
       "@type": 'CreativeWork',
-      "@id": 'https://schema.org/DataCatalog'
+      "@id": 'https://bioschemas.org/profiles/DataCatalog/0.3-RELEASE-2019_07_01'
     }
     json['description'] = 'Repository for samples, reactions and related research data.'
     json['keywords'] = data_catalog_keywords
@@ -72,12 +72,11 @@ module MetadataJsonld
     }
   end
 
-  def json_ld_defined_term(name, alternate_name ,url,defined_term_set, id)
+  def json_ld_defined_term(name ,url,defined_term_set, id)
     {
       json = {}
       json['@type'] = "DefinedTerm"
       json['name'] = name
-      json['alternateName'] = alternate_name
       json['url'] = url
       json['inDefinedTermSet'] = defined_term_set
       json['@id'] = id
@@ -100,12 +99,12 @@ module MetadataJsonld
     ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
     chmo = json_ld_defined_term_set('Chemical Methods Ontology', 'http://purl.obolibrary.org/obo/chmo/releases/2022-04-19/chmo.owl')
 
-    sample = json_ld_defined_term('sample', null, 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
-    reaction = json_ld_defined_term('chemical reaction', null, 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
-    analytical_chemistry = json_ld_defined_term('Analytical Chemistry',['Chemistry, Analytical'], 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
-    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
-    ms = json_ld_defined_term('mass spectrometry', ['MS'], 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
-    ir = json_ld_defined_term('infrared absorption spectroscopy',['infrared (IR) spectroscopy, IR, infra-red absorption spectroscopy, IR spectroscopy, IR absorption spectroscopy, infrared spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
+    sample = json_ld_defined_term('sample', 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
+    reaction = json_ld_defined_term('chemical reaction', 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
+    analytical_chemistry = json_ld_defined_term('Analytical Chemistry', 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
+    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
+    ms = json_ld_defined_term('mass spectrometry', 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
+    ir = json_ld_defined_term('infrared absorption spectroscopy', 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
 
     arr = [sample, reaction, analytical_chemistry, nmr, ms, ir]
     arr
