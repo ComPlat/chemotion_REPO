@@ -55,12 +55,12 @@ module MetadataJsonld
     json['name'] = 'Chemotion Repository'
     json['provider'] = data_catalog_provider
     json['url'] = 'https://www.chemotion-repository.net'
-    json['license'] = 'https://www.gnu.org/licenses/agpl-3.0.en.html'
-    json['contributor'] = data_catalog_contributors
-    json['isAccessibleForFree'] = true
     json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'http://purl.obolibrary.org/obo/CHMO_0000630', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/OBI_0000011']
+    json['isAccessibleForFree'] = true
     json
   end
+
+  
 
   def json_ld_defined_term_set(name,url)
     {
@@ -79,20 +79,10 @@ module MetadataJsonld
       json['name'] = name
       json['url'] = url
       json['inDefinedTermSet'] = defined_term_set
-      json['@id'] = id
+      json['id'] = id
       json
     }
   end
-
-  def json_ld_person(id, given_name, family_name)
-  {
-    json = {}
-    json['@type'] = "Person"
-    json['givenName'] = given_name
-    json['familyName'] = family_name
-    json['@id'] = id
-    json
-  }
 
   def data_catalog_keywords
     sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
@@ -107,20 +97,6 @@ module MetadataJsonld
     ir = json_ld_defined_term('infrared absorption spectroscopy', 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
 
     arr = [sample, reaction, analytical_chemistry, nmr, ms, ir]
-    arr
-  end
-
-  def data_catalog_contributors
-    an = json_ld_person('0000-0002-1692-6778', 'An', 'Nguyen')
-    chia_lin = json_ld_person('0000-0002-9772-0455', 'Chia-Lin', 'Lin')
-    felix = json_ld_person('0000-0002-5035-7978', 'Felix', 'Bach')
-    nicole = json_ld_person('0000-0001-9513-2468', 'Nicole', 'Jung')
-    pei_chi = json_ld_person('0000-0002-9976-4507', 'Pei-Chi', 'Huang')
-    pierre = json_ld_person('0000-0002-0487-3947', 'Pierre', 'Tremouilhac')
-    stefan = json_ld_person('0000-0003-4845-3191', 'Stefan', 'Braese')
-    yu_chieh = json_ld_person('0000-0002-4261-9886', 'Yu-Chieh', 'Huang')
-    
-    arr = [an, chia_lin, felix, nicole, pei_chi, pierre, stefan, yu_chieh]
     arr
   end
 
