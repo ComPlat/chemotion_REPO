@@ -50,7 +50,7 @@ export const MARequestModal = (props) => {
   };
 
   const request = () => {
-    RepositoryFetcher.compound(elementId, rInput.value, 'request').then(() => {
+    RepositoryFetcher.compound(elementId, { xid: rInput.value }, 'request').then(() => {
       setRequestModalShow(false);
       const notification = notificationSystem.current;
       notification.addNotification({
@@ -131,6 +131,7 @@ export const MADataModal = (props) => {
   const { data, elementId, isEditable, saveCallback, xvialCom } = props;
   const [dataModalShow, setDataModalShow] = useState(false);
   const [newData, setNewData] = useState(data);
+  const [newComp, setNewComp] = useState(null);
 
   if (!isEditable) return null;
 
@@ -138,19 +139,20 @@ export const MADataModal = (props) => {
     setNewData(data);
   }, [dataModalShow, data]);
 
-  const selectXvial = (xid) => {
+  const selectXvial = (xid, xcomp) => {
     setNewData(xid);
+    setNewComp(xcomp);
   };
 
   const save = () => {
-    RepositoryFetcher.compound(elementId, newData, 'update').then(() => {
+    RepositoryFetcher.compound(elementId, { xid: newData, xcomp: newComp }, 'update').then(() => {
       setDataModalShow(false);
       saveCallback(elementId, newData);
     });
   };
 
   const remove = () => {
-    RepositoryFetcher.compound(elementId, '', 'update').then(() => {
+    RepositoryFetcher.compound(elementId, {}, 'update').then(() => {
       setDataModalShow(false);
       saveCallback(elementId, '');
     });
@@ -178,7 +180,7 @@ export const MADataModal = (props) => {
           <Modal.Title>Compound X-Vial number</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <FormControl type="text" value={newData} readOnly />
+          <FormControl type="text" defaultValue={newData} readOnly />
           {CompoundList(xvialCom, newData, selectXvial)}
           <div>
             <i className="fa fa-info-circle" aria-hidden="true" />
@@ -218,4 +220,4 @@ MADataModal.propTypes = {
   xvialCom: PropTypes.object.isRequired,
 };
 
-MADataModal.defaultProps = { data: null, saveCallback: () => {} };
+MADataModal.defaultProps = { data: null, saveCallback: () => { } };

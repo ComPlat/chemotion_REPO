@@ -461,6 +461,7 @@ module Chemotion
         params do
           requires :id, type: Integer, desc: 'Element id'
           optional :data, type: String
+          optional :xcomp, type: String
         end
         resource :request do
           post do
@@ -477,12 +478,13 @@ module Chemotion
           end
           post do
             data = @pub.taggable_data || {}
-            xvail = data['xvial'] || {}
-            xvail['num'] = params[:data]
-            xvail['username'] = current_user.name
-            xvail['userid'] = current_user.id
-            xvail['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
-            data['xvial'] = xvail
+            xvial = data['xvial'] || {}
+            xvial['num'] = params[:data]
+            xvial['comp_num'] = params[:xcomp]
+            xvial['username'] = current_user.name
+            xvial['userid'] = current_user.id
+            xvial['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+            data['xvial'] = xvial
             @pub.update!(taggable_data: data)
           end
         end

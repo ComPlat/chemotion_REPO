@@ -4,15 +4,9 @@ import { ToggleIndicator } from '../../libHome/RepoCommon';
 import { MARegisteredTooltip } from './ma/MAComs';
 import { MADataModal, MARequestModal } from './ma/MAModals';
 
-const CompNumber = (xvialCom, data = '') => {
-  if (!xvialCom || typeof xvialCom === 'undefined' || !xvialCom.allowed || !xvialCom.hasData || data === '') return null;
-  const match = xvialCom.data.find(x => x.x_data.xid === data);
-  return match ? <span>:&nbsp;{match.x_short_label}</span> : null;
-};
-
 const MAPanel = (_props) => {
   const {
-    allowRequest, elementId, isEditable, isLogin, data, saveCallback, xvialCom
+    allowRequest, compNum, elementId, isEditable, isLogin, data, saveCallback, xvialCom
   } = _props;
   const [expanded, setExpanded] = useState(true);
 
@@ -31,7 +25,7 @@ const MAPanel = (_props) => {
       <Panel style={{ border: 'none' }} id="collapsible-panel-ma-panel" expanded={expanded} defaultExpanded={expanded} onToggle={() => { }}>
         <Panel.Collapse>
           <Panel.Body style={{ fontSize: '90%', backgroundColor: '#f5f5f5', padding: '4' }}>
-            <b>Sample Registration Number in Molecule Archive</b>{CompNumber(xvialCom, data)} <br />
+            <b>Sample Registration Number in Molecule Archive:</b> {compNum} <br />
             <b>Request a sample:</b> <MARequestModal allowRequest={allowRequest} data={data} elementId={elementId} isLogin={isLogin} />
           </Panel.Body>
         </Panel.Collapse>

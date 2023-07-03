@@ -248,6 +248,7 @@ export default class RepoSample extends Component {
         <br />
         <div ref={this.materialRef}>
           <MAPanel
+            compNum={sample.comp_num}
             isEditable={isReviewer}
             isLogin={isLogin}
             allowRequest

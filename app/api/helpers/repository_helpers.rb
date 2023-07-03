@@ -123,6 +123,7 @@ module RepositoryHelpers
           xvial = 'x'
         end
       end
+      comp_num = s.tag.taggable_data['xvial'] && s.tag.taggable_data['xvial']['comp_num'] unless s.tag.taggable_data.nil?
       pub_info = (pub.review.present? && pub.review['info'].present? && pub.review['info']['comment']) || ''
       ana_infos = {}
       pub.descendants.each do |pp|
@@ -134,7 +135,7 @@ module RepositoryHelpers
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
       segments = Entities::SegmentEntity.represent(s.segments)
       tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
-        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
+        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?

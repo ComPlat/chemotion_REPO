@@ -115,6 +115,7 @@ export default class RepoSampleDetails extends Component {
         decoupled: s.decoupled,
         sid: s.sid,
         short_label: s.short_label || '',
+        comp_num: s.comp_num || '',
         xvial: s.xvial,
         embargo: s.embargo,
         pub_info: s.pub_info,
