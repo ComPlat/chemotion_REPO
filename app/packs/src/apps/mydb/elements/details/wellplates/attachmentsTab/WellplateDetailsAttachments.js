@@ -79,7 +79,7 @@ export default class WellplateDetailsAttachments extends Component {
     EditorFetcher.startEditing({ attachment_id: attachment.id })
       .then((result) => {
         if (result.token) {
-          const url = `/editor?id=${attachment.id}&docType=${docType}&fileType=${fileType}&title=${attachment.filename}&key=${result.token}`;
+          const url = `/editor?id=${attachment.id}&docType=${docType}&fileType=${fileType}&title=${attachment.filename}&key=${result.token}&only_office_token=${result.only_office_token}`;
           window.open(url, '_blank');
 
           attachment.aasm_state = 'oo_editing';
