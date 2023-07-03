@@ -67,7 +67,7 @@ Rails.application.routes.draw do
 
   # Standalone page for ChemScanner
   # get 'chemscanner', to: 'pages#chemscanner'
-  # get 'editor',      to: 'pages#editor'
+  get 'editor',      to: 'pages#editor'
 
   # Standalone page for ChemSpectra
 #  get 'chemspectra', to: 'pages#chemspectra'
