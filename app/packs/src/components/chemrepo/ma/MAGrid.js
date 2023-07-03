@@ -30,7 +30,7 @@ const MAGrid = (props) => {
     const selectedRows = event.api.getSelectedRows();
     if (selectedRows.length > 0) {
       const selectedRow = selectedRows[0];
-      fnSelect(selectedRow.x_data.xid);
+      fnSelect(selectedRow.x_data.xid, selectedRow.x_short_label);
     }
   };
 
@@ -60,8 +60,9 @@ const MAGrid = (props) => {
 
 MAGrid.propTypes = {
   xvialCompounds: PropTypes.object.isRequired,
-  data: PropTypes.string.isRequired,
+  data: PropTypes.string,
   fnSelect: PropTypes.func.isRequired,
 };
 
+MAGrid.defaultProps = { data: null };
 export default MAGrid;

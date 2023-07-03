@@ -43,6 +43,7 @@ export default class RepoXvialButton extends React.Component {
       dataModalShow: false,
       requestModalShow: false,
       newData: props.data,
+      newComp: null,
     };
     this.save = this.save.bind(this);
     this.remove = this.remove.bind(this);
@@ -59,12 +60,12 @@ export default class RepoXvialButton extends React.Component {
     }
   }
 
-  setNewData(newData) {
-    this.setState({ newData });
+  setNewData(newData, newComp = null) {
+    this.setState({ newData, newComp });
   }
 
-  selectXvial(xid) {
-    this.setNewData(xid);
+  selectXvial(xid, xcomp) {
+    this.setNewData(xid, xcomp);
   }
 
   checkRequest() {
@@ -81,9 +82,9 @@ export default class RepoXvialButton extends React.Component {
   }
 
   save() {
-    const { newData } = this.state;
+    const { newData, newComp } = this.state;
     const { elementId, saveCallback } = this.props;
-    RepositoryFetcher.compound(elementId, newData, 'update').then(() => {
+    RepositoryFetcher.compound(elementId, { xid: newData, xcomp: newComp }, 'update').then(() => {
       this.closeModal();
       saveCallback(elementId, newData);
     });
@@ -91,7 +92,7 @@ export default class RepoXvialButton extends React.Component {
 
   remove() {
     const { elementId, saveCallback } = this.props;
-    RepositoryFetcher.compound(elementId, '', 'update').then(() => {
+    RepositoryFetcher.compound(elementId, {}, 'update').then(() => {
       this.closeModal();
       saveCallback(elementId, '');
     });
@@ -99,7 +100,7 @@ export default class RepoXvialButton extends React.Component {
 
   request() {
     const { elementId } = this.props;
-    RepositoryFetcher.compound(elementId, this.rInput.value, 'request').then(
+    RepositoryFetcher.compound(elementId, { xid: this.rInput.value }, 'request').then(
       () => {
         this.closeModal();
         NotificationActions.add({
@@ -117,6 +118,7 @@ export default class RepoXvialButton extends React.Component {
       dataModalShow: false,
       requestModalShow: false,
       newData: this.props.data,
+      newComp: null,
     });
   }
 
@@ -323,5 +325,5 @@ RepoXvialButton.defaultProps = {
   isLogin: false,
   allowRequest: false,
   data: null,
-  saveCallback: () => {},
+  saveCallback: () => { },
 };

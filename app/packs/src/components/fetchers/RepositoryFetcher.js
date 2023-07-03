@@ -377,7 +377,7 @@ export default class RepositoryFetcher {
       credentials: 'same-origin',
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, data })
+      body: JSON.stringify({ id, data: data?.xid, xcomp: data?.xcomp })
     }).then(response => response.json())
       .catch((errorMessage) => {
         console.log(errorMessage);
