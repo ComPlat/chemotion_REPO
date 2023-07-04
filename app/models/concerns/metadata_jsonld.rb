@@ -51,14 +51,14 @@ module MetadataJsonld
       "@id": 'https://schema.org/DataCatalog'
     }
     json['description'] = 'Repository for samples, reactions and related research data.'
-    json['keywords'] = data_catalog_keywords
+    json['keywords'] = data_catalog_keywords(pub)
     json['name'] = 'Chemotion Repository'
     json['provider'] = data_catalog_provider
     json['url'] = 'https://www.chemotion-repository.net'
     json['license'] = 'https://www.gnu.org/licenses/agpl-3.0.en.html'
     json['contributor'] = data_catalog_contributors
     json['isAccessibleForFree'] = true
-    json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'http://purl.obolibrary.org/obo/CHMO_0000630', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/OBI_0000011']
+    # json['measurementTechnique'] = ['https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000591', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/CHMO_0000470', 'http://purl.obolibrary.org/obo/CHMO_0000630', 'https://ontobee.org/ontology/CHMO?iri=http://purl.obolibrary.org/obo/OBI_0000011']
     json
   end
 
@@ -90,7 +90,7 @@ module MetadataJsonld
     json
   end
 
-  def data_catalog_keywords
+  def data_catalog_keywords(pub = self)
     sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
     ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
     chmo = json_ld_defined_term_set('Chemical Methods Ontology', 'http://purl.obolibrary.org/obo/chmo/releases/2022-04-19/chmo.owl')
@@ -98,11 +98,12 @@ module MetadataJsonld
     sample = json_ld_defined_term('sample', nil, 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
     reaction = json_ld_defined_term('chemical reaction', nil, 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
     analytical_chemistry = json_ld_defined_term('Analytical Chemistry',['Chemistry, Analytical'], 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
-    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
-    ms = json_ld_defined_term('mass spectrometry', ['MS'], 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
-    ir = json_ld_defined_term('infrared absorption spectroscopy',['infrared (IR) spectroscopy, IR, infra-red absorption spectroscopy, IR spectroscopy, IR absorption spectroscopy, infrared spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
 
-    arr = [sample, reaction, analytical_chemistry, nmr, ms, ir]
+#    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
+#    ms = json_ld_defined_term('mass spectrometry', ['MS'], 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
+#    ir = json_ld_defined_term('infrared absorption spectroscopy',['infrared (IR) spectroscopy, IR, infra-red absorption spectroscopy, IR spectroscopy, IR absorption spectroscopy, infrared spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
+
+    arr = [sample, reaction, analytical_chemistry]
     arr
   end
 
@@ -168,7 +169,9 @@ module MetadataJsonld
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{doi.suffix}"
     json['additionalType'] = 'Reaction'
     json['name'] = element.rinchi_short_key
-    json['author'] = json_ld_authors(taggable_data)
+    json['creator'] = json_ld_authors(taggable_data)
+    json['author'] = json['creator']
+
     json['description'] = json_ld_description(element.description)
     json['license'] = rights_data[:rightsURI]
     json['datePublished'] = published_at&.strftime('%Y-%m-%d')
@@ -201,7 +204,7 @@ module MetadataJsonld
     json = []
     children&.each do |pub|
       json.push(json_ld_sample(pub)) if pub.element_type == 'Sample'
-      json.push(json_ld_analysis(pub)) if pub.element_type == 'Container'
+      json.push(json_ld_analysis(pub, false)) if pub.element_type == 'Container'
     end
     json
   end
@@ -218,7 +221,7 @@ module MetadataJsonld
   end
 
   def json_ld_container
-    json_ld_analysis
+    json_ld_analysis(self, true)
   end
 
 
@@ -226,21 +229,25 @@ module MetadataJsonld
     arr = []
     # arr.push(json_ld_creative_work(pub))
     pub.children&.each do |ana|
-      arr.push(json_ld_analysis(ana))
+      arr.push(json_ld_analysis(ana, false))
     end
     arr
   end
 
-  def json_ld_analysis(pub = self)
+  def json_ld_analysis(pub = self, root = true)
     json = {}
     json['@context'] = 'https://schema.org'
     json['@type'] = 'Dataset'
     json['@id'] = "https://doi.org/#{pub.doi.full_doi}"
     json['identifier'] = "CRD-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
+    json['publisher'] = json_ld_publisher
+    json['license'] = pub.rights_data[:rightsURI]
     json['name'] = pub.element.extended_metadata['kind'] || '' if pub&.element&.extended_metadata.present?
-    json['author'] = json_ld_authors(pub.taggable_data)
+    json['creator'] = json_ld_authors(pub.taggable_data)
+    json['author'] = json['creator']
     json['description'] = json_ld_analysis_description(pub)
+    json['includedInDataCatalog'] = json_ld_data_catalog(pub) if root == true
     json
   end
 
