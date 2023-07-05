@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { getFormattedISODate, getFormattedTime } from './date-utils';
+import { getFormattedISODate, getFormattedISODateTime } from './date-utils';
 
 const DateInfo = (props) => {
   const {
@@ -11,7 +11,7 @@ const DateInfo = (props) => {
   const formattedPublishedDate =
   getFormattedISODate((tagData?.published_at || tagData?.doi_reg_at));
   const formattedSubmittedDate = getFormattedISODate(pubData?.created_at);
-  const formattedUpdatedDate = getFormattedTime(pubData?.updated_at);
+  const formattedUpdatedDate = getFormattedISODateTime(pubData?.updated_at);
 
   if (isPublished) {
     return (<span><b>{preText} Published on </b> <i>{formattedPublishedDate}</i></span>);
