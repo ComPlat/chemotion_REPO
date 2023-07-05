@@ -7,6 +7,8 @@ module MetadataJsonld
   extend ActiveSupport::Concern
 
   def json_ld
+    return {} if state != 'completed'
+
     if element_type == 'Sample'
       json_ld_sample_root
     elsif element_type == 'Reaction'
@@ -46,10 +48,6 @@ module MetadataJsonld
     json['@context'] = 'https://schema.org'
     json['@type'] = 'DataCatalog'
     json['@id'] = 'https://www.chemotion-repository.net'
-    json['dct:conformsTo'] = {
-      "@type": 'CreativeWork',
-      "@id": 'https://schema.org/DataCatalog'
-    }
     json['description'] = 'Repository for samples, reactions and related research data.'
     json['keywords'] = data_catalog_keywords(pub)
     json['name'] = 'Chemotion Repository'
