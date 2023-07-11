@@ -287,6 +287,8 @@ module MetadataJsonld
     json = {}
     json['@type'] = 'Organization'
     json['name'] = 'chemotion-repository'
+    json['logo'] = 'https://www.chemotion-repository.net/images/repo/Chemotion-V1.png'
+    json['url'] = 'https://www.chemotion-repository.net'
     json
   end
 
