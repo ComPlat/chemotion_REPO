@@ -16,5 +16,7 @@ class InsertAdministratorAccount < ActiveRecord::Migration[4.2]
     user = User.create!(attributes)
     user.update!(account_active: true) if column_exists?(:users, :account_active)
     user.update!(confirmed_at: DateTime.now) if column_exists?(:users, :account_active)
+
+    Profile.create!(user_id: user.id)
   end
 end
