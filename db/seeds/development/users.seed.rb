@@ -2,15 +2,20 @@ require 'faker'
 user_cnt = 6
 password = '@complat'
 
+user_ids = []
 user_cnt.times do |idx|
   uc = idx + 1
-  !User.find_by(email: "complat.user#{uc}@eln.edu") && User.create!(
+  user = !User.find_by(email: "complat.user#{uc}@eln.edu") && User.create!(
     email: "complat.user#{uc}@eln.edu", password: password, first_name: "User#{uc}", last_name: 'Complat',
     name_abbreviation: "CU#{uc}", confirmed_at: Time.now
   )
+  user_ids << user.id
 end
 
 Person.find_each do |u|
+  # only process the persons which were just created
+  next unless user_ids.include?(u.id)
+
   collection = Collection.create(
     user_id: u.id,
     label: "project #{u.name_abbreviation}-#{Faker::Color.color_name}"
