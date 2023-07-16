@@ -7,13 +7,8 @@ import MolViewerModal from './MolViewerModal';
 export default class MolViewerBtn extends Component {
   constructor(props) {
     super(props);
-    this.state = { show: false, molFile: props.fileContent };
-    this.updateState = this.updateState.bind(this);
+    this.state = { show: false };
     this.handleModalOpen = this.handleModalOpen.bind(this);
-  }
-
-  updateState(params) {
-    this.setState({ ...params });
   }
 
   handleModalOpen(e) {
@@ -22,8 +17,10 @@ export default class MolViewerBtn extends Component {
   }
 
   render() {
-    const { config, disabled, isPublic } = this.props;
-    const { molFile, show } = this.state;
+    const {
+      config, disabled, fileContent, isPublic
+    } = this.props;
+    const { show } = this.state;
     if (isPublic && !config.featureEnabled) return null;
 
     return (
@@ -37,7 +34,7 @@ export default class MolViewerBtn extends Component {
           show ?
             <MolViewerModal
               config={config}
-              fileContent={molFile}
+              fileContent={fileContent}
               handleModalOpen={e => this.handleModalOpen(e)}
               isPublic={isPublic}
               show={show}
