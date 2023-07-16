@@ -36,7 +36,6 @@ module Chemotion
         status 204
       end
 
-
       namespace :token do
         desc 'Generate Token'
         params do
@@ -49,6 +48,16 @@ module Chemotion
 
           { token: token }
         end
+      end
+
+
+      desc 'Public initialization'
+      params do
+      end
+      get 'initialize' do
+        {
+          molecule_viewer: Rails.configuration.molecule_viewer_config
+        }
       end
 
       namespace :generic_templates do
@@ -867,6 +876,18 @@ module Chemotion
         desc 'Return PUBLIC statics'
         get do
           ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps')
+        end
+      end
+
+      resource :service do
+        desc 'convert molfile to 3d'
+        params do
+          requires :molfile, type: String, desc: 'Molecule molfile'
+        end
+        post :convert do
+          convert_to_3d(params[:molfile])
+        rescue StandardError => e
+          return { msg: { level: 'error', message: e } }
         end
       end
     end

@@ -17,10 +17,10 @@ import UIStore from 'src/stores/alt/stores/UIStore';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import { chmoConversions } from 'src/components/OlsComponent';
 import { previewContainerImage } from 'src/utilities/imageHelper';
+import MolViewerListBtn from './viewer/MolViewerListBtn';
 
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
-
-import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
+import MatrixCheck from './common/MatrixCheck';
 
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
@@ -369,6 +369,9 @@ const headerBtnGroup = (
   const { chmos } = UserStore.getState();
   const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
 
+  const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
+  const enableMoleculeViewer = MatrixCheck(currentUser.matrix, 'moleculeViewer');
+
   return (
     <div className="upper-btn">
       <Button
@@ -402,7 +405,7 @@ const headerBtnGroup = (
         hasNMRium={hasNMRium}
       />
       <span className="button-right">
-        <RepoMolViewerListBtn el={sample} container={container} isPublic={false} />
+        <MolViewerListBtn el={sample} container={container} isPublic={false} config={UIStore.getState().moleculeViewer} disabled={!enableMoleculeViewer} />
       </span>
       <span
         className="button-right add-to-report"
