@@ -1,0 +1,37 @@
+@mixin viewer-modal {
+  height: 95%;
+  top: 52% !important;
+  margin: unset !important;
+}
+
+.file-viewer-modal {
+  @include viewer-modal;
+  width: 98vw !important;
+  .modal-content {
+    height: 95%;
+  }
+}
+
+.structure-viewer-modal {
+  @include viewer-modal;
+  width: 60vw !important;
+  .modal-content {
+    height: calc(100% - 60px);
+  }
+}
+
+.structure-frame-container {
+  position: relative;
+  height: calc(100vh - 180px);
+  overflow: hidden;
+  max-width: 100%;
+  // padding-top: 56.25%;
+  .frame-div {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}

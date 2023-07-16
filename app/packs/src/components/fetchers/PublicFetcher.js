@@ -1,10 +1,21 @@
 import 'whatwg-fetch';
 import _ from 'lodash';
+import { camelizeKeys } from 'humps';
 import Molecule from '../models/Molecule';
 import Reaction from '../models/Reaction';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 export default class PublicFetcher {
+  static initialize() {
+    const promise = fetch('/api/v1/public/initialize', {
+      credentials: 'same-origin',
+    }).then(response => response.json())
+      .then(json => camelizeKeys(json))
+      .catch(err => console.log(err)); // eslint-disable-line
+
+    return promise;
+  }
+
   static fetchPublicMolecules(params = {}) {
     const page = params.page || 1;
     const perPage = params.perPage || 10;
@@ -265,5 +276,26 @@ export default class PublicFetcher {
       credentials: 'same-origin'
     }).then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
+  static convertMolfile(params) {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+    }, 5000); // 5 seconds timeout
+
+    return fetch('/api/v1/public/service/convert', {
+      signal: abortController.signal, // pass the signal to the fetch function
+      credentials: 'same-origin',
+      method: 'post',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ molfile: params.data.mol })
+    }).then((response) => {
+      clearTimeout(timeoutId);
+      return response.json();
+    }).then(json => new Blob([json.molfile], { type: 'text/plain' })).catch((errorMessage) => {
+      clearTimeout(timeoutId);
+      throw new Error(errorMessage);
+    });
   }
 }

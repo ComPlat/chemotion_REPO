@@ -7,6 +7,14 @@ import SearchFetcher from '../fetchers/SearchFetcher';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
 
 class PublicActions {
+  initialize() {
+    return (dispatch) => {
+      PublicFetcher.initialize()
+        .then(json => dispatch(json))
+        .catch(err => console.log(err));
+    };
+  }
+
   refreshPubElements(type) {
     return type;
   }

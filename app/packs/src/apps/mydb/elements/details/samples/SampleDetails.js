@@ -129,6 +129,7 @@ export default class SampleDetails extends React.Component {
       sample: props.sample,
       reaction: null,
       materialGroup: null,
+      moleculeViewer: UIStore.getState().moleculeViewer,
       showStructureEditor: false,
       loadingMolecule: false,
       showElementalComposition: false,
@@ -158,6 +159,7 @@ export default class SampleDetails extends React.Component {
     this.enableComputedProps = MatrixCheck(currentUser.matrix, 'computedProp');
     this.enableSampleDecoupled = MatrixCheck(currentUser.matrix, 'sampleDecoupled');
     this.enableNmrSim = MatrixCheck(currentUser.matrix, 'nmrSim');
+    this.enableMoleculeViewer = MatrixCheck(currentUser.matrix, 'moleculeViewer');
 
     this.onUIStoreChange = this.onUIStoreChange.bind(this);
     this.clipboard = new Clipboard('.clipboardBtn');
@@ -1737,7 +1739,7 @@ export default class SampleDetails extends React.Component {
 
   render() {
     const sample = this.state.sample || {};
-    const { visible } = this.state;
+    const { moleculeViewer, visible } = this.state;
     const tabContentsMap = {
       properties: this.samplePropertiesTab('properties'),
       analyses: this.sampleContainerTab('analyses'),
@@ -1892,6 +1894,12 @@ export default class SampleDetails extends React.Component {
                   onTabPositionChanged={this.onTabPositionChanged}
                   addInventoryTab={sample.inventory_sample}
                 />
+              <MolViewerBtn
+                config={moleculeViewer}
+                disabled={sample.isNew || !this.enableMoleculeViewer}
+                fileContent={sample.molfile}
+                isPublic={false}
+              />
                 {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
                 <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
                   {tabContents}

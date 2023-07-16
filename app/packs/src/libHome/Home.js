@@ -33,6 +33,8 @@ import RepoElementDetails from './RepoElementDetails';
 import NavFooter from './NavFooter';
 import LoadingModal from '../components/common/LoadingModal';
 
+import PublicActions from '../components/actions/PublicActions';
+
 const extraHomes = () => {
   const homes = [];
   const count = XHome.count || 0;
@@ -54,6 +56,7 @@ class Home extends Component {
   componentDidMount() {
     PublicStore.listen(this.onChange);
     RStore.listen(this.onChange);
+    PublicActions.initialize.defer();
   }
 
   componentWillUnmount() {

@@ -30,6 +30,7 @@ class PublicStore {
     this.reviewData = {};
 
     this.bindListeners({
+      handleInitialize: PublicActions.initialize,
       handleGetMolecules: PublicActions.getMolecules,
       handleGetReactions: PublicActions.getReactions,
       handleSearchMolecules: PublicActions.getSearchMolecules,
@@ -55,6 +56,10 @@ class PublicStore {
       handleDisplayCollection: PublicActions.displayCollection,
 
     });
+  }
+
+  handleInitialize(result) {
+    this.setState(result);
   }
 
   handleRefreshPubElements(type) {

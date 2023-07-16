@@ -55,12 +55,13 @@ import RepoXvialButton from '../components/common/RepoXvialButton';
 import RepoPreviewImage from '../components/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from '../components/LiteratureCommon';
 import RepoSegment from './RepoSegment';
-import RepoMolViewerBtn from './RepoMolViewerBtn';
-import RepoMolViewerListBtn from './RepoMolViewerListBtn';
+import MolViewerBtn from '../components/viewer/MolViewerBtn';
+import MolViewerListBtn from '../components/viewer/MolViewerListBtn';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
 import getFormattedRange from '../components/chemrepo/range-utils';
 import LdData from '../components/chemrepo/LdData';
+import PublicStore from '../components/stores/PublicStore';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -917,7 +918,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath)}
+        {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} config={PublicStore.getState().moleculeViewer} disabled={false} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
@@ -983,7 +984,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath)}
+          {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} config={PublicStore.getState().moleculeViewer} disabled={false} />)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">
@@ -1762,7 +1763,7 @@ class RenderPublishAnalysesPanel extends Component {
         <div className="abstract">
           <div className="lower-text">
             <div className="sub-title">
-              <b>{kind}</b>&nbsp;<RepoMolViewerListBtn el={element} container={analysis} isPublic={isPublic} />
+              <b>{kind}</b>&nbsp;<MolViewerListBtn el={element} container={analysis} isPublic={isPublic} config={PublicStore.getState().moleculeViewer} disabled={false} />
               <RepoPublicComment isReviewer={isReviewer} id={analysis.id} type={type} pageId={pageId} pageType={pageType} userInfo={userInfo} title={kind} />&nbsp;
               <RepoUserComment isLogin={isLogin} id={analysis.id} type={type} pageId={pageId} pageType={pageType} />
             </div>
