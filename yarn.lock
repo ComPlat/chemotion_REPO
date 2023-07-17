@@ -13751,12 +13751,12 @@ react-motion@^0.5.2:
     prop-types "^15.5.8"
     raf "^3.1.0"
 
-react-nglviewer@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/react-nglviewer/-/react-nglviewer-0.5.0.tgz#920f3332d56aa4ed002978fefc83974d6fe232ec"
-  integrity sha512-6zAJY2uJ6TcyFICdaLkKC0Q+2vq/nlsuNFF4yEJosIt1qz8FF8b+GLmQcEvYRHGK7mhMO91rBX2j8qA0rrTz/w==
+react-nglviewer@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/react-nglviewer/-/react-nglviewer-0.6.0.tgz#dfb3987c7f565e1abc05997613d6271c5aefed10"
+  integrity sha512-7d0DdCGriGhl/OAAM/0L1DFPa9R4BfoN520NKjL/B254lOT76c/8Lx9lrzf0HNBeYGz+/UAov0tEUPdmk0KjZw==
   dependencies:
-    ngl "^2.1.0"
+    ngl "^2.1.1"
 
 react-notification-system@^0.2.17, react-notification-system@^0.2.7:
   version "0.2.17"

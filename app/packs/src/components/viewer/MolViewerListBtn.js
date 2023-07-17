@@ -3,8 +3,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { filter } from 'lodash';
-import UserStore from '../stores/UserStore';
-import MatrixCheck from '../common/MatrixCheck';
 import MolViewerListModal from './MolViewerListModal';
 import ArrayUtils from '../../components/utils/ArrayUtils';
 
@@ -12,10 +10,6 @@ export default class MolViewerListBtn extends Component {
   constructor(props) {
     super(props);
     this.state = { openModal: false };
-
-    const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
-    this.enableMoleculeViewer = MatrixCheck(currentUser.matrix, 'moleculeViewer');
-
     this.handleModalOpen = this.handleModalOpen.bind(this);
     this.renderBtn = this.renderBtn.bind(this);
   }

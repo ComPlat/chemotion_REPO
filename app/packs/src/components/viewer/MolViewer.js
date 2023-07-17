@@ -3,12 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Alert } from 'react-bootstrap';
 
-const urlRegex = /^(https?:\/\/)?(((([1-9]|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\.){3}([1-9]|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}))(:(\d{1,5}))?(\/[\w\.-]*)*(\/)?(\?[^\s]*)?$/;
-const isValidUrl = url => urlRegex.test(url);
-
 const MolViewer = (props) => {
   const {
-    endpoint, molContent
+    cliendId, endpoint, molContent
   } = props;
   const [serviceReady, setServiceReady] = useState(false);
   const ifRef = useRef();
@@ -16,8 +13,6 @@ const MolViewer = (props) => {
 
   const discoverService = (event) => {
     const { type, data } = event.data;
-    // TODO: add a timeout to avoid infinite loop
-    // TODO: make the type as configurable
     if (type === 'molviewer:state' && data?.state === 'ready') {
       setServiceReady(true);
     }
@@ -29,20 +24,18 @@ const MolViewer = (props) => {
       if (contentWindow) {
         molContent.text().then((text) => {
           const messageData = { payload: text };
-          // TODO: add a timeout to avoid infinite loop
-          // TODO: make the type as configurable
-          contentWindow.postMessage({ type: 'kit:request-view', data: messageData }, '*');
+          contentWindow.postMessage({ type: `${cliendId}:request-view`, data: messageData }, '*');
         });
       }
     }
   };
 
-  if (!isValidUrl(endpoint)) {
+  if (!endpoint) {
     return <Alert bsStyle="danger">This service is not ready. Please contact your system administrator.</Alert>;
   }
 
   useEffect(() => {
-    if (isValidUrl(endpoint)) {
+    if (endpoint) {
       window.addEventListener('message', discoverService);
       return () => {
         window.removeEventListener('message', discoverService);
@@ -68,8 +61,9 @@ const MolViewer = (props) => {
 };
 
 MolViewer.propTypes = {
+  cliendId: PropTypes.string.isRequired,
   endpoint: PropTypes.string.isRequired,
-  molContent: PropTypes.object.isRequired
+  molContent: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired
 };
 
 export default MolViewer;

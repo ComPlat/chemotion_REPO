@@ -631,7 +631,7 @@ export default class RepoReactionDetails extends Component {
       <div style={{ border: 'none' }}>
         <div>
           <Jumbotron key={`reaction-${reaction.id}`}>
-            <PublicAnchor doi={taggData.doi} isPublished={isPublished} />
+            <PublicAnchor doi={isPublished ? taggData.doi : doi?.full_doi} isPublished={isPublished} />
             {canComment ? (
               <RepoReviewButtonBar
                 element={{ id: reaction.id, elementType: 'Reaction' }}

@@ -18,7 +18,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import { chmoConversions } from 'src/components/OlsComponent';
 import { previewContainerImage } from 'src/utilities/imageHelper';
 import MolViewerListBtn from './viewer/MolViewerListBtn';
-
+import MolViewerSet from './viewer/MolViewerSet';
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
 import MatrixCheck from './common/MatrixCheck';
 
@@ -370,7 +370,7 @@ const headerBtnGroup = (
   const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
 
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
-  const enableMoleculeViewer = MatrixCheck(currentUser.matrix, 'moleculeViewer');
+  const enableMoleculeViewer = MatrixCheck(currentUser.matrix, MolViewerSet.PK);
 
   return (
     <div className="upper-btn">
