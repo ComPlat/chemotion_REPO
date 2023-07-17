@@ -405,7 +405,7 @@ const headerBtnGroup = (
         hasNMRium={hasNMRium}
       />
       <span className="button-right">
-        <MolViewerListBtn el={sample} container={container} isPublic={false} config={UIStore.getState().moleculeViewer} disabled={!enableMoleculeViewer} />
+        <MolViewerListBtn el={sample} container={container} isPublic={false} disabled={!enableMoleculeViewer} />
       </span>
       <span
         className="button-right add-to-report"

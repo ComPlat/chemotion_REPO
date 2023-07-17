@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import RepositoryFetcher from './fetchers/RepositoryFetcher';
-import LoadingActions from './actions/LoadingActions';
 import ReviewStore from '../components/stores/ReviewStore';
 import ReviewActions from '../components/actions/ReviewActions';
 import RepoReactionDetails from '../libHome/RepoReactionDetails';

@@ -3,6 +3,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import MolViewerModal from './MolViewerModal';
+import PublicStore from '../stores/PublicStore';
+import UIStore from '../stores/UIStore';
 
 export default class MolViewerBtn extends Component {
   constructor(props) {
@@ -18,8 +20,9 @@ export default class MolViewerBtn extends Component {
 
   render() {
     const {
-      config, disabled, fileContent, isPublic
+      disabled, fileContent, isPublic
     } = this.props;
+    const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
     const { show } = this.state;
     if (isPublic && !config.featureEnabled) return null;
 
@@ -46,7 +49,6 @@ export default class MolViewerBtn extends Component {
 }
 
 MolViewerBtn.propTypes = {
-  config: PropTypes.object.isRequired,
   disabled: PropTypes.bool.isRequired,
   fileContent: PropTypes.string.isRequired,
   isPublic: PropTypes.bool.isRequired,
