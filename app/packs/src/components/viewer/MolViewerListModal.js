@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { Alert, Button, ButtonGroup, Col, Modal, PanelGroup, Panel, Nav, NavItem } from 'react-bootstrap';
 import { ReactNglViewer } from 'react-nglviewer';
 import MolViewer from './MolViewer';
+import MolViewerSet from './MolViewerSet';
 
 const MolViewerListModal = (props) => {
   const {
@@ -17,7 +18,8 @@ const MolViewerListModal = (props) => {
     const file = (ds?.attachments?.length > 0 && ds?.attachments[0]) || {};
     return { ...file, dsName: ds.name };
   });
-  const [switchViewer, setSwitchViewer] = useState(config.viewerEndpoint ? 'jsmol' : 'ngl');
+  const [switchViewer, setSwitchViewer] =
+    useState(config.viewerEndpoint ? MolViewerSet.JSMOL : MolViewerSet.NGL);
 
   const handleFile = (e, attachment, ds) => {
     e.stopPropagation();
@@ -50,7 +52,12 @@ const MolViewerListModal = (props) => {
                   <Nav bsStyle="pills" stacked activeKey={activeKey}>
                     {
                       attachments.map(attachment => (
-                        <NavItem key={attachment.id} eventKey={attachment.id} active={attachment.id === selected?.id} onClick={e => handleFile(e, attachment, ds)}>
+                        <NavItem
+                          key={attachment.id}
+                          eventKey={attachment.id}
+                          active={attachment.id === selected?.id}
+                          onClick={e => handleFile(e, attachment, ds)}
+                        >
                           <i className="fa fa-file" aria-hidden="true" />&nbsp;{attachment.filename}
                         </NavItem>
                       ))
@@ -88,7 +95,13 @@ const MolViewerListModal = (props) => {
   if (show) {
     let modalBody = <Alert bsStyle="danger">This service is offline. Please contact your system administrator.</Alert>;
     if (newContent) {
-      const viewer = switchViewer === 'ngl' ? <ReactNglViewer fileName={selected?.filename} filePath={newContent} /> : <MolViewer endpoint={config.viewerEndpoint} molContent={newContent} />;
+      const viewer = switchViewer === MolViewerSet.NGL ?
+        <ReactNglViewer fileName={selected?.filename} filePath={newContent} /> :
+        (<MolViewer
+          cliendId={config.viewerClientId}
+          endpoint={config.viewerEndpoint}
+          molContent={newContent}
+        />);
       modalBody = <div style={{ width: '100%', height: 'calc(100vh - 260px)' }}>{viewer}</div>;
     }
     return (
@@ -97,18 +110,25 @@ const MolViewerListModal = (props) => {
           <Modal.Title>
             Dataset: {selected.dsName} / File: {selected?.filename}
             <ButtonGroup bsSize="xsmall" className="button-right">
-              <Button active={switchViewer === 'jsmol'} onClick={() => setSwitchViewer('jsmol')} disabled={!config.viewerEndpoint}>JSmol Viewer</Button>
-              <Button active={switchViewer === 'ngl'} onClick={() => setSwitchViewer('ngl')}>NGL Viewer</Button>
+              <Button
+                active={switchViewer === MolViewerSet.JSMOL}
+                onClick={() => setSwitchViewer(MolViewerSet.JSMOL)}
+                disabled={!config.viewerEndpoint}
+              >
+                JSmol Viewer
+              </Button>
+              <Button
+                active={switchViewer === MolViewerSet.NGL}
+                onClick={() => setSwitchViewer(MolViewerSet.NGL)}
+              >
+                NGL Viewer
+              </Button>
             </ButtonGroup>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body onClick={e => e.stopPropagation()}>
-          <Col md={2} sm={2} lg={2}>
-            {list()}
-          </Col>
-          <Col md={10} sm={10} lg={10}>
-            {modalBody}
-          </Col>
+          <Col md={2} sm={2} lg={2}>{list()}</Col>
+          <Col md={10} sm={10} lg={10}>{modalBody}</Col>
         </Modal.Body>
       </Modal>
     );

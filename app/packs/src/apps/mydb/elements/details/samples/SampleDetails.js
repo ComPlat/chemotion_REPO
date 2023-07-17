@@ -159,7 +159,7 @@ export default class SampleDetails extends React.Component {
     this.enableComputedProps = MatrixCheck(currentUser.matrix, 'computedProp');
     this.enableSampleDecoupled = MatrixCheck(currentUser.matrix, 'sampleDecoupled');
     this.enableNmrSim = MatrixCheck(currentUser.matrix, 'nmrSim');
-    this.enableMoleculeViewer = MatrixCheck(currentUser.matrix, 'moleculeViewer');
+    this.enableMoleculeViewer = MatrixCheck(currentUser.matrix, MolViewerSet.PK);
 
     this.onUIStoreChange = this.onUIStoreChange.bind(this);
     this.clipboard = new Clipboard('.clipboardBtn');

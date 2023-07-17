@@ -12,9 +12,11 @@ def fetch_molecule_viewer_config
     Rails.logger.error("Error fetching molecule viewer config: #{e.message}")
   end
   ActiveSupport::OrderedOptions.new.tap do |config|
+    config.chembox_client_id = molecule_viewer_config['chembox_client_id']
+    config.chembox_endpoint = molecule_viewer_config['chembox_endpoint']
     config.feature_enabled = molecule_viewer_config['feature']['enabled'] || false
+    config.viewer_client_id = molecule_viewer_config['viewer_client_id']
     config.viewer_endpoint = molecule_viewer_config['viewer_endpoint']
-    config.converter_endpoint = molecule_viewer_config['converter_endpoint']
   end
 end
 

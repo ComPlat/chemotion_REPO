@@ -5,6 +5,7 @@ import { Button, ButtonGroup, Modal, ProgressBar } from 'react-bootstrap';
 import { ReactNglViewer } from 'react-nglviewer';
 import PublicFetcher from '../fetchers/PublicFetcher';
 import MolViewer from './MolViewer';
+import MolViewerSet from './MolViewerSet';
 
 const MolViewerModal = (props) => {
   const {
@@ -13,7 +14,8 @@ const MolViewerModal = (props) => {
 
   const [newContent, setNewContent] = useState(fileContent);
   const [progress, setProgress] = useState(null);
-  const [switchViewer, setSwitchViewer] = useState(config.viewerEndpoint ? 'jsmol' : 'ngl');
+  const [switchViewer, setSwitchViewer] =
+    useState(config.viewerEndpoint ? MolViewerSet.JSMOL : MolViewerSet.NGL);
 
   const updateNewContent = (data) => {
     setNewContent(new Blob([data], { type: 'text/plain' }));
@@ -49,15 +51,32 @@ const MolViewerModal = (props) => {
   }, []);
 
   if (show) {
-    const viewer = switchViewer === 'ngl' ? <ReactNglViewer fileName={`${title}.mol`} filePath={newContent} /> : <MolViewer endpoint={config.viewerEndpoint} molContent={newContent} />;
+    const viewer = switchViewer === MolViewerSet.NGL ?
+      <ReactNglViewer fileName={`${title}.mol`} filePath={newContent} /> :
+      (<MolViewer
+        cliendId={config.viewerClientId}
+        endpoint={config.viewerEndpoint}
+        molContent={newContent}
+      />);
     return (
       <Modal animation dialogClassName="structure-viewer-modal" show={show} onHide={handleModalOpen}>
         <Modal.Header closeButton>
           <Modal.Title>
             {title}
             <ButtonGroup bsSize="xsmall" className="button-right">
-              <Button active={switchViewer === 'jsmol'} onClick={() => setSwitchViewer('jsmol')} disabled={!config.viewerEndpoint}>JSmol Viewer</Button>
-              <Button active={switchViewer === 'ngl'} onClick={() => setSwitchViewer('ngl')}>NGL Viewer</Button>
+              <Button
+                active={switchViewer === MolViewerSet.JSMOL}
+                onClick={() => setSwitchViewer(MolViewerSet.JSMOL)}
+                disabled={!config.viewerEndpoint}
+              >
+                JSmol Viewer
+              </Button>
+              <Button
+                active={switchViewer === MolViewerSet.NGL}
+                onClick={() => setSwitchViewer(MolViewerSet.NGL)}
+              >
+                NGL Viewer
+              </Button>
             </ButtonGroup>
           </Modal.Title>
         </Modal.Header>
@@ -76,8 +95,8 @@ const MolViewerModal = (props) => {
 MolViewerModal.propTypes = {
   config: PropTypes.object.isRequired,
   fileContent: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
-  show: PropTypes.bool.isRequired,
   handleModalOpen: PropTypes.func.isRequired,
+  show: PropTypes.bool.isRequired,
   title: PropTypes.string,
 };
 
