@@ -5,6 +5,8 @@ import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { filter } from 'lodash';
 import MolViewerListModal from './MolViewerListModal';
 import ArrayUtils from '../../components/utils/ArrayUtils';
+import PublicStore from '../stores/PublicStore';
+import UIStore from '../stores/UIStore';
 
 export default class MolViewerListBtn extends Component {
   constructor(props) {
@@ -39,9 +41,10 @@ export default class MolViewerListBtn extends Component {
 
   render() {
     const {
-      config, container, el, isPublic
+      container, el, isPublic
     } = this.props;
     const { openModal } = this.state;
+    const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
     if (!el) return null;
     if (isPublic && !config.featureEnabled) return null;
 
@@ -80,7 +83,6 @@ export default class MolViewerListBtn extends Component {
 }
 
 MolViewerListBtn.propTypes = {
-  config: PropTypes.object.isRequired,
   container: PropTypes.object.isRequired,
   disabled: PropTypes.bool.isRequired,
   el: PropTypes.object.isRequired,

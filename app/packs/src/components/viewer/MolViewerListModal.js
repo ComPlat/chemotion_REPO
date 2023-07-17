@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-prop-types */
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Alert, Button, ButtonGroup, Col, Modal, PanelGroup, Panel, Nav, NavItem } from 'react-bootstrap';
+import { Alert, Button, ButtonGroup, Col, Modal, PanelGroup, Panel, ProgressBar, Nav, NavItem } from 'react-bootstrap';
 import { ReactNglViewer } from 'react-nglviewer';
 import MolViewer from './MolViewer';
 import MolViewerSet from './MolViewerSet';
@@ -13,6 +13,7 @@ const MolViewerListModal = (props) => {
 
   const [activeKey, setActiveKey] = useState(1);
   const [newContent, setNewContent] = useState(null);
+  const [progress, setProgress] = useState(0);
   const [selected, setSelected] = useState(() => {
     const ds = datasetContainer[0];
     const file = (ds?.attachments?.length > 0 && ds?.attachments[0]) || {};
@@ -81,9 +82,36 @@ const MolViewerListModal = (props) => {
       `${window.location.origin}/api/v1/public/download/attachment?id=${selected?.id}`
       : `${window.location.origin}/api/v1/attachments/${selected?.id}`;
 
-    return fetch(filePath).then(response => response.blob()).catch((error) => {
-      console.log(error);
-    });
+    return fetch(filePath)
+      .then((response) => {
+        if (!response.ok) {
+          return null;
+        }
+        const contentLength = response.headers.get('Content-Length');
+        const totalSize = parseInt(contentLength, 10);
+        let downloadedSize = 0;
+
+        const reader = response.body.getReader();
+        const chunks = [];
+
+        const pump = () => reader.read().then(({ done, value }) => {
+          if (done) {
+            return new Blob(chunks);
+          }
+
+          downloadedSize += value.byteLength;
+          const progressPercentage = (downloadedSize / totalSize) * 100;
+          setProgress(progressPercentage);
+
+          chunks.push(value);
+          return pump();
+        });
+
+        return pump();
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   useEffect(() => {
@@ -127,7 +155,10 @@ const MolViewerListModal = (props) => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body onClick={e => e.stopPropagation()}>
-          <Col md={2} sm={2} lg={2}>{list()}</Col>
+          <Col md={2} sm={2} lg={2}>
+            { (progress >= 100) ? null : <ProgressBar active now={progress} label="downloading..." /> }
+            {list()}
+          </Col>
           <Col md={10} sm={10} lg={10}>{modalBody}</Col>
         </Modal.Body>
       </Modal>

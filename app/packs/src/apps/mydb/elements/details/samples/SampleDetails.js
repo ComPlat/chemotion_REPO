@@ -129,7 +129,6 @@ export default class SampleDetails extends React.Component {
       sample: props.sample,
       reaction: null,
       materialGroup: null,
-      moleculeViewer: UIStore.getState().moleculeViewer,
       showStructureEditor: false,
       loadingMolecule: false,
       showElementalComposition: false,
@@ -493,7 +492,6 @@ export default class SampleDetails extends React.Component {
   }
 
   unseal() {
-    console.log('unseal');
     const { sample } = this.state;
     sample.sealed = false;
     this.setState({ sample });
@@ -1739,7 +1737,7 @@ export default class SampleDetails extends React.Component {
 
   render() {
     const sample = this.state.sample || {};
-    const { moleculeViewer, visible } = this.state;
+    const { visible } = this.state;
     const tabContentsMap = {
       properties: this.samplePropertiesTab('properties'),
       analyses: this.sampleContainerTab('analyses'),
@@ -1885,36 +1883,34 @@ export default class SampleDetails extends React.Component {
         <Panel.Body>
           <Row><Col md={this.props.fullScreen && this.state.commentScreen ? 6 : 12}>
             <div className={this.props.fullScreen ? 'full' : 'base'}>
-              {this.sampleInfo(sample)}
-              <ListGroup>
-                <ElementDetailSortTab
-                  type="sample"
-                  availableTabs={Object.keys(tabContentsMap)}
-                  tabTitles={tabTitlesMap}
-                  onTabPositionChanged={this.onTabPositionChanged}
-                  addInventoryTab={sample.inventory_sample}
-                />
-              <MolViewerBtn
-                config={moleculeViewer}
-                disabled={sample.isNew || !this.enableMoleculeViewer}
-                fileContent={sample.molfile}
-                isPublic={false}
-              />
-                {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
-                <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
-                  {tabContents}
-                </Tabs>
-              <PublishSampleModal
-                show={showPublishSampleModal}
-                sample={sample}
-                onHide={() => this.showPublishSampleModal(false)}
-                onPublishRefreshClose={this.forcePublishRefreshClose}
-              />
-              </ListGroup>
-              {this.sampleFooter()}
-              {this.structureEditorModal(sample)}
-              {this.renderMolfileModal()}
-              <CommentModal element={sample} />
+          {this.sampleInfo(sample)}
+          <ListGroup>
+            <ElementDetailSortTab
+              type="sample"
+              availableTabs={Object.keys(tabContentsMap)}
+              tabTitles={tabTitlesMap}
+              onTabPositionChanged={this.onTabPositionChanged}
+            />
+            <MolViewerBtn
+              disabled={sample.isNew || !this.enableMoleculeViewer}
+              fileContent={sample.molfile}
+              isPublic={false}
+            />
+            {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
+            <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
+              {tabContents}
+            </Tabs>
+          <PublishSampleModal
+            show={showPublishSampleModal}
+            sample={sample}
+            onHide={() => this.showPublishSampleModal(false)}
+            onPublishRefreshClose={this.forcePublishRefreshClose}
+          />
+          </ListGroup>
+          {this.sampleFooter()}
+          {this.structureEditorModal(sample)}
+          {this.renderMolfileModal()}
+          <CommentModal element={sample} />
             </div>
           </Col>
             {
