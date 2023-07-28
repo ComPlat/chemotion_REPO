@@ -36,7 +36,7 @@ export default class ContainerComponent extends Component {
     this.updateTextTemplates = this.updateTextTemplates.bind(this);
 
     this.handleTemplateChange = this.handleTemplateChange.bind(this);
-    
+
     this.handleAddLink = this.handleAddLink.bind(this);
     this.handleRemoveLink = this.handleRemoveLink.bind(this);
   }
@@ -104,7 +104,7 @@ export default class ContainerComponent extends Component {
     const { templateType } = this.props;
     TextTemplateActions.updateTextTemplates(templateType, textTemplate);
   }
-  
+
   handleAddLink(link) {
     const { container } = this.state;
     if (container.extended_metadata['hyperlinks'] == null) {
@@ -127,9 +127,10 @@ export default class ContainerComponent extends Component {
   render() {
     const { container, textTemplate } = this.state;
     const { readOnly, disabled } = this.props;
+    const isLink = (container.link_id !== undefined)
 
     let quill = (<span />);
-    if (readOnly || disabled) {
+    if (readOnly || disabled || isLink) {
       quill = (
         <QuillViewer value={container.extended_metadata.content} />
       );
@@ -156,7 +157,7 @@ export default class ContainerComponent extends Component {
             value={container.name || '***'}
             // eslint-disable-next-line react/jsx-no-bind
             onChange={this.handleInputChange.bind(this, 'name')}
-            disabled={readOnly || disabled} />
+            disabled={readOnly || disabled || isLink} />
         </Col>
         <Col md={4}>
           <div style={{ marginBottom: 11 }}>
@@ -166,7 +167,7 @@ export default class ContainerComponent extends Component {
               multi={false}
               options={confirmOptions}
               value={container.extended_metadata['status']}
-              disabled={readOnly || disabled}
+              disabled={readOnly || disabled || isLink}
               // eslint-disable-next-line react/jsx-no-bind
               onChange={this.handleInputChange.bind(this, 'status')}
             />
@@ -179,7 +180,7 @@ export default class ContainerComponent extends Component {
               selectName="chmo"
               selectedValue={container.extended_metadata.kind || ''}
               onSelectChange={event => this.handleInputChange('kind', event)}
-              selectedDisable={readOnly || disabled || false}
+              selectedDisable={readOnly || disabled || isLink || false}
             />
           </div>
         </Col>
@@ -194,7 +195,7 @@ export default class ContainerComponent extends Component {
               componentClass="textarea"
               label="Description"
               value={container.description || ''}
-              disabled={readOnly || disabled}
+              disabled={readOnly || disabled || isLink}
               // eslint-disable-next-line react/jsx-no-bind
               onChange={this.handleInputChange.bind(this, 'description')}
             />
@@ -204,14 +205,18 @@ export default class ContainerComponent extends Component {
           <label>Datasets</label>
           <ContainerDatasets
             container={container}
-            readOnly={readOnly}
-            disabled={disabled}
+            readOnly={readOnly || isLink}
+            disabled={disabled || isLink}
             onChange={this.onChange}
           />
         </Col>
         <Col md={12}>
-          <HyperLinksSection data={container.extended_metadata['hyperlinks']} onAddLink={this.handleAddLink} onRemoveLink={this.handleRemoveLink}
-            disabled={disabled}></HyperLinksSection>
+          <HyperLinksSection
+            data={container.extended_metadata['hyperlinks']}
+            onAddLink={this.handleAddLink}
+            onRemoveLink={this.handleRemoveLink}
+            disabled={disabled || isLink}
+          />
         </Col>
       </div>
     );

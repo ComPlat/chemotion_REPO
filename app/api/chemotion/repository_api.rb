@@ -71,6 +71,27 @@ module Chemotion
           end
         end
 
+        def link_analyses(new_element, analyses_arr)
+          unless new_element.container
+            Container.create_root_container(containable: new_element)
+            new_element.reload
+          end
+          analyses = Container.analyses_container(new_element.container.id).first
+
+          analyses_arr&.each do |analysis|
+            analysis_link = analyses.children.create(
+              name: analysis.name,
+              container_type: 'link',
+              description: analysis.description
+            )
+            analysis_link.extended_metadata = {
+              target_id: analysis.id,
+              target_type: analysis.container_type,
+            }
+            analysis_link.save!
+          end
+        end
+
         def reviewer_collections
           c = current_user.pending_collection
           User.reviewer_ids.each do |rev_id|
@@ -123,6 +144,22 @@ module Chemotion
           new_sample.analyses.each do |ana|
             Publication.find_by(element: ana).update(parent: pub)
           end
+          new_sample
+        end
+
+        def create_new_sample_version(sample = @sample)
+          # create a copy of the sample in the users pending_collection
+          new_sample = @sample.dup
+          new_sample.collections << current_user.all_collection
+          new_sample.save!
+          new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
+          unless @literals.nil?
+            lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
+            duplicate_literals(new_sample, lits)
+          end
+
+          link_analyses(new_sample, @sample.analyses)
+
           new_sample
         end
 
@@ -931,6 +968,28 @@ module Chemotion
           @sample.tag_reserved_suffix(@analyses)
           { sample: SampleSerializer.new(@sample).serializable_hash.deep_symbolize_keys }
         end
+      end
+
+      namespace :createNewSampleVersion do
+        desc 'Create a new version of a published Sample'
+        params do
+          requires :sampleId, type: Integer, desc: 'Sample Id'
+        end
+
+        after_validation do
+          # look for the sample in all public samples created by the current user
+          @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @sample
+        end
+
+        post do
+          new_sample = create_new_sample_version
+          {
+            sample: SampleSerializer.new(new_sample).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+
       end
 
       # desc: submit reaction data for publication

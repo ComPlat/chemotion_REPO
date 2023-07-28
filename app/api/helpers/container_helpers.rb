@@ -103,13 +103,16 @@ module ContainerHelpers
   end
 
   def delete_containers_and_attachments(container)
-    Attachment.where_container(container[:id]).destroy_all
+    # delete the link, not the container, if a link_id is present
+    container_id = container[:link_id].present? ? container[:link_id]: container[:id]
+
+    Attachment.where_container(container_id).destroy_all
     if container[:children] && container[:children].length > 0
       container[:children].each do |tmp|
         delete_containers_and_attachments(tmp)
       end
     end
-    Container.where(id: container[:id]).destroy_all
+    Container.where(id: container_id).destroy_all
   end
 
   def can_update_container(container)

@@ -27,6 +27,7 @@ import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import RepoSegment from './RepoSegment';
 import Sample from '../components/models/Sample';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -221,6 +222,12 @@ export default class RepoSample extends Component {
               pageId={sample.molecule_id}
             />
             &nbsp;
+            <NewVersionModal
+              isLogin={isLogin}
+              id={sample.id}
+              type="Sample"
+              title={sample.showed_name}
+            />
           </span>
           {ElStateLabel(sample.embargo)}
         </span>

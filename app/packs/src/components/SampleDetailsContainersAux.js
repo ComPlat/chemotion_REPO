@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  Button, Checkbox, OverlayTrigger, Tooltip,
+  Badge, Button, Checkbox, OverlayTrigger, Tooltip,
   MenuItem, SplitButton, ButtonGroup
 } from 'react-bootstrap';
 import QuillViewer from './QuillViewer';
@@ -371,6 +371,10 @@ const headerBtnGroup = (
 
   return (
     <div className="upper-btn">
+      {
+        container.link_id &&
+        <Badge title="This analysis is a link to the already published analysis.">read only</Badge>
+      }
       <Button
         bsSize="xsmall"
         bsStyle="danger"
@@ -414,9 +418,10 @@ const headerBtnGroup = (
 const HeaderNormal = ({
   sample, container, mode, readOnly, isDisabled, serial,
   handleRemove, handleSubmit, handleAccordionOpen, toggleAddToReport,
-  publish,isReviewer
+  publish, isReviewer
 }) => {
   const clickToOpen = () => handleAccordionOpen(serial);
+
 
   let kind = container.extended_metadata.kind || '';
   kind = (kind.split('|')[1] || kind).trim();

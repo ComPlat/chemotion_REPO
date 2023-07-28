@@ -178,7 +178,38 @@ export default class RepositoryFetcher {
     });
   }
 
-
+  static createNewSampleVersion(params, option = null) {
+    const { id } = params;
+    return fetch(`/api/v1/repository/createNewSampleVersion/`, {
+      credentials: 'same-origin',
+      method: option ? 'PUT' : 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sampleId: id
+      })
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new sample version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_sample_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Sample(json.sample);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
 
   static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
     const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';
