@@ -160,6 +160,9 @@ module Chemotion
 
           link_analyses(new_sample, @sample.analyses)
 
+          new_sample.tag_as_new_version(sample)
+          sample.tag_as_previous_version(new_sample)
+
           new_sample
         end
 

@@ -205,6 +205,32 @@ const OrigElnTag = ({ element }) => {
   );
 };
 
+const NewVersionTag = ({ element }) => {
+  const tagType = getElementType(element) || '';
+  const previousVersionId = element.tag.taggable_data.previous_version
+
+  return (previousVersionId !== undefined) && (
+    <ButtonGroup bsSize="xsmall">
+      <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip id="data public">This is a new version of an already published {tagType.toLowerCase()}.</Tooltip>}
+      >
+        <Button
+          bsSize="xsmall"
+          bsStyle="success"
+          onClick={(event) => handleClick(event, previousVersionId, tagType)}
+        >
+          <i className="fa fa-newspaper-o" aria-hidden="true" />
+        </Button>
+      </OverlayTrigger>
+    </ButtonGroup>
+  )
+}
+
+NewVersionTag.propTypes = {
+  element: PropTypes.object
+};
+
 const PublishedTag = ({ element, fnUnseal }) => {
   const tag = (element && element.tag) || {};
   const tagData = (tag && tag.taggable_data) || {};
@@ -317,6 +343,7 @@ ChemotionTag.defaultProps = {
 export {
   LabelPublication,
   OrigElnTag,
+  NewVersionTag,
   PublishedTag,
   ChemotionTag,
   PublishBtn,

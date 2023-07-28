@@ -24,7 +24,7 @@ import { sampleShowOrNew } from './routesUtils';
 import SvgWithPopover from './common/SvgWithPopover';
 import { ShowUserLabels } from './UserLabels';
 
-import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
+import { LabelPublication, NewVersionTag, PublishedTag, ChemotionTag } from './PublishCommon';
 
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
@@ -365,6 +365,7 @@ export default class ElementsTableSampleEntries extends Component {
               <ShowUserLabels element={sample} />
               <XvialIcon label={(sample.tag.taggable_data.xvial && sample.tag.taggable_data.xvial.num) || ''} />
               <LabelPublication element={sample} key={sample.id + "_publication"} />
+              <NewVersionTag element={sample} />
               <PublishedTag element={sample} />
               <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
               <ElementWellplateLabels element={sample} key={`${sample.id}_wellplate`} />
