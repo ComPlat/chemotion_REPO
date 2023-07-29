@@ -62,7 +62,7 @@ module RepositoryHelpers
     entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
     entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     entities[:elementType] = 'reaction'
-    entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
+    entities[:segments] = Labimotion::SegmentEntity.represent(reaction.segments)
     entities
   end
 
@@ -133,7 +133,7 @@ module RepositoryHelpers
         ana_infos[pp.element_id] = info['comment']
       end
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
-      segments = Entities::SegmentEntity.represent(s.segments)
+      segments = Labimotion::SegmentEntity.represent(s.segments)
       tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
         sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
     end

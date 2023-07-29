@@ -40,7 +40,7 @@ class GenericElementsRevisionMigration < ActiveRecord::Migration[4.2]
       Labimotion::ElementKlassesRevision.create(attributes)
     end
 
-    Element.find_each do |el|
+    Labimotion::Element.find_each do |el|
       klass = ElementKlass.find_by(id: el.element_klass_id)
       if klass.nil?
         el.destroy!

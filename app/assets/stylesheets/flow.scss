@@ -1,0 +1,142 @@
+/* index css */
+
+.overview-example__add {
+  display: none;
+}
+
+.react-flow__node a {
+  font-weight: 700;
+  color: #111;
+}
+
+.react-flow__node.dark-node {
+  background: #0041d0;
+  color: #f8f8f8;
+}
+
+.react-flow__node.dark {
+  background: #557;
+  color: #f8f8f8;
+}
+
+.react-flow__node-selectorNode {
+  font-size: 12px;
+  background: #f0f2f3;
+  border: 1px solid 555;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.react-flow__node-selectorNode .react-flow__handle {
+  border-color: #f0f2f3;
+}
+
+@media screen and (min-width: 768px) {
+  .overview-example__add {
+    display: block;
+  }
+}
+
+/* DnDFlow css */
+
+.dndflow {
+  flex-direction: column;
+  display: flex;
+  height: 100%;
+}
+
+.dndflow aside {
+  overflow: auto;
+  flex-grow: 1;
+  border-right: 1px solid #eee;
+  padding: 15px 10px;
+  font-size: 12px;
+  background: #eee;
+}
+
+.dndflow aside > * {
+  margin-bottom: 10px;
+  cursor: grab;
+}
+
+.dndflow aside .description {
+  margin-bottom: 10px;
+}
+
+.dndflow .reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%;
+}
+
+@media screen and (min-width: 768px) {
+  .dndflow {
+    flex-direction: row;
+  }
+
+  .dndflow aside {
+    width: 20%;
+    max-width: 180px;
+  }
+}
+
+/* Provider css */
+
+.providerflow {
+  flex-direction: column;
+  display: flex;
+  height: 100%;
+}
+
+.providerflow aside {
+  border-right: 1px solid #eee;
+  padding: 15px 10px;
+  font-size: 12px;
+  background: #fcfcfc;
+}
+
+.providerflow aside .description {
+  margin-bottom: 10px;
+}
+
+.providerflow aside .title {
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.providerflow aside .transform {
+  margin-bottom: 20px;
+}
+
+.providerflow .reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%;
+}
+
+.providerflow .selectall {
+  margin-top: 10px;
+}
+
+@media screen and (min-width: 768px) {
+  .providerflow {
+    flex-direction: row;
+  }
+
+  .providerflow aside {
+    width: 20%;
+    max-width: 250px;
+  }
+}
+
+/* save buttons */
+
+.save__controls {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 4;
+  font-size: 12px;
+}
+
+.save__controls button {
+  margin-left: 5px;
+}

@@ -35,7 +35,7 @@ const addSegmentTabs = (element, onChange, contentMap) => {
     if (idx < 0 && !klass.is_active) return;
     let segment = {};
     if (idx > -1) {
-      segment = new Segment(element.segments[idx]);
+      segment = element.segments[idx];
     } else {
       segment = Segment.buildEmpty(cloneDeep(klass));
     }

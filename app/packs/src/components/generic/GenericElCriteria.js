@@ -62,7 +62,7 @@ export default class GenericElCriteria extends Component {
     super(props);
     this.state = {
       genericEl: props.genericEl,
-      segments: segmentsByKlass(props.genericEl.name),
+      segments: segmentsByKlass(props.genericEl?.name)
     };
     this.onChange = this.onChange.bind(this);
     this.onSearch = this.onSearch.bind(this);

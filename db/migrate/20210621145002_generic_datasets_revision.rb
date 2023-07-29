@@ -2,7 +2,7 @@
 
 # Create generic dataset revision
 class GenericDatasetsRevision < ActiveRecord::Migration[4.2]
-  class DatasetKlass < ActiveRecord::Base
+  class Labimotion::DatasetKlass < ActiveRecord::Base
   end
   def self.up
     add_column :dataset_klasses, :uuid, :string, null: true unless column_exists? :dataset_klasses, :uuid

@@ -988,3 +988,100 @@ $bs-successcolor: #5cb85c;
   background-color: #19b5fe !important;
   color: black !important;
 }
+
+.repo-generic-hub-btn {
+  a {
+    padding-top: 8px !important;
+    padding-bottom: 0px !important;
+  }
+}
+
+.repo-generic-hub-layout {
+  position: relative;
+
+  .repo-generic-hub-inner {
+    display: flex;
+    align-items: stretch;
+    height: calc(100vh - 120px);
+
+    .expand-button {
+      border-radius: 0px;
+    }
+
+    .content {
+      background-color: #efefef;
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      .btn-group{
+        display: inline-flex !important;
+        .btn {
+          flex: 1;
+        }
+      }
+    }
+  }
+}
+
+@mixin button-look {
+  background-color: white;
+  padding: 6px;
+  border: 1px solid #ccc;
+}
+
+.repo-generic-hub-desc {
+  margin: 20px 40px;
+  // width: 100%;
+  .contact {
+    float: right;
+    .btn {
+      padding: 10px;
+      color: #0b57d0;
+      font-weight: bold;
+    }
+  }
+  .start {
+    @include button-look;
+  }
+  .download {
+    @include button-look;
+    border-radius: 6px;
+  }
+}
+
+.white-nav-item {
+  a {
+    padding: 15px 15px 10px 0px !important;
+  }
+}
+
+.white-nav-item:hover {
+  text-decoration: underline;
+  text-decoration-color: lightgray;
+  text-decoration-style: solid;
+  text-decoration-thickness: 4px;
+  text-underline-offset: 20%;
+}
+
+.hub-menu {
+  color: white !important;
+  background-color: #6c757d !important;
+  border: 1px solid #6c757d !important;
+  border-radius: 0px !important;
+}
+
+.hub-menu:hover {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}
+
+.hub-menu:focus {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}
+
+.hub-menu:active {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}

@@ -45,7 +45,6 @@ Rails.application.routes.draw do
     get 'pages/affiliations', to: 'pages#affiliations'
     patch 'pages/create_affiliation', to: 'pages#create_affiliation'
     patch 'pages/update_affiliations', to: 'pages#update_affiliations'
-
     # get 'command_n_control', to: 'pages#cnc'
     get 'mydb/*any', to: 'pages#mydb'
     get 'mydb', to: 'pages#mydb'
@@ -60,6 +59,9 @@ Rails.application.routes.draw do
     get 'home/embargo', to: 'pages#home'
     get 'home/embargo/*review_element', to: 'pages#home'
     get 'pages/tokens', to: 'pages#tokens'
+    get 'generic_elements_admin', to: 'pages#gea'
+    get 'generic_segments_admin', to: 'pages#gsa'
+    get 'generic_datasets_admin', to: 'pages#gda'
   end
 
   get 'home/*any', to: 'pages#home'

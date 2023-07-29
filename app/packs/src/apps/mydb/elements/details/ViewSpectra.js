@@ -201,7 +201,7 @@ class ViewSpectra extends React.Component {
         if (ai.id !== si.idAi) return null;
         return ai.extended_metadata.content.ops; // eslint-disable-line
       }).filter(r => r !== null);
-    }).filter(r => r !== null)[0][0];
+    }).filter(r => r !== null)?.[0]?.[0];
     return ops;
   }
 

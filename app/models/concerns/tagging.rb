@@ -9,7 +9,7 @@ module Tagging
   end
 
   def update_tag
-    klass = self.class.name
+    klass = self.class.name.split('::').last
     case klass
     when 'ReactionsProductSample', 'ReactionsStartingMaterialSample',
       'ReactionsSolventSample', 'ReactionsReactantSample'

@@ -387,7 +387,6 @@ module Chemotion
             ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
             ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
             next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
-
             ids = Labimotion::Element.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
             Labimotion::CollectionsElement.create_in_collection(ids, to_collection_id, klass.name)
           end
@@ -490,7 +489,17 @@ module Chemotion
             end
           end
 
-          ExportCollectionsJob.perform_later(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
+          case ENV['PUBLISH_MODE']
+          when 'production'
+            if Rails.env.production?
+              ExportCollectionsJob.perform_later(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
+            end
+          when 'staging'
+            ExportCollectionsJob.perform_now(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
+          else 'development'
+          end
+
+
           status 204
         end
       end
@@ -519,7 +528,16 @@ module Chemotion
               tempfile.unlink
             end
             # run the asyncronous import job and return its id to the client
-            ImportCollectionsJob.perform_now(att, current_user.id)
+
+            case ENV['PUBLISH_MODE']
+            when 'production'
+              if Rails.env.production?
+                ImportCollectionsJob.perform_later(att, current_user.id)
+              end
+            when 'staging'
+              ImportCollectionsJob.perform_now(att, current_user.id)
+            else 'development'
+            end
             status 204
           end
         end
