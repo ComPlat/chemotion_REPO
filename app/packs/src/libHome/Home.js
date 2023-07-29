@@ -34,6 +34,7 @@ import NavFooter from './NavFooter';
 import LoadingModal from '../components/common/LoadingModal';
 
 import PublicActions from '../components/actions/PublicActions';
+import RepoGenericHub from './RepoGenericHub';
 
 const extraHomes = () => {
   const homes = [];
@@ -73,6 +74,8 @@ class Home extends Component {
 
   renderGuestPage() {
     switch (this.state.guestPage) {
+      case 'genericHub':
+        return <RepoGenericHub />;
       case 'moleculeArchive':
         return <RepoPubl listType="moleculeArchive" />;
       case 'newseditor':

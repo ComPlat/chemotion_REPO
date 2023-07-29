@@ -26,12 +26,15 @@ export default class Search extends React.Component {
       searchType: 'sub',
       tanimotoThreshold: 0.7,
       showGenericElCriteria: false,
-      genericEl: null
+      genericEl: null,
+      sample: {},
+      segments: []
     };
     this.handleClearSearchSelection = this.handleClearSearchSelection.bind(this);
     this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
     this.hideGenericElCriteria = this.hideGenericElCriteria.bind(this);
     this.genericElSearch = this.genericElSearch.bind(this);
+    this.sampleSearch = this.sampleSearch.bind(this);
   }
 
   handleSelectionChange(selection) {
@@ -87,16 +90,19 @@ export default class Search extends React.Component {
     const isSync = currentCollection ? currentCollection.is_sync_to_me : false;
     const { genericEl } = this.state;
 
+    const segSearch = (genericEl.segments || []).map(segment => ({ id: segment.id, searchProperties: segment.search_properties }));
 
     const selection = {
       elementType: this.state.elementType,
       searchName: genericEl.search_name,
+      genericKlassId: genericEl.id,
       searchShowLabel: genericEl.search_short_label,
       genericElName: genericEl.name,
       genericKlassId: genericEl.id,
       search_by_method: genericEl.name,
       genericElProperties: genericEl.properties,
       searchProperties: genericEl.search_properties,
+      segSearchProperties: segSearch,
       page_size: uiState.number_of_results
     };
 
@@ -108,6 +114,35 @@ export default class Search extends React.Component {
       isSync,
     });
     this.setState({ showGenericElCriteria: false });
+  }
+
+  sampleSearch() {
+    const uiState = UIStore.getState();
+    const { currentCollection } = uiState;
+    const collectionId = currentCollection ? currentCollection.id : null;
+    const isSync = currentCollection ? currentCollection.is_sync_to_me : false;
+    const { sample } = this.state;
+
+    console.log(sample);
+    console.log(sample && sample.name);
+
+    const segSearch = ((sample && sample.segments) || []).map(segment => ({ id: segment.id, searchProperties: segment.search_properties }));
+    delete sample.segments;
+
+    const selection = {
+      elementType: 'samples',
+      searchProperties: sample,
+      segSearchProperties: segSearch,
+      page_size: uiState.number_of_results
+    };
+
+    UIActions.setSearchSelection(selection);
+    ElementActions.fetchBasedOnSearchSelectionAndCollection({
+      selection,
+      collectionId,
+      isSync,
+    });
+    this.setState({ showGenericElCriteria: false, elementType: 'samples' });
   }
 
   handleClearSearchSelection() {
@@ -143,6 +178,9 @@ export default class Search extends React.Component {
     if (event.startsWith('elements-')) {
       this.showGenericElCriteria();
       this.setState({ elementType: 'elements', genericEl: element });
+    } else if (event === 'SampleAdvanced') {
+      this.showGenericElCriteria();
+      this.setState({ elementType: 'sample' });
     } else {
       this.setState({ elementType: event });
     }
@@ -193,6 +231,7 @@ export default class Search extends React.Component {
         Advanced Search
       </MenuItem>
     );
+
     menu.push(<MenuItem key="divider" divider />);
     menu.push(
       <MenuItem key="embargo" onSelect={() => this.handleElementSelection('embargo')}>
@@ -218,7 +257,7 @@ export default class Search extends React.Component {
   render() {
     const { profile } = UserStore.getState();
     // const { customClass } = (profile && profile.data) || {};
-    const customClass = '.btn-unified'
+    const customClass = '.btn-unified';
 
     const buttonAfter = (
       <ButtonGroup>
@@ -232,38 +271,40 @@ export default class Search extends React.Component {
     );
 
     const submitAddons = (
-      <Grid><Row>
-        <Col sm={6} md={4}>
-          <Form inline>
+      <Grid>
+        <Row>
+          <Col sm={6} md={4}>
+            <Form inline>
+              <Radio
+                ref={(input) => { this.searchSimilarRadio = input; }}
+                value="similar"
+                checked={this.state.searchType === 'similar'}
+                onChange={e => this.handleSearchTypeChange(e)}
+              >
+                &nbsp; Similarity Search &nbsp;
+              </Radio>
+              &nbsp;&nbsp;
+              <FormControl
+                style={{ width: '40%' }}
+                type="text"
+                value={this.state.tanimotoThreshold}
+                ref={(input) => { this.searchTanimotoInput = input; }}
+                onChange={e => this.handleTanimotoChange(e)}
+              />
+            </Form>
+          </Col>
+          <Col sm={4} md={2}>
             <Radio
-              ref={(input) => { this.searchSimilarRadio = input; }}
-              value="similar"
-              checked={this.state.searchType === 'similar'}
+              ref={(input) => { this.searchSubstructureRadio = input; }}
+              value="sub"
+              checked={this.state.searchType === 'sub'}
               onChange={e => this.handleSearchTypeChange(e)}
             >
-              &nbsp; Similarity Search &nbsp;
+              Substructure Search
             </Radio>
-            &nbsp;&nbsp;
-            <FormControl
-              style={{ width: '40%' }}
-              type="text"
-              value={this.state.tanimotoThreshold}
-              ref={(input) => { this.searchTanimotoInput = input; }}
-              onChange={e => this.handleTanimotoChange(e)}
-            />
-          </Form>
-        </Col>
-        <Col sm={4} md={2}>
-          <Radio
-            ref={(input) => { this.searchSubstructureRadio = input; }}
-            value="sub"
-            checked={this.state.searchType === 'sub'}
-            onChange={e => this.handleSearchTypeChange(e)}
-          >
-            Substructure Search
-          </Radio>
-        </Col>
-      </Row></Grid>
+          </Col>
+        </Row>
+      </Grid>
     );
 
     const inputAttributes = {
@@ -279,28 +320,52 @@ export default class Search extends React.Component {
       }
     };
 
-    let title = (<i className={`icon-${this.state.elementType.toLowerCase().slice(0, -1)}`} />);
-    if (this.state.elementType === 'all') title = 'All';
-    if (this.state.elementType === 'embargo') title = (<i className="fa fa-object-group" />);
+    const searchIcon = (elementType) => {
+      if (elementType === 'all') return 'All';
+      // console.log(elementType);
+      if (this.state.elementType === 'embargo') return (<i className="fa fa-object-group" />);
+      if (['samples', 'reactions', 'screens', 'wellplates'].includes(elementType.toLowerCase())) return (<i className={`icon-${elementType.toLowerCase().slice(0, -1)}`} />);
+      if (this.state.genericEl) return (<i className={this.state.genericEl.icon_name} />);
+      return elementType;
+    }
 
     const innerDropdown = (
       <DropdownButton
         className={customClass}
         id="search-inner-dropdown"
-        title={title}
+        title={searchIcon(this.state.elementType)}
         style={{ width: '50px' }}
       >
         {this.renderMenuItems()}
       </DropdownButton>
     );
 
-    const mofProps = {
-      show: this.state.showGenericElCriteria,
-      type: this.state.elementType,
-      component: <GenericElCriteria genericEl={clsInputGroup(this.state.genericEl)} onHide={this.hideGenericElCriteria} onSearch={this.genericElSearch} />,
-      title: `Please input your search criteria for ${this.state.elementType}`,
-      onHide: this.hideGenericElCriteria
-    };
+    let mofProps = {};
+
+    if (this.state.showGenericElCriteria === true) {
+      switch (this.state.elementType) {
+        case 'elements':
+          mofProps = {
+            show: this.state.showGenericElCriteria,
+            type: this.state.elementType,
+            component: <GenericElCriteria genericEl={clsInputGroup(this.state.genericEl)} onHide={this.hideGenericElCriteria} onSearch={this.genericElSearch} />,
+            title: `Please input your search criteria for ${this.state.elementType}`,
+            onHide: this.hideGenericElCriteria
+          };
+          break;
+        case 'sample':
+          mofProps = {
+            show: this.state.showGenericElCriteria,
+            type: this.state.elementType,
+            component: <SampleCriteria sample={this.state.sample} onHide={this.hideGenericElCriteria} onSearch={this.sampleSearch} />,
+            title: `Please input your search criteria for ${this.state.elementType}`,
+            onHide: this.hideGenericElCriteria
+          };
+          break;
+        default:
+          break;
+      }
+    }
 
     return (
       <div className="chemotion-search">

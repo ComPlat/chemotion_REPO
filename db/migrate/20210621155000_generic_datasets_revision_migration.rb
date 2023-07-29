@@ -8,7 +8,7 @@ class GenericDatasetsRevisionMigration < ActiveRecord::Migration[4.2]
       properties = klass.properties_template || { uuid: uuid, layers: {}, select_options: {} }
       properties['uuid'] = uuid
       properties['eln'] = Chemotion::Application.config.version
-      properties['klass'] = 'DatasetKlass'
+      properties['klass'] = 'Labimotion::DatasetKlass'
       select_options = properties['select_options']
       select_options&.map { |k, v| select_options[k] = { desc: k, options: v } }
       properties['select_options'] = select_options || {}

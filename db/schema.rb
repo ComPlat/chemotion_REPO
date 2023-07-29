@@ -1562,7 +1562,28 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
              order by extended_metadata -> 'instrument' limit 10
            $function$
   SQL
-
+  create_function :set_element_klasses_identifier, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.set_element_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update element_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
+  SQL
+  create_function :set_dataset_klasses_identifier, sql_definition: <<-SQL
+      CREATE OR REPLACE FUNCTION public.set_dataset_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update dataset_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
+  SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
       CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()

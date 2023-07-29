@@ -347,27 +347,30 @@ module Export
     # rubocop:enable Metrics/MethodLength
 
     def fetch_element_klasses
-      klasses = ElementKlass.where(is_active: true, is_generic: false)
+      klasses = Labimotion::ElementKlass.where(is_active: true, is_generic: false)
       fetch_many(klasses, {'created_by' => 'User'})
     end
 
     def fetch_segment_klasses
-      klasses = SegmentKlass.where(is_active: true)
+      klasses = Labimotion::SegmentKlass.where(is_active: true)
       fetch_many(klasses, {'created_by' => 'User'})
     end
 
     def fetch_segments(element)
       element_type = element.class.name
-      segments = Segment.where("element_id = ? AND element_type = ?", element.id, element_type)
+#byebug
+      segments = Labimotion::Segment.where("element_id = ? AND element_type = ?", element.id, element_type)
       segments.each do |segment|
+#byebug
         segment = fetch_properties(segment)
         fetch_one(segment.segment_klass.element_klass)
+#byebug
         fetch_one(segment.segment_klass, {
-          'element_klass_id' => 'ElementKlass'
+          'element_klass_id' => 'Labimotion::ElementKlass'
         })
         fetch_one(segment, {
           'element_id' => segment.element_type,
-          'segment_klass_id' => 'SegmentKlass',
+          'segment_klass_id' => 'Labimotion::SegmentKlass',
           'created_by' => 'User'
         })
       end
@@ -411,7 +414,7 @@ module Export
           files&.each_with_index do |fi, fdx|
             att = Attachment.find(fi['aid'])
             @attachments += [att]
-            properties['layers'][key]['fields'][idx]['value']['files'][fdx]['aid'] = fetch_one(att, {'attachable_id' => 'Segment'}) unless att.nil?
+            properties['layers'][key]['fields'][idx]['value']['files'][fdx]['aid'] = fetch_one(att, {'attachable_id' => 'Labimotion::Segment'}) unless att.nil?
           end
         end
 

@@ -452,6 +452,7 @@ export default class ContainerDataset extends Component {
         marginLeft: 17,
       },
     };
+
     const termId = absOlsTermId(kind);
     const klasses =
       (UserStore.getState() && UserStore.getState().dsKlasses) || [];
@@ -553,6 +554,14 @@ export default class ContainerDataset extends Component {
               }}
             />
           </>
+        </Col>
+        <Col md={12}>
+          <GenericDSDetails
+            genericDS={genericDS}
+            klass={klass}
+            kind={kind}
+            onChange={this.handleDSChange}
+          />
         </Col>
         <Col md={12}>
           <GenericDSDetails

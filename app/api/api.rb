@@ -61,6 +61,7 @@ class API < Grape::API
     def is_public_request?
       request.path.start_with?(
         '/api/v1/public/',
+        '/api/v1/labimotion_hub/',
         '/api/v1/public_chemscanner/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
@@ -186,9 +187,15 @@ class API < Grape::API
   mount Labimotion::GenericDatasetAPI
   mount Labimotion::SegmentAPI
   mount Labimotion::LabimotionHubAPI
+  mount Labimotion::GenericElementAPI
+  mount Labimotion::GenericDatasetAPI
+  mount Labimotion::SegmentAPI
+
+  ## For REPO
   mount Chemotion::RepositoryAPI
   mount Chemotion::ArticleAPI
   mount Chemotion::CollaborationAPI
+  mount Labimotion::LabimotionHubAPI
 
   add_swagger_documentation(info: {
     "title": "Chemotion Repository",

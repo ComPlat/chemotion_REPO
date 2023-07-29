@@ -76,6 +76,38 @@ export default class GenericEl extends Element {
     return target;
   }
 
+  analysesContainers() {
+    if (this.container.children.length === 0) {
+      const analyses = Container.buildEmpty();
+      analyses.container_type = 'analyses';
+      this.container.children.push(analyses);
+    }
+    return this.container
+      .children
+      .filter(el => ~el.container_type.indexOf('analyses'));
+  }
+
+
+  analysisContainers() {
+    let target = [];
+    this.analysesContainers().forEach((aec) => {
+      const aics = aec.children
+        .filter(el => ~el.container_type.indexOf('analysis'));
+      target = [...target, ...aics];
+    });
+    return target;
+  }
+
+  datasetContainers() {
+    let target = [];
+    this.analysisContainers().forEach((aic) => {
+      const dts = aic.children
+        .filter(el => ~el.container_type.indexOf('dataset'));
+      target = [...target, ...dts];
+    });
+    return target;
+  }
+
   static buildNewShortLabel(klass) {
     const { currentUser } = UserStore.getState();
     if (!currentUser) {
@@ -94,6 +126,22 @@ export default class GenericEl extends Element {
     copy.can_update = true;
     copy.can_copy = false;
     return copy;
+  }
+
+  static clearProperties(props) {
+    Object.keys(props.layers).forEach((key) => {
+      const newLayer = props.layers[key] || {};
+      newLayer.ai = [];
+      (newLayer.fields || []).forEach((f, idx) => {
+        if (f && (f.type === 'drag_sample' || f.type === 'drag_element' || f.type === 'upload')) {
+          newLayer.fields[idx].value = null;
+        }
+        if (f && (f.type === 'table')) {
+          newLayer.fields[idx].sub_values = [];
+        }
+      });
+    });
+    return props;
   }
 
   static copyFromCollectionId(element, collection_id) {

@@ -52,12 +52,14 @@ module Entities
 
     private
 
-    # The frontend assumes the analysis (no other container types) to have a preview image.
-    # Technically the images are attached to the analysis' dataset children though.
-    # Therefore we have to collect all eligible images from the dataset children and display the newest
-    # thumbnail available.
-    def preview_img
-      return unless object.container_type == 'analysis'
+    def preview_img(container_ids, attachments)
+      attachments = attachments.select do |a|
+        a.thumb == true && a.attachable_type == 'Container' && container_ids.include?(a.attachable_id)
+      end
+
+      image_atts = attachments.select do |a_img|
+        a_img&.content_type&.match(Regexp.union(%w[jpg jpeg png tiff]))
+      end
 
       attachments_with_thumbnail = Attachment.where(
         thumb: true,

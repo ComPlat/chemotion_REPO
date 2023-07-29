@@ -40,6 +40,14 @@ const routes = {
     },
     '/': 'show'
   },
+  '/genericHub': {
+    target: {
+      show: function(e) {
+        PublicActions.openRepositoryPage('genericHub')
+      },
+    },
+    '/': 'show'
+  },
   '/moleculeArchive': {
     target: {
       show: function(e) {

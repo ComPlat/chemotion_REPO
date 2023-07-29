@@ -1,5 +1,5 @@
 import React from 'react';
-import { Nav, Navbar, NavItem } from 'react-bootstrap';
+import { Button, Nav, Navbar, NavItem, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import UserAuth from '../components/UserAuth';
 import UserStore from '../components/stores/UserStore';
 import UIStore from '../components/stores/UIStore';
@@ -124,15 +124,20 @@ export default class Navigation extends React.Component {
             {
               true ?
                 <NavItem eventKey={4} onClick={() => Aviator.navigate('/home/newsroom')} className="white-nav-item">
-                  Newsroom&nbsp;<i className="fa fa-bullhorn" aria-hidden="true" />
+                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom
                 </NavItem> : null
             }
             {
               true ?
                 <NavItem eventKey={5} target="_blank" href="https://www.chemotion.net/docs/repo" className="white-nav-item">
-                  How-To&nbsp;<i className="fa fa-question-circle" aria-hidden="true" />
+                  <i className="fa fa-question-circle" aria-hidden="true" />&nbsp;How-To
                 </NavItem> : null
             }
+            <NavItem eventKey={8} onClick={() => Aviator.navigate('/home/genericHub')} className="repo-generic-hub-btn">
+              <OverlayTrigger placement="bottom" overlay={<Tooltip id="_tooltip_labimotion_hub">LabIMotion Template Hub</Tooltip>}>
+                <Button><i className="fa fa-empire" aria-hidden="true" />{' '}LabIMotion</Button>
+              </OverlayTrigger>
+            </NavItem>
           </Nav>
         </Navbar.Collapse>
       </Navbar>

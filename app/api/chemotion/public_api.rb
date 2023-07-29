@@ -66,8 +66,8 @@ module Chemotion
           requires :klass, type: String, desc: 'Klass', values: %w[Element Segment Dataset]
         end
         get do
-          list = "#{params[:klass]}Klass".constantize.where(is_active: true).where.not(released_at: nil).select { |s| s["is_generic"].blank? }
-          entities = Entities::GenericPublicEntity.represent(list)
+          list = "Labimotion::#{params[:klass]}Klass".constantize.where(is_active: true).where.not(released_at: nil).select { |s| s["is_generic"].blank? }
+          entities = Labimotion::GenericPublicEntity.represent(list)
           # entities.length > 1 ? de_encode_json(entities) : []
         end
       end
@@ -78,11 +78,10 @@ module Chemotion
           requires :username, type: String, desc: 'Username'
           requires :password, type: String, desc: 'Password'
         end
-        post do
-          token = Usecases::Public::BuildToken.execute!(params)
-          error!('401 Unauthorized', 401) if token.blank?
-
-          { token: token }
+        get do
+          list = Labimotion::ElementKlass.where(is_active: true) if params[:generic_only].present? && params[:generic_only] == true
+          list = Labimotion::ElementKlass.where(is_active: true) unless params[:generic_only].present? && params[:generic_only] == true
+          list.pluck(:name)
         end
       end
 

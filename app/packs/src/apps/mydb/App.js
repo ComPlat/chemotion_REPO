@@ -19,6 +19,7 @@ import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import Aviator from 'aviator';
 import { RepoReviewModal } from 'repo-review-ui';
+import { FlowViewerModal } from 'chem-generic-ui';
 import alt from './alt';
 import initRoutes from './routes';
 import ReviewActions from './actions/ReviewActions';

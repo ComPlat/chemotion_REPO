@@ -196,7 +196,7 @@ export default class NoticeButton extends React.Component {
         nextState.localVersion.indexOf('.js')
       );
       if (serverVer !== localVer) {
-        createUpgradeNotification(serverVer, localVer);
+        // createUpgradeNotification(serverVer, localVer);
       }
     }
 

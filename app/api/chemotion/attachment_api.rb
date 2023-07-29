@@ -75,6 +75,21 @@ module Chemotion
       end
     end
 
+    resource :export_ds do
+      desc "Download the dataset attachment file"
+      get 'dataset/:container_id' do
+        env['api.format'] = :binary
+        export = Labimotion::ExportDataset.new
+        export.export(params[:container_id])
+        export.spectra(params[:container_id])
+        content_type('application/vnd.ms-excel')
+        ds_filename = export.res_name(params[:container_id])
+        filename = URI.escape(ds_filename)
+        header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+        export.read
+      end
+    end
+
     resource :attachments do
       before do
         @attachment = Attachment.find_by(id: params[:attachment_id])
@@ -109,7 +124,7 @@ module Chemotion
             end
 
             if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
-              element = Segment.find(@attachment.attachable_id)&.element
+              element = Labimotion::Segment.find(@attachment.attachable_id)&.element
               can_dwnld = @attachment.created_for == current_user.id ||
                           (ElementPolicy.new(current_user, element).read? &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)

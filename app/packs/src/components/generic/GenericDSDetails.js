@@ -51,7 +51,7 @@ class GenericDSDetails extends Component {
       Object.keys(genericDS).length !== 0
     ) {
       return (
-        <Panel className="panel-detail generic-ds-panel"> 
+        <Panel className="panel-detail generic-ds-panel">
           <Panel.Body>
             {this.elementalPropertiesItem(genericDS)}
             <span className="g-ds-note label">

@@ -52,7 +52,6 @@ export default class CollectionSelect extends React.Component {
   ColOptions() {
     const { unsharedRoots } = this.state;
 
-    console.log(unsharedRoots);
     const cAllTree = [];
     this.makeTree(cAllTree, unsharedRoots || [], 0);
 

@@ -67,6 +67,12 @@ module Chemotion
               new_dataset.name = ds.name
               new_dataset.extended_metadata = ds.extended_metadata
               new_dataset.save!
+
+              if ds.dataset.present?
+                new_dataset.dataset = ds.dataset.dup
+                new_dataset.dataset.uuid = SecureRandom.uuid
+                new_dataset.dataset.save!
+              end
             end
           end
         end
@@ -559,7 +565,7 @@ module Chemotion
           entities = Entities::ReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
-          entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
+          entities[:segments] = Labimotion::SegmentEntity.represent(reaction.segments)
           embargo = find_embargo_collection(publication)
           entities[:embargo] = embargo&.label
           entities[:embargoId] = embargo&.id
@@ -588,7 +594,7 @@ module Chemotion
         get do
           sample = Sample.where(id: params[:id]).includes(:molecule, :tag).last
           review_sample = { **sample.serializable_hash.deep_symbolize_keys }
-          review_sample[:segments] = sample.segments.present? ? Entities::SegmentEntity.represent(sample.segments) : []
+          review_sample[:segments] = sample.segments.present? ? Labimotion::SegmentEntity.represent(sample.segments) : []
           molecule = Molecule.find(sample.molecule_id) unless sample.nil?
           containers = Entities::ContainerEntity.represent(sample.container)
           publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')

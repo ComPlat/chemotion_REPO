@@ -155,6 +155,8 @@ export default class ElementsTableEntries extends Component {
       sourceType = DragDropItemTypes.REACTION;
     } else if (isDropForGP) {
       sourceType = DragDropItemTypes.GENERALPROCEDURE;
+    } else {
+      sourceType = DragDropItemTypes.ELEMENT;
     }
     return sourceType;
   }
