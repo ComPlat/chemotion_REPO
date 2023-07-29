@@ -245,7 +245,8 @@ export default class CollectionTree extends React.Component {
         else if (typeof e.label === 'string' && e.label.startsWith('Reviewing')) {orderedRoots[4] = e  }
         else if (typeof e.label === 'string' && e.label.startsWith('Element To Review')) {orderedRoots[5] = e  }
         else if (typeof e.label === 'string' && e.label.startsWith('Reviewed')) { orderedRoots[6] = e }
-        else if (e.label === 'Embargoed Publications') {orderedRoots[7] = e  }
+        else if (typeof e.label === 'string' && e.label === 'Embargo Accepted') { orderedRoots[7] = e }
+        else if (e.label === 'Embargoed Publications') {orderedRoots[8] = e  }
         else {orderedRoots[idx+10] = e  }
       })
     }
