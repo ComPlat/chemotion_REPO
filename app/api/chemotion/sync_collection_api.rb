@@ -67,7 +67,7 @@ module Chemotion
       handle_review = proc do |collections|
         cols = []
         collections.each do |col|
-          unless col['label'] == 'Reviewing' || col['label'] == 'Pending Publications' || col['label'] == 'Element To Review' || col['label'] == 'Reviewed'
+          unless col['label'] == 'Reviewing' || col['label'] == 'Pending Publications' || col['label'] == 'Element To Review' || col['label'] == 'Reviewed' || col['label'] == 'Embargo Accepted'
             cols.push(col)
             next
           end
@@ -102,6 +102,7 @@ module Chemotion
         collections.each do |obj|
           root_ancestries.push(obj['ancestry'])
         end
+
         root_ancestries.map!(&:to_i)
         col_tree = Collection.remote(current_user.id).where(id: root_ancestries)
                              .where([' user_id in (select user_ids(?))', current_user.id]).order('shared_by_id')
