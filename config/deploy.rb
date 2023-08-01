@@ -60,7 +60,7 @@ set :slackistrano, false
 
 set :default_env, fetch(:default_env, {}).merge({
 #  'WEBPACKER_PRECOMPILE' => 'false',
-  'NODE_OPTIONS' => '"--max-old-space-size=3072"'
+  'NODE_OPTIONS' => '"--max-old-space-size=4096"'
 })
 
 
