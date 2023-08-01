@@ -125,6 +125,7 @@ export default class RepoSample extends Component {
       isPublished,
       isLogin,
       isReviewer,
+      isPublisher,
       element,
     } = this.props;
     const { xvialCom } = element;
@@ -223,7 +224,7 @@ export default class RepoSample extends Component {
             />
             &nbsp;
             <NewVersionModal
-              isLogin={isLogin}
+              isPublisher={isPublisher}
               id={sample.id}
               type="Sample"
               title={sample.showed_name}
@@ -321,11 +322,13 @@ RepoSample.propTypes = {
   handleCommentBtn: PropTypes.func,
   isLogin: PropTypes.bool,
   isReviewer: PropTypes.bool,
+  isPublisher: PropTypes.bool
 };
 
 RepoSample.defaultProps = {
   canComment: false,
   isLogin: false,
   isReviewer: false,
+  isPublisher: false,
   handleCommentBtn: () => {},
 };

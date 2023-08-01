@@ -133,8 +133,13 @@ module RepositoryHelpers
       end
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
       segments = Entities::SegmentEntity.represent(s.segments)
-      tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
-        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
+      isPublisher = (current_user.present? && current_user.id == pub.published_by)
+      tag.merge(analyses: containers, literatures: literatures,
+                sample_svg_file: s.sample_svg_file, short_label: s.short_label,
+                melting_point: s.melting_point, boiling_point: s.boiling_point,
+                sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial,
+                embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos,
+                pub_info: pub_info, segments: segments, isPublisher: isPublisher)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?
