@@ -24,6 +24,8 @@ import alt from './alt';
 import initRoutes from './routes';
 import ReviewActions from './actions/ReviewActions';
 import ReviewStore from './stores/ReviewStore';
+import ProgressModal from './common/ProgressModal';
+import ContactEmail from './chemrepo/core/ContactEmail';
 
 class App extends Component {
   constructor(_props) {
@@ -144,6 +146,12 @@ class App extends Component {
     return (
       <Col className="small-col collec-tree">
         <CollectionTree />
+        <div className="news-box">
+          <p>New to the Repository? Explore our <a href="https://chemotion.net/docs/repo/settings_preparation" target="_blank" rel="noreferrer">Preparation</a> & <a href="https://chemotion.net/docs/repo/workflow" target="_blank" rel="noreferrer">Workflow</a> </p>
+          <p>Guidelines: Discover <a href="https://chemotion.net/docs/repo/details_standards/reactions" target="_blank" rel="noreferrer">Details and Standards</a></p>
+          <p>Learn More: Visit <a href="https://chemotion.net/docs/repo/references" target="_blank" rel="noreferrer">here</a></p>
+          <ContactEmail />
+        </div>
       </Col>
     );
   }
