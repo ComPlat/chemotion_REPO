@@ -1,19 +1,7 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 import { GenGridBase } from 'chem-generic-ui';
-
-const ContactEmail = () => {
-  const email = 'chemotion-labimotion@lists.kit.edu';
-  const handleSendEmail = () => {
-    window.location.href = `mailto:${email}`;
-  };
-
-  return (
-    <Button bsSize="small" onClick={handleSendEmail}>
-      <i className="fa fa-envelope-o" aria-hidden="true" />&nbsp;Send feedback about LabIMotion
-    </Button>
-  );
-};
+import ContactEmail from '../components/chemrepo/core/ContactEmail';
 
 const gridData = [
   {
@@ -58,7 +46,7 @@ const RepoGenericHubDesc = () => {
 
   return (
     <div className="repo-generic-hub-desc">
-      <h1>LabIMotion Template Hub<span className="contact"><ContactEmail /></span></h1>
+      <h1>LabIMotion Template Hub<span className="contact"><ContactEmail email="chemotion-labimotion@lists.kit.edu" label="Send feedback about LabIMotion" /></span></h1>
       <h3>
         Welcome to the <b>LabIMotion Template Hub</b>, a platform for sharing new elements, segments, and datasets templates.
       </h3>

@@ -1085,3 +1085,15 @@ $bs-successcolor: #5cb85c;
   background-color: #ddd !important;
   color: #6c757d !important;
 }
+
+.news-box {
+  font-size: 12px;
+  padding: 8px;
+  border: 2px solid #eaf0f6;
+  background-color: #f9fcff;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  margin-top: 8px;
+}
