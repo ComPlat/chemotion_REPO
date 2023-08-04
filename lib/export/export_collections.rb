@@ -66,7 +66,7 @@ module Export
           zipping.put_next_entry 'schema.json'
           zipping.write schema_json
           description += "#{schema_json_checksum} schema.json\n"
-          # write all attachemnts into an attachments directory
+          # write all attachments into an attachments directory
           @attachments.each do |attachment|
             attachment_path = File.join('attachments', "#{attachment.identifier}#{File.extname(attachment.filename)}")
             next if attachment.attachment_attacher.file.blank?
@@ -163,7 +163,6 @@ module Export
         fetch_many(sample.residues, {
                      'sample_id' => 'Sample',
         })
-
         segment, @attachments = Labimotion::Export.fetch_segments(sample, @attachments, &method(:fetch_one))
         @segments += segment if segment.present?
 
@@ -202,6 +201,8 @@ module Export
                        'sample_id' => 'Sample',
                      })
         end
+        segment, @attachments = Labimotion::Export.fetch_segments(reaction, @attachments, &method(:fetch_one))
+        @segments += segment if segment.present?
 
         segment, @attachments = Labimotion::Export.fetch_segments(reaction, @attachments, &method(:fetch_one))
         @segments += segment if segment.present?
@@ -300,7 +301,6 @@ module Export
     # rubocop:disable Metrics/MethodLength
     def fetch_containers(containable)
       containable_type = containable.class.name
-
       # fetch root container
       root_container = containable.container
       fetch_one(containable.container, {
@@ -346,36 +346,6 @@ module Export
     end
     # rubocop:enable Metrics/MethodLength
 
-    def fetch_element_klasses
-      klasses = Labimotion::ElementKlass.where(is_active: true, is_generic: false)
-      fetch_many(klasses, {'created_by' => 'User'})
-    end
-
-    def fetch_segment_klasses
-      klasses = Labimotion::SegmentKlass.where(is_active: true)
-      fetch_many(klasses, {'created_by' => 'User'})
-    end
-
-    def fetch_segments(element)
-      element_type = element.class.name
-#byebug
-      segments = Labimotion::Segment.where("element_id = ? AND element_type = ?", element.id, element_type)
-      segments.each do |segment|
-#byebug
-        segment = fetch_properties(segment)
-        fetch_one(segment.segment_klass.element_klass)
-#byebug
-        fetch_one(segment.segment_klass, {
-          'element_klass_id' => 'Labimotion::ElementKlass'
-        })
-        fetch_one(segment, {
-          'element_id' => segment.element_type,
-          'segment_klass_id' => 'Labimotion::SegmentKlass',
-          'created_by' => 'User'
-        })
-      end
-    end
-
     def fetch_literals(element)
       element_type = element.class.name
 
@@ -389,60 +359,6 @@ module Export
                     'user_id' => 'User',
                   })
       end
-    end
-
-    def fetch_properties(instance)
-      properties = instance.properties
-      properties['layers'].keys.each do |key|
-        layer = properties['layers'][key]
-
-        # field_samples = layer['fields'].select { |ss| ss['type'] == 'drag_sample' }  -- TODO for elements
-        # field_elements = layer['fields'].select { |ss| ss['type'] == 'drag_element' }  -- TODO for elements
-
-        field_molecules = layer['fields'].select { |ss| ss['type'] == 'drag_molecule' }
-        field_molecules.each do |field|
-          idx = properties['layers'][key]['fields'].index(field)
-          id = field["value"] && field["value"]["el_id"] unless idx.nil?
-          mol = Molecule.find(id) unless id.nil?
-          properties['layers'][key]['fields'][idx]['value']['el_id'] = fetch_one(mol) unless mol.nil?
-        end
-
-        field_uploads = layer['fields'].select { |ss| ss['type'] == 'upload' }
-        field_uploads.each do |upload|
-          idx = properties['layers'][key]['fields'].index(upload)
-          files = upload["value"] && upload["value"]["files"]
-          files&.each_with_index do |fi, fdx|
-            att = Attachment.find(fi['aid'])
-            @attachments += [att]
-            properties['layers'][key]['fields'][idx]['value']['files'][fdx]['aid'] = fetch_one(att, {'attachable_id' => 'Labimotion::Segment'}) unless att.nil?
-          end
-        end
-
-        field_tables = properties['layers'][key]['fields'].select { |ss| ss['type'] == 'table' }
-        field_tables&.each do |field|
-          next unless field['sub_values'].present? && field['sub_fields'].present?
-          # field_table_samples = field['sub_fields'].select { |ss| ss['type'] == 'drag_sample' }  -- not available yet
-          # field_table_uploads = field['sub_fields'].select { |ss| ss['type'] == 'upload' }       -- not available yet
-          field_table_molecules = field['sub_fields'].select { |ss| ss['type'] == 'drag_molecule' }
-          if field_table_molecules.present?
-            col_ids = field_table_molecules.map { |x| x.values[0] }
-            col_ids.each do |col_id|
-              field['sub_values'].each do |sub_value|
-                next unless sub_value[col_id].present? && sub_value[col_id]['value'].present? && sub_value[col_id]['value']['el_id'].present?
-
-                svalue = sub_value[col_id]['value']
-                next unless svalue['el_id'].present? && svalue['el_inchikey'].present?
-
-                tmol = Molecule.find_by(id: svalue['el_id'])
-                sub_value[col_id]['value']['el_id'] = fetch_one(tmol) unless tmol.nil?
-              end
-            end
-          end
-        end
-
-      end
-      instance.properties = properties
-      instance
     end
 
     def fetch_many(instances, foreign_keys = {})

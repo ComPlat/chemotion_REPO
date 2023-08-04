@@ -101,6 +101,7 @@ module Import
         import_segments
         import_datasets
         import_attachments
+        import_datasets
         import_literals
       end
     end
