@@ -367,7 +367,6 @@ module Chemotion
         dl_s = dl[:sample_detail_level] || 0
 
         search_method = 'chemotion_id' if arg&.match(/(CRR|CRS|CRD)-\d+/)
-
         scope = case search_method
                 when 'polymer_type'
                   if dl_s > 0
@@ -493,6 +492,7 @@ module Chemotion
         #   wells: :sample
         # )
         # user_screens = Screen.by_collection_id(collection_id)
+        user_elements = Labimotion::Element.by_collection_id(collection_id)
 
         case scope&.first
         when Sample

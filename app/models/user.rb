@@ -357,6 +357,7 @@ class User < ApplicationRecord
       "sync_collections_users.collection_id = collections.id")
       .where("sync_collections_users.shared_by_id = #{su_id}")
       .where("sync_collections_users.user_id = #{self.id}")
+      .where("sync_collections_users.permission_level = 0 and sync_collections_users.fake_ancestry is not null")
       .where("collections.label = 'Pending Publications'").first
   end
 
