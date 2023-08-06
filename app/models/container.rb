@@ -32,10 +32,16 @@ class Container < ApplicationRecord
   # TODO: dependent destroy for attachments should be implemented when attachment get paranoidized instead of this DJ
   before_destroy :delete_attachment
   before_destroy :destroy_datasetable
-  has_closure_tree order: "extended_metadata->'index' asc"
+  has_closure_tree order: Arel.sql("extended_metadata->'index' asc")
 
   scope :analyses_for_root, ->(root_id) {
     where(container_type: 'analysis').joins(
+      "inner join container_hierarchies ch on ch.generations = 2 and ch.ancestor_id = #{root_id} and ch.descendant_id = containers.id "
+    )
+  }
+
+  scope :links_for_root, ->(root_id) {
+    where(container_type: 'link').joins(
       "inner join container_hierarchies ch on ch.generations = 2 and ch.ancestor_id = #{root_id} and ch.descendant_id = containers.id "
     )
   }
@@ -54,6 +60,10 @@ class Container < ApplicationRecord
 
   def analyses
     Container.analyses_for_root(self.id)
+  end
+
+  def links
+    Container.links_for_root(self.id)
   end
 
   def root_element

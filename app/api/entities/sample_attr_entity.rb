@@ -5,7 +5,7 @@ module Entities
     expose :type, :name, :short_label, :description, :created_at, :updated_at,
     :target_amount_value, :target_amount_unit, :real_amount_value, :location,
     :real_amount_unit, :molfile, :solvent, :molarity_value, :molarity_unit,
-    :is_top_secret, :is_restricted, :external_label, :analyses, :purity,
+    :is_top_secret, :is_restricted, :external_label, :analyses, :links, :purity,
     :children_count, :parent_id, :imported_readout, :_contains_residues,
     :sample_svg_file, :density, :boiling_point, :melting_point, :stereo,
     :reaction_description, :container, :metrics,

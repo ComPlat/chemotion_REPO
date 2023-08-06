@@ -261,6 +261,10 @@ class Sample < ApplicationRecord
     self.container ? self.container.analyses : Container.none
   end
 
+  def links
+    self.container ? self.container.links : Container.none
+  end
+
   #TODO move to molecule (chemotion_ELN)
   def pubchem_cid
     mol = self.molecule
