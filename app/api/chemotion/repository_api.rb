@@ -144,6 +144,7 @@ module Chemotion
           new_sample.analyses.each do |ana|
             Publication.find_by(element: ana).update(parent: pub)
           end
+          new_sample.update_tag!(analyses_tag: true)
           new_sample
         end
 
