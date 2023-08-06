@@ -158,7 +158,9 @@ module Chemotion
             duplicate_literals(new_sample, lits)
           end
 
-          link_analyses(new_sample, @sample.analyses)
+          link_analyses(new_sample, sample.analyses)
+
+          new_sample.update_tag!(analyses_tag: true)
 
           new_sample.tag_as_new_version(sample)
           sample.tag_as_previous_version(new_sample)
