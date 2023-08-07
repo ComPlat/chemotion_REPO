@@ -25,7 +25,6 @@ class ReviewStore {
       handelReviewPublish: ReviewActions.reviewPublish,
       handleGetElements: ReviewActions.getElements,
       handelUpdateComment: ReviewActions.updateComment,
-      handleUnitsSystem: ReviewActions.fetchUnitsSystem,
       handleReviewUpdate: ReviewActions.updateReview,
       handleFetchSample: ReviewActions.fetchSample,
       handleClose: PublicActions.close,
@@ -66,11 +65,6 @@ class ReviewStore {
     }
     this.setState({ bundles, current_user });
   }
-
-  handleUnitsSystem(result) {
-    this.setState({ unitsSystem: result });
-  }
-
 
   handleReviewUpdate(review) {
     this.setState({ review: review });

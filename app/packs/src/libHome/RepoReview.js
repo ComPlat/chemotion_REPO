@@ -101,7 +101,6 @@ export default class RepoReview extends Component {
     ReviewStore.listen(this.onChange);
     ReviewActions.getElements.defer();
     EmbargoActions.getEmbargoBundle(); // added to ReviewStore
-    ReviewActions.fetchUnitsSystem.defer();
   }
 
   componentWillUnmount() {
