@@ -278,11 +278,6 @@ class PublicStore {
       elements, page, perPage, pages, selectType, selectState, searchType, searchValue
     });
   }
-
-
-  handleUnitsSystem(result) {
-    this.setState({ unitsSystem: result });
-  }
 }
 
 export default alt.createStore(PublicStore, 'PublicStore');

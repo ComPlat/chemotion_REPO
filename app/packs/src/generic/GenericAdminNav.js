@@ -11,7 +11,7 @@ const GenericAdminNav = (props) => {
   return (
     <Navbar fixedTop>
       <Navbar.Header>
-        <Navbar.Brand><a href="/">Back to MyDB</a></Navbar.Brand>
+        <Navbar.Brand><a href="/mydb">Back to MyDB</a></Navbar.Brand>
         <Navbar.Toggle />
       </Navbar.Header>
       <Navbar.Collapse>

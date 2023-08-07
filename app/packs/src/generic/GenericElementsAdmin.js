@@ -7,7 +7,7 @@ import uuid from 'uuid';
 import Clipboard from 'clipboard';
 import { findIndex, filter, sortBy, orderBy } from 'lodash';
 
-import { GenGridEl, GenButtonTooltip, SelectOptionLayer, ElementField, FieldCondEditModal, orgLayerObject, WorkflowModal, LayerAttrEditModal, LayerAttrNewModal, UploadModal, AttrCopyModal, AttrNewModal, AttrEditModal, GenericDummy, reUnit } from 'chem-generic-ui';
+import { GenGridEl, GenButtonTooltip, SelectOptionLayer, ElementField, FieldCondEditModal, orgLayerObject, WorkflowModal, LayerAttrEditModal, LayerAttrNewModal, UploadModal, AttrCopyModal, AttrNewModal, AttrEditModal, GenericDummy, reUnit, si } from 'chem-generic-ui';
 import LoadingModal from '../components/common/LoadingModal';
 import Notifications from '../components/Notifications';
 import GenericElsFetcher from '../components/fetchers/GenericElsFetcher';
@@ -50,7 +50,7 @@ export default class GenericElementsAdmin extends React.Component {
       layerKey: '',
       fieldObj: {},
       selectOptions: [],
-      unitsSystem: {},
+      unitsSystem: si,
       show: { tab: '', modal: '' },
       propTabKey: 1,
       revisions: [],
@@ -83,7 +83,6 @@ export default class GenericElementsAdmin extends React.Component {
     this.onFieldMove = this.onFieldMove.bind(this);
     this.onShowFieldCond = this.onShowFieldCond.bind(this);
     this.onFieldInputChange = this.onFieldInputChange.bind(this);
-    this.fetchConfigs = this.fetchConfigs.bind(this);
     this.handleCond = this.handleCond.bind(this);
     this.onFieldSubFieldChange = this.onFieldSubFieldChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -99,7 +98,6 @@ export default class GenericElementsAdmin extends React.Component {
 
   componentDidMount() {
     this.fetchElements();
-    this.fetchConfigs();
     UsersFetcher.fetchCurrentUser().then((result) => {
       if (!result.error) {
         this.setState({ user: result.user });
@@ -446,11 +444,6 @@ export default class GenericElementsAdmin extends React.Component {
           this.handleShowState('tab', '');
         }
       });
-  }
-
-  fetchConfigs() {
-    GenericElsFetcher.fetchUnitsSystem()
-      .then((result) => { this.setState({ unitsSystem: result }); });
   }
 
   fetchRevisions() {

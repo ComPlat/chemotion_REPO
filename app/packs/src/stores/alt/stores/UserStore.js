@@ -17,7 +17,6 @@ class UserStore {
       genericEls: [],
       segmentKlasses: [],
       dsKlasses: [],
-      unitsSystem: {},
       matriceConfigs: [],
       omniauthProviders: []
     };
@@ -35,7 +34,6 @@ class UserStore {
       handleFetchNoVNCDevices: UserActions.fetchNoVNCDevices,
       handleSegementKlasses: UserActions.fetchSegmentKlasses,
       handleDatasetKlasses: UserActions.fetchDatasetKlasses,
-      handleUnitsSystem: UserActions.fetchUnitsSystem,
       handleOmniauthProviders: UserActions.fetchOmniauthProviders
     });
   }
@@ -102,10 +100,6 @@ class UserStore {
 
   handleDatasetKlasses(result) {
     this.state.dsKlasses = result.klass;
-  }
-
-  handleUnitsSystem(result) {
-    this.state.unitsSystem = result;
   }
 
   handleOmniauthProviders(result) {

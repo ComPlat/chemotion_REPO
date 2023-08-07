@@ -6,7 +6,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import uuid from 'uuid';
 import Clipboard from 'clipboard';
 import { findIndex, filter, sortBy, orderBy } from 'lodash';
-import { GenGridDs, GenButtonTooltip, SelectOptionLayer, ElementField, FieldCondEditModal, orgLayerObject, LayerAttrEditModal, LayerAttrNewModal, GenericDummy, reUnit, UploadModal } from 'chem-generic-ui';
+import { GenGridDs, GenButtonTooltip, SelectOptionLayer, ElementField, FieldCondEditModal, orgLayerObject, LayerAttrEditModal, LayerAttrNewModal, GenericDummy, reUnit, UploadModal, si } from 'chem-generic-ui';
 import LoadingModal from '../components/common/LoadingModal';
 import Notifications from '../components/Notifications';
 import GenericDSsFetcher from '../components/fetchers/GenericDSsFetcher';
@@ -26,7 +26,7 @@ export default class GenericDatasetsAdmin extends React.Component {
       newFieldKey: '',
       layerKey: '',
       selectOptions: [],
-      unitsSystem: {},
+      unitsSystem: si,
       show: { tab: '', modal: '' },
       propTabKey: 1,
       revisions: [],
@@ -52,7 +52,6 @@ export default class GenericDatasetsAdmin extends React.Component {
     this.onFieldInputChange = this.onFieldInputChange.bind(this);
     this.onShowFieldCond = this.onShowFieldCond.bind(this);
     this.handleCond = this.handleCond.bind(this);
-    this.fetchConfigs = this.fetchConfigs.bind(this);
     this.handleDeActive = this.handleDeActive.bind(this);
     this.propTabSelect = this.propTabSelect.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -65,7 +64,6 @@ export default class GenericDatasetsAdmin extends React.Component {
 
   componentDidMount() {
     this.fetchElements();
-    this.fetchConfigs();
     UsersFetcher.fetchCurrentUser().then((result) => {
       if (!result.error) {
         this.setState({ user: result.user });
@@ -203,11 +201,6 @@ export default class GenericDatasetsAdmin extends React.Component {
 
   getShowState(att, val) { return { ...this.state.show, [att]: val }; }
 
-  fetchConfigs() {
-    GenericDSsFetcher.fetchUnitsSystem()
-      .then((result) => { this.setState({ unitsSystem: result }); });
-  }
-
   fetchElements() {
     GenericDSsFetcher.listDatasetKlass()
       .then((result) => { this.setState({ elements: result.klass }); });
@@ -332,7 +325,6 @@ export default class GenericDatasetsAdmin extends React.Component {
   }
 
   handleCreateLayer(_layer) {
-    console.log('_layer', _layer)
     const layer = _layer;
     if (!validateLayerInput(layer)) return;
     const { element } = this.state;
@@ -367,7 +359,6 @@ export default class GenericDatasetsAdmin extends React.Component {
 
   handleUploadTemplate(properties, message, valid) {
     const { element } = this.state;
-    console.log('properties', properties);
     if (valid === false) {
       this.closeModal();
       notification({
