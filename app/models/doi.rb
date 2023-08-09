@@ -17,11 +17,12 @@
 #  doiable_id     :integer
 #  doiable_type   :string
 #  suffix         :string
+#  version_count  :integer          default(0)
 #
 # Indexes
 #
 #  index_dois_on_suffix  (suffix) UNIQUE
-#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count) UNIQUE
+#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count,version_count) UNIQUE
 #
 # Foreign Keys
 #
@@ -44,6 +45,7 @@ class Doi < ApplicationRecord
       s += "/#{term_id}"
       s += ".#{analysis_count}" if analysis_count.to_i > 0
     end
+    s += "/#{version_count}" if version_count.to_i > 0
     s
   end
 
@@ -107,22 +109,34 @@ class Doi < ApplicationRecord
              "reaction/" + element.products_short_rinchikey_trimmed
            end
 
-    ds = Doi.select("*, coalesce(molecule_count, 0) as real_count")
-            .where(inchikey: ik)
-            .order('real_count desc')
-    if ds.blank?
-      mc = 0
-      version = ''
+    if (previous_doi_id = element.tag.taggable_data['previous_doi'])
+      previous_doi =  Doi.find_by(id: previous_doi_id)
+      mc = previous_doi.molecule_count
+      mc_string = ".#{mc}"
+      vc = previous_doi.version_count + 1
+      vc_string = ".#{vc}"
+      suffix = "#{ik}#{mc_string}#{vc_string}"
     else
-      mc = ds.first.molecule_count.to_i.next
-      version = ".#{mc}"
+      ds = Doi.select("*, coalesce(molecule_count, 0) as real_count")
+              .where(inchikey: ik)
+              .order('real_count desc')
+      if ds.blank?
+        mc = 0
+        mc_string = ''
+      else
+        mc = ds.first.molecule_count.to_i.next
+        mc_string = ".#{mc}"
+      end
+      vc = 0
+      suffix = "#{ik}#{mc_string}"
     end
-    suffix = "#{ik}#{version}"
+
     d = Doi.create!(
       inchikey: ik,
       doiable_id: element.id,
       doiable_type: klass,
       molecule_count: mc,
+      version_count: vc,
       suffix: suffix
     )
   end
