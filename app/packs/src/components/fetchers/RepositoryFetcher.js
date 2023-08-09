@@ -6,7 +6,9 @@ import NotificationActions from '../actions/NotificationActions';
 const AnalysisIdstoPublish = element => (
   element.analysisArray()
     .filter(a => (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')))
-    .map(x => x.id)
+    .map(container => {
+      return container.link_id ? container.link_id : container.id;
+    })
 );
 
 export default class RepositoryFetcher {

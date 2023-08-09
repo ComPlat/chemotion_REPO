@@ -150,7 +150,7 @@ module Chemotion
 
         def create_new_sample_version(sample = @sample)
           # create a copy of the sample in the users pending_collection
-          new_sample = @sample.dup
+          new_sample = sample.dup
           new_sample.collections << current_user.all_collection
           new_sample.save!
           new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
@@ -167,6 +167,38 @@ module Chemotion
           sample.tag_as_previous_version(new_sample)
 
           new_sample
+        end
+
+        def submit_new_sample_version(sample = @sample)
+          sample.collections.clear
+          sample.collections << current_user.pending_collection
+          sample.collections << Collection.element_to_review_collection
+          sample.collections << @embargo_collection unless @embargo_collection.nil?
+          sample.save!
+
+          if (has_analysis = (sample.analyses.present? or sample.links.present?))
+            if (doi = sample.doi)
+              doi.update!(doiable: sample)
+            else
+              doi = Doi.create_for_element!(sample)
+            end
+            pub = Publication.create!(
+              state: Publication::STATE_PENDING,
+              element: sample,
+              published_by: current_user.id,
+              doi: doi,
+              # parent_id: parent_publication_id,
+              taggable_data: @publication_tag.merge(
+                author_ids: @author_ids,
+                #original_analysis_ids: analyses.pluck(:id),
+                analysis_ids: sample.analyses.pluck(:id)
+              )
+            )
+          end
+          sample.analyses.each do |analysis|
+            Publication.find_by(element: analysis).update(parent: pub)
+          end
+          sample
         end
 
         def concat_author_ids(coauthors = params[:coauthors])
@@ -340,8 +372,14 @@ module Chemotion
 
         def prepare_sample_data
           reviewer_collections
-          new_sample = duplicate_sample(@sample, @analyses)
-          @sample.tag_as_published(new_sample, @analyses)
+
+          if @sample.tag.taggable_data['previous_version']
+            new_sample = submit_new_sample_version
+          else
+            new_sample = duplicate_sample(@sample, @analyses)
+            @sample.tag_as_published(new_sample, @analyses)
+          end
+
           new_sample.create_publication_tag(current_user, @author_ids, @license)
           @sample.untag_reserved_suffix
           pub = Publication.where(element: new_sample).first
@@ -938,7 +976,9 @@ module Chemotion
 
         after_validation do
           @sample = current_user.samples.find_by(id: params[:sampleId])
-          @analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          links = @sample&.links&.where(id: params[:analysesIds])
+          @analyses = analyses.or(links)
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
           ols_validation(@analyses)
           @author_ids = if params[:addMe]

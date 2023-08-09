@@ -5,8 +5,10 @@ module SubmissionHelpers
   extend Grape::API::Helpers
 
   def ols_validation(analyses)
-    analyses.each do |ana|
-      error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+    analyses.each do |container|
+      if container.container_type == 'analysis'
+        error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+      end
     end
   end
 
