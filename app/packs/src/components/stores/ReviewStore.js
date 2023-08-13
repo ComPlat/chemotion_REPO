@@ -7,8 +7,11 @@ import EmbargoActions from '../actions/EmbargoActions';
 class ReviewStore {
   constructor() {
     this.showReviewModal = false;
+    this.showCommendModal = false;
     this.reviewData = {};
     this.btnAction = '';
+    this.field = '';
+    this.orgInfo = '';
     //this.bundles = [];
     this.selectType;
     this.selectState;
@@ -20,6 +23,7 @@ class ReviewStore {
 
     this.bindListeners({
       handleReviewModal: ReviewActions.handleReviewModal,
+      handleCommentModal: ReviewActions.handleCommentModal,
       handleDisplayReviewReaction: ReviewActions.displayReviewReaction,
       handleDisplayReviewSample: ReviewActions.displayReviewSample,
       handelReviewPublish: ReviewActions.reviewPublish,
@@ -35,7 +39,7 @@ class ReviewStore {
 
   handleClose({ deleteEl }) {
     this.setState({
-      currentElement: null
+      currentElement: null, showReviewModal: false, showCommentModal: false
     });
   }
 
@@ -89,21 +93,25 @@ class ReviewStore {
       elements, page, perPage, pages, selectType, selectState, searchType, searchValue
     } = results;
     this.setState({
-      elements, page, perPage, pages, selectType, selectState, searchType, searchValue, showReviewModal: false
+      elements, page, perPage, pages, selectType, selectState, searchType, searchValue, showReviewModal: false, showCommentModal: false
     });
   }
 
   handleReviewModal(result) {
-    this.setState({ showReviewModal: result.show, btnAction: result.action });
+    this.setState({ showReviewModal: result.show, showCommentModal: false, btnAction: result.action });
+  }
+
+  handleCommentModal(result) {
+    this.setState({ showCommentModal: result.show, showReviewModal: false, btnAction: result.action, field: result.field, orgInfo: result.orgInfo });
   }
 
   handelUpdateComment(result) {
-    this.setState({ review: result.review, showReviewModal: false });
+    this.setState({ review: result.review, showReviewModal: false, showCommentModal: false });
   }
 
   handelReviewPublish(results) {
     // const { history, checklist, reviewComments } = results.review;
-    this.setState({ review: results.review, showReviewModal: false, review_info: results.review_info });
+    this.setState({ review: results.review, showReviewModal: false, showCommentModal: false,  review_info: results.review_info });
     ReviewActions.getElements(this.selectType || 'All', this.selectState || 'pending', this.searchType || 'All', this.searchValue || '', this.page, this.perPage);
   }
 
@@ -119,6 +127,7 @@ class ReviewStore {
         reaction: result?.element?.reaction || {},
         currentElement: result?.element || {},
         showReviewModal: false,
+        showCommentModal: false,
         review: publication?.review || {},
         review_info: result?.element?.review_info || {},
       });
@@ -138,6 +147,7 @@ class ReviewStore {
         queryId: result.id || 0,
         currentElement: result?.element || {},
         showReviewModal: false,
+        showCommentModal: false,
         review: publication?.review || {},
         review_info: result?.element?.review_info || {},
       });

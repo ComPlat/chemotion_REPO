@@ -51,7 +51,7 @@ export default class UsersFetcher {
       credentials: 'same-origin'
     })
       .then(response => response.json()).then(json => json).catch((errorMessage) => {
-        console.log(errorMessage);
+        // console.log(errorMessage);
       });
 
     return promise;

@@ -76,6 +76,14 @@ module Chemotion
     end
 
     resource :export_ds do
+      before do
+        @container = Container.find_by(id: params[:container_id])
+        element = @container.root.containable
+        can_read = ElementPolicy.new(current_user, element).read?
+        can_dwnld = can_read &&
+                    ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+        error!('401 Unauthorized', 401) unless can_dwnld
+      end
       desc "Download the dataset attachment file"
       get 'dataset/:container_id' do
         env['api.format'] = :binary

@@ -766,6 +766,12 @@ module Chemotion
               next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if root.state == Publication::STATE_REVIEWED
               review_history << next_node
               review['history'] = review_history
+            else
+              if comment.present? && root.state == Publication::STATE_PENDING
+                next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' }
+                review_history << next_node
+                review['history'] = review_history
+              end
             end
             if checklist&.length&.positive?
               revst = review['checklist'] || {}

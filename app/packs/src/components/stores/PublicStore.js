@@ -27,6 +27,7 @@ class PublicStore {
     this.howtos = [];
     // this.bundles = [];
     this.showReviewModal = false;
+    this.showCommendModal = false;
     this.reviewData = {};
 
     this.bindListeners({

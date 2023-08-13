@@ -201,6 +201,7 @@ module Export
                        'sample_id' => 'Sample',
                      })
         end
+
         segment, @attachments = Labimotion::Export.fetch_segments(reaction, @attachments, &method(:fetch_one))
         @segments += segment if segment.present?
 

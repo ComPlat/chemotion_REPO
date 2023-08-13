@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Panel, Row, Col, Button, Jumbotron } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import { head, filter } from 'lodash';
-import { RepoCommentModal } from 'repo-review-ui';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
   AuthorList,
@@ -57,7 +56,7 @@ export default class RepoReactionDetails extends Component {
       showRA: {},
       // showReviewModal: false,
       // btnAction: '',
-      showCommentModal: false,
+      // showCommentModal: false,
       commentField: '',
       originInfo: '',
     };
@@ -70,9 +69,7 @@ export default class RepoReactionDetails extends Component {
     this.toggleRA = this.toggleRA.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
-    this.handleSubmitReview = this.handleSubmitReview.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
-    this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
 
   toggleScheme() {
@@ -129,39 +126,8 @@ export default class RepoReactionDetails extends Component {
   handleReviewBtn(showReviewModal, btnAction) {
     ReviewActions.handleReviewModal(showReviewModal, btnAction);
   }
-
-  handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
-    LoadingActions.start();
-    ReviewActions.reviewPublish(
-      elementId,
-      'reaction',
-      comment,
-      action,
-      checklist,
-      reviewComments
-    );
-    // this.setState({ showReviewModal: false });
-  }
-
-  handleCommentBtn(show, field, orgInfo) {
-    this.setState({
-      showCommentModal: show,
-      commentField: field,
-      originInfo: orgInfo,
-    });
-  }
-
-  handleSubmitComment(elementId, elementType, field, comment, origInfo) {
-    LoadingActions.start();
-    const cinfo = {};
-    if (typeof cinfo[field] === 'undefined') {
-      cinfo[field] = {};
-    }
-    cinfo[field].comment = comment;
-    cinfo[field].origInfo = origInfo;
-
-    ReviewActions.updateComment(elementId, elementType, cinfo);
-    this.setState({ showCommentModal: false });
+  handleCommentBtn(showCommentModal, commentField, originInfo) {
+    ReviewActions.handleCommentModal(showCommentModal, 'Comment', commentField, originInfo);
   }
 
   updateRepoXvial() {
@@ -742,23 +708,6 @@ export default class RepoReactionDetails extends Component {
                 )}
           </Jumbotron>
         </div>
-        {canComment ? (
-          <div>
-            <RepoCommentModal
-              show={this.state.showCommentModal}
-              elementId={reaction.id}
-              elementType="reaction"
-              field={this.state.commentField}
-              orgInfo={this.state.originInfo}
-              review={this.props.review}
-              review_info={review_info}
-              onUpdate={this.handleSubmitComment}
-              onHide={() => this.setState({ showCommentModal: false })}
-            />
-          </div>
-        ) : (
-          ''
-        )}
       </div>
     );
   }

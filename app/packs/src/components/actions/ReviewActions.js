@@ -6,7 +6,9 @@ class ReviewActions {
   handleReviewModal(show, action) {
     return { show, action };
   }
-
+  handleCommentModal(show, action, field, orgInfo) {
+    return { show, action, field, orgInfo };
+  }
   updateReview(review) {
     return review;
   }
