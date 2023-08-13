@@ -300,6 +300,9 @@ class PublicActions {
   handleReviewModal(show) {
     return show;
   }
+  handleCommentModal(show) {
+    return show;
+  }
 
 
   fetchBasedOnSearchSelectionAndCollection(params) {

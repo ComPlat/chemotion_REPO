@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Panel } from 'react-bootstrap';
 import PropTypes from 'prop-types';
-import { RepoCommentModal } from 'repo-review-ui';
 import {
   ClosePanel,
   MoleculeInfo,
@@ -21,40 +20,25 @@ export default class RepoSampleDetails extends Component {
       originInfo: '',
     };
     this.handleReviewBtn = this.handleReviewBtn.bind(this);
-    this.handleSubmitReview = this.handleSubmitReview.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
-    this.handleSubmitComment = this.handleSubmitComment.bind(this);
+    this.handleSubmitReview = this.handleSubmitReview.bind(this);
+    // this.handleSubmitComment = this.handleSubmitComment.bind(this);
   }
 
   handleReviewBtn(showReviewModal, btnAction) {
     ReviewActions.handleReviewModal(showReviewModal, btnAction);
   }
 
+//  this.handleCommentBtn(this.state.showCommentModal, this.state.commentField, this.state.originInfo)}
+
+  handleCommentBtn(showCommentModal, commentField, originInfo) {
+    ReviewActions.handleCommentModal(showCommentModal, 'Comment', commentField, originInfo);
+  }
   handleSubmitReview(elementId, comment, action, checklist, reviewComments) {
     LoadingActions.start();
     ReviewActions.reviewPublish(elementId, 'sample', comment, action, checklist, reviewComments);
-    // this.setState({ showReviewModal: false });
   }
 
-  handleCommentBtn(show, field, orgInfo) {
-    this.setState({
-      showCommentModal: show,
-      commentField: field,
-      originInfo: orgInfo
-    });
-  }
-
-  handleSubmitComment(elementId, elementType, field, comment, origInfo) {
-    LoadingActions.start();
-    const cinfo = {};
-    if (typeof (cinfo[field]) === 'undefined') {
-      cinfo[field] = {};
-    }
-    cinfo[field].comment = comment;
-    cinfo[field].origInfo = origInfo;
-    ReviewActions.updateComment(elementId, elementType, cinfo);
-    this.setState({ showCommentModal: false });
-  }
 
   render() {
     const {
@@ -172,7 +156,7 @@ export default class RepoSampleDetails extends Component {
           <div>
             {details}
           </div>
-          {
+          {/* {
             canComment ?
               <div>
                 <RepoCommentModal
@@ -187,7 +171,7 @@ export default class RepoSampleDetails extends Component {
                   onHide={() => this.setState({ showCommentModal: false })}
                 />
               </div> : ''
-          }
+          } */}
 
         </Panel.Body>
       </Panel>

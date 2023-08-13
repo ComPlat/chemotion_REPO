@@ -28,6 +28,10 @@ const PublicSample = (_props) => {
     ? sample.literatures.map(lit => literatureContent(lit, true)).join('')
     : '';
 
+  const referencesPhysicalProp = canComment && (sample.melting_point || sample.boiling_point)
+  ? `Melting point:[${getFormattedRange(sample.melting_point)}]; Boiling point:[${getFormattedRange(sample.boiling_point)}]`
+  : '';
+
   const reactionLink = sample.reaction_ids?.length > 0 ? (
     <>
       &nbsp;
@@ -77,6 +81,7 @@ const PublicSample = (_props) => {
       <br />
       <div>
         <b>Physical Properties:</b>
+        <CommentBtn {..._props} field="Physical Properties" orgInfo={referencesPhysicalProp} onShow={handleCommentBtn} />
         <div>Melting point: {getFormattedRange(sample.melting_point)}</div>
         <div>Boiling point: {getFormattedRange(sample.boiling_point)}</div>
       </div>

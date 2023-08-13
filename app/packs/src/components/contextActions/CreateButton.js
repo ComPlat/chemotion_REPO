@@ -45,8 +45,7 @@ export default class CreateButton extends React.Component {
         sampleCount: 0,
         wellplateCount: 0
       }
-    }
-
+    };
     this.createBtn = this.createBtn.bind(this);
     this.onChange = this.onChange.bind(this);
   }
@@ -264,11 +263,11 @@ export default class CreateButton extends React.Component {
     const { layout } = this.state;
     const type = UserStore.getState().currentType;
     const elements = [
-      { name: 'sample', label: 'Sample' },
-      { name: 'reaction', label: 'Reaction' },
-      { name: 'wellplate', label: 'Wellplate' },
-      { name: 'screen', label: 'Screen' },
-      { name: 'research_plan', label: 'Research Plan' }
+      { name: 'sample', label: 'Sample', isDefault: true },
+      { name: 'reaction', label: 'Reaction', isDefault: true },
+      // { name: 'wellplate', label: 'Wellplate', isDefault: true },
+      // { name: 'screen', label: 'Screen', isDefault: true },
+      { name: 'research_plan', label: 'Research Plan', isDefault: true }
     ];
     let genericEls = [];
     const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -294,15 +293,10 @@ export default class CreateButton extends React.Component {
           disabled={isDisabled}
           onClick={() => this.createElementOfType(type)}
         >
-          {this.createWellplateModal()}
-
-          <MenuItem id="create-sample-button" onSelect={() => this.createElementOfType('sample')}>Create Sample</MenuItem>
-          <MenuItem id="create-reaction-button" onSelect={() => this.createElementOfType('reaction')}>Create Reaction</MenuItem>
-          {/* <MenuItem onSelect={() => this.createElementOfType('wellplate')}>Create Wellplate</MenuItem>
-          <MenuItem onSelect={() => this.createElementOfType('screen')}>Create Screen</MenuItem>
-          <MenuItem onSelect={() => this.createElementOfType('research_plan')}>Create Research Plan</MenuItem>
-          <MenuItem divider />
-          <MenuItem onSelect={() => this.createWellplateFromSamples()}>Create Wellplate from Samples</MenuItem>
+          {/* {this.createWellplateModal()} */}
+          {itemTables}
+          {/* <MenuItem divider /> */}
+          {/* <MenuItem onSelect={() => this.createWellplateFromSamples()}>Create Wellplate from Samples</MenuItem>
           <MenuItem onSelect={() => this.createScreenFromWellplates()}>Create Screen from Wellplates</MenuItem> */}
           <MenuItem divider />
           <MenuItem onSelect={() => this.copySample()} disabled={this.isCopySampleDisabled()}>Copy Sample</MenuItem>
@@ -311,12 +305,12 @@ export default class CreateButton extends React.Component {
             disabled={this.noSampleSelected() || this.isAllCollection()}>
             Split Sample
           </MenuItem>
-          <MenuItem
+          {/* <MenuItem
             onSelect={() => this.splitSelectionAsSubwellplates()}
             disabled={this.noWellplateSelected() || this.isAllCollection()}
           >
             Split Wellplate
-          </MenuItem>
+          </MenuItem> */}
         </SplitButton>
       </div>
     )

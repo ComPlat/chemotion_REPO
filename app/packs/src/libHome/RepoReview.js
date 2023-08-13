@@ -3,7 +3,7 @@ import SVG from 'react-inlinesvg';
 import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Select from 'react-select';
 import { filter } from 'lodash';
-import { RepoReviewModal } from 'repo-review-ui';
+import { RepoReviewModal, RepoCommentModal } from 'repo-review-ui';
 import RepoReviewDetails from './RepoReviewDetails';
 import ReviewActions from '../components/actions/ReviewActions';
 import EmbargoActions from '../components/actions/EmbargoActions';
@@ -74,6 +74,7 @@ export default class RepoReview extends Component {
       elements: [],
       currentElement: null,
       showReviewModal: false,
+      showCommentModal: false,
       reviewData: {},
       selectType: 'All',
       searchType: 'All',
@@ -82,6 +83,8 @@ export default class RepoReview extends Component {
       selectState: defaultState,
       bundles: [],
       btnAction: '',
+      field: '',
+      orgInfo: '',
       showEmbargoModal: false,
       selectedElement: null,
       selectedEmbargo: null
@@ -95,6 +98,7 @@ export default class RepoReview extends Component {
     this.onEmbargoBtnSave = this.onEmbargoBtnSave.bind(this);
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
+    this.handleCommentUpdate = this.handleCommentUpdate.bind(this);
   }
 
   componentDidMount() {
@@ -124,6 +128,17 @@ export default class RepoReview extends Component {
     checklist[col].status = e.target.checked;
     review.checklist = checklist;
     ReviewActions.updateReview(review);
+  }
+
+  handleCommentUpdate(elementId, elementType, field, commentInput, origInfo) {
+    LoadingActions.start();
+    const cinfo = {};
+    if (typeof (cinfo[field]) === 'undefined') {
+      cinfo[field] = {};
+    }
+    cinfo[field].comment = commentInput;
+    cinfo[field].origInfo = origInfo;
+    ReviewActions.updateComment(elementId, elementType, cinfo);
   }
 
   onPerPageChange(e) {
@@ -443,24 +458,49 @@ export default class RepoReview extends Component {
 
   renderReviewModal() {
     const { showReviewModal, reviewData, review_info, review, currentElement, elementType, btnAction } = this.state;
-    const rrr = {};
-    rrr['review_info'] = review_info;
-    rrr['review'] = review;
-    rrr['btnAction'] = btnAction;
-    rrr['elementType'] = elementType;
+    const obj = {};
+    obj['review_info'] = review_info;
+    obj['review'] = review;
+    obj['btnAction'] = btnAction;
+    obj['elementType'] = elementType;
     if (elementType === 'sample') {
-      rrr['elementId'] = currentElement?.sample?.id;
+      obj['elementId'] = currentElement?.sample?.id;
     } else {
-      rrr['elementId'] = currentElement?.reaction?.id;
+      obj['elementId'] = currentElement?.reaction?.id;
     }
 
     return (
       <RepoReviewModal
         show={showReviewModal}
-        data={rrr}
+        data={obj}
         onSubmit={this.handleSubmitReview}
         onUpdate={this.handleReviewUpdate}
         onHide={() => this.setState({ showReviewModal: false })}
+      />
+    );
+  }
+
+  renderCommentModal() {
+    const { showCommentModal, review_info, review, currentElement, elementType, btnAction, field, orgInfo } = this.state;
+    const obj = {};
+    obj['review_info'] = review_info;
+    obj['field'] = field;
+    obj['orgInfo'] = orgInfo;
+    obj['review'] = review;
+    obj['btnAction'] = btnAction;
+    obj['elementType'] = elementType;
+    if (elementType === 'sample') {
+      obj['elementId'] = currentElement?.sample?.id;
+    } else {
+      obj['elementId'] = currentElement?.reaction?.id;
+    }
+
+    return (
+      <RepoCommentModal
+        show={showCommentModal}
+        data={obj}
+        onUpdate={this.handleCommentUpdate}
+        onHide={() => this.setState({ showCommentModal: false })}
       />
     );
   }
@@ -508,6 +548,7 @@ export default class RepoReview extends Component {
           </Col>
         </Row>
         {this.renderReviewModal()}
+        {this.renderCommentModal()}
       </div>
     );
   }
