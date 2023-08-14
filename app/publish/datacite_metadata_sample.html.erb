@@ -89,6 +89,9 @@
   </descriptions>
 
   <relatedIdentifiers>
+    <% if previous_version_doi %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsNewVersionOf">https://dx.doi.org/<%= "#{previous_version_doi}" %></relatedIdentifier>
+    <% end %>
     <% dois[:analyses_dois].each do |_, ds| %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>
     <% end %>

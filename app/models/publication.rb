@@ -415,6 +415,8 @@ class Publication < ActiveRecord::Base
   end
 
   def datacite_metadata_xml
+    previous_version_tag = ElementTag.find_by(taggable_type: element_type, taggable_id: element.tag.taggable_data['previous_version'])
+    previous_version_doi = previous_version_tag.taggable_data.fetch('publication', {}).fetch('doi')
     if parent.nil? && %w[Sample Reaction].include?(element_type)
       coly = element.collections.where(
         <<~SQL
@@ -425,7 +427,9 @@ class Publication < ActiveRecord::Base
     end
     parent_element = parent&.element
     literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
-    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi, cust_sample: cust_sample)
+    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag,
+                                  parent_element: parent_element.presence, previous_version_doi: previous_version_doi,
+                                  rights: rights_data, lits: literals, col_doi: cdoi, cust_sample: cust_sample)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
