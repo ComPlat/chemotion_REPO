@@ -225,6 +225,7 @@ export default class RepoSample extends Component {
             &nbsp;
             <NewVersionModal
               isPublisher={isPublisher}
+              isLatestVersion={!sample.new_version}
               id={sample.id}
               type="Sample"
               title={sample.showed_name}

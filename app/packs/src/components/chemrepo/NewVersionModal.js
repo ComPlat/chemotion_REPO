@@ -4,7 +4,7 @@ import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } fr
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const NewVersionModal = (props) => {
-  const { isPublisher, id, type, title } = props;
+  const { isPublisher, isLatestVersion, id, type, title } = props;
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
 
@@ -18,7 +18,7 @@ const NewVersionModal = (props) => {
     }
   };
 
-  if (isPublisher) {
+  if (isPublisher && isLatestVersion) {
     return (
       <>
         <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Create a new version</Tooltip>}>
@@ -61,6 +61,7 @@ const NewVersionModal = (props) => {
 NewVersionModal.propTypes = {
   sampleId: PropTypes.number.isRequired,
   isPublisher: PropTypes.bool,
+  isLatestVersion: PropTypes.bool,
   type: PropTypes.string,
   title: PropTypes.string
 };

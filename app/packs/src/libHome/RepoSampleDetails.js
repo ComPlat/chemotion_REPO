@@ -135,6 +135,7 @@ export default class RepoSampleDetails extends Component {
         segments: s.segments || [],
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
+        new_version: s.new_version
       };
       const isPublisher = s.isPublisher
 

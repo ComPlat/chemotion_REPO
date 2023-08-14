@@ -93,7 +93,9 @@ module RepositoryHelpers
       )
       .select(
         <<~SQL
-        samples.*, (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at
+        samples.*,
+        (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at,
+        (select taggable_data -> 'new_version' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version
         SQL
       )
       .order('published_at desc')
@@ -139,7 +141,7 @@ module RepositoryHelpers
                 melting_point: s.melting_point, boiling_point: s.boiling_point,
                 sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial,
                 embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos,
-                pub_info: pub_info, segments: segments, isPublisher: isPublisher)
+                pub_info: pub_info, segments: segments, isPublisher: isPublisher, new_version: s.new_version)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?
