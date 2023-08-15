@@ -7,7 +7,7 @@ module SubmissionHelpers
   def ols_validation(analyses)
     analyses.each do |container|
       if container.container_type == 'analysis'
-        error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+        error!('analyses check fail', 404) if (container.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
       end
     end
   end

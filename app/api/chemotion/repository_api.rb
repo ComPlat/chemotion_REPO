@@ -176,13 +176,39 @@ module Chemotion
           sample.collections << @embargo_collection unless @embargo_collection.nil?
           sample.save!
 
-          if (has_analysis = (sample.analyses.present? or sample.links.present?))
+          if sample.analyses.or(sample.links).present?
+            # create dois and publications for analyses
+            sample.analyses.each do |container|
+              if container.container_type == 'analysis'
+                # create doi for analysis
+                if (doi = container.doi)
+                  doi.update(doiable: container)
+                else
+                  doi = Doi.create_for_analysis!(container, sample.molecule.inchikey)
+                end
+
+                # create publication for sample
+                Publication.create!(
+                  state: Publication::STATE_PENDING,
+                  element: container,
+                  published_by: current_user.id,
+                  doi: doi,
+                  taggable_data: @publication_tag.merge(
+                    author_ids: @author_ids
+                  )
+                )
+              end
+            end
+
+            # create doi for sample
             if (doi = sample.doi)
               doi.update!(doiable: sample)
             else
               doi = Doi.create_for_element!(sample)
             end
-            pub = Publication.create!(
+
+            # create publication for sample
+            publication = Publication.create!(
               state: Publication::STATE_PENDING,
               element: sample,
               published_by: current_user.id,
@@ -190,13 +216,12 @@ module Chemotion
               # parent_id: parent_publication_id,
               taggable_data: @publication_tag.merge(
                 author_ids: @author_ids,
-                #original_analysis_ids: analyses.pluck(:id),
                 analysis_ids: sample.analyses.pluck(:id)
               )
             )
           end
           sample.analyses.each do |analysis|
-            Publication.find_by(element: analysis).update(parent: pub)
+            Publication.find_by(element: analysis).update(parent: publication)
           end
           sample
         end
