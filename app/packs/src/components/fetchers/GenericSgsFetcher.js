@@ -6,7 +6,7 @@ export default class GenericSgsFetcher extends GenericBaseFetcher {
   static execData(params, path) { return super.execData(params, `segments/${path}`); }
 
   static fetchKlassOpen() {
-    return this.open('/list?klass=Segment', 'GET');
+    return this.open('/list?klass=SegmentKlass', 'GET');
   }
 
   static createSegmentKlass(params) {

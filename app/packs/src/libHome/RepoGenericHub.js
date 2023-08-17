@@ -147,7 +147,7 @@ const RepoGenericHub = () => {
 
   const clickMenu = (e, type) => {
     e.stopPropagation();
-    GenericBaseFetcher.open(`/list?klass=${capitalizeFirstLetter(type)}&with_props=true`, 'GET')
+    GenericBaseFetcher.open(`/list?klass=${capitalizeFirstLetter(type)}Klass&with_props=true`, 'GET')
       .then((result) => {
         setState({ ...state, menuSelected: type, gridData: result.list });
       })
