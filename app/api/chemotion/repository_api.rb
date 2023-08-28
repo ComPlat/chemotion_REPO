@@ -1081,7 +1081,9 @@ module Chemotion
           @scheme_only = false
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
           error!('404 found no reaction to publish', 404) unless @reaction
-          @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
+          unless @reaction.analyses.empty?
+            @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
+          end
           ols_validation(@analysis_set)
           @author_ids = if params[:addMe]
                           [current_user.id] + coauthor_validation(params[:coauthors])

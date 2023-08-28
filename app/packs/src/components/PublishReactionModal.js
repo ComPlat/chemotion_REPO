@@ -691,7 +691,7 @@ export default class PublishReactionModal extends Component {
 
     if (show) {
       const analysesView = [];
-      const analysesReaction = head(filter(reaction.container.children, o => o.container_type === 'analyses')).children;
+      const analysesReaction = reaction.container ? head(filter(reaction.container.children, o => o.container_type === 'analyses')).children : [];
 
       selectedAnalysesCount = (analysesReaction || []).filter(a =>
         (a.extended_metadata && (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')) && a.extended_metadata.kind)).length;
