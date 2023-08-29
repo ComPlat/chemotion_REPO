@@ -13,6 +13,10 @@ export default class GenericElsFetcher extends GenericBaseFetcher {
     return super.execData(params, `generic_elements/${path}`);
   }
 
+  static fetchKlassOpen() {
+    return this.open('/list?klass=ElementKlass', 'GET');
+  }
+
   static fetchByCollectionId(id, queryParams = {}, isSync = false) {
     return BaseFetcher.fetchByCollectionId(
       id,
