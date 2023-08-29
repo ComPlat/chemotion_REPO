@@ -155,7 +155,7 @@ Person.find_each do |u|
                                          show_yield: true)
 
     reaction_svg = composer.compose_reaction_svg
-    
+
     attributes = {
       name: Faker::Book.title,
       short_label: Faker::Book.title,
@@ -168,6 +168,7 @@ Person.find_each do |u|
 
     reaction = Reaction.new(attributes)
     reaction.collections = [collection, ca]
+    reaction.container = Container.create_root_container
     reaction.save!
   end
 end
