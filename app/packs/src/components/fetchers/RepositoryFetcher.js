@@ -213,6 +213,39 @@ export default class RepositoryFetcher {
     });
   }
 
+  static createNewReactionVersion(params, option = null) {
+    const { id } = params;
+    return fetch(`/api/v1/repository/createNewReactionVersion/`, {
+      credentials: 'same-origin',
+      method: option ? 'PUT' : 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        reactionId: id
+      })
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new reaction version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_reaction_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
   static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
     const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';
     const paramSearchValue = (searchValue && searchValue !== '') ? `&search_value=${searchValue}` : '';

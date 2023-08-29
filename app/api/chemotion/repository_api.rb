@@ -329,6 +329,13 @@ module Chemotion
           new_reaction.reload
         end
 
+        def create_new_reaction_version(reaction = @reaction)
+          new_reaction = reaction.dup
+          new_reaction.collections << current_user.all_collection
+          new_reaction.save!
+          new_reaction
+        end
+
         def create_publication_tag(contributor, author_ids, license)
           authors = User.where(type: %w[Person Collaborator], id: author_ids)
                         .includes(:affiliations)
@@ -1060,7 +1067,6 @@ module Chemotion
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end
-
       end
 
       # desc: submit reaction data for publication
@@ -1130,6 +1136,27 @@ module Chemotion
           @reaction.reload
           {
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionVersion do
+        desc 'Create a new version of a published Reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          # look for the reaction in all public reactions created by the current user
+          @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          new_reaction = create_new_reaction_version
+          {
+            reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end

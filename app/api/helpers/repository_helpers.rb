@@ -61,6 +61,7 @@ module RepositoryHelpers
     entities[:embargo] = reaction.embargo
     entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
     entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
+    entities[:isPublisher] = (current_user.present? && current_user.id == pub.published_by)
     entities[:elementType] = 'reaction'
     entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
     entities

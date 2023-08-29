@@ -33,6 +33,7 @@ import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import PublicAnchor from '../components/chemrepo/PublicAnchor';
 import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 import QuillViewer from '../components/QuillViewer';
 import {
   Citation,
@@ -596,6 +597,8 @@ export default class RepoReactionDetails extends Component {
       typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview =
       typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
+    const idyPublisher =
+      typeof reaction.isPublisher === 'undefined' ? false : reaction.isPublisher;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
     let embargo = <span />;
@@ -673,6 +676,7 @@ export default class RepoReactionDetails extends Component {
                   taggData.author_ids && taggData.author_ids.length > 1
                 }
               />
+              &nbsp;
               <PublicCommentModal
                 isReviewer={idyReview}
                 id={reaction.id}
@@ -683,6 +687,14 @@ export default class RepoReactionDetails extends Component {
               &nbsp;
               <UserCommentModal
                 isLogin={idyLogin}
+                id={reaction.id}
+                type="Reaction"
+                title={`Reaction, CRR-${pubData.id}`}
+              />
+              &nbsp;
+              <NewVersionModal
+                isPublisher={idyPublisher}
+                isLatestVersion={!reaction.new_version}
                 id={reaction.id}
                 type="Reaction"
                 title={`Reaction, CRR-${pubData.id}`}

@@ -9,7 +9,20 @@ const NewVersionModal = (props) => {
   const commentInputRef = useRef(null);
 
   const handleSubmit = () => {
-    RepositoryFetcher.createNewSampleVersion({ id }).then(() => setModalShow(false));
+    switch (type) {
+      case 'Reaction':
+        RepositoryFetcher.createNewReactionVersion({ id }).then((reaction) => {
+          setModalShow(false);
+          window.location = `/mydb/collection/all/reaction/${reaction.id}`
+        });
+        break;
+      case 'Sample':
+        RepositoryFetcher.createNewSampleVersion({ id }).then((sample) => {
+          setModalShow(false);
+          window.location = `/mydb/collection/all/sample/${sample.id}`
+        });
+        break;
+    }
   };
 
   const defaultAttrs = {
