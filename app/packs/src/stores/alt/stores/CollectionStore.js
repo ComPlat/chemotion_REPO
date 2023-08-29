@@ -53,7 +53,7 @@ class CollectionStore {
   }
 
   handleFetchSharedCollectionRoots(results) {
-    this.state.sharedRoots = results.collections;
+    this.state.sharedRoots = results?.collections;
   }
 
   handleFetchRemoteCollectionRoots(results) {

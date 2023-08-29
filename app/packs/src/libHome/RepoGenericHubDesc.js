@@ -7,12 +7,14 @@ const gridData = [
   {
     desc: '1H nuclear magnetic resonance spectroscopy (1H NMR)',
     label: '1H nuclear magnetic resonance spectroscopy (1H NMR)',
+    version: '2.6',
     released_at: '2021-08-06T21:25:08.057Z',
     properties_release: { }
   },
   {
     desc: 'cyclic voltammetry (CV)',
     label: 'cyclic voltammetry (CV)',
+    version: '1.0',
     released_at: '2021-08-08T20:26:08.088Z',
     properties_release: { }
   }
@@ -35,6 +37,7 @@ const RepoGenericHubDesc = () => {
     {
       headerName: 'Chemical Methods Ontology', field: 'label', minWidth: 350,
     },
+    { headerName: 'Version', field: 'version' },
     { headerName: 'Released at', field: 'released_at' },
     {
       headerName: 'Template',

@@ -465,7 +465,6 @@ const instrumentText = (analysis) => {
   return ` Instrument: ${ttlIns.length}/${analysis.children.length}`;
 };
 
-
 const getElementSegments = (elementName, tabs) => {
   let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -475,7 +474,6 @@ const getElementSegments = (elementName, tabs) => {
   }
   return _.uniq(tabs.concat(labels));
 }
-
 
 // the requirements for file types as given
 const isFileTypePass = (analysisType, attachments) => {
@@ -558,4 +556,5 @@ export {
   getElementSegments,
   isNmrPass,
   isDatasetPass,
+  getElementSegments,
 };

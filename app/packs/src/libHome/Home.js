@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import { Grid, Row } from 'react-bootstrap';
 import Aviator from 'aviator';
 
-import { DragDropContext } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import WelcomeMessage from '../components/WelcomeMessage';
 
 import initPublicRoutes from './homeRoutes';
@@ -159,11 +159,15 @@ class Home extends Component {
   }
 }
 
-const HomeWithDnD = DragDropContext(HTML5Backend)(Home);
 document.addEventListener('DOMContentLoaded', () => {
   const domElement = document.getElementById('Home');
   if (domElement) {
-    ReactDOM.render(<HomeWithDnD />, domElement);
+    ReactDOM.render(
+      <DndProvider backend={HTML5Backend}>
+        <Home />
+      </DndProvider>,
+      domElement
+    );
     initPublicRoutes();
     Aviator.dispatch();
   }

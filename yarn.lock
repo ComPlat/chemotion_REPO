@@ -3430,6 +3430,87 @@
     classcat "^5.0.3"
     zustand "^4.3.1"
 
+"@react-dnd/asap@^4.0.0":
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@react-dnd/asap/-/asap-4.0.1.tgz#5291850a6b58ce6f2da25352a64f1b0674871aab"
+  integrity sha512-kLy0PJDDwvwwTXxqTFNAAllPHD73AycE9ypWeln/IguoGBEbvFcPDbCV03G52bEcC5E+YgupBE0VzHGdC8SIXg==
+
+"@react-dnd/invariant@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@react-dnd/invariant/-/invariant-2.0.0.tgz#09d2e81cd39e0e767d7da62df9325860f24e517e"
+  integrity sha512-xL4RCQBCBDJ+GRwKTFhGUW8GXa4yoDfJrPbLblc3U09ciS+9ZJXJ3Qrcs/x2IODOdIE5kQxvMmE2UKyqUictUw==
+
+"@react-dnd/shallowequal@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@react-dnd/shallowequal/-/shallowequal-2.0.0.tgz#a3031eb54129f2c66b2753f8404266ec7bf67f0a"
+  integrity sha512-Pc/AFTdwZwEKJxFJvlxrSmGe/di+aAOBn60sremrpLo6VI/6cmiUYNNwlI5KNYttg7uypzA3ILPMPgxB2GYZEg==
+
+"@reactflow/background@11.2.8":
+  version "11.2.8"
+  resolved "https://registry.yarnpkg.com/@reactflow/background/-/background-11.2.8.tgz#aa83f87b7d65442b52732f0a04d9da981f978265"
+  integrity sha512-5o41N2LygiNC2/Pk8Ak2rIJjXbKHfQ23/Y9LFsnAlufqwdzFqKA8txExpsMoPVHHlbAdA/xpQaMuoChGPqmyDw==
+  dependencies:
+    "@reactflow/core" "11.8.3"
+    classcat "^5.0.3"
+    zustand "^4.4.1"
+
+"@reactflow/controls@11.1.19":
+  version "11.1.19"
+  resolved "https://registry.yarnpkg.com/@reactflow/controls/-/controls-11.1.19.tgz#a8bc4b4eafc10d5d230db5286753e867bcf35e5b"
+  integrity sha512-Vo0LFfAYjiSRMLEII/aeBo+1MT2a0Yc7iLVnkuRTLzChC0EX+A2Fa+JlzeOEYKxXlN4qcDxckRNGR7092v1HOQ==
+  dependencies:
+    "@reactflow/core" "11.8.3"
+    classcat "^5.0.3"
+    zustand "^4.4.1"
+
+"@reactflow/core@11.8.3":
+  version "11.8.3"
+  resolved "https://registry.yarnpkg.com/@reactflow/core/-/core-11.8.3.tgz#03ffeb06fbc141b8f786cb4ac8169f8a51a5f00e"
+  integrity sha512-y6DN8Wy4V4KQBGHFqlj9zWRjLJU6CgdnVwWaEA/PdDg/YUkFBMpZnXqTs60czinoA2rAcvsz50syLTPsj5e+Wg==
+  dependencies:
+    "@types/d3" "^7.4.0"
+    "@types/d3-drag" "^3.0.1"
+    "@types/d3-selection" "^3.0.3"
+    "@types/d3-zoom" "^3.0.1"
+    classcat "^5.0.3"
+    d3-drag "^3.0.0"
+    d3-selection "^3.0.0"
+    d3-zoom "^3.0.0"
+    zustand "^4.4.1"
+
+"@reactflow/minimap@11.6.3":
+  version "11.6.3"
+  resolved "https://registry.yarnpkg.com/@reactflow/minimap/-/minimap-11.6.3.tgz#1cfddd87e9afd23ad704167988c66bd683ffc5d2"
+  integrity sha512-PSA28dk09RnBHOA1zb45fjQXz3UozSJZmsIpgq49O3trfVFlSgRapxNdGsughWLs7/emg2M5jmi6Vc+ejcfjvQ==
+  dependencies:
+    "@reactflow/core" "11.8.3"
+    "@types/d3-selection" "^3.0.3"
+    "@types/d3-zoom" "^3.0.1"
+    classcat "^5.0.3"
+    d3-selection "^3.0.0"
+    d3-zoom "^3.0.0"
+    zustand "^4.4.1"
+
+"@reactflow/node-resizer@2.1.5":
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/@reactflow/node-resizer/-/node-resizer-2.1.5.tgz#f4033946ccc9cc8f47a94ed93f10a32befd546f1"
+  integrity sha512-z/hJlsptd2vTx13wKouqvN/Kln08qbkA+YTJLohc2aJ6rx3oGn9yX4E4IqNxhA7zNqYEdrnc1JTEA//ifh9z3w==
+  dependencies:
+    "@reactflow/core" "11.8.3"
+    classcat "^5.0.4"
+    d3-drag "^3.0.0"
+    d3-selection "^3.0.0"
+    zustand "^4.4.1"
+
+"@reactflow/node-toolbar@1.2.7":
+  version "1.2.7"
+  resolved "https://registry.yarnpkg.com/@reactflow/node-toolbar/-/node-toolbar-1.2.7.tgz#cf6639945dc42b42416f293d6132e1187bca3424"
+  integrity sha512-vs+Wg1tjy3SuD7eoeTqEtscBfE9RY+APqC28urVvftkrtsN7KlnoQjqDG6aE45jWP4z+8bvFizRWjAhxysNLkg==
+  dependencies:
+    "@reactflow/core" "11.8.3"
+    classcat "^5.0.3"
+    zustand "^4.4.1"
+
 "@redux-saga/core@^1.1.3":
   version "1.1.3"
   resolved "https://registry.npmjs.org/@redux-saga/core/-/core-1.1.3.tgz"
@@ -3759,6 +3840,13 @@
   dependencies:
     "@types/d3-selection" "*"
 
+"@types/d3-drag@^3.0.1":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@types/d3-drag/-/d3-drag-3.0.3.tgz#829a58420d8818be65a005795068964ff80a387b"
+  integrity sha512-82AuQMpBQjuXeIX4tjCYfWjpm3g7aGCfx6dFlxX2JlRaiME/QWcHzBsINl7gbHCODA2anPYlL31/Trj/UnjK9A==
+  dependencies:
+    "@types/d3-selection" "*"
+
 "@types/d3-dsv@*":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@types/d3-dsv/-/d3-dsv-3.0.0.tgz#f3c61fb117bd493ec0e814856feb804a14cfc311"
@@ -3841,6 +3929,11 @@
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/d3-selection/-/d3-selection-3.0.3.tgz#57be7da68e7d9c9b29efefd8ea5a9ef1171e42ba"
   integrity sha512-Mw5cf6nlW1MlefpD9zrshZ+DAWL4IQ5LnWfRheW6xwsdaWOb6IRRu2H7XPAQcyXEx1D7XQWgdoKR83ui1/HlEA==
+
+"@types/d3-selection@^3.0.3":
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/@types/d3-selection/-/d3-selection-3.0.6.tgz#c35b5320188e921d10f77f50198705a14b8aecf6"
+  integrity sha512-2ACr96USZVjXR9KMD9IWi1Epo4rSDKnUtYn6q2SPhYxykvXTw9vR77lkFNruXVg4i1tzQtBxeDMx0oNvJWbF1w==
 
 "@types/d3-shape@*":
   version "3.1.0"
@@ -8932,6 +9025,14 @@ gauge@^4.0.3:
     string-width "^4.2.3"
     strip-ansi "^6.0.1"
     wide-align "^1.1.5"
+
+generic-ui-core@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/generic-ui-core/-/generic-ui-core-1.0.0.tgz#cdd40d15f398731ba9dc6b92840051985eee0a56"
+  integrity sha512-i2BwJHB4i3IcgJnLtKLEKuzOXdWG4Bht93gv+Olz5NsIXn2u19zKPPrqbRj3xGsq1s0Ek++VjPXvTJdsGBRteQ==
+  dependencies:
+    chem-units "^0.0.5"
+    lodash "^4.17.21"
 
 generic-ui-core@^1.0.0:
   version "1.0.0"

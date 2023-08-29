@@ -540,6 +540,15 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.time "deleted_at"
   end
 
+  create_table "hub_logs", id: :serial, force: :cascade do |t|
+    t.string "klass_type"
+    t.string "klass_id"
+    t.string "origin"
+    t.string "uuid"
+    t.string "version"
+    t.datetime "created_at"
+  end
+
   create_table "ketcherails_amino_acids", id: :serial, force: :cascade do |t|
     t.integer "moderated_by"
     t.integer "suggested_by"
@@ -1561,28 +1570,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
              and upper(extended_metadata -> 'instrument') like upper($2 || '%')
              order by extended_metadata -> 'instrument' limit 10
            $function$
-  SQL
-  create_function :set_element_klasses_identifier, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.set_element_klasses_identifier()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	update element_klasses set identifier = gen_random_uuid() where identifier is null;
-        return new;
-      end
-      $function$
-  SQL
-  create_function :set_dataset_klasses_identifier, sql_definition: <<-SQL
-      CREATE OR REPLACE FUNCTION public.set_dataset_klasses_identifier()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	update dataset_klasses set identifier = gen_random_uuid() where identifier is null;
-        return new;
-      end
-      $function$
   SQL
 
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
