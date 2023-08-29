@@ -257,12 +257,11 @@ export default class RepoPubl extends Component {
     }
     return PublicFetcher.fetchAdvancedValues(this.state.advType, input)
       .then(res => ({
-        options: res.result
-          .map(u => ({
-            value: u.key,
-            name: u.name,
-            label: u.label
-          }))
+        options: res.result?.map(u => ({
+          value: u.key,
+          name: u.name,
+          label: u.label
+        }))
       })).catch((errorMessage) => {
         console.log(errorMessage);
       });

@@ -73,19 +73,21 @@ const RepoGenericHub = () => {
       field: 'name',
       minWidth: 170,
     },
-    { headerName: 'Prefix', field: 'klass_prefix' },
+    { headerName: 'Prefix', width: 80, minWidth: 80, field: 'klass_prefix' },
     { headerName: 'Element label', field: 'label' },
     {
       headerName: 'Icon',
       field: 'icon_name',
-      minWidth: 50,
-      width: 50,
+      minWidth: 80,
+      width: 80,
       sortable: false,
       filter: false,
       cellRenderer: IconRenderer,
     },
     { headerName: 'Description', field: 'desc' },
+    { headerName: 'Version', width: 80, minWidth: 80, field: 'version' },
     { headerName: 'Released at', field: 'released_at' },
+    { headerName: 'Id', field: 'uuid' },
     {
       headerName: 'Template',
       cellRenderer: TemplateRenderer,
@@ -101,10 +103,12 @@ const RepoGenericHub = () => {
     {
       headerName: 'Belongs to',
       field: 'element_klass.name',
-      minWidth: 50,
+      minWidth: 80,
       cellRenderer: BelongsToRenderer,
     },
+    { headerName: 'Version', width: 80, minWidth: 80, field: 'version' },
     { headerName: 'Released at', field: 'released_at' },
+    { headerName: 'Id', field: 'uuid' },
     {
       headerName: 'Template',
       cellRenderer: TemplateRenderer,
@@ -124,7 +128,9 @@ const RepoGenericHub = () => {
     {
       headerName: 'Chemical Methods Ontology', field: 'label', minWidth: 350,
     },
+    { headerName: 'Version', width: 80, minWidth: 80, field: 'version' },
     { headerName: 'Released at', field: 'released_at' },
+    { headerName: 'Id', field: 'uuid' },
     {
       headerName: 'Template',
       cellRenderer: TemplateRenderer,

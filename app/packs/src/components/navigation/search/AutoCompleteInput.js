@@ -129,7 +129,7 @@ export default class AutoCompleteInput extends React.Component {
     let debounced = debounce(this.props.suggestions, 200)
     debounced(value).then(result => {
       let newState = {}
-      if(result.length > 0) {
+      if(result?.length > 0) {
         newState.suggestions = result
         newState.showSuggestions = show
       } else {
