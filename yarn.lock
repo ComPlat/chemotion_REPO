@@ -4678,13 +4678,6 @@ ag-grid-react@^29.0.0:
   dependencies:
     prop-types "^15.8.1"
 
-ag-grid-react@^27.3.0:
-  version "27.3.0"
-  resolved "https://registry.yarnpkg.com/ag-grid-react/-/ag-grid-react-27.3.0.tgz#fe06647653f8b0b349b8e613aab8ea2e07915562"
-  integrity sha512-2bs9YfJ/shvBZQLLjny4NFvht+ic6VtpTPO0r3bHHOhlL3Fjx2rGvS6AHSwfvu+kJacHCta30PjaEbX8T3UDyw==
-  dependencies:
-    prop-types "^15.8.1"
-
 ag-grid-react@^28.2.1:
   version "28.2.1"
   resolved "https://registry.yarnpkg.com/ag-grid-react/-/ag-grid-react-28.2.1.tgz#c38585b8f165a5cf9343eab6994c06855f5b2caf"
@@ -6137,6 +6130,11 @@ chem-generic-ui@^1.0.10:
     react-select "5.4.0"
     reactflow "^11.7.2"
     uuid "^9.0.0"
+
+chem-units@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/chem-units/-/chem-units-0.0.4.tgz#4c24d87607b16e8d1236b6f65dd8a6b7797a6345"
+  integrity sha512-lk85nyb0KGm+q2H5FQ3aRN2oubwiAj+s9dWpu2GngMvWX3I6wiszS1CJQNOJRZ150KWfhUatgECetxGTWiIFBw==
 
 chem-units@^0.0.5:
   version "0.0.5"
