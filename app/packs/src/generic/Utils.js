@@ -8,7 +8,7 @@ import NotificationActions from '../components/actions/NotificationActions';
 import UserStore from '../components/stores/UserStore';
 import UIActions from '../components/actions/UIActions';
 import MatrixCheck from '../components/common/MatrixCheck';
-import elklasses from 'klasses.json';
+import elklasses from '../../klasses.json';
 
 export const ALL_TYPES = [
   Constants.GENERIC_TYPES.ELEMENT,

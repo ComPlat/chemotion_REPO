@@ -79,7 +79,6 @@ export default class ManagingModalSharing extends React.Component {
       });
     }
 
-
     return isSampleSelectionEmpty && isReactionSelectionEmpty &&
       isWellplateSelectionEmpty && isScreenSelectionEmpty &&
       isElementSelectionEmpty;
