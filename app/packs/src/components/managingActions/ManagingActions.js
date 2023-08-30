@@ -54,7 +54,6 @@ const upState = (state) => {
       uncheckedIds: state[`${klass}`] ? state[`${klass}`].uncheckedIds : List(),
     };
   });
-  //  }
 
   return (stateObj);
 };

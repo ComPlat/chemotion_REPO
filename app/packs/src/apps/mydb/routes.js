@@ -112,7 +112,6 @@ elementNames(false).forEach((klass) => {
   routes[`/${klass}`] = item;
 });
 
-
 export default function() {
   Aviator.root = '/mydb';
   Aviator.pushStateEnabled = true;
