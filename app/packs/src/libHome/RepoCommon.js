@@ -62,6 +62,7 @@ import { getFormattedISODate, getFormattedISODateTime } from '../components/chem
 import getFormattedRange from '../components/chemrepo/range-utils';
 import LdData from '../components/chemrepo/LdData';
 import PublicStore from '../components/stores/PublicStore';
+import PublicLabels from '../components/chemrepo/PublicLabels';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -995,14 +996,15 @@ const RenderAnalysisHeader = (props) => {
             <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
             <br /><br />
           </span>
-          <span style={hideInfo(molecule)}>
+          {PublicLabels(element.labels)}
+          <div style={hideInfo(molecule)}>
             {nameOrFormula}
             {iupacUserDefined}
             <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
             <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
             <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
             <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
-          </span>
+          </div>
           <h6><b>Sample DOI: </b>
             {
               isPublic ?

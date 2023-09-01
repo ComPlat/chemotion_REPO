@@ -41,6 +41,8 @@ module RepositoryHelpers
     schemeList = get_reaction_table(reaction.id)
     entities = Entities::ReactionEntity.represent(reaction, serializable: true)
     entities[:products].each do |p|
+      label_ids = p[:tag]['taggable_data']['user_labels'] || [] unless p[:tag]['taggable_data'].nil?
+      p[:labels] = UserLabel.public_labels(label_ids) unless label_ids.nil?
       pub_product = p
       p[:xvialCom] = build_xvial_com(p[:molecule][:inchikey], current_user&.id)
       pub_product_tag = pub_product[:tag]['taggable_data']
@@ -117,6 +119,8 @@ module RepositoryHelpers
       reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
       pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
       sid = pub.taggable_data["sid"] unless pub.nil? || pub.taggable_data.nil?
+      label_ids = s.tag.taggable_data['user_labels'] || [] unless s.tag.taggable_data.nil?
+      user_labels = UserLabel.public_labels(label_ids) unless label_ids.nil?
       xvial = s.tag.taggable_data['xvial'] && s.tag.taggable_data['xvial']['num'] unless s.tag.taggable_data.nil?
       if xvial.present?
         unless current_user.present? && User.reviewer_ids.include?(current_user.id)
@@ -135,7 +139,8 @@ module RepositoryHelpers
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
       segments = Labimotion::SegmentEntity.represent(s.segments)
       tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
-        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
+        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, labels: user_labels,
+        showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?

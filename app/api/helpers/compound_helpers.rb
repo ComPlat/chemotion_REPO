@@ -50,7 +50,7 @@ module CompoundHelpers
       inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = #{sid}
     SQL
 
-    data = CompoundOpenData.where("compound_open_data.x_data ->> 'xid' = e.taggable_data -> 'xvial' ->> 'num'").joins(xvial_com_sql).order(x_created_at: :desc).pluck :x_data
+    data = CompoundOpenData.where("x_data ->> 'xid' = e.taggable_data -> 'xvial' ->> 'num'").joins(xvial_com_sql).order(x_created_at: :desc).pluck :x_data
 
     x_data = data.map do |obj|
       { affiliation: obj['affiliation'], provided_by: obj['provided_by'], group: obj['group'] }

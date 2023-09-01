@@ -29,6 +29,7 @@ class UserLabelModal extends Component {
     this.handleEditLabelClick = this.handleEditLabelClick.bind(this);
   }
 
+
   componentDidMount() {
     UserStore.listen(this.onChange);
   }
@@ -42,7 +43,7 @@ class UserLabelModal extends Component {
     const list = (labels || []).filter(r => (r.access_level === 2 || r.user_id === (currentUser && currentUser.id))) || [];
 
     this.setState({
-      labels: list
+      labels: list,
     });
   }
 
@@ -67,7 +68,7 @@ class UserLabelModal extends Component {
 
   handleAcessChange(val, e) {
     const { label } = this.state;
-    label.access_level = (val === true || val === 1) ? 1 : 0;
+    label.access_level = e?.value || 0;
     this.setState({
       label
     });
@@ -95,7 +96,7 @@ class UserLabelModal extends Component {
       UsersFetcher.updateUserLabel({
         id: label.id,
         title: label.title,
-        access_level: (label.access_level === true || label.access_level === 1) ? 1 : 0,
+        access_level: label.access_level || 0,
         description: label.description,
         color: label.color
       }).then(() => {
@@ -145,6 +146,9 @@ class UserLabelModal extends Component {
         default:
           accessLabel = '';
       }
+      const currentUser = UserStore.getState()?.currentUser;
+      const isReviewer = (currentUser?.is_reviewer) || false;
+
       return (
         <tr key={`row_${g.id}`}>
           <td md={3}><Badge style={badgeStyle}>{g.title}</Badge></td>
@@ -152,7 +156,7 @@ class UserLabelModal extends Component {
           <td md={3}>{g.description}</td>
           <td md={3}>{g.color}</td>
           <td md={3}>
-            <Button bsSize="xsmall" disabled={g.access_level === 2} bsStyle={g.access_level === 2 ? 'default' : 'success'} onClick={e => this.handleEditLabelClick(e, g)}>
+            <Button bsSize="xsmall" disabled={g.access_level === 2 && !isReviewer} bsStyle={g.access_level === 2 && !isReviewer ? 'default' : 'success'} onClick={e => this.handleEditLabelClick(e, g)}>
               {g.access_level === 2 ? 'Global' : 'Edit'}
             </Button>
           </td>
@@ -202,6 +206,17 @@ class UserLabelModal extends Component {
     const bcStyle = {
       backgroundColor: label.color || this.state.defaultColor
     };
+    const accessList = [
+      { label: 'Private - Exclusive access for you', value: 0 },
+      { label: 'Public - Shareable before publication, Visible to all after', value: 1 }
+    ];
+
+    const currentUser = UserStore.getState()?.currentUser;
+    const isReviewer = (currentUser?.is_reviewer) || false;
+
+    if (isReviewer) {
+      accessList.unshift({ label: 'Global - Open to everyone', value: 2 });
+    }
 
     return (
       <Form horizontal>
@@ -210,10 +225,12 @@ class UserLabelModal extends Component {
             Public?
           </Col>
           <Col sm={10}>
-            <Checkbox
-              inputRef={(m) => { this.accessLevelInput = m; }}
-              checked={label.access_level === 1}
+            <Select
+              name="stereoAbs"
+              clearable={false}
+              options={accessList}
               onChange={e => this.handleAcessChange(!label.access_level, e)}
+              value={label.access_level}
             />
           </Col>
         </FormGroup>

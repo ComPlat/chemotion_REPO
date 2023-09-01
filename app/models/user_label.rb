@@ -15,5 +15,12 @@
 #
 
 class UserLabel < ApplicationRecord
-    acts_as_paranoid
+  acts_as_paranoid
+
+  def self.public_labels(label_ids)
+    return [] if label_ids.blank?
+    labels = UserLabel.where(id: label_ids, access_level: [1,2])
+    .order('access_level desc, position, title')
+    labels&.map{|l| {title: l.title, description: l.description, color: l.color} } ||[]
+  end
 end
