@@ -44,6 +44,13 @@ module Chemotion
 
         old_att&.destroy
       end
+
+      def remove_duplicated(att)
+        old_att = Attachment.find_by(filename: att.filename, attachable_id: att.attachable_id)
+        return unless old_att.id != att.id
+
+        old_att&.destroy
+      end
     end
 
     rescue_from ActiveRecord::RecordNotFound do |_error|
@@ -497,21 +504,25 @@ module Chemotion
           att = Attachment.find(g_id)
           next unless att
           can_edit = writable?(att)
-          if can_edit
-            abs_path = att.abs_path
-            molfile = pm[:molfile]
-            result =  Tempfile.create('molfile') do |t_molfile|
-              t_molfile.write(molfile)
-              t_molfile.rewind
-              Chemotion::Jcamp::RegenerateJcamp.spectrum(
-                abs_path, t_molfile.path
-              )
-            end
 
-            att.file_data = result
-            att.rewrite_file_data!
-            { status: true }
+          next unless writable?(att)
+
+          remove_duplicated(att)
+
+          abs_path = att.abs_path
+          molfile = pm[:molfile]
+          result =  Tempfile.create('molfile') do |t_molfile|
+            t_molfile.write(molfile)
+            t_molfile.rewind
+            Chemotion::Jcamp::RegenerateJcamp.spectrum(
+              abs_path, t_molfile.path
+            )
           end
+
+          att.file_data = result
+          att.rewrite_file_data!
+          { status: true }
+
         end
       end
 
