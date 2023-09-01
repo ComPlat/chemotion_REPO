@@ -53,7 +53,6 @@ export default class RepoSampleDetails extends Component {
 
     let { buttons } = this.props;
 
-
     const history = review?.history || [];
     if (typeof (element) === 'undefined' || !element) {
       return <div />;
@@ -63,7 +62,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer, xvialCom
+      molecule, isLogin, isReviewer, xvialCom, labels
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -120,6 +119,7 @@ export default class RepoSampleDetails extends Component {
         segments: s.segments || [],
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
+        labels: (isPublished ? s.labels : labels) || [],
       };
 
       return (

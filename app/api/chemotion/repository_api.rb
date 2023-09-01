@@ -608,10 +608,12 @@ module Chemotion
           embargo = find_embargo_collection(publication)
           review_sample[:embargo] = embargo&.label
           review_sample[:embargoId] = embargo&.id
-
+          label_ids = sample.tag.taggable_data['user_labels'] || [] unless sample.tag.taggable_data.nil?
+          user_labels = UserLabel.public_labels(label_ids) unless label_ids.nil?
           {
             molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
             sample: review_sample,
+            labels: user_labels,
             publication: publication,
             literatures: literatures,
             analyses: containers,

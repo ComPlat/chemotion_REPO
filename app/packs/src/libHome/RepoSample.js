@@ -27,6 +27,7 @@ import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import RepoSegment from './RepoSegment';
 import Sample from '../components/models/Sample';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
+import PublicLabels from '../components/chemrepo/PublicLabels';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -202,6 +203,7 @@ export default class RepoSample extends Component {
           <SidToPubChem sid={sample.sid} />
           &nbsp;
           <span className="repo-public-user-comment">
+            {PublicLabels(sample.labels)}
             <PublicCommentModal
               isReviewer={isReviewer}
               id={sample.id}
