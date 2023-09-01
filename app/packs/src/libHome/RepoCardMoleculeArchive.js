@@ -11,7 +11,7 @@ const RepoCardMoleculeArchive = (params) => {
   }
   const tooltipView = <Tooltip id="id_icon_tip">Click to view chemical compounds</Tooltip>;
   return (
-    <Row className="repo-statistic">
+    <Row className="repo-statistic" style={{ height: 'unset', paddingBottom: '0px' }}>
       <Col lg={12} md={12} sm={12}>
         <h3>archive for materials</h3>
       </Col>

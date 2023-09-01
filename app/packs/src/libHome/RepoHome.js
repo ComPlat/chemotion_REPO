@@ -153,6 +153,13 @@ class RepoHome extends Component {
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
             <Col md={3} sm={12}>
               <RepoCardMoleculeArchive publishedStatics={this.state.publishedStatics} />
+              <a className="repo-nfdi-award" href="https://www.nfdi4chem.de/fair4chem-award/" target="_blank" rel="noreferrer">
+                <img
+                  src="/images/repo/fair4chem_chemotion_2024_EN.jpg"
+                  alt="FAIR4Chem Award"
+                  title="FAIR4Chem Award"
+                />
+              </a>
             </Col>
             <Col md={6} sm={12}>
               <RepoCardIntro lastPublished={this.state.lastPublished} />
