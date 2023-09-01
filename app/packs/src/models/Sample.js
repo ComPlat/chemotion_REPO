@@ -44,22 +44,6 @@ export default class Sample extends Element {
   }
 
 
-  static clearProperties(props) {
-    Object.keys(props.layers).forEach((key) => {
-      const newLayer = props.layers[key] || {};
-      newLayer.ai = [];
-      (newLayer.fields || []).forEach((f, idx) => {
-        if (f && (f.type === 'drag_sample' || f.type === 'drag_element' || f.type === 'upload')) {
-          newLayer.fields[idx].value = null;
-        }
-        if (f && (f.type === 'table')) {
-          newLayer.fields[idx].sub_values = [];
-        }
-      });
-    });
-    return props;
-  }
-
   static copyFromSampleAndCollectionId(sample, collection_id, structure_only = false, keepResidueInfo = false, keepExternalLabel = true) {
     const newSample = sample.buildCopy();
     newSample.collection_id = collection_id;
