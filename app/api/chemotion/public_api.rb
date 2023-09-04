@@ -682,7 +682,7 @@ module Chemotion
 
             scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
             elements.push(
-              id: e.element_id, pub_id: e.id, svg: svg_file, type: element_type, title: title, published_at: e.published_at&.strftime('%d-%m-%Y'),
+              id: e.element_id, pub_id: e.id, svg: svg_file, type: element_type, title: title, published_at: e.published_at&.strftime('%Y-%m-%d'),
               published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
