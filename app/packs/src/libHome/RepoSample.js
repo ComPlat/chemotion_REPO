@@ -215,6 +215,7 @@ export default class RepoSample extends Component {
             />
             &nbsp;
             <UserCommentModal
+              isPublished={isPublished}
               isLogin={isLogin}
               id={sample.id}
               type="Sample"

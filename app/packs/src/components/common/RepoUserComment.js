@@ -22,14 +22,14 @@ export default class RepoUserComment extends React.Component {
 
   render() {
     const { modalShow } = this.state;
-    const { id, isLogin, title } = this.props;
+    const { id, isLogin, isPublished, title } = this.props;
     const defaultAttrs = {
       style: {
         height: '400px', overflow: 'auto', whiteSpace: 'pre'
       }
     };
 
-    if (isLogin) {
+    if (isPublished && isLogin) {
       return (
         <span>
           <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Leave a comment about this data to the reviewers </Tooltip>}>
@@ -79,6 +79,7 @@ export default class RepoUserComment extends React.Component {
 RepoUserComment.propTypes = {
   id: PropTypes.number.isRequired,
   isLogin: PropTypes.bool,
+  isPublished: PropTypes.bool.isRequired,
   type: PropTypes.string,
   title: PropTypes.string,
   pageType: PropTypes.string,

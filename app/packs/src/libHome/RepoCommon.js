@@ -994,7 +994,7 @@ const RenderAnalysisHeader = (props) => {
             <span className="repo-pub-title"><b>Product</b></span>&nbsp;
             <RepoXvialButton isEditable={isReviewer} isLogin={isLogin} allowRequest elementId={element.id} data={xvial} saveCallback={updateRepoXvial} xvialCom={xvialCom} />
             <RepoPublicComment isReviewer={isReviewer} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} userInfo={userInfo} pageType="reactions" pageId={reactionId} />&nbsp;
-            <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
+            <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} isPublished={isPublic} />
             <br /><br />
           </span>
           {PublicLabels(element.labels)}
@@ -1707,7 +1707,7 @@ class RenderPublishAnalysesPanel extends Component {
             <div className="sub-title">
               <b>{kind}</b>&nbsp;<MolViewerListBtn el={element} container={analysis} isPublic={isPublic} disabled={false} />
               <RepoPublicComment isReviewer={isReviewer} id={analysis.id} type={type} pageId={pageId} pageType={pageType} userInfo={userInfo} title={kind} />&nbsp;
-              <RepoUserComment isLogin={isLogin} id={analysis.id} type={type} pageId={pageId} pageType={pageType} />
+              <RepoUserComment isLogin={isLogin} id={analysis.id} type={type} pageId={pageId} pageType={pageType} isPublished={isPublic} />
             </div>
             {doiLink}
             {crdLink}
