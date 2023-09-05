@@ -15,8 +15,6 @@ import {
   Doi,
   ReactionTable,
   ReactionRinChiKey,
-  ReactionProperties,
-  ReactionTlc,
   RenderAnalysisHeader,
   RenderPublishAnalysesPanel,
   IconToMyDB,
@@ -24,13 +22,14 @@ import {
   SchemeWord,
   resizableSvg,
 } from './RepoCommon';
-import LoadingActions from '../components/actions/LoadingActions';
 import PublicActions from '../components/actions/PublicActions';
 import ReviewActions from '../components/actions/ReviewActions';
 import DateInfo from '../components/chemrepo/DateInfo';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import PublicAnchor from '../components/chemrepo/PublicAnchor';
 import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
+import PublicReactionTlc from '../components/chemrepo/PublicReactionTlc';
+import PublicReactionProperties from '../components/chemrepo/PublicReactionProperties';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import QuillViewer from '../components/QuillViewer';
 import {
@@ -137,7 +136,7 @@ export default class RepoReactionDetails extends Component {
 
   reactionInfo(reaction) {
     const { showScheme, showRinchi, showProp, showTlc } = this.state;
-    const { canComment, review_info, review } = this.props;
+    const { canComment, review_info, review, isPublished } = this.props;
 
     const svgPath = `/images/reactions/${reaction.reaction_svg_file}`;
     const content = reaction.description;
@@ -289,11 +288,11 @@ export default class RepoReactionDetails extends Component {
                 orgInfo={properties}
                 onShow={this.handleCommentBtn}
               />
-              <ReactionProperties
+              <PublicReactionProperties
                 reaction={reaction}
                 toggle={this.toggleProp}
                 show={showProp}
-                bodyAttrs={bodyAttrs}
+                isPublished={isPublished}
               />
             </Col>
           </Row>
@@ -305,11 +304,11 @@ export default class RepoReactionDetails extends Component {
                 orgInfo={tlc}
                 onShow={this.handleCommentBtn}
               />
-              <ReactionTlc
+              <PublicReactionTlc
                 reaction={reaction}
                 toggle={this.toggleTlc}
                 show={showTlc}
-                bodyAttrs={bodyAttrs}
+                isPublished={isPublished}
               />
             </Col>
           </Row>
