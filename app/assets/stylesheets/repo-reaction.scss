@@ -1,0 +1,13 @@
+.public-data-section {
+  border: none !important;
+  .panel-body {
+    font-size: 90%;
+    padding-bottom: unset;
+    .row {
+      padding-bottom: 8px;
+      div .description {
+        white-space: pre;
+      }
+    }
+  }
+}

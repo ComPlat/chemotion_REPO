@@ -61,8 +61,9 @@ import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
 import getFormattedRange from '../components/chemrepo/range-utils';
 import LdData from '../components/chemrepo/LdData';
-import PublicStore from '../components/stores/PublicStore';
 import PublicLabels from '../components/chemrepo/PublicLabels';
+import PublicReactionTlc from '../components/chemrepo/PublicReactionTlc';
+import PublicReactionProperties from '../components/chemrepo/PublicReactionProperties';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -1247,67 +1248,6 @@ const ReactionRinChiKey = ({
   );
 };
 
-const ReactionProperties = ({
-  reaction, toggle, show, bodyAttrs
-}) => {
-  const showIndicatorProp = (show) ? 'down' : 'right';
-  return (
-    <span>
-      <ToggleIndicator onClick={toggle} name="Properties" indicatorStyle={showIndicatorProp} />
-      <Panel style={{ border: 'none' }} id="collapsible-panel-properties" expanded={show} defaultExpanded={show} onToggle={() => { }}>
-        <Panel.Collapse>
-          <Panel.Body {...bodyAttrs}>
-            <Row >
-              <Col sm={4} md={4} lg={4}>
-                <b>Status: </b>{reaction.status}
-              </Col>
-              <Col sm={4} md={4} lg={4}>
-                <b>Temperature: </b>{reaction.temperature && reaction.temperature.userText !== '' ? `${reaction.temperature.userText} ${reaction.temperature.valueUnit}` : ''}
-              </Col>
-              <Col sm={4} md={4} lg={4}>
-                <b>Duration: </b>{CalcDuration(reaction)}
-              </Col>
-            </Row>
-          </Panel.Body>
-        </Panel.Collapse>
-      </Panel>
-    </span>
-  );
-};
-
-const ReactionTlc = ({
-  reaction, toggle, show, bodyAttrs
-}) => {
-  const showIndicatorTlc = (show) ? 'down' : 'right';
-  return (
-    <span>
-      <ToggleIndicator onClick={toggle} name="TLC-Control" indicatorStyle={showIndicatorTlc} />
-      <Panel style={{ border: 'none' }} id="collapsible-panel-tlc" expanded={show} defaultExpanded={show} onToggle={() => { }}>
-        <Panel.Collapse>
-          <Panel.Body {...bodyAttrs}>
-            <Row style={{ paddingBottom: '8px' }}>
-              <Col sm={2} md={2} lg={2}><b>Solvents (parts)</b></Col>
-              <Col sm={10} md={10} lg={10}>{reaction.tlc_solvents || ''}</Col>
-            </Row>
-            <Row style={{ paddingBottom: '8px' }}>
-              <Col sm={2} md={2} lg={2}><b>Rf-Value</b></Col>
-              <Col sm={10} md={10} lg={10}>{reaction.rf_value && reaction.rf_value !== '0' ? reaction.rf_value : ''}</Col>
-            </Row>
-            <Row style={{ paddingBottom: '8px' }}>
-              <Col sm={2} md={2} lg={2}><b>TLC-Description</b></Col>
-              <Col sm={10} md={10} lg={10}>
-                <div style={{ whiteSpace: 'pre' }}>
-                  {reaction.tlc_description || ''}
-                </div>
-              </Col>
-            </Row>
-          </Panel.Body>
-        </Panel.Collapse>
-      </Panel>
-    </span>
-  );
-};
-
 const InputFieldYield = (props) => {
   return (
     <FormGroup>
@@ -1649,21 +1589,21 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
         </Row>
         <Row>
           <Col sm={12} md={12} lg={12}>
-            <ReactionProperties
+            <PublicReactionProperties
               reaction={reaction}
               toggle={toggleProp}
               show={showProp}
-              bodyAttrs={bodyAttrs}
+              isPublished={false}
             />
           </Col>
         </Row>
         <Row>
           <Col sm={12} md={12} lg={12}>
-            <ReactionTlc
+            <PublicReactionTlc
               reaction={reaction}
               toggle={toggleTlc}
               show={showTlc}
-              bodyAttrs={bodyAttrs}
+              isPublished={false}
             />
           </Col>
         </Row>
@@ -2166,20 +2106,6 @@ ReactionRinChiKey.propTypes = {
   bodyAttrs: PropTypes.object
 };
 
-ReactionProperties.propTypes = {
-  reaction: PropTypes.any.isRequired,
-  toggle: PropTypes.func,
-  show: PropTypes.bool,
-  bodyAttrs: PropTypes.object
-};
-
-ReactionTlc.propTypes = {
-  reaction: PropTypes.any.isRequired,
-  toggle: PropTypes.func,
-  show: PropTypes.bool,
-  bodyAttrs: PropTypes.object
-};
-
 const DatasetDetail = ({ isPublished, element }) => {
   const { molecule } = element;
   molecule.tag = {
@@ -2358,8 +2284,6 @@ export {
   ReactionInfo,
   ReactionTable,
   ReactionRinChiKey,
-  ReactionProperties,
-  ReactionTlc,
   RenderAnalysisHeader,
   RenderPublishAnalyses,
   RenderPublishAnalysesPanel,
