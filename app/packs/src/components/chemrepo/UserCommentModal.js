@@ -5,7 +5,7 @@ import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const UserCommentModal = (props) => {
   const {
-    id, isLogin, title, type, pageType, pageId
+    id, isLogin, isPublished, title, type, pageType, pageId
   } = props;
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
@@ -21,7 +21,7 @@ const UserCommentModal = (props) => {
     }
   };
 
-  if (isLogin) {
+  if (isPublished && isLogin) {
     return (
       <>
         <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Leave a comment about this data to the reviewers </Tooltip>}>
@@ -71,6 +71,7 @@ const UserCommentModal = (props) => {
 UserCommentModal.propTypes = {
   id: PropTypes.number.isRequired,
   isLogin: PropTypes.bool,
+  isPublished: PropTypes.bool.isRequired,
   type: PropTypes.string,
   title: PropTypes.string,
   pageType: PropTypes.string,

@@ -647,6 +647,7 @@ export default class RepoReactionDetails extends Component {
               />
               &nbsp;
               <UserCommentModal
+                isPublished={isPublished}
                 isLogin={idyLogin}
                 id={reaction.id}
                 type="Reaction"
