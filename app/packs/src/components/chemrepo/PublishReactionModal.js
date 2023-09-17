@@ -865,7 +865,6 @@ export default class PublishReactionModal extends Component {
               >
                 <span>Skip amount and yield validation (the product has no amount and yield)</span>
               </Checkbox>
-              {awareEmbargo}
               <PanelGroup accordion id={`panelgroup_${reaction.id}`} defaultActiveKey={0}>
                 <Panel
                   eventKey="2"
