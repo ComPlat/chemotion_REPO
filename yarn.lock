@@ -6131,11 +6131,6 @@ chem-generic-ui@^1.0.10:
     reactflow "^11.7.2"
     uuid "^9.0.0"
 
-chem-units@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/chem-units/-/chem-units-0.0.4.tgz#4c24d87607b16e8d1236b6f65dd8a6b7797a6345"
-  integrity sha512-lk85nyb0KGm+q2H5FQ3aRN2oubwiAj+s9dWpu2GngMvWX3I6wiszS1CJQNOJRZ150KWfhUatgECetxGTWiIFBw==
-
 chem-units@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/chem-units/-/chem-units-0.0.5.tgz#b5621a6c132ee58e7c0d7999c88ccd63a128498a"

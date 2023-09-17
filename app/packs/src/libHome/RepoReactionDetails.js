@@ -152,7 +152,10 @@ export default class RepoReactionDetails extends Component {
         <QuillViewer value={content} preview />
       </span>
     );
-    if (descContent === '') descQV = '';
+    if (descContent === '') {
+      if (isPublished) descQV = '';
+      else descQV = <span><b>Description:</b><br /><br /></span>;
+    }
 
     const addinfoContent =
       additionInfo &&
@@ -167,7 +170,10 @@ export default class RepoReactionDetails extends Component {
         <QuillViewer value={additionInfo} preview />
       </span>
     );
-    if (addinfoContent === '') addQV = '';
+    if (addinfoContent === '') {
+      if (isPublished) addQV = '';
+      else addQV = <span><b>Additional information for publication and purification details:</b><br /><br /></span>;
+    }
 
     const temperature = reaction.temperature
       ? `${reaction.temperature.userText} ${reaction.temperature.valueUnit}`

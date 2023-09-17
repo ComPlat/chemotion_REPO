@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from 'react-bootstrap';
 import { Citation, literatureContent, RefByUserInfo } from '../LiteratureCommon';
 import { ChemotionId, CommentBtn, Doi } from '../../libHome/RepoCommon';
-import getFormattedRange from './range-utils';
+import { formatPhysicalProps } from './publication-utils';
 
 const PublicSample = (_props) => {
   const {
@@ -28,8 +28,9 @@ const PublicSample = (_props) => {
     ? sample.literatures.map(lit => literatureContent(lit, true)).join('')
     : '';
 
-  const referencesPhysicalProp = canComment && (sample.melting_point || sample.boiling_point)
-  ? `Melting point:[${getFormattedRange(sample.melting_point)}]; Boiling point:[${getFormattedRange(sample.boiling_point)}]`
+  const { meltingPoint, boilingPoint, showPhysicalProps } = formatPhysicalProps(sample);
+  const referencesPhysicalProp = canComment && (!!meltingPoint || !!boilingPoint)
+  ? `Melting point:[${meltingPoint}]; Boiling point:[${boilingPoint}]`
   : '';
 
   const reactionLink = sample.reaction_ids?.length > 0 ? (
@@ -78,13 +79,19 @@ const PublicSample = (_props) => {
           <div><div>{references}</div></div>
         </span>
       </h5>
-      <br />
-      <div>
-        <b>Physical Properties:</b>
-        <CommentBtn {..._props} field="Physical Properties" orgInfo={referencesPhysicalProp} onShow={handleCommentBtn} />
-        <div>Melting point: {getFormattedRange(sample.melting_point)}</div>
-        <div>Boiling point: {getFormattedRange(sample.boiling_point)}</div>
-      </div>
+      {
+        (!isPublished || showPhysicalProps) && (
+          <>
+          <br />
+          <div>
+            <b>Physical Properties:</b>
+            <CommentBtn {..._props} field="Physical Properties" orgInfo={referencesPhysicalProp} onShow={handleCommentBtn} />
+            <div>Melting point: {meltingPoint}</div>
+            <div>Boiling point: {boilingPoint}</div>
+          </div>
+          </>
+        )
+      }
     </div>
   );
 };

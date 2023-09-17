@@ -40,13 +40,15 @@ const PublicReactionProperties = ({
                 {reactionStatus}
               </Col>
               <Col sm={4} md={4} lg={4}>
-                <b>Temperature: </b>
+                {isPublished && !reactionTemperature ? '' : (<b>Temperature: </b>)}
                 {temperature?.userText !== ''
                   ? `${temperature.userText} ${temperature.valueUnit}`
                   : ''}
               </Col>
               <Col sm={4} md={4} lg={4}>
-                <b>Duration: </b>
+                {isPublished && !reactionDuration ? '' : (
+                  <b>Duration: </b>
+                )}
                 {reactionDuration}
               </Col>
             </Row>

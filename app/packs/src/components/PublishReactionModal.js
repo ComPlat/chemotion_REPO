@@ -27,8 +27,8 @@ import { groupByCitation, Citation } from '../components/LiteratureCommon';
 import LiteraturesFetcher from '../components/fetchers/LiteraturesFetcher';
 import CollaboratorFetcher from '../components/fetchers/CollaboratorFetcher';
 import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
-import { contentToText } from './utils/quillFormat';
 import { CitationTypeMap, CitationTypeEOL } from './CitationType';
+import SubmissionCheck from './chemrepo/SubmissionCheck';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
@@ -611,13 +611,6 @@ export default class PublishReactionModal extends Component {
     if (isFullyPublish) {
       validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
       validates.push({ name: 'reaction type', value: !!(reaction.rxno && reaction.rxno.length > 0), message: reaction.rxno ? '' : 'Reaction type is missing' });
-      const hasDuration =
-        !!(reaction.duration && reaction.duration !== '' && Number(reaction.duration.split(' ')[0]) > 0);
-      validates.push({ name: 'duration', value: hasDuration, message: hasDuration ? '' : 'Duration is missing' });
-      const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
-      validates.push({ name: 'temperature', value: hasTemperature, message: hasTemperature ? '' : 'Temperature is missing' });
-      const desc = contentToText(reaction.description).trim() || '';
-      validates.push({ name: 'description', value: !!desc, message: desc ? '' : 'Description is missing' });
       const hasSt = reaction.starting_materials && reaction.starting_materials.length > 0;
       validates.push({ name: 'start_material', value: !!hasSt, message: hasSt ? '' : 'Start material is missing' });
       const hasSv =
@@ -638,12 +631,6 @@ export default class PublishReactionModal extends Component {
           }
         });
       }
-    } else {
-      const hasDuration =
-        !!(reaction.duration && reaction.duration !== '' && Number(reaction.duration.split(' ')[0]) > 0);
-      validates.push({ name: 'duration', value: hasDuration, message: hasDuration ? '' : 'Duration is missing' });
-      const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
-      validates.push({ name: 'temperature', value: hasTemperature, message: hasTemperature ? '' : 'Temperature is missing' });
     }
     validates = this.state.noAmountYield ? validates : validates.concat(validateYield(reaction));
     return validates;
@@ -659,8 +646,6 @@ export default class PublishReactionModal extends Component {
     const canPublish = isFullyPublish ? this.validateAnalyses() : true;
     const validateInfo = this.validatePub(isFullyPublish);
     const validateObjs = validateInfo && validateInfo.filter(v => v.value === false);
-    const validateMsgs = validateObjs && validateObjs.map(a => a.message);
-    const validateMsg = validateMsgs ? validateMsgs.join('\n') : '';
     const validated = !!(validateObjs && validateObjs.length === 0);
 
     let selectedAnalysesCount = (this.state.reaction.analyses || [])
@@ -769,7 +754,7 @@ export default class PublishReactionModal extends Component {
 
       return (
         <div>
-          <Modal dialogClassName="publishReactionModal" animation show={show} bsSize="large" onHide={() => this.props.onHide(false)}>
+          <Modal dialogClassName="structure-viewer-modal" animation show={show} bsSize="large" onHide={() => this.props.onHide(false)}>
             <Modal.Header closeButton style={{ paddingBottom: '2px', paddingTop: '10px' }}>
               <Grid style={{ width: '100%' }}>
                 <Col sm={6} lg={6}>
@@ -800,14 +785,6 @@ export default class PublishReactionModal extends Component {
                 onCC0ConsentChange={this.handleCC0ConsentChange}
                 cc0Deed={cc0Consent}
               />
-              <FormGroup>
-                <Col md={12} sm={12}>
-                  <div style={{
-                    whiteSpace: 'pre', padding: '10px', color: 'red', borderRadius: '3px'
-                }}>{validateMsg}
-                  </div>
-                </Col>
-              </FormGroup>
               <div className={`display-${isFullyPublish}`}>
                 <ReactionInfo
                   reaction={reaction}
@@ -832,6 +809,10 @@ export default class PublishReactionModal extends Component {
                   onUnitChange={this.handleUnitChange}
                 />
               </div>
+              <div style={{ margin: '5px 0px' }}>
+                <SubmissionCheck validates={validateInfo} />
+              </div>
+              {awareEmbargo}
               <Checkbox
                 onChange={() => { this.handleNoSolventCheck(); }}
                 checked={this.state.noSolvent}
@@ -846,7 +827,6 @@ export default class PublishReactionModal extends Component {
               >
                 <span>Skip amount and yield validation (the product has no amount and yield)</span>
               </Checkbox>
-              {awareEmbargo}
               <PanelGroup accordion id={`panelgroup_${reaction.id}`} defaultActiveKey={0}>
                 <Panel
                   eventKey="2"

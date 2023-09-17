@@ -967,7 +967,7 @@ export default class ReactionDetailsScheme extends Component {
             <Row>
               <Col md={12}>
                 <FormGroup>
-                  {reaction.is_published ? <ControlLabel>Description</ControlLabel> : <span><HelpInfo optionalElement={<ControlLabel className="field_required">Description</ControlLabel>} source="requiredField" />&nbsp;<HelpInfo source="description" place="right" /></span>}
+                  {reaction.is_published ? <ControlLabel>Description</ControlLabel> : <span><HelpInfo optionalElement={<ControlLabel>Description</ControlLabel>} source="requiredField" />&nbsp;<HelpInfo source="description" place="right" /></span>}
                   <div className="quill-resize">
                     {
                       permitOn(reaction) ?

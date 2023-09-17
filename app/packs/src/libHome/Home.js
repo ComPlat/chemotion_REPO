@@ -57,7 +57,7 @@ class Home extends Component {
   componentDidMount() {
     PublicStore.listen(this.onChange);
     RStore.listen(this.onChange);
-    PublicActions.initialize.defer();
+    PublicActions.initialize();
   }
 
   componentWillUnmount() {

@@ -24,7 +24,7 @@ export default class MolViewerBtn extends Component {
     } = this.props;
     const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
     const { show } = this.state;
-    if (isPublic && !config.featureEnabled) return null;
+    if (isPublic && !config?.featureEnabled) return null;
 
     return (
       <>
