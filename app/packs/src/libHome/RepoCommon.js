@@ -59,7 +59,7 @@ import MolViewerBtn from '../components/viewer/MolViewerBtn';
 import MolViewerListBtn from '../components/viewer/MolViewerListBtn';
 import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
-import getFormattedRange from '../components/chemrepo/range-utils';
+import { formatPhysicalProps } from '../components/chemrepo/publication-utils';
 import LdData from '../components/chemrepo/LdData';
 import PublicLabels from '../components/chemrepo/PublicLabels';
 import PublicReactionTlc from '../components/chemrepo/PublicReactionTlc';
@@ -981,6 +981,7 @@ const RenderAnalysisHeader = (props) => {
       <Citation key={lit.id} literature={lit} />
     </li>
   )) : [];
+  const { meltingPoint, boilingPoint, showPhysicalProps } = formatPhysicalProps(element);
   return (
     <div>
       <br />
@@ -1042,14 +1043,18 @@ const RenderAnalysisHeader = (props) => {
           <RepoSegment segments={element.segments} />
         </Col>
       </Row>
-      <Row>
-        <Col sm={12} md={12} lg={12}>
-          <h5><b>Physical Properties:</b></h5>
-          <div>Melting point: {getFormattedRange(element.melting_point)}</div>
-          <div>Boiling point: {getFormattedRange(element.boiling_point)}</div>
-        </Col>
-      </Row>
-      < br/>
+      {
+        (!isPublic || showPhysicalProps) && (
+          <Row>
+            <Col sm={12} md={12} lg={12}>
+              <h5><b>Physical Properties:</b></h5>
+              <div>Melting point: {meltingPoint}</div>
+              <div>Boiling point: {boilingPoint}</div>
+            </Col>
+          </Row>
+        )
+      }
+      <br />
     </div>
   );
 };

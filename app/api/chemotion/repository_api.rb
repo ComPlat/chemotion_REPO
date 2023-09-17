@@ -393,7 +393,7 @@ module Chemotion
           svg_file = e.element.sample_svg_file if element_type == 'Sample'
           title = e.element.short_label if element_type == 'Sample'
           review_info = repo_review_info(e, current_user&.id, true)
-          checklist = e.review['checklist'] if User.reviewer_ids.include?(current_user&.id) || review_info[:groupleader] == true
+          checklist = e.review && e.review['checklist'] if User.reviewer_ids.include?(current_user&.id) || review_info[:groupleader] == true
           scheme_only = element_type == 'Reaction' && e.taggable_data && e.taggable_data['scheme_only']
 
 
