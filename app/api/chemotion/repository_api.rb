@@ -331,8 +331,28 @@ module Chemotion
 
         def create_new_reaction_version(reaction = @reaction)
           new_reaction = reaction.dup
+
           new_reaction.collections << current_user.all_collection
+
+          dir = File.join(Rails.root, 'public', 'images', 'reactions')
+          rsf = reaction.reaction_svg_file
+          path = File.join(dir, rsf)
+          new_rsf = "#{Time.now.to_i}-#{rsf}"
+          dest = File.join(dir, new_rsf)
+
           new_reaction.save!
+          new_reaction.copy_segments(segments: reaction.segments, current_user_id: current_user.id)
+          unless @literals.nil?
+            lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id }
+            duplicate_literals(new_reaction, lits)
+          end
+          if File.exists? path
+            FileUtils.cp(path, dest)
+            new_reaction.update_columns(reaction_svg_file: new_rsf)
+          end
+
+          link_analyses(new_reaction, reaction.analyses)
+
           new_reaction
         end
 

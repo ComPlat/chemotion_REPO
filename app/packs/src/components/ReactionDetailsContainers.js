@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Badge,
   PanelGroup,
   Panel,
   Button,
@@ -204,6 +205,10 @@ export default class ReactionDetailsContainers extends Component {
 
     return (
       <div className="upper-btn">
+        {
+          container.link_id &&
+          <Badge title="This analysis is a link to the already published analysis.">read only</Badge>
+        }
         <Button
           bsSize="xsmall"
           bsStyle="danger"

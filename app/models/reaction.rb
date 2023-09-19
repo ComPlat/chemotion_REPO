@@ -161,6 +161,10 @@ class Reaction < ApplicationRecord
     self.container ? self.container.analyses : []
   end
 
+  def links
+    self.container ? self.container.links : []
+  end
+
   def auto_format_temperature!
     valueUnitCheck = (temperature['valueUnit'] =~ /^(°C|°F|K)$/).present?
     temperature['valueUnit'] = '°C' if (!valueUnitCheck)
