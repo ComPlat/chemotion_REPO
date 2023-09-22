@@ -18,13 +18,14 @@ import XTdCont from './extra/ElementsTableEntriesXTdCont';
 import { elementShowOrNew } from './routesUtils';
 import SvgWithPopover from './common/SvgWithPopover';
 import UserStore from './stores/UserStore';
-import { PublishedTag } from './PublishCommon';
+import { PublishedTag, NewVersionTag } from './PublishCommon';
 
 const reactionPublished = (element) => {
   if (element.type === 'reaction') {
-    return (
+    return <>
       <PublishedTag element={element} />
-    );
+      <NewVersionTag element={element} />
+    </>;
   }
   return (<span />);
 };

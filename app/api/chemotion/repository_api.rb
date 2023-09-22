@@ -353,6 +353,32 @@ module Chemotion
 
           link_analyses(new_reaction, reaction.analyses)
 
+          new_reaction.update_tag!(analyses_tag: true)
+
+          new_reaction.tag_as_new_version(reaction)
+          reaction.tag_as_previous_version(new_reaction)
+
+          reaction.reactions_samples.each  do |reaction_sample|
+            # copy the reaction sample instance
+            new_reaction_sample = reaction_sample.dup
+
+            # look for the sample in the public collection
+            sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            next unless sample
+
+            # create a new version of the sample (and link it's analyses)
+            new_sample = create_new_sample_version(sample)
+
+            # update the new reaction sample instance
+            new_reaction_sample.sample_id = new_sample.id
+            new_reaction_sample.reaction_id = new_reaction.id
+            new_reaction_sample.save!
+          end
+
+          new_reaction.update_svg_file!
+          new_reaction.reload
+          new_reaction.save!
+          new_reaction.reload
           new_reaction
         end
 

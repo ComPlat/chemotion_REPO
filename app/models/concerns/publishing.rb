@@ -174,7 +174,7 @@ module Publishing
       element_tag.update!(
         taggable_data: (element_tag.taggable_data || {}).merge(
           previous_version: previous_element.id,
-          previous_doi: previous_element&.doi.id
+          previous_doi: previous_element&.doi&.id
         )
       )
     end
