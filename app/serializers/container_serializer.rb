@@ -23,8 +23,14 @@ class ContainerSerializer < ActiveModel::Serializer
 
   def get_attachment_ids(arr, containers)
     containers.map do |container, subcontainers|
-      arr.push(container.id)
-      get_attachment_ids(arr, subcontainers)
+      if container.container_type == 'link'
+        target_container = Container.find(container.extended_metadata['target_id'])
+        target_subcontainers = target_container.hash_tree[target_container]
+        get_attachment_ids(arr, target_subcontainers)
+      else
+        arr.push(container.id)
+        get_attachment_ids(arr, subcontainers)
+      end
     end
   end
 

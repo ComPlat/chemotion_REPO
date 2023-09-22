@@ -169,7 +169,7 @@ module Chemotion
           new_sample
         end
 
-        def submit_new_sample_version(sample = @sample)
+        def submit_new_sample_version(sample = @sample, parent_publication_id = nil)
           sample.collections.clear
           sample.collections << current_user.pending_collection
           sample.collections << Collection.element_to_review_collection
@@ -187,7 +187,7 @@ module Chemotion
                   doi = Doi.create_for_analysis!(container, sample.molecule.inchikey)
                 end
 
-                # create publication for sample
+                # create publication for analyses
                 Publication.create!(
                   state: Publication::STATE_PENDING,
                   element: container,
@@ -213,7 +213,7 @@ module Chemotion
               element: sample,
               published_by: current_user.id,
               doi: doi,
-              # parent_id: parent_publication_id,
+              parent_id: parent_publication_id,
               taggable_data: @publication_tag.merge(
                 author_ids: @author_ids,
                 analysis_ids: sample.analyses.pluck(:id)
@@ -382,6 +382,47 @@ module Chemotion
           new_reaction
         end
 
+        def submit_new_reaction_version(reaction = @reaction)
+          reaction.collections.clear
+          reaction.collections << current_user.pending_collection
+          reaction.collections << Collection.element_to_review_collection
+          reaction.collections << @embargo_collection unless @embargo_collection.nil?
+          reaction.save!
+
+          princhi_string, princhi_long_key, princhi_short_key, princhi_web_key = reaction.products_rinchis
+
+          # create doi for reaction
+          if (doi = reaction.doi)
+            doi.update!(doiable: reaction)
+          else
+            doi = Doi.create_for_element!(reaction)
+          end
+
+          # create publication for reaction
+          publication = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: reaction,
+            published_by: current_user.id,
+            doi: doi,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids,
+              products_rinchi: {
+                rinchi_string: princhi_string,
+                rinchi_long_key: princhi_long_key,
+                rinchi_short_key: princhi_short_key,
+                rinchi_web_key: princhi_web_key
+              }
+            )
+          )
+
+          reaction.reactions_samples.each  do |reaction_sample|
+            sample = current_user.samples.find_by(id: reaction_sample.sample_id)
+            submit_new_sample_version(sample, parent_publication_id = publication.id)
+          end
+
+          reaction
+        end
+
         def create_publication_tag(contributor, author_ids, license)
           authors = User.where(type: %w[Person Collaborator], id: author_ids)
                         .includes(:affiliations)
@@ -422,9 +463,15 @@ module Chemotion
 
         def prepare_reaction_data
           reviewer_collections
-          new_reaction = duplicate_reaction(@reaction, @analysis_set)
-          reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
-          @reaction.tag_as_published(new_reaction, reaction_analysis_set)
+
+          if @reaction.tag.taggable_data['previous_version']
+            new_reaction = submit_new_reaction_version
+          else
+            new_reaction = duplicate_reaction(@reaction, @analysis_set)
+            reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
+            @reaction.tag_as_published(new_reaction, reaction_analysis_set)
+          end
+
           new_reaction.create_publication_tag(current_user, @author_ids, @license)
           new_reaction.samples.each do |new_sample|
             new_sample.create_publication_tag(current_user, @author_ids, @license)
@@ -1133,8 +1180,8 @@ module Chemotion
           @scheme_only = false
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
           error!('404 found no reaction to publish', 404) unless @reaction
-          unless @reaction.analyses.empty?
-            @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
+          unless @reaction.analyses.empty? && @reaction.links.empty?
+            @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | @reaction&.links&.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
           end
           ols_validation(@analysis_set)
           @author_ids = if params[:addMe]
