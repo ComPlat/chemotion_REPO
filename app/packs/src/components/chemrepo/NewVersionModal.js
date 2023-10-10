@@ -8,6 +8,12 @@ const NewVersionModal = (props) => {
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
 
+  const openModal = () => {
+    if (isLatestVersion) {
+      setModalShow(true)
+    }
+  }
+
   const handleSubmit = () => {
     switch (type) {
       case 'Reaction':
@@ -31,11 +37,17 @@ const NewVersionModal = (props) => {
     }
   };
 
-  if (isPublisher && isLatestVersion) {
+  const tooltip = isLatestVersion ? <Tooltip id="tt_metadata">Create a new version</Tooltip>
+                                  : <Tooltip id="tt_metadata">A new version has already been created</Tooltip>
+
+  // fake the disabled style since otherwise the overlay would not show
+  const className = isLatestVersion ? '' : 'new-version-btn-disabled'
+
+  if (isPublisher) {
     return (
       <>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Create a new version</Tooltip>}>
-          <Button bsSize="xsmall" bsStyle="success" onClick={() => setModalShow(true)}>
+        <OverlayTrigger placement="top" overlay={tooltip}>
+          <Button bsSize="xsmall" bsStyle="success" onClick={openModal} className={className}>
             <i className="fa fa-paper-plane" />
           </Button>
         </OverlayTrigger>

@@ -988,3 +988,14 @@ $bs-successcolor: #5cb85c;
   background-color: #19b5fe !important;
   color: black !important;
 }
+
+.new-version-btn-disabled,
+.new-version-btn-disabled:hover {
+  color: #fff !important;
+  background-color: #5cb85c !important;
+  border-color: #4cae4c !important;
+
+  opacity: 0.65;
+  box-shadow: none;
+  cursor: not-allowed;
+}
