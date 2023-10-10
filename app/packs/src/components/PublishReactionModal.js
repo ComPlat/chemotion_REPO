@@ -12,7 +12,7 @@ import {
   Grid,
   ControlLabel
 } from 'react-bootstrap';
-import { head, filter, findIndex, flatten, sortedUniq } from 'lodash';
+import { head, filter, findIndex, flatten, sortedUniq, get, isUndefined } from 'lodash';
 import Select from 'react-select';
 import Immutable from 'immutable';
 import { validateYield } from './PublishCommon';
@@ -71,6 +71,7 @@ export default class PublishReactionModal extends Component {
       sortedIds: [],
       selectedEmbargo: '-1',
       selectedLicense: 'CC BY',
+      disableLicense: false,
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noSolvent: false,
@@ -112,10 +113,14 @@ export default class PublishReactionModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    const previous_license = get(nextProps.reaction, 'tag.taggable_data.previous_license');
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
+      selectedLicense: isUndefined(previous_license) ? 'CC BY' : previous_license,
+      disableLicense: !isUndefined(previous_license)
     });
   }
 
@@ -349,11 +354,11 @@ export default class PublishReactionModal extends Component {
 
   handlePublishReaction() {
     const {
-      selectedLicense, cc0Consent, publishType, selectedUsers
+      selectedLicense, disableLicense, cc0Consent, publishType, selectedUsers
     } = this.state;
     const authorCount = selectedUsers && selectedUsers.length;
 
-    if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
+    if (selectedLicense === 'CC0' && !disableLicense && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
       alert('Please check the license section before sending your data.');
       return true;
     }
@@ -739,7 +744,7 @@ export default class PublishReactionModal extends Component {
       });
 
       const {
-        selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
+        selectedEmbargo, selectedLicense, disableLicense, cc0Consent, noEmbargo
       } = this.state;
 
       const publishTypeAs = {
@@ -796,6 +801,7 @@ export default class PublishReactionModal extends Component {
                 selectedValue={selectedEmbargo}
                 onEmbargoChange={this.handleEmbargoChange}
                 selectedLicense={selectedLicense}
+                disableLicense={disableLicense}
                 onLicenseChange={this.handleLicenseChange}
                 onCC0ConsentChange={this.handleCC0ConsentChange}
                 cc0Deed={cc0Consent}

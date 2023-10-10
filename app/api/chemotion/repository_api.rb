@@ -1114,6 +1114,11 @@ module Chemotion
           error!('401 Unauthorized', 401) unless @sample
           error!('404 analyses not found', 404) if @analyses.empty?
           @group_reviewers = coauthor_validation(params[:reviewers])
+
+          previous_license = @sample&.tag&.taggable_data['previous_license']
+          if previous_license
+            error!('400 license does not match previous version', 400) unless previous_license == params[:license]
+          end
         end
 
         post do
@@ -1196,6 +1201,11 @@ module Chemotion
           # error!('Reaction Publication not authorized', 401)
           @analysis_set_ids = @analysis_set.map(&:id)
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
+
+          previous_license = @reaction&.tag&.taggable_data['previous_license']
+          if previous_license
+            error!('400 license does not match previous version', 400) unless previous_license == params[:license]
+          end
         end
 
         post do

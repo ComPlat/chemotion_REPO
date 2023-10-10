@@ -367,7 +367,7 @@ class EmbargoCom extends Component {
       >
         {LicenseLegalCode(this.props.selectedLicense)}
         {
-        this.props.selectedLicense === 'CC0' ?
+        (this.props.selectedLicense === 'CC0' && !this.props.disableLicense) ?
           (
             <div stye={{ width: '100%' }}>
               <Checkbox checked={this.props.cc0Deed.consent1} onChange={e => this.handleCC0ConsentChange(e, 'consent1')}>
@@ -386,9 +386,12 @@ class EmbargoCom extends Component {
 
     return (
       <div>
-        <Form horizontal style={{ display: 'flex' }}>
-          <div style={{ width: '20%', textAlign: 'right' }}>
-            <ControlLabel>Choose license&nbsp;</ControlLabel>
+        <Form horizontal style={{ display: 'flex', marginBottom: 15 }}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            {
+              this.props.disableLicense ? <ControlLabel>Licence (from Previous Version</ControlLabel>
+                                        : <ControlLabel>Choose license</ControlLabel>
+            }
           </div>
           <div style={{ width: '20%' }}>
             <Select
@@ -396,15 +399,16 @@ class EmbargoCom extends Component {
               onChange={e => this.handleLicenseChange(e)}
               options={licenses}
               className="select-assign-collection"
+              disabled={this.props.disableLicense}
             />
           </div>
-          <div style={{ width: '40%', textAlign: 'right' }}>
-            <ControlLabel>Publish with Embargo Bundle</ControlLabel>&nbsp;
-            <div role="button" style={{ display: 'inline' }} onClick={() => this.setState({ isShow: !isShow })}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            <ControlLabel>Publish with Embargo Bundle</ControlLabel>
+            <div role="button" style={{ display: 'inline', paddingLeft: 5 }} onClick={() => this.setState({ isShow: !isShow })}>
               <i className="fa fa-question-circle" aria-hidden="true" />
-            </div>&nbsp;
+            </div>
           </div>
-          <div style={{ width: '40%' }}>
+          <div style={{ width: '20%' }}>
             <Select
               value={this.props.selectedValue}
               onChange={e => this.handleEmbargoChange(e)}
