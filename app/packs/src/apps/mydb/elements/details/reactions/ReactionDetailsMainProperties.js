@@ -133,7 +133,7 @@ export default class ReactionDetailsMainProperties extends Component {
           </Col>
           <Col md={3}>
             <FormGroup>
-              {reaction.is_published ? <ControlLabel>Temperature</ControlLabel> : <HelpInfo optionalElement={<ControlLabel className="field_required">Temperature</ControlLabel>} source="requiredField" />}
+              {reaction.is_published ? <ControlLabel>Temperature</ControlLabel> : <HelpInfo optionalElement={<ControlLabel>Temperature</ControlLabel>} source="requiredField" />}
               <InputGroup>
                 <InputGroup.Button>
                   <OverlayTrigger placement="bottom" overlay={temperatureTooltip}>

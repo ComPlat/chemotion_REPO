@@ -191,18 +191,6 @@ export default class ReactionDetails extends Component {
     if ((reaction.rxno || '') === '' && schemeOnly === false) {
       validates.push({ name: 'reaction_type', value: false, message: 'Reaction Type is missing.' });
     }
-    const duration = (reaction.duration || '').split(' ').shift();
-    if (duration === '' || (duration === reaction.duration)) {
-      validates.push({ name: 'duration', value: false, message: 'No duration' });
-    }
-    const hasTemperature = !!(reaction.temperature && reaction.temperature.userText);
-    if (!hasTemperature) {
-      validates.push({ name: 'temperature', value: false, message: 'Temperature is missing' });
-    }
-    const desc = contentToText(reaction.description).trim() || '';
-    if (desc === '' && schemeOnly === false) {
-      validates.push({ name: 'description', value: false, message: 'Description is missing' });
-    }
 
     if (schemeOnly === false) {
       let hasAnalyses = (reaction.container.children.filter(c => c.container_type === 'analyses')[0].children.length > 0);
