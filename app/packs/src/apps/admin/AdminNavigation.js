@@ -15,7 +15,7 @@ const NavHead = () => (
   <Navbar.Brand>
     <NavDropdown title="Chemotion" className="navig-brand" id="bg-nested-dropdown-brand">
       <MenuItem eventKey="11" href="http://www.chemotion-repository.net" target="_blank">Chemotion Repository</MenuItem>
-      <MenuItem eventKey="13" href="http://www.complat.kit.edu/" target="_blank">Complat</MenuItem>
+      <MenuItem eventKey="13" href="https://www.complat.kit.edu/26.php" target="_blank">Complat</MenuItem>
       <MenuItem eventKey="14" href="https://github.com/ComPlat" target="_blank">Complat on Github</MenuItem>
       <MenuItem divider />
       <MenuItem eventKey="15" href="/" target="_self">Chemotion</MenuItem>
