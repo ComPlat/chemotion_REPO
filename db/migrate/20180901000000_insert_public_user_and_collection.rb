@@ -10,7 +10,7 @@ class InsertPublicUserAndCollection < ActiveRecord::Migration[4.2]
       first_name: 'Public',
       last_name: 'User',
       password: 'PleaseChangeYourPassword',
-      name_abbreviation: 'PUB',
+      name_abbreviation: 'CI',  # needs to be exactly that string
     }
     user = User.create!(attributes)
     user.update!(account_active: true) if column_exists?(:users, :account_active)
