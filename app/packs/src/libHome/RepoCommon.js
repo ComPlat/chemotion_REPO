@@ -79,6 +79,7 @@ const CollectionDesc = (props) => {
     'Scheme-only reactions': 'Collections of published scheme-only reactions (no associated analytical data).',
     'My Published Elements': 'Collection of the published samples and reactions you submitted. The samples/reactions that were embargoed are placed in sub-folders.',
     'Pending Publications': 'Collection of the samples and reactions you have submitted and are currently being reviewed.',
+    'New Versions': 'Collection of samples and reactions which are new versions of already published elements before resubmission.',
     Reviewing: 'Collection of the samples and reactions that have been reviewed by a reviewer and needs revision from your side.',
     'Element To Review': 'Collection of the samples and reactions that currently have to be reviewed.',
     Reviewed: 'Collection of the samples and reactions that were reviewed and sent back to the submitters for revision/corrections (Read-Only). Waiting for resubmission.',

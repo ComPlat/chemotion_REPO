@@ -330,6 +330,16 @@ class User < ApplicationRecord
       .where("collections.label = 'Pending Publications'").first
   end
 
+  def versions_collection
+    su_id = User.chemotion_user.id
+    Collection.joins(
+      "INNER JOIN sync_collections_users ON " +
+      "sync_collections_users.collection_id = collections.id")
+      .where("sync_collections_users.shared_by_id = #{su_id}")
+      .where("sync_collections_users.user_id = #{self.id}")
+      .where("collections.label = 'New Versions'").first
+  end
+
   def reviewing_collection
     su_id = User.chemotion_user.id
     Collection.joins(
@@ -542,11 +552,13 @@ class User < ApplicationRecord
 
     sys_published_by = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Published by')
     sys_pending_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Pending Publication from')
+    sys_versions_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'New Versions from')
     sys_reviewing_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Reviewing Publication from')
     sys_ready_publish_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Embargoed Publications from')
 
     sys_reviewing_collection = self.reviewing_collection || Collection.create(user: chemotion_user, label: 'Reviewing', ancestry: "#{sys_reviewing_from.id}")
     sys_pending_collection = self.pending_collection || Collection.create(user: chemotion_user, label: 'Pending Publications', ancestry: "#{sys_pending_from.id}")
+    sys_versions_collection = self.versions_collection || Collection.create(user: chemotion_user, label: 'New Versions', ancestry: "#{sys_versions_from.id}")
     sys_published_collection = self.published_collection || Collection.create(user: chemotion_user, label: 'Published Elements', ancestry: "#{sys_published_by.id}")
     sys_publication_embargo_collection = self.publication_embargo_collection || Collection.create(user: chemotion_user, label: 'Embargoed Publications', ancestry: "#{sys_ready_publish_from.id}")
 
@@ -564,6 +576,7 @@ class User < ApplicationRecord
     SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: Collection.scheme_only_reactions_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
     SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_published_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
     SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_pending_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_versions_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
     SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_reviewing_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
     SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_publication_embargo_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
   end
