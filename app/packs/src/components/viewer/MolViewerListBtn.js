@@ -46,7 +46,7 @@ export default class MolViewerListBtn extends Component {
     const { openModal } = this.state;
     const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
     if (!el) return null;
-    if (isPublic && !config.featureEnabled) return null;
+    if (isPublic && !config?.featureEnabled) return null;
 
     if (container?.children?.length < 1) { return this.renderBtn(true); }
 
