@@ -244,5 +244,17 @@ module Publishing
       end
       true
     end
+
+    def get_new_version_short_label
+      m = self.previous_version.short_label.match /^(.*)-V(\d+)$/
+      if m
+        # increment the version part of the short_label of the previous version
+        version = Integer(m[2]) + 1
+        self.short_label = "#{m[1]}-V#{version}"
+      else
+        # append "-V1" to the short_label of the previous version
+        self.short_label = "#{self.previous_version.short_label}-V1"
+      end
+    end
   end
 end

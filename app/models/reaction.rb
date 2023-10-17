@@ -58,6 +58,7 @@ class Reaction < ApplicationRecord
   multisearchable against: %i[name short_label rinchi_string]
 
   attr_accessor :can_copy
+  attr_accessor :previous_version
 
   # search scopes for exact matching
   pg_search_scope :search_by_reaction_name, against: :name
@@ -268,9 +269,13 @@ class Reaction < ApplicationRecord
   end
 
   def auto_set_short_label
-    prefix = creator.reaction_name_prefix
-    counter = creator.counters['reactions'].succ
-    self.short_label = "#{creator.initials}-#{prefix}#{counter}"
+    unless self.previous_version.present?
+      prefix = creator.reaction_name_prefix
+      counter = creator.counters['reactions'].succ
+      self.short_label = "#{creator.initials}-#{prefix}#{counter}"
+    else
+      self.short_label = get_new_version_short_label
+    end
   end
 
   def update_counter

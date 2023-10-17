@@ -151,6 +151,7 @@ module Chemotion
         def create_new_sample_version(sample = @sample)
           # create a copy of the sample in the users pending_collection
           new_sample = sample.dup
+          new_sample.previous_version = sample
           new_sample.collections << current_user.all_collection
           new_sample.collections << current_user.versions_collection
           new_sample.save!
@@ -332,6 +333,7 @@ module Chemotion
 
         def create_new_reaction_version(reaction = @reaction)
           new_reaction = reaction.dup
+          new_reaction.previous_version = reaction
           new_reaction.collections << current_user.all_collection
           new_reaction.collections << current_user.versions_collection
           new_reaction.save!
