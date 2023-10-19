@@ -56,7 +56,7 @@ export default class MolViewerListBtn extends Component {
     datasetContainer = datasetContainer.map((dc) => {
       const ds = Object.assign({}, dc);
       const { attachments } = ds;
-      ds.attachments = attachments.filter(attachment => ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(attachment.filename?.match(/\.([^.]+)$/)[1].toLowerCase()));
+      ds.attachments = attachments.filter(attachment => ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(attachment.filename?.match(/\.([^.]+)$/)?.[1]?.toLowerCase()));
       if (ds.attachments.length > 0) return ds;
       return null;
     });
