@@ -35,6 +35,7 @@ export default class ContainerDatasetModal extends Component {
             <ContainerDataset
               ref={this.datasetInput}
               readOnly={readOnly}
+              disabled={disabled}
               dataset_container={dataset_container}
               kind={kind}
               onModalHide={() => onHide()}

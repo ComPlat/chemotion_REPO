@@ -569,6 +569,7 @@ export default class ContainerDataset extends Component {
             klass={klass}
             kind={kind}
             onChange={this.handleDSChange}
+            readOnly={readOnly || disabled}
           />
         </Col>
       </Row>

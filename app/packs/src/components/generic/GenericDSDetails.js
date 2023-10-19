@@ -1,15 +1,28 @@
-/* eslint-disable no-restricted-globals */
 /* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { GenInterface, GenButtonReload, absOlsTermLabel } from 'chem-generic-ui';
+import { LayerPlain } from 'chem-generic-ui-viewer';
 import { Panel, ButtonToolbar } from 'react-bootstrap';
-import {
-  GenInterface,
-  GenButtonReload,
-  absOlsTermLabel,
-} from 'chem-generic-ui';
-import UserStore from 'src/stores/alt/stores/UserStore';
-import MatrixCheck from 'src/components/common/MatrixCheck';
+
+const elementalPropertiesItem = (genericDS, onChange, readOnly = false) => {
+  const { properties } = genericDS;
+  const layersLayout = readOnly ?
+    (<LayerPlain
+      layers={properties.layers}
+      options={properties.select_options || {}}
+      id={properties.uuid}
+    />) : (
+      <GenInterface
+        generic={genericDS}
+        fnChange={onChange}
+        isPreview={false}
+        isActiveWF={false}
+        fnNavi={() => {}}
+      />
+    );
+  return (<div style={{ margin: '5px' }}>{layersLayout}</div>);
+};
 
 class GenericDSDetails extends Component {
   constructor(props) {
@@ -28,46 +41,30 @@ class GenericDSDetails extends Component {
     onChange(genericDS);
   }
 
-  elementalPropertiesItem(genericDS) {
-    const { onChange } = this.props;
-    const layersLayout = (
-      <GenInterface
-        generic={genericDS}
-        fnChange={onChange}
-        isPreview={false}
-        isActiveWF={false}
-        fnNavi={() => {}}
-      />
-    );
-    return <div style={{ margin: '5px' }}>{layersLayout}</div>;
-  }
-
   render() {
-    const { genericDS, kind, klass } = this.props;
-    const currentUser =
-      (UserStore.getState() && UserStore.getState().currentUser) || {};
-    if (
-      MatrixCheck(currentUser.matrix, 'genericDataset') &&
-      Object.keys(genericDS).length !== 0
-    ) {
+    const {
+      genericDS, kind, klass, onChange, readOnly
+    } = this.props;
+    if (Object.keys(genericDS).length !== 0) {
       return (
         <Panel className="panel-detail generic-ds-panel">
           <Panel.Body>
-            {this.elementalPropertiesItem(genericDS)}
+            {elementalPropertiesItem(genericDS, onChange, readOnly)}
             <span className="g-ds-note label">
-              <span className="g-ds-title">Note</span>
-              <br />
-              Selected analysis type: {absOlsTermLabel(kind)}
-              <br />
+              <span className="g-ds-title">Note</span><br />
+              {readOnly ? null : (<>Selected analysis type: {absOlsTermLabel(kind)}<br /></>)}
               Content is designed for: {genericDS.klass_label}
             </span>
-            <ButtonToolbar className="pull-right">
-              <GenButtonReload
-                klass={klass}
-                generic={genericDS}
-                fnReload={this.handleReload}
-              />
-            </ButtonToolbar>
+            {readOnly ?
+              null : (
+                <ButtonToolbar className="pull-right">
+                  <GenButtonReload
+                    klass={klass}
+                    generic={genericDS}
+                    fnReload={this.handleReload}
+                  />
+                </ButtonToolbar>
+              )}
           </Panel.Body>
         </Panel>
       );
@@ -81,6 +78,7 @@ GenericDSDetails.propTypes = {
   genericDS: PropTypes.object,
   klass: PropTypes.object,
   onChange: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool.isRequired,
 };
 GenericDSDetails.defaultProps = { kind: '', genericDS: {}, klass: {} };
 
