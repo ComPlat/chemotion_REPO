@@ -6,6 +6,7 @@ import { HomeFeature } from './RepoCommon';
 import RepoCardStaticsBoard from './RepoCardStaticsBoard';
 import RepoCardIntro from './RepoCardIntro';
 import RepoCardMoleculeArchive from './RepoCardMoleculeArchive';
+import { RepoCardReviewerIntro, RepoCardReviewerIntroBtn, ReviewGuidelines } from './RepoCardReviewerIntro';
 
 const PartnersInfo = (info) => {
   const { header, img, content } = info;
@@ -58,11 +59,11 @@ const Infos = [
 ];
 
 class RepoHome extends Component {
-  constructor(props) {
+  constructor() {
     super();
-    this.state = {
-    };
+    this.state = { showReviewers: false };
     this.onChange = this.onChange.bind(this);
+    this.onShow = this.onShow.bind(this);
   }
 
   componentDidMount() {
@@ -83,6 +84,13 @@ class RepoHome extends Component {
         publishedStatics: PublicState.publishedStatics
       }));
     }
+  }
+
+  onShow() {
+    this.setState(prevState => ({
+      ...prevState,
+      showReviewers: !prevState.showReviewers
+    }));
   }
 
   render() {
@@ -123,7 +131,7 @@ class RepoHome extends Component {
         intro: 'Release your research data and pass an internal review that ensures data quality.'
       },
       peer: {
-        fa: 'fa fa-external-link',
+        fa: 'fa fa-users',
         title: 'Peer review',
         intro: 'Before publication, you can share your data with external reviewers or the publishers.'
       },
@@ -135,7 +143,12 @@ class RepoHome extends Component {
       api: {
         fa: 'fa fa-connectdevelop',
         title: 'APIs',
-        intro: 'With Chemotion APIs, transfer data easily from your ELN to the repository.'
+        intro: 'With Chemotion APIs, transfer data easily from your ELN to the Chemotion repository.'
+      },
+      labimotion: {
+        fa: 'fa fa-empire',
+        title: 'Extensive Customization',
+        intro: 'With LabIMotion: Tailor your modules or benefit from the availability of new elements, sections, and dataset templates that can be tailored to meet scientists\' specific requirements.'
       }
     };
 
@@ -171,8 +184,7 @@ class RepoHome extends Component {
         </Col>
         <Col md={12} sm={12}>
           <Row>
-            <Col md={2} sm={12}>&nbsp;</Col>
-            <Col md={8} sm={12}>
+            <Col md={12} sm={12}>
               <Row>
                 <Col md={12} sm={12}>
                   <div className="home-title">
@@ -182,6 +194,25 @@ class RepoHome extends Component {
                   </div>
                 </Col>
               </Row>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={2} sm={12}>&nbsp;</Col>
+            <Col md={8} sm={12}>
+              <Row className="feature">
+                <Col md={4} sm={12}>&nbsp;</Col>
+                <Col md={4} sm={12}>
+                  <HomeFeature
+                    extraStyle={{ display: 'flex', flexWrap: 'wrap' }}
+                    fa={features.peer.fa}
+                    title={features.peer.title}
+                    intro={features.peer.intro}
+                    extra={<RepoCardReviewerIntroBtn show={this.state.showReviewers} onClick={() => this.onShow()} />}
+                  />
+                </Col>
+                <Col md={4} sm={12}>&nbsp;</Col>
+              </Row>
+              { this.state.showReviewers && <RepoCardReviewerIntro />}
               <Row className="feature">
                 <Col md={4} sm={12}>
                   <HomeFeature fa={features.store.fa} title={features.store.title} intro={features.store.intro} />
@@ -206,7 +237,7 @@ class RepoHome extends Component {
               </Row>
               <Row className="feature">
                 <Col md={4} sm={12}>
-                  <HomeFeature fa={features.peer.fa} title={features.peer.title} intro={features.peer.intro} />
+                  <HomeFeature fa={features.labimotion.fa} title={features.labimotion.title} intro={features.labimotion.intro} />
                 </Col>
                 <Col md={4} sm={12}>
                   <HomeFeature fa={features.oai.fa} title={features.oai.title} intro={features.oai.intro} />

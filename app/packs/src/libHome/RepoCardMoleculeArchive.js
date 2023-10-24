@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button, Col, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import CountUp from 'react-countup';
 import Aviator from 'aviator';
 
 const RepoCardMoleculeArchive = (params) => {
@@ -29,7 +28,7 @@ const RepoCardMoleculeArchive = (params) => {
         <Col lg={12} md={12} sm={12} className="panel-heading dtl">
           <div className="rr">
             <div className="cnt">
-              <CountUp end={count} />{' '}
+              {count}{' '}
               <OverlayTrigger placement="top" overlay={tooltipView}>
                 <Button bsStyle="link" onClick={() => Aviator.navigate('/home/moleculeArchive')}>
                   published

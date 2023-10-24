@@ -298,4 +298,16 @@ export default class PublicFetcher {
       throw new Error(errorMessage);
     });
   }
+
+  static reviewers() {
+    const promise = fetch('/intro/reviewers.json', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+      headers: { 'cache-control': 'no-cache' }
+    })
+      .then(response => response.json()).then(json => json).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
 }

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button, Col, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import CountUp from 'react-countup';
 import PublicActions from '../components/actions/PublicActions';
 import RepoNavListTypes from './RepoNavListTypes';
 
@@ -41,7 +40,7 @@ const RepoCardStaticsBoard = (params) => {
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
               <div className="cnt">
-                <CountUp end={stsSample.e_cnt} />{' '}
+                {stsSample.e_cnt}{' '}
                 <OverlayTrigger placement="top" overlay={tooltipView}>
                   <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.sample); PublicActions.getMolecules({ listType: 'sample' }); }}>
                     published
@@ -67,7 +66,7 @@ const RepoCardStaticsBoard = (params) => {
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
               <div className="cnt">
-                <CountUp end={stsReaction.e_cnt} />{' '}
+                {stsReaction.e_cnt}{' '}
                 <OverlayTrigger placement="top" overlay={tooltipView}>
                   <Button bsStyle="link" onClick={() => { PublicActions.openRepositoryPage(pubPage.reaction); PublicActions.getReactions(); }}>
                     published
@@ -88,7 +87,7 @@ const RepoCardStaticsBoard = (params) => {
           </Col>
           <Col lg={12} md={12} sm={12} className="panel-heading dtl">
             <Row className="rr">
-              <div className="cnt"><CountUp end={stsAnalysisCnt} />&nbsp;<span className="tit">published</span></div>
+              <div className="cnt">{stsAnalysisCnt}&nbsp;<span className="tit">published</span></div>
               <div style={{ display: 'flex' }}>
                 <div>Top 3:&nbsp;&nbsp;</div>
                 <div className="italic-desc">

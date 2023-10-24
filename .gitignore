@@ -94,6 +94,9 @@
 !/public/images/ghs/
 !/public/images/creative_common/
 
+/public/intro/*
+!/public/intro/.keep
+
 /public/editors/*
 !/public/editors/.keep
 /public/favicon.ico
