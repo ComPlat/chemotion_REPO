@@ -126,11 +126,12 @@ const NewsroomTemplate = {
 };
 
 const HomeFeature = props => (
-  <div className="feature-block">
+  <div className="feature-block" style={props.extraStyle}>
     <h3><div><i className={`${props.fa}`} aria-hidden="true" /></div>&nbsp;{props.title}</h3>
     <p>
       {props.intro}
     </p>
+    {props.extra}
   </div>
 );
 

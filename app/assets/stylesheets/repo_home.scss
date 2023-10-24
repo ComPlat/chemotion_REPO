@@ -264,7 +264,7 @@ $bs-successcolor: #5cb85c;
 }
 
 .icon-chemotion {
-  width: 20%;
+  width: 15%;
 }
 
 .icon-nfdi4chem {
@@ -302,6 +302,25 @@ $bs-successcolor: #5cb85c;
   bottom: 0px;
   z-index: 1030;
   background-color: #efefef;
+}
+
+.reviewers-intro {
+  background-color: aliceblue;
+}
+
+.card-reviewers {
+  img {
+    max-height: 250px;
+    max-width: 200px;
+  }
+  h3, h4 {
+    font-weight: bolder;
+    min-height: 40px;
+  }
+  .description {
+    font-size: 16px;
+    line-height: 1.6;
+  }
 }
 
 .card-partners {
@@ -595,6 +614,7 @@ $bs-successcolor: #5cb85c;
 
 .repo-statistic {
   @extend .card-well;
+  background-color: unset;
   padding-bottom: 10px;
   > div {
     flex: 1;
@@ -1014,6 +1034,7 @@ $bs-successcolor: #5cb85c;
       height: 100%;
       display: flex;
       flex-direction: column;
+      overflow: auto;
       .btn-group{
         display: inline-flex !important;
         .btn {

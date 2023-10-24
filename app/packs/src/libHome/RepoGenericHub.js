@@ -164,30 +164,24 @@ const RepoGenericHub = () => {
   };
 
   return (
-    <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-      <Col md={12}>
+    <Row className="repo-welcome">
+      <Col lg={12} md={12} sm={12}>
         <div className="repo-generic-hub-layout">
           <div className="repo-generic-hub-inner">
-            <Button onClick={clickExpand} className="expand-button">
-              <i
-                className={`fa fa-caret-${expanded ? 'right' : 'left'}`}
-                aria-hidden="true"
-              />
-            </Button>
             <div className="content">
-              {!expanded && <RepoGenericHubDesc />}
-              {expanded && (
-                <ButtonGroup>
-                  <Button className="hub-menu" active={menuSelected === 'element'} onClick={e => clickMenu(e, 'element')}>Generic Element Template</Button>
-                  <Button className="hub-menu" active={menuSelected === 'segment'} onClick={e => clickMenu(e, 'segment')}>Generic Segment Template</Button>
-                  <Button className="hub-menu" active={menuSelected === 'dataset'} onClick={e => clickMenu(e, 'dataset')}>Generic Dataset Template</Button>
-                </ButtonGroup>
-              )}
+              <RepoGenericHubDesc />
+              <ButtonGroup>
+                <Button className="hub-menu" active={menuSelected === 'element'} onClick={e => clickMenu(e, 'element')}>Generic Element Template</Button>
+                <Button className="hub-menu" active={menuSelected === 'segment'} onClick={e => clickMenu(e, 'segment')}>Generic Segment Template</Button>
+                <Button className="hub-menu" active={menuSelected === 'dataset'} onClick={e => clickMenu(e, 'dataset')}>Generic Dataset Template</Button>
+              </ButtonGroup>
               {
-                expanded && menuSelected && (
+                menuSelected && (
                   <div style={{ flex: '1', margin: '0px 15px 15px 15px' }}>
                     <h3>{menuSelected ? `Generic ${capitalizeFirstLetter(menuSelected)} Template` : ''}</h3>
-                    <GenGridBase gridColumn={columnDefs[menuSelected]} gridData={gridData} />
+                    <div>
+                      <GenGridBase gridColumn={columnDefs[menuSelected]} gridData={gridData} />
+                    </div>
                   </div>
                 )
               }
