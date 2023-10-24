@@ -835,6 +835,7 @@ module Chemotion
           optional :id, type: Integer, desc: "Id"
           optional :type, type: String, desc: "Type", values: %w[sample reaction container collection]
           optional :inchikey, type: String, desc: "inchikey"
+          optional :all, type: Boolean, desc: 'with all samples', default: false
         end
         after_validation do
           @type = params['type']&.classify
@@ -862,7 +863,7 @@ module Chemotion
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
-          @publication.json_ld
+          @publication.json_ld(params['all'])
         end
 
         desc "Get JSON-Link Data"

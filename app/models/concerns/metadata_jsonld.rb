@@ -6,13 +6,14 @@ require 'nokogiri'
 module MetadataJsonld
   extend ActiveSupport::Concern
 
-  def json_ld
+  def json_ld(all = false)
+    all = true if all == 'true'
     return {} if state != 'completed'
 
     if element_type == 'Sample'
       json_ld_sample_root
     elsif element_type == 'Reaction'
-      json_ld_reaction
+      json_ld_reaction(all)
     elsif element_type == 'Container'
       json_ld_container
     end
@@ -148,7 +149,7 @@ module MetadataJsonld
     json['image'] = 'https://www.chemotion-repository.net/images/samples/' + pub.element.sample_svg_file  if pub&.element&.sample_svg_file.present?
     json['description'] = json_ld_description(pub.element.description)
     #json['author'] = json_ld_authors(pub.taggable_data)
-    json['hasBioChemEntityPart'] = json_ld_moelcule_entity(pub)
+    json['hasBioChemEntityPart'] = json_ld_moelcule_entity(pub.element)
     json['subjectOf'] = json_ld_subjectOf(pub)
     #json_object = JSON.parse(json)
     #JSON.pretty_generate(json_object)
@@ -157,8 +158,7 @@ module MetadataJsonld
     # formatted_json
   end
 
-
-  def json_ld_reaction
+  def json_ld_reaction(all = false)
     json = {}
     json['@context'] = 'https://schema.org'
     json['@type'] = 'Study'
@@ -178,7 +178,7 @@ module MetadataJsonld
     json['provider'] = json_ld_publisher
     json['keywords'] = 'chemical reaction: structures conditions'
     json['citation'] = json_ld_citations(element.literatures, element.id)
-    json['subjectOf'] = json_ld_reaction_has_part
+    json['subjectOf'] = json_ld_reaction_has_part(all)
     json
   end
 
@@ -198,12 +198,20 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_reaction_has_part
+  def json_ld_reaction_has_part(all = false)
     json = []
     children&.each do |pub|
       json.push(json_ld_sample(pub)) if pub.element_type == 'Sample'
       json.push(json_ld_analysis(pub, false)) if pub.element_type == 'Container'
     end
+    if all == true
+      element&.samples&.each do |sample|
+        next if sample.publication.present? || !sample.collections&.pluck(:id).include?(Collection.public_collection&.id)
+
+        json.push(json_ld_sample_el(sample))
+      end
+    end
+
     json
   end
 
@@ -337,17 +345,40 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_moelcule_entity(pub = self)
-    mol = pub.element.molecule
+  def json_ld_moelcule_entity(element)
+    mol = element.molecule
     json = {}
     json['@type'] = 'MolecularEntity'
     json['smiles'] = mol.cano_smiles
     json['inChIKey'] = mol.inchikey
     json['inChI'] = mol.inchistring
-    json['name'] = pub.element.molecule_name&.name
+    json['name'] = element.molecule_name&.name
     json['molecularFormula'] = mol.sum_formular
     json['molecularWeight'] = json_ld_molecular_weight(mol)
     json['iupacName'] = mol.iupac_name
     json
+  end
+
+  def json_ld_sample_el(sample)
+
+    # metadata_xml
+    json = {}
+    json['@context'] = 'https://schema.org'
+    json['@type'] = 'ChemicalSubstance'
+    json['@id'] = sample.id
+    json['identifier'] = sample.id
+    json['name'] = sample.molecule_name&.name
+    json['alternateName'] = sample.molecule.inchistring
+    # json['image'] = element.sample_svg_file
+    json['image'] = 'https://www.chemotion-repository.net/images/samples/' + sample.sample_svg_file  if sample&.sample_svg_file.present?
+    json['description'] = json_ld_description(sample.description)
+    #json['author'] = json_ld_authors(pub.taggable_data)
+    json['hasBioChemEntityPart'] = json_ld_moelcule_entity(sample)
+    ## json['subjectOf'] = json_ld_subjectOf(pub)
+    #json_object = JSON.parse(json)
+    #JSON.pretty_generate(json_object)
+    json
+    # formatted_json = JSON.pretty_generate(json)
+    # formatted_json
   end
 end
