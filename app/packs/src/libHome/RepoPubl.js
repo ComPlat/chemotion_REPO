@@ -36,6 +36,7 @@ const renderMoleculeArchive =
 
 const renderMolecule = (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
   <RepoMoleculeList
+    key={molecule.id}
     molecule={molecule}
     currentElement={currentElement}
     isPubElement={isPubElement}
@@ -47,6 +48,7 @@ const renderMolecule = (molecule, currentElement, isPubElement, advFlag, advType
 
 const renderReaction = (element, currentElement, isPubElement, schemeOnly = false) => (
   <RepoReactionList
+    key={element.id}
     element={element}
     currentElement={currentElement}
     isPubElement={isPubElement}
