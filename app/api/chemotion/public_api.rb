@@ -646,7 +646,7 @@ module Chemotion
           requires :id, type: Integer, desc: "collection id"
         end
         get do
-          pub = Publication.find_by(element_type: 'Collection', element_id: params[:id])
+          pub = Publication.find_by(element_type: 'Collection', element_id: params[:id], state: 'completed')
           { col: pub }
         end
       end
@@ -667,8 +667,8 @@ module Chemotion
           anasql = <<~SQL
             publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
           SQL
-          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
-          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
+          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples, state: 'completed').select(anasql).order(updated_at: :desc)
+          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions, state: 'completed').select(anasql).order(updated_at: :desc)
           list = sample_list + reaction_list
           elements = []
           list.each do |e|
@@ -817,7 +817,7 @@ module Chemotion
           result = declared(params, include_missing: false)
           list = []
           limit = params[:limit] - params[:offset] > 1000 ? params[:offset] + 1000 : params[:limit]
-          scope = Publication.where(element_type: params[:type])
+          scope = Publication.where(element_type: params[:type], state: 'completed')
           scope = scope.where('published_at >= ?', params[:date_from]) if params[:date_from].present?
           scope = scope.where('published_at <= ?', params[:date_to]) if params[:date_to].present?
           publications = scope.order(:published_at).offset(params[:offset]).limit(limit)
@@ -835,7 +835,7 @@ module Chemotion
           optional :id, type: Integer, desc: "Id"
           optional :type, type: String, desc: "Type", values: %w[sample reaction container collection]
           optional :inchikey, type: String, desc: "inchikey"
-          optional :all, type: Boolean, desc: 'with all samples', default: false
+          optional :extension, type: String, desc: 'JSON-LD extension option', values: %w[LLM]
         end
         after_validation do
           @type = params['type']&.classify
@@ -863,7 +863,7 @@ module Chemotion
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
-          @publication.json_ld(params['all'])
+          @publication.json_ld(params['extension'])
         end
 
         desc "Get JSON-Link Data"
