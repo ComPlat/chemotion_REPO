@@ -6,14 +6,13 @@ require 'nokogiri'
 module MetadataJsonld
   extend ActiveSupport::Concern
 
-  def json_ld(all = false)
-    all = true if all == 'true'
+  def json_ld(ext = nil)
     return {} if state != 'completed'
 
     if element_type == 'Sample'
       json_ld_sample_root
     elsif element_type == 'Reaction'
-      json_ld_reaction(all)
+      json_ld_reaction(ext)
     elsif element_type == 'Container'
       json_ld_container
     end
@@ -135,7 +134,7 @@ module MetadataJsonld
     }
   end
 
-  def json_ld_sample(pub = self)
+  def json_ld_sample(pub = self, ext = nil)
     # metadata_xml
     json = {}
     json['@context'] = 'https://schema.org'
@@ -153,12 +152,18 @@ module MetadataJsonld
     json['subjectOf'] = json_ld_subjectOf(pub)
     #json_object = JSON.parse(json)
     #JSON.pretty_generate(json_object)
+
+    if ext == 'LLM'
+      reaction = element_type == 'Reaction' ? element : nil
+      json = Metadata::Jsonldllm.sample_ext(json, pub&.element, reaction)
+    end
+
     json
     # formatted_json = JSON.pretty_generate(json)
     # formatted_json
   end
 
-  def json_ld_reaction(all = false)
+  def json_ld_reaction(ext = nil)
     json = {}
     json['@context'] = 'https://schema.org'
     json['@type'] = 'Study'
@@ -178,7 +183,11 @@ module MetadataJsonld
     json['provider'] = json_ld_publisher
     json['keywords'] = 'chemical reaction: structures conditions'
     json['citation'] = json_ld_citations(element.literatures, element.id)
-    json['subjectOf'] = json_ld_reaction_has_part(all)
+    json['subjectOf'] = json_ld_reaction_has_part(ext)
+
+    if ext == 'LLM'
+      json = Metadata::Jsonldllm.reaction_ext(json, element)
+    end
     json
   end
 
@@ -198,17 +207,17 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_reaction_has_part(all = false)
+  def json_ld_reaction_has_part(ext = nil)
     json = []
     children&.each do |pub|
-      json.push(json_ld_sample(pub)) if pub.element_type == 'Sample'
+      json.push(json_ld_sample(pub, ext)) if pub.element_type == 'Sample'
       json.push(json_ld_analysis(pub, false)) if pub.element_type == 'Container'
     end
-    if all == true
+    if ext == 'LLM' && element&.samples.present?
       element&.samples&.each do |sample|
         next if sample.publication.present? || !sample.collections&.pluck(:id).include?(Collection.public_collection&.id)
 
-        json.push(json_ld_sample_el(sample))
+        json.push(Metadata::Jsonldllm.all_samples(element, sample))
       end
     end
 
@@ -359,26 +368,4 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_sample_el(sample)
-
-    # metadata_xml
-    json = {}
-    json['@context'] = 'https://schema.org'
-    json['@type'] = 'ChemicalSubstance'
-    json['@id'] = sample.id
-    json['identifier'] = sample.id
-    json['name'] = sample.molecule_name&.name
-    json['alternateName'] = sample.molecule.inchistring
-    # json['image'] = element.sample_svg_file
-    json['image'] = 'https://www.chemotion-repository.net/images/samples/' + sample.sample_svg_file  if sample&.sample_svg_file.present?
-    json['description'] = json_ld_description(sample.description)
-    #json['author'] = json_ld_authors(pub.taggable_data)
-    json['hasBioChemEntityPart'] = json_ld_moelcule_entity(sample)
-    ## json['subjectOf'] = json_ld_subjectOf(pub)
-    #json_object = JSON.parse(json)
-    #JSON.pretty_generate(json_object)
-    json
-    # formatted_json = JSON.pretty_generate(json)
-    # formatted_json
-  end
 end
