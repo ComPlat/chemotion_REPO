@@ -30,13 +30,13 @@ export const ReviewGuidelines = () => (
       <div className="card-reviewers">
         <h3>Chemotion Repository Review Guidelines</h3>
         <p className="description">
-          The Chemotion Repository is a curated repository. The submitted entries are curated with respect to formal aspects and feedback is given referring to possible questions or errors. This effort is done to ensure a high quality of the submitted data and to provide data according to community standards. The most important formatting requirements and other hints that can help users to pass the curation easily are described in detail in the documentation, e.g. here (and following pages): <a href="https://www.chemotion.net/docs/repo/details_standards/characterization" target="_blank" rel="noreferrer">Chemotion Repository &gt; Details and Standards</a>
+          The Chemotion Repository is a curated repository. The submitted entries are curated with respect to formal aspects and feedback is given referring to possible questions or errors. This effort is done to ensure a high quality of the submitted data and to provide data according to community standards. The most important formatting requirements and other hints that can help users to pass the curation easily are described in detail in the documentation, e.g. here (and following pages): <a href="https://chemotion.net/docs/repo/details_standards" target="_blank" rel="noreferrer">Chemotion Repository &gt; Details and Standards</a>
         </p>
         <p className="description">
           The reviewers involved in the curation are volunteers that support the idea of collecting open data. They do their best to guide and support users. All reviewers confirmed to work according to ethical standards. This means in detail that reviewers declare that they will thoroughly review all submissions for publication to the best of their knowledge and ability. They pledge to treat all content confidentially and to not disclose any information, whether personal or factual, to third parties during the review process. They will assess all submissions neutrally, impartially, and by the same criteria. If a conflict of interest arises, they will decline the review of the submission and transfer it to another reviewer for evaluation.
         </p>
         <p className="description">
-          Please don&#39;t hesitate to contact the reviewers assigned to your submissions if there are any questions. Please use the option to answer per feedback note to the reviewers. We are glad for all comments and explanations - if there are things to be discussed.
+          Please don&#39;t hesitate to contact the reviewers assigned to your submissions if there are any questions. Please use the option to answer per feedback note, we are glad for all comments and explanations.
         </p>
       </div>
     </Col>
