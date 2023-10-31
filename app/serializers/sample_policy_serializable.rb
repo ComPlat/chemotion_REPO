@@ -23,7 +23,14 @@ module SamplePolicySerializable
       # return false if !%w[Sample Reaction].include?(@element.class.name)      ####
       # || (@element.class.name == 'Sample' && @element.reactions&.length > 0)  ####
 
+      # check if the element is in the versions collection of the user
+      if @policy && @policy.user.versions_collection.samples.exists?(id: @element.id)
+        cp = true
+      end
+
+      # check if the sample has already been submitted for publication
       pub = Publication.find_by(element: @element)
+
       return cp if pub.nil? || pub&.state == 'reviewed'
       false
     end

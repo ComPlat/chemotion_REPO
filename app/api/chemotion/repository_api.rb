@@ -149,10 +149,8 @@ module Chemotion
         end
 
         def create_new_sample_version(sample = @sample)
-          # create a copy of the sample in the users pending_collection
           new_sample = sample.dup
           new_sample.previous_version = sample
-          new_sample.collections << current_user.all_collection
           new_sample.collections << current_user.versions_collection
           new_sample.save!
           new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
@@ -334,7 +332,6 @@ module Chemotion
         def create_new_reaction_version(reaction = @reaction)
           new_reaction = reaction.dup
           new_reaction.previous_version = reaction
-          new_reaction.collections << current_user.all_collection
           new_reaction.collections << current_user.versions_collection
           new_reaction.save!
           new_reaction.copy_segments(segments: reaction.segments, current_user_id: current_user.id)
@@ -418,7 +415,7 @@ module Chemotion
           )
 
           reaction.reactions_samples.each  do |reaction_sample|
-            sample = current_user.samples.find_by(id: reaction_sample.sample_id)
+            sample = current_user.versions_collection.samples.find_by(id: reaction_sample.sample_id)
             submit_new_sample_version(sample, parent_publication_id = publication.id)
           end
 
@@ -470,9 +467,10 @@ module Chemotion
             new_reaction = submit_new_reaction_version
           else
             new_reaction = duplicate_reaction(@reaction, @analysis_set)
-            reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
-            @reaction.tag_as_published(new_reaction, reaction_analysis_set)
           end
+
+          reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
+          @reaction.tag_as_published(new_reaction, reaction_analysis_set)
 
           new_reaction.create_publication_tag(current_user, @author_ids, @license)
           new_reaction.samples.each do |new_sample|
@@ -504,9 +502,9 @@ module Chemotion
             new_sample = submit_new_sample_version
           else
             new_sample = duplicate_sample(@sample, @analyses)
-            @sample.tag_as_published(new_sample, @analyses)
           end
 
+          @sample.tag_as_published(new_sample, @analyses)
           new_sample.create_publication_tag(current_user, @author_ids, @license)
           @sample.untag_reserved_suffix
           pub = Publication.where(element: new_sample).first
@@ -1103,6 +1101,9 @@ module Chemotion
 
         after_validation do
           @sample = current_user.samples.find_by(id: params[:sampleId])
+          unless @sample
+            @sample = current_user.versions_collection.samples.find_by(id: params[:reactionId])
+          end
           analyses = @sample&.analyses&.where(id: params[:analysesIds])
           links = @sample&.links&.where(id: params[:analysesIds])
           @analyses = analyses.or(links)
@@ -1186,7 +1187,10 @@ module Chemotion
         after_validation do
           @scheme_only = false
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
-          error!('404 found no reaction to publish', 404) unless @reaction
+          unless @reaction
+            @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            error!('404 found no reaction to publish', 404) unless @reaction
+          end
           @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | @reaction&.links&.where(id: params[:analysesIds]) \
                           | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds])) \
                           | Container.where(id: (@reaction.samples.map(&:links).flatten.map(&:id) & params[:analysesIds]))
