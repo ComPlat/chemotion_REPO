@@ -13,7 +13,8 @@ import UnsealBtn from './chemrepo/UnsealButton';
 const labelStyle = {
   display: 'inline-block',
   marginLeft: '5px',
-  marginRight: '5px'
+  marginRight: '5px',
+  borderColor: 'grey'
 };
 
 const handleClick = (e, id, clickType) => {
