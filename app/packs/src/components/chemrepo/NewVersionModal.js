@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
+import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const NewVersionModal = (props) => {
-  const { isPublisher, isLatestVersion, id, type, title } = props;
+  const { type, element, className, isPublisher, isLatestVersion } = props;
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
 
@@ -17,13 +18,13 @@ const NewVersionModal = (props) => {
   const handleSubmit = () => {
     switch (type) {
       case 'Reaction':
-        RepositoryFetcher.createNewReactionVersion({ id }).then((reaction) => {
+        RepositoryFetcher.createNewReactionVersion({ id: element.id }).then((reaction) => {
           setModalShow(false);
           window.location = `/mydb/collection/all/reaction/${reaction.id}`
         });
         break;
       case 'Sample':
-        RepositoryFetcher.createNewSampleVersion({ id }).then((sample) => {
+        RepositoryFetcher.createNewSampleVersion({ id: element.id }).then((sample) => {
           setModalShow(false);
           window.location = `/mydb/collection/all/sample/${sample.id}`
         });
@@ -37,17 +38,21 @@ const NewVersionModal = (props) => {
     }
   };
 
-  const tooltip = isLatestVersion ? <Tooltip id="tt_metadata">Create a new version</Tooltip>
-                                  : <Tooltip id="tt_metadata">A new version has already been created</Tooltip>
+  const isElementPublisher = element.publication && (element.publication.published_by == UserStore.getState().currentUser.id)
+  const isElementLatestVersion = !element.tag.taggable_data.new_version
+
+  const tooltip = (isLatestVersion || isElementLatestVersion)
+                  ? <Tooltip id="tt_metadata">Create a new version of this {type.toLowerCase()}</Tooltip>
+                  : <Tooltip id="tt_metadata">A new version of this {type.toLowerCase()} has already been created</Tooltip>
 
   // fake the disabled style since otherwise the overlay would not show
-  const className = isLatestVersion ? '' : 'new-version-btn-disabled'
+  const btnClassName = className + ((isLatestVersion || isElementLatestVersion) ? '' : ' new-version-btn-disabled')
 
-  if (isPublisher) {
+  if (isPublisher || isElementPublisher) {
     return (
       <>
         <OverlayTrigger placement="top" overlay={tooltip}>
-          <Button bsSize="xsmall" bsStyle="success" onClick={openModal} className={className}>
+          <Button bsSize="xsmall" bsStyle="success" onClick={openModal} className={btnClassName}>
             <i className="fa fa-tag" />
           </Button>
         </OverlayTrigger>
@@ -58,7 +63,7 @@ const NewVersionModal = (props) => {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              Create a new version
+              Create a new version of this {type.toLowerCase()}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body style={{ overflow: 'auto' }}>
@@ -71,7 +76,7 @@ const NewVersionModal = (props) => {
               <Button
                 bsStyle="success"
                 onClick={handleSubmit}
-              > Create new version
+              > Create
               </Button>
             </ButtonToolbar>
           </Modal.Body>
@@ -84,15 +89,16 @@ const NewVersionModal = (props) => {
 };
 
 NewVersionModal.propTypes = {
-  sampleId: PropTypes.number.isRequired,
-  isPublisher: PropTypes.bool,
-  isLatestVersion: PropTypes.bool,
   type: PropTypes.string,
-  title: PropTypes.string
+  element: PropTypes.object,
+  className: PropTypes.string,
+  isPublisher: PropTypes.bool,
+  isLatestVersion: PropTypes.bool
 };
 
+
 NewVersionModal.defaultProps = {
-  isPublisher: false
+  className: ''
 };
 
 export default NewVersionModal;

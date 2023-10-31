@@ -61,6 +61,7 @@ import { chmoConversions } from './OlsComponent';
 import ConfirmClose from './common/ConfirmClose';
 import { EditUserLabels, ShowUserLabels } from './UserLabels';
 import CopyElementModal from './common/CopyElementModal';
+import NewVersionModal from './chemrepo/NewVersionModal';
 import NotificationActions from './actions/NotificationActions';
 import MatrixCheck from './common/MatrixCheck';
 import AttachmentFetcher from './fetchers/AttachmentFetcher';
@@ -654,6 +655,11 @@ export default class SampleDetails extends React.Component {
         <PrintCodeButton element={sample} />
         {sample.isNew ? <FastInput fnHandle={this.handleFastInput} /> : null}
         <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+        <NewVersionModal
+          type="Sample"
+          element={sample}
+          className="button-right"
+        />
         <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
         {decoupleCb}
         <div style={{ display: 'inline-block', marginLeft: '10px' }}>

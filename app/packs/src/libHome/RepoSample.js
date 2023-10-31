@@ -224,11 +224,10 @@ export default class RepoSample extends Component {
             />
             &nbsp;
             <NewVersionModal
+              type="Sample"
+              element={sample}
               isPublisher={isPublisher}
               isLatestVersion={!sample.new_version}
-              id={sample.id}
-              type="Sample"
-              title={sample.showed_name}
             />
           </span>
           {ElStateLabel(sample.embargo)}

@@ -693,11 +693,10 @@ export default class RepoReactionDetails extends Component {
               />
               &nbsp;
               <NewVersionModal
+                type="Reaction"
+                element={reaction}
                 isPublisher={idyPublisher}
                 isLatestVersion={!reaction.new_version}
-                id={reaction.id}
-                type="Reaction"
-                title={`Reaction, CRR-${pubData.id}`}
               />
             </h4>
             <br />

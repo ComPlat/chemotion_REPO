@@ -33,6 +33,7 @@ import ConfirmClose from './common/ConfirmClose';
 import { rfValueFormat } from './utils/ElementUtils';
 import ExportSamplesBtn from './ExportSamplesBtn';
 import CopyElementModal from './common/CopyElementModal';
+import NewVersionModal from './chemrepo/NewVersionModal';
 import { permitOn } from './common/uis';
 import { addSegmentTabs } from './generic/SegmentDetails';
 import Immutable from 'immutable';
@@ -419,7 +420,6 @@ export default class ReactionDetails extends Component {
     const defCol = currentCollection && currentCollection.is_shared === false &&
       currentCollection.is_locked === false && currentCollection.label !== 'All' ? currentCollection.id : null;
 
-
     const copyBtn = (reaction.can_copy === true && !reaction.isNew) ? (
       <CopyElementModal
         element={reaction}
@@ -436,8 +436,6 @@ export default class ReactionDetails extends Component {
 
     const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
       reaction.publication.taggable_data.scheme_only === true) || false;
-
-
 
     return (
       <div>
@@ -515,6 +513,11 @@ export default class ReactionDetails extends Component {
           <ElementAnalysesLabels element={reaction} key={reaction.id+"_analyses"}/>
           { schemeOnly ? <span>&nbsp;<Label>scheme only</Label></span> : '' }
         </div>
+        <NewVersionModal
+          type="Reaction"
+          element={reaction}
+          className="button-right"
+        />
         <PublishBtnReaction
           reaction={reaction}
           showModal={this.handlePublishReactionModal}
