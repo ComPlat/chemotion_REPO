@@ -48,7 +48,7 @@ const NewVersionModal = (props) => {
       <>
         <OverlayTrigger placement="top" overlay={tooltip}>
           <Button bsSize="xsmall" bsStyle="success" onClick={openModal} className={className}>
-            <i className="fa fa-paper-plane" />
+            <i className="fa fa-tag" />
           </Button>
         </OverlayTrigger>
         <Modal
