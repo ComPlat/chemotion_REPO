@@ -667,8 +667,8 @@ module Chemotion
           anasql = <<~SQL
             publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
           SQL
-          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples, state: 'completed').select(anasql).order(updated_at: :desc)
-          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions, state: 'completed').select(anasql).order(updated_at: :desc)
+          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
+          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
           list = sample_list + reaction_list
           elements = []
           list.each do |e|
