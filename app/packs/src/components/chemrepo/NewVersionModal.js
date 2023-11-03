@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
+import { get } from 'lodash'
+
 import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
@@ -9,8 +11,11 @@ const NewVersionModal = (props) => {
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
 
+  const isElementPublisher = element.publication && (element.publication.published_by == UserStore.getState().currentUser.id)
+  const isElementLatestVersion = !get(element, 'tag.taggable_data.new_version')
+
   const openModal = () => {
-    if (isLatestVersion) {
+    if (isLatestVersion || isElementLatestVersion) {
       setModalShow(true)
     }
   }
@@ -37,9 +42,6 @@ const NewVersionModal = (props) => {
       height: '400px', overflow: 'auto', whiteSpace: 'pre'
     }
   };
-
-  const isElementPublisher = element.publication && (element.publication.published_by == UserStore.getState().currentUser.id)
-  const isElementLatestVersion = !element.tag.taggable_data.new_version
 
   const tooltip = (isLatestVersion || isElementLatestVersion)
                   ? <Tooltip id="tt_metadata">Create a new version of this {type.toLowerCase()}</Tooltip>
