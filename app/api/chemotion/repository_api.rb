@@ -365,13 +365,12 @@ module Chemotion
             sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
             next unless sample
 
-            # create a new version of the sample (and link it's analyses)
-            new_sample = create_new_sample_version(sample)
-
             # update the new reaction sample instance
-            new_reaction_sample.sample_id = new_sample.id
             new_reaction_sample.reaction_id = new_reaction.id
             new_reaction_sample.save!
+
+            # remove sample from versions collectoin again, overriding the behaviour in ReactionSampleCollections
+            CollectionsSample.find_by(sample: sample, collection: @current_user.versions_collection).delete
           end
 
           new_reaction.update_svg_file!
