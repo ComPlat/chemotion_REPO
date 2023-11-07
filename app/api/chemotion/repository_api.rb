@@ -148,7 +148,7 @@ module Chemotion
           new_sample
         end
 
-        def create_new_sample_version(sample = @sample)
+        def create_new_sample_version(sample = @sample, reaction = @reaction)
           new_sample = sample.dup
           new_sample.previous_version = sample
           new_sample.collections << current_user.versions_collection
@@ -165,6 +165,13 @@ module Chemotion
 
           new_sample.tag_as_new_version(sample)
           sample.tag_as_previous_version(new_sample)
+
+          # replace previous sample in reaction
+          unless reaction.nil?
+            reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
+            reaction_sample.sample_id = new_sample.id
+            reaction_sample.save!
+          end
 
           new_sample
         end
@@ -1147,12 +1154,16 @@ module Chemotion
         desc 'Create a new version of a published Sample'
         params do
           requires :sampleId, type: Integer, desc: 'Sample Id'
+          optional :reactionId, type: Integer, desc: 'Reaction Id'
         end
 
         after_validation do
           # look for the sample in all public samples created by the current user
           @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @sample
+
+          # look for an optional reaction in the versions_collection of the current user
+          @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId]) unless params[:reactionId].nil?
         end
 
         post do

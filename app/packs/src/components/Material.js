@@ -6,12 +6,14 @@ import { compose } from 'redux';
 import DragDropItemTypes from './DragDropItemTypes';
 import NumeralInputWithUnitsCompo from './NumeralInputWithUnitsCompo';
 import SampleName from './common/SampleName';
+import NewVersionModal from './chemrepo/NewVersionModal';
 import ElementActions from './actions/ElementActions';
 import { UrlSilentNavigation, SampleCode } from './utils/ElementUtils';
 import { correctPrefix, validDigit } from './utils/MathUtils';
 import Reaction from './models/Reaction';
 import Sample from './models/Sample';
 import { permitCls, permitOn } from './common/uis';
+import UserStore from './stores/UserStore';
 
 const matSource = {
   beginDrag(props) {
@@ -544,6 +546,17 @@ class Material extends Component {
         <td>
           {this.equivalentOrYield(material)}
         </td>
+        {
+          permitOn(reaction) && reaction.previousVersion && <td>
+            <NewVersionModal
+              type="Sample"
+              element={material}
+              parent={reaction}
+              isPublisher={material.sealed}
+              bsSize="small"
+            />
+          </td>
+        }
         <td>
           <Button
             disabled={!permitOn(reaction)}

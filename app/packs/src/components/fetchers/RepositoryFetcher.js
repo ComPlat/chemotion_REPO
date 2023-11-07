@@ -181,7 +181,7 @@ export default class RepositoryFetcher {
   }
 
   static createNewSampleVersion(params, option = null) {
-    const { id } = params;
+    const { id, reactionId } = params;
     return fetch(`/api/v1/repository/createNewSampleVersion/`, {
       credentials: 'same-origin',
       method: option ? 'PUT' : 'POST',
@@ -190,7 +190,8 @@ export default class RepositoryFetcher {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        sampleId: id
+        sampleId: id,
+        reactionId: reactionId
       })
     }).then((response) => {
       return response.json()

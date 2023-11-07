@@ -7,7 +7,7 @@ import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const NewVersionModal = (props) => {
-  const { type, element, className, isPublisher, isLatestVersion } = props;
+  const { type, element, parent, className, bsSize, isPublisher, isLatestVersion } = props;
   const [modalShow, setModalShow] = useState(false);
   const commentInputRef = useRef(null);
 
@@ -29,7 +29,7 @@ const NewVersionModal = (props) => {
         });
         break;
       case 'Sample':
-        RepositoryFetcher.createNewSampleVersion({ id: element.id }).then((sample) => {
+        RepositoryFetcher.createNewSampleVersion({ id: element.id, reactionId: parent.id }).then((sample) => {
           setModalShow(false);
           window.location = `/mydb/collection/all/sample/${sample.id}`
         });
@@ -54,7 +54,7 @@ const NewVersionModal = (props) => {
     return (
       <>
         <OverlayTrigger placement="top" overlay={tooltip}>
-          <Button bsSize="xsmall" bsStyle="success" onClick={openModal} className={btnClassName}>
+          <Button bsSize={bsSize} bsStyle="success" onClick={openModal} className={btnClassName}>
             <i className="fa fa-tag" />
           </Button>
         </OverlayTrigger>
@@ -93,14 +93,18 @@ const NewVersionModal = (props) => {
 NewVersionModal.propTypes = {
   type: PropTypes.string,
   element: PropTypes.object,
+  parent: PropTypes.object,
   className: PropTypes.string,
+  bsSize: PropTypes.string,
   isPublisher: PropTypes.bool,
   isLatestVersion: PropTypes.bool
 };
 
 
 NewVersionModal.defaultProps = {
-  className: ''
+  parent: {},
+  className: '',
+  bsSize: 'xsmall'
 };
 
 export default NewVersionModal;
