@@ -26,6 +26,17 @@ export const formatDateYMDLong = (dt) => {
   }
 };
 
-export const getFormattedISODate = date => (date ? moment(date).format('YYYY-MM-DD') : '');
 export const getFormattedTime = date => (date ? moment(date).format('HH:mm') : '');
 export const getFormattedISODateTime = date => (date ? moment(date).format('YYYY-MM-DD HH:mm') : '');
+export const getFormattedISODate = (date) => {
+  if (date == null || typeof date === 'undefined') return '';
+  try {
+    const m = moment(date, 'YYYY-MM-DD');
+    if (m.isValid()) {
+      return m.format('YYYY-MM-DD');
+    }
+    return '';
+  } catch (e) {
+    return '';
+  }
+};
