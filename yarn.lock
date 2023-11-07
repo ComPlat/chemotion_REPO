@@ -3787,6 +3787,11 @@ adler-32@~1.3.0:
   dependencies:
     printj "~1.2.2"
 
+ag-grid-community@^27.3.0:
+  version "27.3.0"
+  resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-27.3.0.tgz#b1e94a58026aaf2f0cd7920e35833325b5e762c7"
+  integrity sha512-R5oZMXEHXnOLrmhn91J8lR0bv6IAnRcU6maO+wKLMJxffRWaAYFAuw1jt7bdmcKCv8c65F6LEBx4ykSOALa9vA==
+
 ag-grid-community@^28.2.1:
   version "28.2.1"
   resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-28.2.1.tgz#50778cb2254ee79497222781909d8364007dd91e"
@@ -3796,6 +3801,13 @@ ag-grid-community@^31.0.0, ag-grid-community@~31.0.3:
   version "31.0.3"
   resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-31.0.3.tgz#80870881a3be03aa5df890b4a70409ef5d781e7f"
   integrity sha512-k81YmLaOQOab9BavYD+Pw2smZSl6TXOJqj9hRuf70XQl3EknOHCGcra7joJxZRJLMKE/HdR+u33TNyX4TCuWfg==
+
+ag-grid-react@^27.3.0:
+  version "27.3.0"
+  resolved "https://registry.yarnpkg.com/ag-grid-react/-/ag-grid-react-27.3.0.tgz#fe06647653f8b0b349b8e613aab8ea2e07915562"
+  integrity sha512-2bs9YfJ/shvBZQLLjny4NFvht+ic6VtpTPO0r3bHHOhlL3Fjx2rGvS6AHSwfvu+kJacHCta30PjaEbX8T3UDyw==
+  dependencies:
+    prop-types "^15.8.1"
 
 ag-grid-react@^28.2.1:
   version "28.2.1"
@@ -5628,7 +5640,7 @@ d3-axis@3:
   resolved "https://registry.yarnpkg.com/d3-axis/-/d3-axis-3.0.0.tgz#c42a4a13e8131d637b745fc2973824cfeaf93322"
   integrity sha512-IH5tgjV4jE/GhHkRV0HiVYPDtvfjHQlQfJHs0usq7M30XcSBvOotpmH1IgkcXsO/5gEQZD43B//fc7SRT5S+xw==
 
-d3-brush@2, d3-brush@2.1.0:
+d3-brush@2:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/d3-brush/-/d3-brush-2.1.0.tgz#adadfbb104e8937af142e9a6e2028326f0471065"
   integrity sha512-cHLLAFatBATyIKqZOkk/mDHUbzne2B3ZwxkzMHvFTCZCmLaXDpZRihQSn8UNXTkGD/3lb/W2sQz0etAftmHMJQ==
@@ -10059,13 +10071,6 @@ mime-types@^2.1.31, mime-types@~2.1.34:
   dependencies:
     mime-db "1.52.0"
 
-mime-types@^2.1.25:
-  version "2.1.34"
-  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.34.tgz#5a712f9ec1503511a945803640fafe09d3793c24"
-  integrity sha512-6cP692WwGIs9XXdOO4++N+7qjqv0rqxxVvJ3VHPh/Sc9mVZcQP+ZGhkKiTvWMQRr2tbHkJP/Yn7Y0npb3ZBs4A==
-  dependencies:
-    mime-db "1.51.0"
-
 mime@1.6.0:
   version "1.6.0"
   resolved "https://registry.npmjs.org/mime/-/mime-1.6.0.tgz"
@@ -10447,6 +10452,16 @@ neo-async@^2.6.2:
   version "2.6.2"
   resolved "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
+
+ngl@^2.1.1:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/ngl/-/ngl-2.2.0.tgz#170cbfb1997c9a05b8d42c7be11d388da9c55631"
+  integrity sha512-aPJb1zFHzHBZl8u1Dl82LiyuulEzSEzMwdpuugyCHxQ09KuXxlIQD5JJo3dKUbMyU5yqtiOScVWLmu6/Uw27RQ==
+  dependencies:
+    chroma-js "^1.3.7"
+    signals "^1.0.0"
+    sprintf-js "^1.1.2"
+    three "^0.118.0"
 
 nise@^5.1.4:
   version "5.1.4"
@@ -13770,6 +13785,11 @@ simple-get@^3.0.3:
     once "^1.3.1"
     simple-concat "^1.0.0"
 
+signals@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/signals/-/signals-1.0.0.tgz#65f0c1599352b35372ecaae5a250e6107376ed69"
+  integrity sha512-dE3lBiqgrgIvpGHYBy6/kiYKfh0HXRmbg0ocakBKiOefbal6ZeTtNlQlxsu9ADkNzv5OmRwRKu+IaTPSqJdZDg==
+
 sinon@^15.2.0:
   version "15.2.0"
   resolved "https://registry.yarnpkg.com/sinon/-/sinon-15.2.0.tgz#5e44d4bc5a9b5d993871137fd3560bebfac27565"
@@ -14377,6 +14397,11 @@ text-table@^0.2.0, text-table@~0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz"
   integrity sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=
+
+three@^0.118.0:
+  version "0.118.3"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.118.3.tgz#c0bf8c10a68155478f12f4ccac2ff979526a4a0a"
+  integrity sha512-ijECXrNzDkHieoeh2H69kgawTGH8DiamhR4uBN8jEM7VHSKvfTdEvOoHsA8Aq7dh7PHAxhlqBsN5arBI3KixSw==
 
 throttleit@^1.0.0:
   version "1.0.0"

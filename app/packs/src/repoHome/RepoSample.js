@@ -15,11 +15,11 @@ import {
   RenderPublishAnalysesPanel,
   SidToPubChem,
   ToggleIndicator,
-  ElStateLabel,
 } from 'src/repoHome/RepoCommon';
 import DateInfo from 'src/components/chemrepo/DateInfo';
 import LicenseIcon from 'src/components/chemrepo/LicenseIcon';
 import MAPanel from 'src/components/chemrepo/MoleculeArchive';
+import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import PublicAnchor from 'src/components/chemrepo/PublicAnchor';
 import PublicSample from 'src/components/chemrepo/PublicSample';
@@ -28,6 +28,7 @@ import RepoSegment from 'src/repoHome/RepoSegment';
 import Sample from 'src/models/Sample';
 import UserCommentModal from 'src/components/chemrepo/UserCommentModal';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
+import { ExtIcon, ExtInfo } from 'src/components/chemrepo/ExtIcon';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -41,10 +42,7 @@ const scrollView = () => {
 export default class RepoSample extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      expandSA: true,
-      expandSG: '',
-    };
+    this.state = { expandSA: true };
     this.panelRef = React.createRef();
     this.materialRef = React.createRef();
     this.handleAnalysesLink = this.handleAnalysesLink.bind(this);
@@ -198,7 +196,8 @@ export default class RepoSample extends Component {
           <SidToPubChem sid={sample.sid} />
           &nbsp;
           <span className="repo-public-user-comment">
-            {PublicLabels(sample.labels)}
+            {ExtIcon(sample.embargo)}
+            <span>{PublicLabels(sample.labels)}</span>
             <PublicCommentModal
               isReviewer={isReviewer}
               id={sample.id}
@@ -220,7 +219,7 @@ export default class RepoSample extends Component {
             />
             &nbsp;
           </span>
-          {ElStateLabel(sample.embargo)}
+          {StateLabel(sample.embargo)}
         </span>
         <br />
         {iupacUserDefined}
@@ -236,6 +235,7 @@ export default class RepoSample extends Component {
           affiliations={sample.affiliations}
           affiliationMap={affiliationMap}
         />
+        {ExtInfo(sample.embargo)}
         <br />
         <PublicSample
           {...this.props}

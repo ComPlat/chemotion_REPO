@@ -5,8 +5,6 @@ import UserAuth from 'src/components/navigation/UserAuth';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 
-// import NavNewSession from '../libHome/NavNewSession';
-// import DocumentHelper from '../components/utils/DocumentHelper';
 import NavNewSession from 'src/components/navigation/NavNewSession';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 

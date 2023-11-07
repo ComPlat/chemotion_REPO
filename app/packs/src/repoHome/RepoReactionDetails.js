@@ -22,6 +22,7 @@ import {
   SchemeWord,
   resizableSvg,
 } from 'src/repoHome/RepoCommon';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import DateInfo from 'src/components/chemrepo/DateInfo';
@@ -31,7 +32,8 @@ import PublicCommentModal from 'src/components/chemrepo/PublicCommentModal';
 import PublicReactionTlc from 'src/components/chemrepo/PublicReactionTlc';
 import PublicReactionProperties from 'src/components/chemrepo/PublicReactionProperties';
 import UserCommentModal from 'src/components/chemrepo/UserCommentModal';
-import QuillViewer from 'src/components/QuillViewer';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 import {
   Citation,
   literatureContent,
@@ -42,6 +44,7 @@ import RepoReviewButtonBar from 'src/repoHome/RepoReviewButtonBar';
 import Sample from 'src/models/Sample';
 import RepoSegment from 'src/repoHome/RepoSegment';
 import { getAuthorLabel } from 'src/components/chemrepo/publication-utils';
+import PublicLabels from 'src/components/chemrepo/PublicLabels';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
