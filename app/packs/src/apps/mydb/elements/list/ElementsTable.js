@@ -21,7 +21,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import ElementsTableGroupedEntries from 'src/apps/mydb/elements/list/ElementsTableGroupedEntries';
 import Select from 'react-select';
 import PropTypes from 'prop-types';
-import { stopEvent } from './utils/DomHelper';
+import { stopEvent } from 'src/utilities/DomHelper';
 
 export default class ElementsTable extends React.Component {
   constructor(props) {
@@ -304,10 +304,10 @@ export default class ElementsTable extends React.Component {
               style={
                 { textAlign: 'center', zIndex: 0 }
               }
-              onChange={event => this.handleNumberOfResultsChange(event, false)}
-              onBlur={event => this.handleNumberOfResultsChange(event, true)}
-              onKeyDown={event => this.handleKeyDown(event)}
-              value={ui.number_of_results ? ui.number_of_results : 0} />
+              onChange={(event) => this.handleNumberOfResultsChange(event, false)}
+              onBlur={(event) => this.handleNumberOfResultsChange(event, true)}
+              onKeyDown={(event) => this.handleKeyDown(event)}
+              value={ui.number_of_results ? ui.number_of_results : 0}
             />
           </InputGroup>
         </FormGroup>

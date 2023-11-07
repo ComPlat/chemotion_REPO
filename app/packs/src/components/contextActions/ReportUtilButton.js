@@ -76,8 +76,8 @@ const ReportUtilButton = ({ customClass, isDisabled=false  }) => {
         <MenuItem onSelect={ElementActions.showLiteratureDetail} title="Reference Manager">
           Reference Manager
         </MenuItem>
-        {graph}
-        {task}
+        {/* {graph}
+        {task} */}
         {divider}
         {predDiv}
       </Dropdown.Menu>

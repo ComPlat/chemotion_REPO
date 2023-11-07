@@ -5,15 +5,7 @@ import { ProfileList, ProfileForm, FileUploadForm } from 'chemotion-converter-cl
 import ConverterApi from 'src/fetchers/ConverterFetcher';
 import GenericDSsFetcher from 'src/fetchers/GenericDSsFetcher';
 
-<<<<<<< HEAD:app/packs/src/apps/converter/ConverterAdmin.js
 class ConverterAdmin extends Component {
-=======
-import ConverterApi from '../../components/fetchers/ConverterFetcher';
-import GenericDSsFetcher from '../../components/fetchers/GenericDSsFetcher';
-
-class ConverterAdmin extends Component {
-
->>>>>>> converter for user:app/packs/src/admin/converter/ConverterAdmin.js
   constructor(props) {
     super(props);
     this.state = {
@@ -69,10 +61,7 @@ class ConverterAdmin extends Component {
 
       console.log(options?.client);
       this.setState({
-<<<<<<< HEAD:app/packs/src/apps/converter/ConverterAdmin.js
         // eslint-disable-next-line max-len
-=======
->>>>>>> converter for user:app/packs/src/admin/converter/ConverterAdmin.js
         profiles: profiles?.profiles || [], datasets, options: options?.options || [], client: options?.client || null
       });
     });

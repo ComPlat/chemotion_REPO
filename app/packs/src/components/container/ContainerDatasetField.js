@@ -9,7 +9,7 @@ import { absOlsTermId } from 'chem-generic-ui';
 import { GenericDSMisType } from 'src/apps/generic/Utils';
 
 // For REPO
-import PublicFetcher from './fetchers/PublicFetcher';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 
 const dataTarget = {
   canDrop(props, monitor) {

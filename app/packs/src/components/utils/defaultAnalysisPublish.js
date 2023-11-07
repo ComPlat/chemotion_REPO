@@ -1,4 +1,4 @@
-import { isNmrPass, isDatasetPass } from '../../libHome/RepoCommon';
+import { isNmrPass, isDatasetPass } from 'src/repoHome/RepoCommon';
 
 const applyPublish = (el) => {
   const ext = [];

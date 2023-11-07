@@ -19,7 +19,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import WellplateDetails from 'src/apps/mydb/elements/details/wellplates/WellplateDetails';
 import { Tabs, Tab, Label, Button } from 'react-bootstrap';
 
-import { getPublicationId } from './chemrepo/publication-utils';
+import { getPublicationId } from 'src/components/chemrepo/publication-utils';
 
 const tabInfoHash = {
   metadata: {

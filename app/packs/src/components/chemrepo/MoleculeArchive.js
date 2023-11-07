@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Panel } from 'react-bootstrap';
-import { ToggleIndicator } from '../../libHome/RepoCommon';
-import { MARegisteredTooltip } from './ma/MAComs';
-import { MADataModal, MARequestModal } from './ma/MAModals';
+import { ToggleIndicator } from 'src/repoHome/RepoCommon';
+import { MARegisteredTooltip } from 'src/components/chemrepo/ma/MAComs';
+import { MADataModal, MARequestModal } from 'src/components/chemrepo/ma/MAModals';
 
 const MAPanel = (_props) => {
   const {

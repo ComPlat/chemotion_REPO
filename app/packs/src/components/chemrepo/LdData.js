@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import PublicFetcher from '../fetchers/PublicFetcher';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 
 const LdData = ({ type, id }) => {
   const [data, setData] = useState(null);

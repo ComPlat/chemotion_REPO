@@ -8,24 +8,12 @@ import AbbreviationContainer from 'src/apps/chemscanner/containers/AbbreviationC
 import HeaderMenuContainer from 'src/apps/chemscanner/containers/HeaderMenuContainer';
 import MainContentContainer from 'src/apps/chemscanner/containers/MainContentContainer';
 import LoadingModalContainer from 'src/apps/chemscanner/containers/LoadingModalContainer';
-import AbbreviationContainer from '../containers/AbbreviationContainer';
-
-import ArchivedManagementContainer from '../containers/ArchivedManagementContainer';
-import ImportModalContainer from '../containers/ImportModalContainer';
-import FileStorageContainer from '../containers/FileStorageContainer';
-
-import * as types from '../actions/ActionTypes';
 
 class Root extends Component {
   componentDidMount() {
-    const {
-      isScriptLoaded, isScriptLoadSucceed, attachEditor,
-      getCurrentVersion
-    } = this.props;
-
-    getCurrentVersion();
-
+    const { isScriptLoaded, isScriptLoadSucceed, attachEditor } = this.props;
     const check = isScriptLoaded && isScriptLoadSucceed;
+
     if (!check) return;
 
     attachEditor('chemscanner-cdjs-container');
@@ -46,25 +34,7 @@ class Root extends Component {
 
   render() {
     const { modal, ui } = this.props;
-    const view = ui.get('view');
-
-    let viewContainer = <span />;
-    switch (view) {
-      case types.VIEW_SCANNED_FILES:
-        viewContainer = <MainContentContainer modal={modal} />;
-        break;
-      case types.VIEW_ABBREVIATION:
-        viewContainer = <AbbreviationContainer />;
-        break;
-      case types.VIEW_FILE_STORAGE:
-        viewContainer = <FileStorageContainer />;
-        break;
-      case types.VIEW_ARCHIVED_MANAGEMENT:
-        viewContainer = <ArchivedManagementContainer />;
-        break;
-      default:
-        break;
-    }
+    const abbView = ui.get('abbView') || false;
 
     return (
       <Grid fluid className="chemscanner-grid">
@@ -84,7 +54,6 @@ class Root extends Component {
         </Row>
         <Row>
           <LoadingModalContainer />
-          <ImportModalContainer />
         </Row>
       </Grid>
     );
@@ -96,7 +65,6 @@ Root.propTypes = {
   isScriptLoaded: PropTypes.bool.isRequired,
   isScriptLoadSucceed: PropTypes.bool.isRequired,
   attachEditor: PropTypes.func.isRequired,
-  getCurrentVersion: PropTypes.func.isRequired,
   modal: PropTypes.string
 };
 
@@ -104,7 +72,6 @@ Root.defaultProps = {
   modal: ''
 };
 
-const scriptUrl = '/cdjs/chemdrawweb/chemdrawweb.js';
-// const scriptUrl = 'https://chemdrawdirect.perkinelmer.cloud/js/chemdrawweb/chemdrawweb.js';
-
+// const scriptUrl = '/cdjs/chemdrawweb/chemdrawweb.js';
+const scriptUrl = 'https://chemdrawdirect.perkinelmer.cloud/js/chemdrawweb/chemdrawweb.js';
 export default scriptLoader(scriptUrl)(Root);

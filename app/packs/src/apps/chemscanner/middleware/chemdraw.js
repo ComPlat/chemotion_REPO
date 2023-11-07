@@ -11,17 +11,10 @@ const cleanUpPromise = (cddInstance, mdl) => {
   });
 
   return loadPromise.then(() => {
-    const version = cddInstance.getVersion().split('.')[0];
-
-    if (version === '18') {
-      cddInstance.g.instanceHub.chemDraw.handleCommand('selectAll');
-      cddInstance.g.instanceHub.chemDraw.handleCommand('cleanStructure');
-    } else {
-      const clean = cddInstance.g.instanceHub.commandLibrary.getOrCreate(356);
-      const selectAll = cddInstance.g.instanceHub.commandLibrary.getOrCreate(54);
-      selectAll.handleCommand();
-      clean.handleCommand();
-    }
+    const clean = cddInstance.g.instanceHub.commandLibrary.getOrCreate(356);
+    const selectAll = cddInstance.g.instanceHub.commandLibrary.getOrCreate(54);
+    selectAll.handleCommand();
+    clean.handleCommand();
 
     return new Promise(resolve => cddInstance.getMOL(mol => resolve(mol)));
   });
@@ -103,7 +96,7 @@ export default store => next => (action) => {
     return next({
       type,
       [CALL_API]: {
-        endpoint: '/api/v1/public_chemscanner/svg/mdl',
+        endpoint: '/api/v1/chemscanner/svg/mdl',
         options: {
           credentials: 'same-origin',
           method: 'post',

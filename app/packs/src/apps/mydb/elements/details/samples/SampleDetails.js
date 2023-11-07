@@ -77,9 +77,11 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
-import RepositoryActions from './actions/RepositoryActions';
-import PublishSampleModal from './PublishSampleModal';
-import RepoXvialButton from './common/RepoXvialButton';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
+import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
+// import RepoXvialButton from 'src/components/chemrepo/common/RepoXvialButton';
 import {
   PublishedTag,
   OrigElnTag,
@@ -87,9 +89,9 @@ import {
   PublishBtn,
   ReviewPublishBtn,
   validateMolecule,
-} from './PublishCommon';
-import SampleDetailsRepoComment from './SampleDetailsRepoComment';
-import { permitOn } from './common/uis';
+} from 'src/components/chemrepo/PublishCommon';
+import SampleDetailsRepoComment from 'src/components/chemrepo/SampleDetailsRepoComment';
+import { permitOn } from 'src/components/common/uis';
 
 const MWPrecision = 6;
 
@@ -571,6 +573,7 @@ export default class SampleDetails extends React.Component {
     }
   }
 
+
   sampleFooter() {
     const { sample, startExport } = this.state;
     const belongToReaction = sample.belongTo && sample.belongTo.type === 'reaction';
@@ -587,86 +590,16 @@ export default class SampleDetails extends React.Component {
       </Button>
     );
 
-    const decoupleCb =
-    permitOn(sample) && this.enableSampleDecoupled ? (
-        <Checkbox
-          className="sample-header-decouple"
-          checked={sample.decoupled}
-          onChange={(e) => this.decoupleChanged(e)}
-        >
-          Decoupled
-        </Checkbox>
-      ) : null;
-
-    const isPub = !!((sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.publication && sample.tag.taggable_data.publication.published_at));
+    const saveAndCloseBtn = belongToReaction && !sample.isNew ? this.saveBtn(sample, true) : null;
     return (
-      <div>
-        <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
-          <span><i className="icon-sample" />{sample.title()}</span>
-        </OverlayTrigger>
-        <ConfirmClose el={sample} />
-        <OverlayTrigger
-          placement="bottom"
-          overlay={<Tooltip id="saveCloseSample">Save and Close Sample</Tooltip>}
-        >
-          <Button
-            bsStyle="warning"
-            bsSize="xsmall"
-            className="button-right"
-            onClick={() => this.handleSubmit(true)}
-            style={{ display: saveBtnDisplay }}
-            disabled={!this.sampleIsValid() || !permitOn(sample)}
-          >
-            <i className="fa fa-floppy-o" />
-            <i className="fa fa-times" />
-          </Button>
-        </OverlayTrigger>
-        <OverlayTrigger
-          placement="bottom"
-          overlay={<Tooltip id="saveSample">Save Sample</Tooltip>}
-        >
-          <Button
-            bsStyle="warning"
-            bsSize="xsmall"
-            className="button-right"
-            onClick={() => this.handleSubmit()}
-            style={{ display: saveBtnDisplay }}
-            disabled={!this.sampleIsValid() || !permitOn(sample)}
-          >
-            <i className="fa fa-floppy-o" />
-          </Button>
-        </OverlayTrigger>
-        {copyBtn}
-        <OverlayTrigger
-          placement="bottom"
-          overlay={<Tooltip id="fullSample">FullScreen</Tooltip>}
-        >
-          <Button
-            bsStyle="info"
-            bsSize="xsmall"
-            className="button-right"
-            onClick={() => this.props.toggleFullScreen()}
-          >
-            <i className="fa fa-expand" />
-          </Button>
-        </OverlayTrigger>
-        <PrintCodeButton element={sample} />
-        {sample.isNew ? <FastInput fnHandle={this.handleFastInput} /> : null}
-        <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
-        <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
-        {decoupleCb}
-        <div style={{ display: 'inline-block', marginLeft: '10px' }}>
-          <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
-          {colLabel}
-          <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
-          <PubchemLabels element={sample} />
-          <OrigElnTag element={sample} />
-          <PublishedTag element={sample} fnUnseal={this.unseal} />
-          <LabelPublication element={sample} />
-          {this.extraLabels().map((Lab, i) => <Lab key={i} element={sample} />)}
-        </div>
-        <ShowUserLabels element={sample} />
-      </div>
+      <ButtonToolbar>
+        <Button bsStyle="primary" onClick={() => DetailActions.close(sample)}>
+          Close
+        </Button>
+        {this.saveBtn(sample)}
+        {saveAndCloseBtn}
+        {downloadAnalysesBtn}
+      </ButtonToolbar>
     );
   }
 
@@ -1239,11 +1172,22 @@ export default class SampleDetails extends React.Component {
             </Button>
           </OverlayTrigger>
           <PrintCodeButton element={sample} />
+          <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+          <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
           {sample.isNew
             ? null
             : <OpenCalendarButton isPanelHeader eventableId={sample.id} eventableType="Sample" />}
           {inventorySample}
           {decoupleCb}
+          <div style={{ display: 'inline-block', marginLeft: '10px' }}>
+            <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
+            {colLabel}
+            <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
+            <PubchemLabels element={sample} />
+            <OrigElnTag element={sample} />
+            <PublishedTag element={sample} fnUnseal={this.unseal} />
+            <LabelPublication element={sample} />
+          </div>
         </div>
         <ShowUserLabels element={sample} />
       </div>
@@ -1769,20 +1713,6 @@ export default class SampleDetails extends React.Component {
     };
 
     let { showPublishSampleModal } = this.state
-
-    for (let j = 0; j < XTabs.count; j += 1) {
-      if (XTabs[`on${j}`](sample)) {
-        const NoName = XTabs[`content${j}`];
-        tabContentsMap[`xtab_${j}`] = (
-          <Tab eventKey={`xtab_${j}`} key={`xtab_${j}`} title={XTabs[`title${j}`]} >
-            <ListGroupItem style={{ paddingBottom: 20 }} >
-              <NoName sample={sample} />
-            </ListGroupItem>
-          </Tab>
-        );
-        tabTitlesMap[`xtab_${j}`] = XTabs[`title${j}`];
-      }
-    }
 
     addSegmentTabs(sample, this.handleSegmentsChange, tabContentsMap);
     const stb = [];

@@ -54,7 +54,7 @@ module DataCite
     def self.report_hash(lit, bib)
       url = LiteraturePaser.doi_url(lit[:id], lit[:url], lit[:doi], bib)
       { title: lit[:title], url: url, doi: lit[:doi], year: bib['year']&.to_s, issn: bib['issn']&.to_s,
-        author: bib['author']&.to_s }
+        author: bib['author']&.to_s&.force_encoding('UTF-8') }
     rescue StandardError => e
       { title: lit[:title], url: url, doi: lit[:doi], year: bib['year']&.to_s, issn: bib['issn']&.to_s,
         author: bib['author']&.to_s&.dup&.force_encoding('UTF-8') }

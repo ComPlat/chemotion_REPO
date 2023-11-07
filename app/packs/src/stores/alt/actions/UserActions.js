@@ -3,7 +3,6 @@ import UsersFetcher from 'src/fetchers/UsersFetcher';
 import GenericSgsFetcher from 'src/fetchers/GenericSgsFetcher';
 import GenericDSsFetcher from 'src/fetchers/GenericDSsFetcher';
 import Aviator from 'aviator';
-import SegmentsFetcher from '../fetchers/SegmentsFetcher';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 
 class UserActions {

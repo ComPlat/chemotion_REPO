@@ -273,7 +273,7 @@ module MetadataJsonld
     element = pub.element
     kind = 'dataset for ' + (element.extended_metadata['kind'] || '')&.split('|').pop + '\n'
     desc = element.extended_metadata['description'] || '' + '\n'
-    content = REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'] || '')).text, false, nil, false).to_s
+    content = element.extended_metadata['content'].nil? ? '' : REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text, false, nil, false).to_s
 
     kind + desc + content
   end

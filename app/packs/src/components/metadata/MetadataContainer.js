@@ -4,18 +4,18 @@ import { Panel, Tabs, Tab } from 'react-bootstrap';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import Metadata from 'src/models/Metadata';
 import UIStore from 'src/stores/alt/stores/UIStore';
-import DetailActions from 'src/stores/alt/actions/DetailActions'
-import ElementActions from 'src/stores/alt/actions/ElementActions'
+import DetailActions from 'src/stores/alt/actions/DetailActions';
+import ElementActions from 'src/stores/alt/actions/ElementActions';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
-import MetadataHeader from './MetadataHeader'
-import MetadataGeneral from './MetadataGeneral'
-import MetadataCreators from './MetadataCreators'
-import MetadataContributors from './MetadataContributors'
-import MetadataAlternateIdentifiers from './MetadataAlternateIdentifiers'
-import MetadataRelatedIdentifiers from './MetadataRelatedIdentifiers'
-import MetadataRightsList from './MetadataRightsList'
-import MetadataFundingReferences from './MetadataFundingReferences'
+import MetadataHeader from 'src/components/metadata/MetadataHeader'
+import MetadataGeneral from 'src/components/metadata/MetadataGeneral'
+import MetadataCreators from 'src/components/metadata/MetadataCreators'
+import MetadataContributors from 'src/components/metadata/MetadataContributors'
+import MetadataAlternateIdentifiers from 'src/components/metadata/MetadataAlternateIdentifiers'
+import MetadataRelatedIdentifiers from 'src/components/metadata/MetadataRelatedIdentifiers'
+import MetadataRightsList from 'src/components/metadata/MetadataRightsList'
+import MetadataFundingReferences from 'src/components/metadata/MetadataFundingReferences'
 
 export default class MetadataContainer extends Component {
   constructor(props) {

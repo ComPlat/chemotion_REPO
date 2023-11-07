@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
-import RepositoryFetcher from '../fetchers/RepositoryFetcher';
-import PublicActions from '../actions/PublicActions';
+import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 
 export default class PublicCommentModal extends React.Component {
   constructor(props) {

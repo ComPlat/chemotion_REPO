@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import QuillEditor from '../../components/QuillEditor';
+import QuillEditor from 'src/components/QuillEditor';
 
 export default class EditorRichText extends Component {
   handleChange(e) {

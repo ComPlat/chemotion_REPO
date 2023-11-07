@@ -21,6 +21,7 @@ import ReactionDetailsProperties from 'src/apps/mydb/elements/details/reactions/
 import GreenChemistry from 'src/apps/mydb/elements/details/reactions/greenChemistryTab/GreenChemistry';
 import Utils from 'src/utilities/Functions';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import { setReactionByType } from 'src/apps/mydb/elements/details/reactions/ReactionDetailsShare';
@@ -43,8 +44,8 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
-import RepositoryActions from './actions/RepositoryActions';
-import PublishReactionModal from './PublishReactionModal';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublishReactionModal from 'src/components/chemrepo/PublishReactionModal';
 import {
   PublishedTag,
   OrigElnTag,
@@ -53,10 +54,10 @@ import {
   ReviewPublishBtn,
   validateMolecule,
   validateYield
-} from './PublishCommon';
-import ReactionDetailsRepoComment from './ReactionDetailsRepoComment';
-import { contentToText } from './utils/quillFormat';
-import HelpInfo from './common/HelpInfo';
+} from 'src/components/chemrepo/PublishCommon';
+import ReactionDetailsRepoComment from 'src/components/chemrepo/ReactionDetailsRepoComment';
+import { contentToText } from 'src/utilities/quillFormat';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 export default class ReactionDetails extends Component {
   constructor(props) {
@@ -415,7 +416,7 @@ export default class ReactionDetails extends Component {
   }
 
   reactionHeader(reaction) {
-    const hasChanged = reaction.changed ? '' : 'none';
+    let hasChanged = reaction.changed ? '' : 'none';
     const titleTooltip = formatTimeStampsOfElement(reaction || {});
 
     const { currentCollection } = UIStore.getState();
@@ -630,7 +631,6 @@ export default class ReactionDetails extends Component {
           {this.productData(reaction)}
         </Tab>
       ),
-/*
       green_chemistry: (
         <Tab eventKey="green_chemistry" title="Green Chemistry" key={`green_chem_${reaction.id}`}>
           {
@@ -650,7 +650,6 @@ export default class ReactionDetails extends Component {
           />
         </Tab>
       )
-*/
     };
 
     const tabTitlesMap = {
@@ -667,6 +666,7 @@ export default class ReactionDetails extends Component {
       stb.push(value);
     });
 
+    // For REPO
     let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
     segmentKlasses =
       segmentKlasses.filter(s => s.element_klass && s.element_klass.name === reaction.type);
@@ -679,6 +679,7 @@ export default class ReactionDetails extends Component {
         stb.push(klass.label);
       }
     });
+
 
     const { showPublishReactionModal } = this.state;
     const submitLabel = (reaction && reaction.isNew) ? 'Create' : 'Save';

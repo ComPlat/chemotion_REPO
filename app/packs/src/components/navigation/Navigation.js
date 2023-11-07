@@ -10,7 +10,7 @@ import UserActions from 'src/stores/alt/actions/UserActions';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 import NavNewSession from 'src/components/navigation/NavNewSession'
-import NavHead from 'src/components/navigation/NavHead'
+import NavHead from 'src/components/navigation/RepoNavHead';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 import NavigationModal from 'src/components/navigation/NavigationModal';
 import SearchFilter from 'src/components/navigation/search/SearchFilter.js'

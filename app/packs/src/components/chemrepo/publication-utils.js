@@ -1,4 +1,4 @@
-import getFormattedRange from './range-utils';
+import getFormattedRange from 'src/components/chemrepo/range-utils';
 
 export const getElementType = element => element?.tag?.taggable_type;
 

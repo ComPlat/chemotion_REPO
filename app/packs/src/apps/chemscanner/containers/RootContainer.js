@@ -3,8 +3,6 @@ import { connect } from 'react-redux';
 
 import Root from 'src/apps/chemscanner/components/Root';
 import setCddInstance from 'src/apps/chemscanner/actions/chemdrawInstanceActions';
-import Root from '../components/Root';
-import { getCurrentVersion } from '../actions/uiActions';
 
 const RootContainer = props => <Root {...props} />;
 
@@ -31,7 +29,6 @@ const mapDispatchToProps = dispatch => ({
     // eslint-disable-next-line no-undef
     perkinelmer.ChemdrawWebManager.attach(config);
   },
-  getCurrentVersion: () => dispatch(getCurrentVersion()),
 });
 
 export default connect(

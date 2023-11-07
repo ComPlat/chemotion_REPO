@@ -1,7 +1,7 @@
 import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import PropTypes from 'prop-types';
-import helpDescs from '../utils/helpDescs';
+import helpDescs from 'src/components/utils/helpDescs';
 
 const HelpInfo = props => (
   helpDescs[props.source] !== undefined ?

@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
 
-import MetadataAlternateIdentifier from './MetadataAlternateIdentifier'
+import MetadataAlternateIdentifier from 'src/components/metadata/MetadataAlternateIdentifier'
 
 const MetadataAlternateIdentifiers = ({ metadata, onAdd, onChange, onRemove }) => {
   return (

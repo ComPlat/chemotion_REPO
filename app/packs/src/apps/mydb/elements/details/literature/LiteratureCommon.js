@@ -28,7 +28,7 @@ const RefByUserInfo = ({ info, litype }) => {
 };
 
 
-const Cite = require('citation-js');
+// const Cite = require('citation-js');
 
 const LiteralType = ({ val, handleInputChange, disabled = false }) => (
   <FormControl

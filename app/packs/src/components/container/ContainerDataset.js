@@ -30,9 +30,6 @@ import HyperLinksSection from 'src/components/common/HyperLinksSection';
 import ImageAnnotationEditButton from 'src/apps/mydb/elements/details/researchPlans/ImageAnnotationEditButton';
 import ImageAnnotationModalSVG from 'src/apps/mydb/elements/details/researchPlans/ImageAnnotationModalSVG';
 
-import { absOlsTermId } from '../admin/generic/Utils';
-import Container from './models/Container';
-
 export default class ContainerDataset extends Component {
   constructor(props) {
     super();

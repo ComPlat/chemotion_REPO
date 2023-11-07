@@ -8,26 +8,26 @@ module Chemotion
   # API for Public data
   class PublicAPI < Grape::API
     include Grape::Kaminari
-    # helpers do
-    #   def send_notification(attachment, user, status, has_error = false)
-    #     data_args = { 'filename': attachment.filename, 'comment': 'the file has been updated' }
-    #     level = 'success'
-    #     if has_error
-    #       data_args['comment'] = ' an error has occurred, the file is not changed.'
-    #       level = 'error'
-    #     elsif status == 4
-    #       data_args['comment'] = ' file has not changed.'
-    #       level = 'info'
-    #     elsif @status == 7
-    #       data_args['comment'] = ' an error has occurred while force saving the document, please review your changes.'
-    #       level = 'error'
-    #     end
-    #     message = Message.create_msg_notification(
-    #       channel_subject: Channel::EDITOR_CALLBACK, message_from: user.id,
-    #       data_args: data_args, attach_id: attachment.id, research_plan_id: attachment.attachable_id, level: level
-    #     )
-    #   end
-    # end
+    helpers do
+      def send_notification(attachment, user, status, has_error = false)
+        data_args = { 'filename': attachment.filename, 'comment': 'the file has been updated' }
+        level = 'success'
+        if has_error
+          data_args['comment'] = ' an error has occurred, the file is not changed.'
+          level = 'error'
+        elsif status == 4
+          data_args['comment'] = ' file has not changed.'
+          level = 'info'
+        elsif @status == 7
+          data_args['comment'] = ' an error has occurred while force saving the document, please review your changes.'
+          level = 'error'
+        end
+        message = Message.create_msg_notification(
+          channel_subject: Channel::EDITOR_CALLBACK, message_from: user.id,
+          data_args: data_args, attach_id: attachment.id, research_plan_id: attachment.attachable_id, level: level
+        )
+      end
+    end
     helpers CompoundHelpers
     helpers PublicHelpers
 
@@ -289,17 +289,17 @@ module Chemotion
 
         desc 'Return all countries available'
         get 'countries' do
-          ISO3166::Country.all_translated
+          { affiliations: ISO3166::Country.all_translated }
         end
 
         desc "Return all current organizations"
         get "organizations" do
-          Affiliation.where.not(organization: ENV['BLIST_ORGANIZATIONS']).pluck("DISTINCT organization")
+          { affiliations: Affiliation.where.not(organization: ENV['BLIST_ORGANIZATIONS']).pluck("DISTINCT organization")}
         end
 
         desc "Return all current departments"
         get "departments" do
-          Affiliation.where.not(department:  ENV['BLIST_DEPARTMENTS']).pluck("DISTINCT trim(department)")
+          { affiliations: Affiliation.where.not(department:  ENV['BLIST_DEPARTMENTS']).pluck('DISTINCT department')}
         end
 
         # desc "Return all current groups"
@@ -319,7 +319,7 @@ module Chemotion
       get 'collection' do
         pub_coll = Collection.public_collection
         if current_user
-          coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll.id)
+          coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll&.id)
           { id: coll&.id, is_sync_to_me: true  }
         else
           { id: nil }
@@ -374,11 +374,11 @@ module Chemotion
           return "/molecules/#{molecule.id.to_s}" if type.empty?
 
           version = params[:version] ? params[:version] : ""
-          analyses = Collection.public_collection.samples
+          analyses = Collection.public_collection&.samples
             .where("samples.molecule_id = ?", molecule.id.to_s)
             .map(&:analyses).flatten
 
-          analyses_filtered = analyses.select { |a|
+          analyses_filtered = analyses&.select { |a|
             em = a.extended_metadata
             check = em['kind'].to_s.gsub(/\s/, '') == type
             check = check && (em['analysis_version'] || '1') == version unless version.empty?
@@ -471,7 +471,7 @@ module Chemotion
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
             obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], req_xvial)
           end
-          entities
+          { molecules: entities }
         end
       end
 
@@ -548,7 +548,7 @@ module Chemotion
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:id])
           end
 
-          entities
+          { reactions: entities }
         end
       end
 
@@ -875,7 +875,7 @@ module Chemotion
       resource :published_statics do
         desc 'Return PUBLIC statics'
         get do
-          ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps')
+          { published_statics: ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps') }
         end
       end
 

@@ -1,7 +1,6 @@
 import * as routesUtils from 'src/utilities/routesUtils';
 import { elementNames } from 'src/apps/generic/Utils';
 
-
 const routes = {
   '/': 'root',
   target: {

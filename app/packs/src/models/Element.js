@@ -32,7 +32,7 @@ export default class Element {
     }
     return sha256(JSON.stringify(_.omit(_.omit(
       tThis,
-      ['_checksum', 'belongTo', 'matGroup', 'molecule_names', 'equivalent', '_equivalent', 'formulaChanged', 'research_plans', ...fieldsToOmit],
+      ['_checksum', 'belongTo', 'matGroup', 'molecule_names', 'equivalent', '_equivalent', 'formulaChanged', 'research_plans', 'sealed', ...fieldsToOmit],
     ), _.isEmpty)));
   }
 

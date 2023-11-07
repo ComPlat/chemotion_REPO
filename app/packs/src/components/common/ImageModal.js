@@ -1,12 +1,11 @@
 // PLEASE check carefully when performing ELN rebasing
 import React, { Component, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import { stopEvent } from 'src/utilities/DomHelper';
-import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Document, Page, pdfjs } from 'react-pdf';
-import UserStore from '../stores/UserStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 const defaultImageStyle = {

@@ -1,5 +1,5 @@
 import Element from 'src/models/Element';
-import { CitationType } from '../CitationType';
+import { CitationType } from 'src/components/CitationType';
 
 export default class Literature extends Element {
   static buildEmpty() {

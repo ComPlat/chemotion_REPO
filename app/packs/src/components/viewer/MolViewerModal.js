@@ -3,9 +3,9 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button, ButtonGroup, Modal, ProgressBar } from 'react-bootstrap';
 import { ReactNglViewer } from 'react-nglviewer';
-import PublicFetcher from '../fetchers/PublicFetcher';
-import MolViewer from './MolViewer';
-import MolViewerSet from './MolViewerSet';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
+import MolViewer from 'src/components/viewer/MolViewer';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
 
 const MolViewerModal = (props) => {
   const {

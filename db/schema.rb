@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_08_10_100000) do
+ActiveRecord::Schema.define(version: 2023_08_29_100000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+  enable_extension "postgres_fdw"
   enable_extension "uuid-ossp"
 
   create_table "affiliations", id: :serial, force: :cascade do |t|
@@ -70,8 +71,8 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.string "attachable_type"
     t.string "aasm_state"
     t.bigint "filesize"
-    t.jsonb "attachment_data"
     t.integer "con_state"
+    t.jsonb "attachment_data"
     t.index ["attachable_type", "attachable_id"], name: "index_attachments_on_attachable_type_and_attachable_id"
     t.index ["identifier"], name: "index_attachments_on_identifier", unique: true
   end
@@ -80,8 +81,8 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.string "token", null: false
     t.integer "user_id"
     t.inet "ip"
-    t.string "fqdn"
     t.string "role"
+    t.string "fqdn"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.index ["user_id"], name: "index_authentication_keys_on_user_id"
@@ -126,6 +127,98 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.jsonb "chemical_data"
   end
 
+  create_table "chemscanner_molecules", id: :serial, force: :cascade do |t|
+    t.integer "scheme_id", null: false
+    t.integer "external_id"
+    t.integer "clone_from"
+    t.string "mdl"
+    t.string "cano_smiles"
+    t.string "label"
+    t.string "abbreviation"
+    t.string "description"
+    t.jsonb "aliases", default: {}
+    t.jsonb "details", default: {}
+    t.jsonb "extended_metadata", default: {}
+    t.boolean "is_approved", default: false
+    t.integer "imported_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.string "inchistring"
+    t.string "inchikey"
+  end
+
+  create_table "chemscanner_reaction_steps", id: :serial, force: :cascade do |t|
+    t.integer "reaction_id", null: false
+    t.integer "reaction_external_id", null: false
+    t.integer "reagent_ids", default: [], array: true
+    t.string "reagent_smiles", default: [], array: true
+    t.integer "step_number", null: false
+    t.string "description"
+    t.string "temperature"
+    t.string "time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+  end
+
+  create_table "chemscanner_reactions", id: :serial, force: :cascade do |t|
+    t.integer "scheme_id", null: false
+    t.integer "external_id", null: false
+    t.integer "clone_from"
+    t.string "description"
+    t.string "temperature"
+    t.string "time"
+    t.string "status"
+    t.float "yield"
+    t.jsonb "details", default: {}
+    t.jsonb "extended_metadata", default: {}
+    t.boolean "is_approved", default: false
+    t.integer "imported_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+  end
+
+  create_table "chemscanner_reactions_molecules", id: :serial, force: :cascade do |t|
+    t.integer "reaction_id", null: false
+    t.integer "molecule_id", null: false
+    t.string "type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+  end
+
+  create_table "chemscanner_schemes", id: :serial, force: :cascade do |t|
+    t.integer "source_id", null: false
+    t.boolean "is_approved", default: false
+    t.jsonb "extended_metadata", default: {}
+    t.integer "index", default: 0
+    t.string "image_data", default: ""
+    t.string "version", default: ""
+    t.integer "created_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+  end
+
+  create_table "chemscanner_source_hierarchies", id: false, force: :cascade do |t|
+    t.integer "ancestor_id", null: false
+    t.integer "descendant_id", null: false
+    t.integer "generations", null: false
+    t.index ["ancestor_id", "descendant_id", "generations"], name: "chemscanner_source_anc_desc_idx", unique: true
+    t.index ["descendant_id"], name: "chemscanner_source_desc_idx"
+  end
+
+  create_table "chemscanner_sources", id: :serial, force: :cascade do |t|
+    t.integer "parent_id"
+    t.integer "file_id", null: false
+    t.jsonb "extended_metadata", default: {}
+    t.integer "created_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "code_logs", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "source"
     t.integer "source_id"
@@ -164,8 +257,8 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
   create_table "collections_elements", id: :serial, force: :cascade do |t|
     t.integer "collection_id"
     t.integer "element_id"
-    t.datetime "deleted_at"
     t.string "element_type"
+    t.datetime "deleted_at"
     t.index ["collection_id"], name: "index_collections_elements_on_collection_id"
     t.index ["deleted_at"], name: "index_collections_elements_on_deleted_at"
     t.index ["element_id", "collection_id"], name: "index_collections_elements_on_element_id_and_collection_id", unique: true
@@ -298,6 +391,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.datetime "released_at"
     t.string "identifier"
     t.datetime "sync_time"
+    t.jsonb "metadata", default: {}
     t.integer "updated_by"
     t.integer "released_by"
     t.integer "sync_by"
@@ -390,25 +484,45 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["device_id"], name: "index_device_metadata_on_device_id"
   end
 
+  create_table "dois", id: :serial, force: :cascade do |t|
+    t.integer "molecule_id"
+    t.string "inchikey"
+    t.integer "molecule_count"
+    t.integer "analysis_id"
+    t.string "analysis_type"
+    t.integer "analysis_count"
+    t.jsonb "metadata", default: {}
+    t.boolean "minted", default: false
+    t.datetime "minted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "doiable_id"
+    t.string "doiable_type"
+    t.string "suffix"
+    t.index ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true
+    t.index ["suffix"], name: "index_dois_on_suffix", unique: true
+  end
+
   create_table "element_klasses", id: :serial, force: :cascade do |t|
     t.string "name"
     t.string "label"
     t.string "desc"
     t.string "icon_name"
+    t.boolean "is_active", default: true, null: false
+    t.string "klass_prefix", default: "E", null: false
+    t.boolean "is_generic", default: true, null: false
+    t.integer "place", default: 100, null: false
     t.jsonb "properties_template"
     t.integer "created_by"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
-    t.boolean "is_active", default: true, null: false
-    t.string "klass_prefix", default: "E", null: false
-    t.boolean "is_generic", default: true, null: false
-    t.integer "place", default: 100, null: false
     t.string "uuid"
     t.jsonb "properties_release", default: {}
     t.datetime "released_at"
     t.string "identifier"
     t.datetime "sync_time"
+    t.jsonb "metadata", default: {}
     t.integer "updated_by"
     t.integer "released_by"
     t.integer "sync_by"
@@ -453,12 +567,12 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
   create_table "elements", id: :serial, force: :cascade do |t|
     t.string "name"
     t.integer "element_klass_id"
+    t.string "short_label"
     t.jsonb "properties"
     t.integer "created_by"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
-    t.string "short_label"
     t.string "uuid"
     t.string "klass_uuid"
     t.jsonb "properties_release"
@@ -836,6 +950,30 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
+  create_table "publications", id: :serial, force: :cascade do |t|
+    t.string "state"
+    t.jsonb "metadata", default: {}
+    t.jsonb "taggable_data", default: {}
+    t.jsonb "dois", default: {}
+    t.string "element_type"
+    t.integer "element_id"
+    t.integer "doi_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.datetime "deleted_at"
+    t.string "original_element_type"
+    t.integer "original_element_id"
+    t.string "ancestry"
+    t.text "metadata_xml"
+    t.integer "published_by"
+    t.datetime "published_at"
+    t.jsonb "review"
+    t.datetime "accepted_at"
+    t.text "oai_metadata_xml"
+    t.index ["ancestry"], name: "index_publications_on_ancestry"
+    t.index ["element_type", "element_id", "deleted_at"], name: "publications_element_idx"
+  end
+
   create_table "reactions", id: :serial, force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -883,6 +1021,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.datetime "deleted_at"
     t.boolean "waste", default: false
     t.float "coefficient", default: 1.0
+    t.float "scheme_yield"
     t.boolean "show_label", default: false, null: false
     t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
     t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
@@ -989,8 +1128,8 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
   end
 
   create_table "research_plans_screens", force: :cascade do |t|
-    t.integer "screen_id"
-    t.integer "research_plan_id"
+    t.bigint "screen_id", null: false
+    t.bigint "research_plan_id", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
@@ -999,8 +1138,8 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
   end
 
   create_table "research_plans_wellplates", force: :cascade do |t|
-    t.integer "research_plan_id"
-    t.integer "wellplate_id"
+    t.bigint "research_plan_id", null: false
+    t.bigint "wellplate_id", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
@@ -1040,7 +1179,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.integer "molecule_id"
     t.binary "molfile"
     t.float "purity", default: 1.0
-    t.string "deprecated_solvent", default: ""
     t.string "impurities", default: ""
     t.string "location", default: ""
     t.boolean "is_top_secret", default: false
@@ -1065,7 +1203,6 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.integer "molecule_name_id"
     t.string "molfile_version", limit: 20
     t.jsonb "stereo"
-    t.string "mol_rdkit"
     t.string "metrics", default: "mmm"
     t.boolean "decoupled", default: false, null: false
     t.float "molecular_mass"
@@ -1140,6 +1277,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.datetime "released_at"
     t.string "identifier"
     t.datetime "sync_time"
+    t.jsonb "metadata", default: {}
     t.integer "updated_by"
     t.integer "released_by"
     t.integer "sync_by"
@@ -1301,6 +1439,11 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["user_id"], name: "index_users_admins_on_user_id"
   end
 
+  create_table "users_collaborators", id: :serial, force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "collaborator_id"
+  end
+
   create_table "users_devices", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "device_id"
@@ -1342,6 +1485,7 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
     t.index ["wellplate_id"], name: "index_wells_on_wellplate_id"
   end
 
+  add_foreign_key "dois", "molecules"
   add_foreign_key "literals", "literatures"
   add_foreign_key "report_templates", "attachments"
   add_foreign_key "sample_tasks", "samples"
@@ -1351,48 +1495,64 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
        RETURNS json
        LANGUAGE sql
       AS $function$
-           select array_to_json(array_agg(row_to_json(result))) from (
-           SELECT sync_collections_users.id, users.type,users.first_name || chr(32) || users.last_name as name,sync_collections_users.permission_level,
-           sync_collections_users.reaction_detail_level,sync_collections_users.sample_detail_level,sync_collections_users.screen_detail_level,sync_collections_users.wellplate_detail_level
-           FROM sync_collections_users
-           INNER JOIN users ON users.id = sync_collections_users.user_id AND users.deleted_at IS NULL
-           WHERE sync_collections_users.shared_by_id = $1 and sync_collections_users.collection_id = $2
-           group by  sync_collections_users.id,users.type,users.name_abbreviation,users.first_name,users.last_name,sync_collections_users.permission_level
-           ) as result
-           $function$
+       select array_to_json(array_agg(row_to_json(result))) from (
+       SELECT sync_collections_users.id, users.type,users.first_name || chr(32) || users.last_name as name,sync_collections_users.permission_level,
+       sync_collections_users.reaction_detail_level,sync_collections_users.sample_detail_level,sync_collections_users.screen_detail_level,sync_collections_users.wellplate_detail_level
+       FROM sync_collections_users
+       INNER JOIN users ON users.id = sync_collections_users.user_id AND users.deleted_at IS NULL
+       WHERE sync_collections_users.shared_by_id = $1 and sync_collections_users.collection_id = $2
+       group by  sync_collections_users.id,users.type,users.name_abbreviation,users.first_name,users.last_name,sync_collections_users.permission_level
+       ) as result
+       $function$
+  SQL
+  create_function :com_xvial, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.com_xvial(p_allow boolean DEFAULT false)
+       RETURNS SETOF compound_open_data_locals
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if p_allow IS false then
+      		return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+      	elsif EXISTS(select * from to_regclass('compound_open_data') where to_regclass is not null) then
+      	   RETURN QUERY SELECT compound_open_data.* FROM compound_open_data;
+      	else
+      	   return QUERY SELECT compound_open_data_locals.* FROM compound_open_data_locals;
+          end if;
+      END
+      $function$
   SQL
   create_function :detail_level_for_sample, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.detail_level_for_sample(in_user_id integer, in_sample_id integer)
        RETURNS TABLE(detail_level_sample integer, detail_level_wellplate integer)
        LANGUAGE plpgsql
       AS $function$
-          declare
-          	i_detail_level_wellplate integer default 0;
-          	i_detail_level_sample integer default 0;
-          begin
-          	select max(all_cols.sample_detail_level), max(all_cols.wellplate_detail_level)
-          	into i_detail_level_sample, i_detail_level_wellplate
-          	from
-          	(
-          		select v_sams_cols.cols_sample_detail_level sample_detail_level, v_sams_cols.cols_wellplate_detail_level wellplate_detail_level
-          			from v_samples_collections v_sams_cols
-          			where v_sams_cols.sams_id = in_sample_id
-          			and v_sams_cols.cols_user_id in (select user_ids(in_user_id))
-          		union
-          		select sync_cols.sample_detail_level sample_detail_level, sync_cols.wellplate_detail_level wellplate_detail_level
-          			from sync_collections_users sync_cols
-          			inner join collections cols on cols.id = sync_cols.collection_id and cols.deleted_at is null
-          			where sync_cols.collection_id in
-          			(
-          				select v_sams_cols.cols_id
-          				from v_samples_collections v_sams_cols
-          				where v_sams_cols.sams_id = in_sample_id
-          			)
-          			and sync_cols.user_id in (select user_ids(in_user_id))
-          	) all_cols;
+      declare
+        i_detail_level_wellplate integer default 0;
+        i_detail_level_sample integer default 0;
+      begin
+        select max(all_cols.sample_detail_level), max(all_cols.wellplate_detail_level)
+        into i_detail_level_sample, i_detail_level_wellplate
+        from
+        (
+          select v_sams_cols.cols_sample_detail_level sample_detail_level, v_sams_cols.cols_wellplate_detail_level wellplate_detail_level
+            from v_samples_collections v_sams_cols
+            where v_sams_cols.sams_id = in_sample_id
+            and v_sams_cols.cols_user_id in (select user_ids(in_user_id))
+          union
+          select sync_cols.sample_detail_level sample_detail_level, sync_cols.wellplate_detail_level wellplate_detail_level
+            from sync_collections_users sync_cols
+            inner join collections cols on cols.id = sync_cols.collection_id and cols.deleted_at is null
+            where sync_cols.collection_id in
+            (
+              select v_sams_cols.cols_id
+              from v_samples_collections v_sams_cols
+              where v_sams_cols.sams_id = in_sample_id
+            )
+            and sync_cols.user_id in (select user_ids(in_user_id))
+        ) all_cols;
 
-              return query select coalesce(i_detail_level_sample,0) detail_level_sample, coalesce(i_detail_level_wellplate,0) detail_level_wellplate;
-          end;$function$
+          return query select coalesce(i_detail_level_sample,0) detail_level_sample, coalesce(i_detail_level_wellplate,0) detail_level_wellplate;
+      end;$function$
   SQL
   create_function :generate_notifications, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.generate_notifications(in_channel_id integer, in_message_id integer, in_user_id integer, in_user_ids integer[])
@@ -1490,27 +1650,72 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
        RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
          and l.element_type = $1 and l.element_id = $2
        $function$
+  SQL
+  create_function :pub_reactions_by_molecule, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
+       RETURNS TABLE(reaction_ids integer)
+       LANGUAGE sql
+      AS $function$
+          (select r.id from collections c, collections_reactions cr, reactions r, reactions_samples rs, samples s,molecules m
+           where c.id=$1 and c.id = cr.collection_id and cr.reaction_id = r.id
+           and r.id = rs.reaction_id and rs.sample_id = s.id and rs.type in ('ReactionsProductSample')
+           and c.deleted_at is null and cr.deleted_at is null and r.deleted_at is null and rs.deleted_at is null and s.deleted_at is null and m.deleted_at is null
+           and s.molecule_id = m.id and m.id=$2)
+        $function$
+  SQL
+  create_function :set_dataset_klasses_identifier, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.set_dataset_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update dataset_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
+  SQL
+  create_function :set_element_klasses_identifier, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.set_element_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update element_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
+  SQL
+  create_function :set_segment_klasses_identifier, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.set_segment_klasses_identifier()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	update segment_klasses set identifier = gen_random_uuid() where identifier is null;
+        return new;
+      end
+      $function$
   SQL
   create_function :shared_user_as_json, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.shared_user_as_json(in_user_id integer, in_current_user_id integer)
        RETURNS json
        LANGUAGE plpgsql
       AS $function$
-             begin
-             	if (in_user_id = in_current_user_id) then
-             		return null;
-             	else
-             		return (select row_to_json(result) from (
-             		select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-             		from users where id = $1
-             		) as result);
-             	end if;
-              end;
-           $function$
+         begin
+          if (in_user_id = in_current_user_id) then
+            return null;
+          else
+            return (select row_to_json(result) from (
+            select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
+            from users where id = $1
+            ) as result);
+          end if;
+          end;
+       $function$
   SQL
   create_function :update_users_matrix, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.update_users_matrix()
@@ -1540,22 +1745,22 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
        RETURNS json
        LANGUAGE sql
       AS $function$
-             select row_to_json(result) from (
-            	 select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
-           	   from users where id = $1
-         	   ) as result
-           $function$
+         select row_to_json(result) from (
+           select users.id, users.name_abbreviation as initials ,users.type,users.first_name || chr(32) || users.last_name as name
+           from users where id = $1
+         ) as result
+       $function$
   SQL
   create_function :user_ids, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.user_ids(user_id integer)
        RETURNS TABLE(user_ids integer)
        LANGUAGE sql
       AS $function$
-             select $1 as id
-             union
-             (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
-             and users.type in ('Group') and users_groups.user_id = $1)
-           $function$
+          select $1 as id
+          union
+          (select users.id from users inner join users_groups ON users.id = users_groups.group_id WHERE users.deleted_at IS null
+         and users.type in ('Group') and users_groups.user_id = $1)
+        $function$
   SQL
   create_function :user_instrument, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.user_instrument(user_id integer, sc text)
@@ -1572,6 +1777,13 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
            $function$
   SQL
 
+
+  create_trigger :set_dataset_klasses_identifier, sql_definition: <<-SQL
+      CREATE TRIGGER set_dataset_klasses_identifier AFTER INSERT ON public.dataset_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_dataset_klasses_identifier()
+  SQL
+  create_trigger :set_element_klasses_identifier, sql_definition: <<-SQL
+      CREATE TRIGGER set_element_klasses_identifier AFTER INSERT ON public.element_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_element_klasses_identifier()
+  SQL
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
       CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
   SQL
@@ -1579,6 +1791,33 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       CREATE TRIGGER set_segment_klasses_identifier AFTER INSERT ON public.segment_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_segment_klasses_identifier()
   SQL
 
+  create_view "compound_open_data_locals", sql_definition: <<-SQL
+      SELECT c.x_id,
+      c.x_sample_id,
+      c.x_data,
+      c.x_created_at,
+      c.x_updated_at,
+      c.x_inchikey,
+      c.x_sum_formular,
+      c.x_cano_smiles,
+      c.x_external_label,
+      c.x_short_label,
+      c.x_name,
+      c.x_stereo
+     FROM ( SELECT NULL::integer AS x_id,
+              NULL::integer AS x_sample_id,
+              NULL::jsonb AS x_data,
+              NULL::timestamp without time zone AS x_created_at,
+              NULL::timestamp without time zone AS x_updated_at,
+              NULL::character varying AS x_inchikey,
+              NULL::character varying AS x_sum_formular,
+              NULL::character varying AS x_cano_smiles,
+              NULL::character varying AS x_external_label,
+              NULL::character varying AS x_short_label,
+              NULL::character varying AS x_name,
+              NULL::jsonb AS x_stereo) c
+    WHERE (c.x_id IS NOT NULL);
+  SQL
   create_view "literal_groups", sql_definition: <<-SQL
       SELECT lits.element_type,
       lits.element_id,
@@ -1621,6 +1860,111 @@ ActiveRecord::Schema.define(version: 2023_08_10_100000) do
       channels,
       users
     WHERE ((channels.id = messages.channel_id) AND (messages.id = notifications.message_id) AND (users.id = messages.created_by));
+  SQL
+  create_view "publication_authors", sql_definition: <<-SQL
+      SELECT DISTINCT (jsonb_array_elements((publications.taggable_data -> 'creators'::text)) ->> 'id'::text) AS author_id,
+      publications.element_id,
+      publications.element_type,
+          CASE
+              WHEN ((publications.state)::text ~~ 'completed%'::text) THEN 'completed'::character varying
+              ELSE publications.state
+          END AS state,
+      publications.doi_id,
+      publications.ancestry
+     FROM publications
+    WHERE (publications.deleted_at IS NULL);
+  SQL
+  create_view "publication_collections", sql_definition: <<-SQL
+      SELECT p.id,
+      p.state,
+      p.element_id,
+      (p.taggable_data ->> 'label'::text) AS label,
+      (p.taggable_data ->> 'col_doi'::text) AS doi,
+      jsonb_array_elements((p.taggable_data -> 'element_dois'::text)) AS elobj,
+      p.doi_id,
+      p.published_by
+     FROM publications p
+    WHERE ((p.deleted_at IS NULL) AND ((p.element_type)::text = 'Collection'::text));
+  SQL
+  create_view "publication_ontologies", sql_definition: <<-SQL
+      SELECT root.element_type,
+      root.element_id,
+      sub.element_id AS container_id,
+      root.published_at,
+      (containers.extended_metadata -> 'kind'::text) AS ontologies,
+      btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 1)) AS term_id,
+      btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2)) AS label
+     FROM publications root,
+      publications sub,
+      containers
+    WHERE (((root.state)::text ~~ 'complete%'::text) AND ((root.element_type)::text = ANY (ARRAY[('Sample'::character varying)::text, ('Reaction'::character varying)::text])) AND ((sub.element_type)::text = 'Container'::text) AND (root.id = ANY ((string_to_array((sub.ancestry)::text, '/'::text))::integer[])) AND (root.deleted_at IS NULL) AND (sub.element_id = containers.id));
+  SQL
+  create_view "publication_statics", sql_definition: <<-SQL
+      SELECT 'sample'::text AS el_type,
+      'sample-embargo'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text = 'accepted'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'sample'::text AS el_type,
+      'sample-review'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text = ANY (ARRAY[('pending'::character varying)::text, ('reviewed'::character varying)::text])) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'sample'::text AS el_type,
+      'sample'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'sample'::text AS el_type,
+      'xvial'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM (publications
+       JOIN element_tags et ON ((((et.taggable_type)::text = 'Sample'::text) AND (((et.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((et.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text)) AND (et.taggable_id = publications.element_id))))
+    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'reaction'::text AS el_type,
+      'reaction-embargo'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text = 'accepted'::text) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'reaction'::text AS el_type,
+      'reaction-review'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text = ANY (ARRAY[('pending'::character varying)::text, ('reviewed'::character varying)::text])) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'reaction'::text AS el_type,
+      'reaction'::text AS ex_type,
+      count(publications.id) AS e_cnt
+     FROM publications
+    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Reaction'::text) AND (publications.deleted_at IS NULL))
+  UNION
+   SELECT 'analysis'::text AS el_type,
+      summ.g_type AS ex_type,
+      sum(summ.c_num) AS e_cnt
+     FROM ( SELECT
+                  CASE
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%NMR%'::text) THEN 'NMR'::text
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%mass%'::text) THEN 'Mass'::text
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%DEPT%'::text) THEN 'DEPT'::text
+                      WHEN (((containers.extended_metadata -> 'kind'::text) ~~ '%X-ray%'::text) OR ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0000156%'::text)) THEN 'X-ray'::text
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0000630%'::text) THEN 'IR'::text
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0001007%'::text) THEN 'TLC'::text
+                      WHEN ((containers.extended_metadata -> 'kind'::text) ~~ '%CHMO:0001075%'::text) THEN 'EA'::text
+                      WHEN (split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2) <> ''::text) THEN btrim(split_part((containers.extended_metadata -> 'kind'::text), '|'::text, 2))
+                      ELSE (containers.extended_metadata -> 'kind'::text)
+                  END AS g_type,
+              count(containers.id) AS c_num
+             FROM containers
+            WHERE ((containers.id IN ( SELECT publications.element_id
+                     FROM publications
+                    WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Container'::text) AND (publications.deleted_at IS NULL)))) AND ((containers.extended_metadata -> 'kind'::text) <> ''::text))
+            GROUP BY (containers.extended_metadata -> 'kind'::text)) summ
+    GROUP BY summ.g_type;
   SQL
   create_view "v_samples_collections", sql_definition: <<-SQL
       SELECT cols.id AS cols_id,

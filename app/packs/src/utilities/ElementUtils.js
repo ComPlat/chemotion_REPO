@@ -5,10 +5,10 @@ import { searchAndReplace } from 'src/utilities/markdownUtils';
 import MatrixCheck from 'src/components/common/MatrixCheck';
 
 import UIStore from 'src/stores/alt/stores/UIStore';
-import UserStore from '../stores/alt/stores/UserStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
 
-import { contentToText } from './quillFormat';
-import { chmoConversions } from '../OlsComponent';
+import { contentToText } from 'src/utilities/quillFormat';
+import { chmoConversions } from 'src/components/OlsComponent';
 
 
 const rfValueFormat = (input) => {
@@ -556,5 +556,4 @@ export {
   getElementSegments,
   isNmrPass,
   isDatasetPass,
-  getElementSegments,
 };

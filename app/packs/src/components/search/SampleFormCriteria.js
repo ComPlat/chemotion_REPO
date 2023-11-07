@@ -5,10 +5,6 @@ import {
   Table, Glyphicon, Tabs, Tab, OverlayTrigger, Tooltip
 } from 'react-bootstrap';
 import Select from 'react-select';
-// import DetailActions from '../actions/DetailActions';
-// import NumeralInputWithUnitsCompo from '../NumeralInputWithUnitsCompo';
-// import TextRangeWithAddon from '../TextRangeWithAddon';
-// import PrivateNoteElement from '../PrivateNoteElement';
 
 export default class SampleFormCriteria extends React.Component {
   constructor(props) {

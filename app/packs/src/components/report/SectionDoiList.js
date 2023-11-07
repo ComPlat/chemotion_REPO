@@ -1,10 +1,10 @@
 import React from 'react';
 import SVG from 'react-inlinesvg';
 import { Table, Tooltip, OverlayTrigger } from 'react-bootstrap';
-import ReportActions from '../actions/ReportActions';
-import ReportStore from '../stores/ReportStore';
-import { UserSerial } from '../utils/ReportHelper';
-import ReportsFetcher from '../fetchers/ReportsFetcher';
+import ReportActions from 'src/stores/alt/actions/ReportActions';
+import ReportStore from 'src/stores/alt/stores/ReportStore';
+import { UserSerial } from 'src/utilities/ReportHelper';
+import ReportsFetcher from 'src/fetchers/ReportsFetcher';
 
 
 const svgPath = (svg, type) => {

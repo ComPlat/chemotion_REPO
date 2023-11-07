@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Col, Panel, Row } from 'react-bootstrap';
-import { CalcDuration, ToggleIndicator } from '../../libHome/RepoCommon';
+import { CalcDuration, ToggleIndicator } from 'src/repoHome/RepoCommon';
 
 const PublicReactionProperties = ({
   reaction, toggle, show, isPublished

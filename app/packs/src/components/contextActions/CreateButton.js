@@ -263,11 +263,11 @@ export default class CreateButton extends React.Component {
     const { layout } = this.state;
     const type = UserStore.getState().currentType;
     const elements = [
-      { name: 'sample', label: 'Sample', isDefault: true },
-      { name: 'reaction', label: 'Reaction', isDefault: true },
-      // { name: 'wellplate', label: 'Wellplate', isDefault: true },
-      // { name: 'screen', label: 'Screen', isDefault: true },
-      { name: 'research_plan', label: 'Research Plan', isDefault: true }
+      { name: 'sample', label: 'Sample' },
+      { name: 'reaction', label: 'Reaction' },
+      { name: 'wellplate', label: 'Wellplate' },
+      { name: 'screen', label: 'Screen' },
+      { name: 'research_plan', label: 'Research Plan' }
     ];
     let genericEls = [];
     const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -295,8 +295,8 @@ export default class CreateButton extends React.Component {
         >
           {/* {this.createWellplateModal()} */}
           {itemTables}
-          {/* <MenuItem divider /> */}
-          {/* <MenuItem onSelect={() => this.createWellplateFromSamples()}>Create Wellplate from Samples</MenuItem>
+          {/* <MenuItem divider />
+          <MenuItem onSelect={() => this.createWellplateFromSamples()}>Create Wellplate from Samples</MenuItem>
           <MenuItem onSelect={() => this.createScreenFromWellplates()}>Create Screen from Wellplates</MenuItem> */}
           <MenuItem divider />
           <MenuItem onSelect={() => this.copySample()} disabled={this.isCopySampleDisabled()}>Copy Sample</MenuItem>

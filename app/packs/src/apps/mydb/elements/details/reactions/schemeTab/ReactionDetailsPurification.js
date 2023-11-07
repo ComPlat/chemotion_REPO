@@ -11,7 +11,7 @@ import Sample from 'src/models/Sample';
 import { observationPurification, solventsTL } from 'src/utilities/reactionPredefined';
 import { permitOn } from 'src/components/common/uis';
 import PrivateNoteElement from 'src/apps/mydb/elements/details/PrivateNoteElement';
-import HelpInfo from '../components/common/HelpInfo';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 function dummy() { return true; }
 

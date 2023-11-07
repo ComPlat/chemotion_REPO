@@ -33,7 +33,8 @@ class Container < ApplicationRecord
   before_destroy :delete_attachment
   before_destroy :destroy_datasetable
 
-  has_closure_tree order: "extended_metadata->'index' asc"
+  ## has_closure_tree order: "extended_metadata->'index' asc"  ## TODO: Paggy
+  has_closure_tree
 
   scope :analyses_for_root, ->(root_id) {
     where(container_type: 'analysis').joins(

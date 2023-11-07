@@ -1,21 +1,19 @@
 import 'whatwg-fetch';
+
 import { camelizeKeys } from 'humps';
 
 export const CALL_API = 'Call API';
 
 const callApi = (endpoint, options = {}) => (
-  fetch(endpoint, options).then((response) => {
-    if (!response.ok) return Promise.reject(response);
+  fetch(endpoint, options).then(response => (
+    response.json().then((json) => {
+      if (!response.ok) {
+        return Promise.reject(json);
+      }
 
-    const contentType = response.headers.get('content-type');
-    const jsonType = contentType.indexOf('application/json') !== -1;
-
-    if (jsonType) {
-      return response.json().then(json => camelizeKeys(json));
-    }
-
-    return response;
-  })
+      return camelizeKeys(json);
+    })
+  ))
 );
 
 export default store => next => (action) => {
@@ -29,7 +27,9 @@ export default store => next => (action) => {
   if (typeof endpoint !== 'string') {
     throw new Error('Specify a string endpoint URL.');
   }
-  if (!normalizer) normalizer = res => res;
+  if (!normalizer) {
+    normalizer = res => res;
+  }
 
   return callApi(endpoint, options).then(response => next({
     response: normalizer(response, store, action.type),

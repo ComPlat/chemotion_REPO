@@ -1,4 +1,4 @@
-import { getElementSegments } from './ElementUtils';
+import { getElementSegments } from 'src/utilities/ElementUtils';
 import Immutable from 'immutable';
 
 const getVisibilityList = (layout, availableTabs, addInventoryTab) => {

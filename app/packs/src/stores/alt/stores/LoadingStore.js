@@ -4,9 +4,9 @@ import ReportActions from 'src/stores/alt/actions/ReportActions';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 import InboxActions from 'src/stores/alt/actions/InboxActions';
 import PredictionActions from 'src/stores/alt/actions/PredictionActions';
-import RepositoryActions from '../actions/RepositoryActions';
-import PublicActions from '../actions/PublicActions';
-import ReviewActions from '../actions/ReviewActions';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 
 class LoadingStore {
   constructor() {
@@ -14,7 +14,7 @@ class LoadingStore {
     this.state = { filePool: [] };
 
     this.bindListeners({
-      handleStart: LoadingActions.start,
+      handleStart: [LoadingActions.start, PublicActions.openRepositoryPage],
       handleStop:
         [
           LoadingActions.stop,
@@ -59,8 +59,11 @@ class LoadingStore {
     });
   }
 
-  handleStart() {
-    this.setState({ loading: true });
+  handleStart(page = '') {
+    const regex = /^$|\bpublications/i;
+    if (!page || regex.test(page)) {
+      this.setState({ loading: true });
+    }
   }
 
   handleStop() {

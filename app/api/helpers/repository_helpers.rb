@@ -39,7 +39,7 @@ module RepositoryHelpers
     end
 
     schemeList = get_reaction_table(reaction.id)
-    entities = Entities::ReactionEntity.represent(reaction, serializable: true)
+    entities = Entities::RepoReactionEntity.represent(reaction, serializable: true)
     entities[:products].each do |p|
       label_ids = p[:tag]['taggable_data']['user_labels'] || [] unless p[:tag]['taggable_data'].nil?
       p[:labels] = UserLabel.public_labels(label_ids) unless label_ids.nil?
@@ -100,7 +100,7 @@ module RepositoryHelpers
       )
       .order('published_at desc')
     published_samples = pub_samples.map do |s|
-      containers = Entities::ContainerEntity.represent(s.container)
+      container = Entities::ContainerEntity.represent(s.container)
       tag = s.tag.taggable_data['publication']
       #u = User.find(s.tag.taggable_data['publication']['published_by'].to_i)
       #time = DateTime.parse(s.tag.taggable_data['publication']['published_at'])
@@ -138,7 +138,7 @@ module RepositoryHelpers
       end
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
       segments = Labimotion::SegmentEntity.represent(s.segments)
-      tag.merge(analyses: containers, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
+      tag.merge(container: container, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
         sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, labels: user_labels,
         showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
     end

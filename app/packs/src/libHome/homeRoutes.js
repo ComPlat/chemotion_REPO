@@ -1,9 +1,9 @@
-import PublicActions from '../components/actions/PublicActions';
-import PublicFetcher from '../components/fetchers/PublicFetcher';
-import RepoNavListTypes from './RepoNavListTypes';
-import ReviewActions from '../components/actions/ReviewActions';
-import EmbargoActions from '../components/actions/EmbargoActions';
-import LoadingActions from '../components/actions/LoadingActions';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
+import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 const routes = {
   '/': 'root',
@@ -34,11 +34,14 @@ const routes = {
     target: {
       show: function(e) {
         LoadingActions.start();
+        PublicActions.setSearchParams({
+          advType: 'Authors', advValue: [], page: 1, searchOptions: []
+        });
         PublicActions.getReactions.defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.REACTION}`)
       },
     },
-    '/': 'show'
+    '/': 'show',
   },
   '/genericHub': {
     target: {
@@ -52,6 +55,9 @@ const routes = {
     target: {
       show: function(e) {
         LoadingActions.start();
+        PublicActions.setSearchParams({
+          advType: 'Authors', advValue: [], page: 1, searchOptions: []
+        });
         PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE }); // .defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.MOLECULE_ARCHIVE}`)
       },

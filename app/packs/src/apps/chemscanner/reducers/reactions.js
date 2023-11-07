@@ -1,240 +1,121 @@
-import { List, fromJS } from 'immutable';
+import { List } from 'immutable';
 
 import * as types from 'src/apps/chemscanner/actions/ActionTypes';
-import { createReducer } from '../utils';
 
-const reactions = createReducer(List(), {
-  [types.UPDATE_REAGENTS_SMILES]: (state, action) => {
-    const { response } = action;
-    const { reaction } = response;
-    if (!reaction) return state;
+export default function reactions(state = List(), action) {
+  switch (action.type) {
+    case types.ADD_REAGENTS_SMILES: {
+      const { response, smiType, smi } = action;
+      const editedReactions = response.reactions;
+      if (!editedReactions) return state;
 
-    const { id, svg, reagentExternalIds } = reaction;
-
-    const rIndex = state.findIndex(r => r.get('id') === id);
-    if (rIndex < 0) return state;
-
-    return state.update(rIndex, r => (
-      r.set('svg', svg).set('reagentExtIds', fromJS(reagentExternalIds))
-    ));
-  },
-  [types.CLEAN_UP]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    const cleanedReactions = response.reactions;
-    if (!cleanedReactions || cleanedReactions.length === 0) return state;
-
-    return state.withMutations((mapState) => {
-      cleanedReactions.forEach((cr) => {
-        const rIndex = mapState.findIndex(r => r.get('id') === cr.id);
-        mapState.update(rIndex, (r) => {
-          let newR = r.set('svg', cr.svg);
-          ['reactants', 'reagents', 'products'].forEach((group) => {
-            const molGroup = newR.get(group);
-            cr[group].forEach((cm) => {
-              const mIdx = molGroup.findIndex(mm => mm.get('id') === cm.id);
-              newR = newR.updateIn([group, mIdx], m => m.mergeDeep(cm));
-            });
-          });
-
-          return newR;
+      const listSmi = List(smi.split(','));
+      return state.withMutations((mapState) => {
+        editedReactions.forEach((edited) => {
+          const rIndex = mapState.findIndex(r => r.get('id') === edited.id);
+          mapState.update(rIndex, r => r.withMutations(mr => (
+            mr.set('svg', edited.svg).set(smiType, listSmi)
+          )));
         });
       });
-    });
-  },
-  [types.EDIT_REACTION_COMMENT]: (state, action) => {
-    const {
-      id, fileUid, cdUid, comment
-    } = action;
-    const rIndex = state.findIndex(r => (
-      r.get('fileUid') === fileUid && r.get('cdUid') === cdUid && r.get('id') === id
-    ));
-    if (rIndex < 0) return state;
+    }
+    case types.CLEAN_UP: {
+      const { response } = action;
+      if (!response) return state;
 
-    return state.update(rIndex, r => r.set('comment', comment));
-  },
-  [types.HIDE_FILE]: (state, action) => {
-    // If not logged-in, remove reactions. Otherwise, keep it since we need
-    // reactions information for FileStorage grid
-    const firstReaction = state.get(0);
-    if (firstReaction.get('id')) return state;
+      const cleanedReactions = response.reactions;
+      if (!cleanedReactions || cleanedReactions.length === 0) return state;
 
-    const { fileUid } = action;
-    const ids = action.ids || [];
+      return state.withMutations((mapState) => {
+        cleanedReactions.forEach((cr) => {
+          const rIndex = mapState.findIndex(r => r.get('id') === cr.id);
+          mapState.update(rIndex, (r) => {
+            let newR = r.set('svg', cr.svg);
+            ['reactants', 'reagents', 'products'].forEach((group) => {
+              const molGroup = newR.get(group);
+              cr[group].forEach((cm) => {
+                const mIdx = molGroup.findIndex(mm => mm.get('id') === cm.id);
+                newR = newR.updateIn([group, mIdx], m => m.mergeDeep(cm));
+              });
+            });
 
-    let newState = state.filterNot(r => r.get('fileUid') === fileUid);
-    newState = newState.filterNot(r => ids.includes(r.get('schemeId')));
-
-    return newState;
-  },
-  [types.HIDE_SCHEME]: (state, action) => {
-    // If not logged-in, remove reactions. Otherwise, keep it since we need
-    // reactions information for FileStorage grid
-    const firstReaction = state.get(0);
-    if (firstReaction.get('id')) return state;
-
-    const ids = action.ids || [];
-    return state.filterNot(r => ids.includes(r.get('schemeId')));
-  },
-  [types.DELETE_FILE]: (state, action) => {
-    const fileUid = action.response;
-    return state.filterNot(m => m.get('uid') === fileUid);
-  },
-  [types.HIDE_REACTION]: (state, action) => {
-    const { id, fileUid, schemeIdx } = action;
-    return state.filterNot(r => (
-      r.get('fileUuid') === fileUid &&
-        r.get('externalId') === id &&
-        r.get('schemeIdx') === schemeIdx
-    ));
-  },
-  [types.SCAN_FILE_FOR_REACTIONS]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    return state.concat(response.get('reactions') || []);
-  },
-  [types.GET_SCANNED_OUTPUT]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    const scannedReactions = response.get('reactions');
-    if (!scannedReactions) return state;
-
-    let newState = state;
-    scannedReactions.forEach((reaction) => {
-      const idx = newState.findIndex(sr => sr.get('id') === reaction.get('id'));
-      if (idx < 0) {
-        newState = newState.push(reaction);
-      } else {
-        newState = newState.update(idx, r => r.merge(reaction));
-      }
-    });
-
-    return newState;
-  },
-  [types.RESCAN_STORED_FILE]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    return state.concat(response.get('reactions') || []);
-  },
-  [types.SELECT_REACTION]: (state, action) => {
-    const { id, fileUid, schemeIdx } = action;
-    const rIndex = state.findIndex(r => (
-      r.get('fileUuid') === fileUid &&
-        r.get('schemeIdx') === schemeIdx &&
-        r.get('externalId') === id
-    ));
-    if (rIndex < 0) return state;
-
-    return state.update(rIndex, (r) => {
-      const selected = r.get('selected') || false;
-      return r.set('selected', !selected);
-    });
-  },
-  [types.TOGGLE_RESIN_IN_REACTION]: (state, action) => {
-    const {
-      fileUid, cdUid, rId, molId, atomId
-    } = action;
-
-    const rIndex = state.findIndex(r => (
-      r.get('id') === rId && r.get('fileUid') === fileUid && r.get('cdUid') === cdUid
-    ));
-    if (rIndex < 0) return state;
-
-    const findMol = (reaction, mId) => {
-      const rGroup = ['reactants', 'reagents', 'products'];
-      return rGroup.reduce((map, group) => {
-        const idx = reaction.get(group).findIndex(m => m.get('id') === mId);
-        if (idx < 0) return map;
-
-        return { [group]: idx };
-      }, {});
-    };
-
-    const molPos = findMol(state.get(rIndex), molId);
-    const group = Object.keys(molPos)[0];
-    const groupIdx = molPos[group];
-
-    return state.update(rIndex, r => r.updateIn([group, groupIdx, 'alias'], (aliases) => {
-      const index = aliases.findIndex(alias => alias.get('id') === atomId);
-      return aliases.update(index, (alias) => {
-        const resin = alias.get('resin') || false;
-        return alias.set('resin', !resin);
+            return newR;
+          });
+        });
       });
-    }));
-  },
-  [types.RETRIEVE_STORED_FILES]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
+    }
+    case types.EDIT_REACTION_COMMENT: {
+      const {
+        id, fileUid, cdUid, comment
+      } = action;
+      const rIndex = state.findIndex(r => (
+        r.get('fileUid') === fileUid && r.get('cdUid') === cdUid && r.get('id') === id
+      ));
+      if (rIndex < 0) return state;
 
-    const storedReactions = response.reactions;
-    if (!storedReactions) return state;
+      return state.update(rIndex, r => r.set('comment', comment));
+    }
+    case types.REMOVE_FILE: {
+      const { fileUid } = action;
+      return state.filterNot(r => r.get('fileUid') === fileUid);
+    }
+    case types.REMOVE_REACTION: {
+      const { id, fileUid, cdUid } = action;
+      return state.filterNot(r => (
+        r.get('id') === id && r.get('fileUid') === fileUid && r.get('cdUid') === cdUid
+      ));
+    }
+    case types.SCAN_FILE_FOR_REACTIONS: {
+      const { response } = action;
+      if (!response) return state;
 
-    const curIds = state.map(f => f.get('id'));
-    const newReactions = storedReactions.filter(s => !curIds.includes(s.id));
+      return state.concat(response.get('reactions') || []);
+    }
+    case types.SELECT_REACTION: {
+      const { id, fileUid, cdUid } = action;
+      const rIndex = state.findIndex(r => (
+        r.get('fileUid') === fileUid && r.get('cdUid') === cdUid && r.get('id') === id
+      ));
+      if (rIndex < 0) return state;
 
-    return state.concat(fromJS(newReactions));
-  },
-  [types.APPROVE_FILE]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
+      return state.update(rIndex, (r) => {
+        const selected = r.get('selected') || false;
+        return r.set('selected', !selected);
+      });
+    }
+    case types.TOGGLE_RESIN_IN_REACTION: {
+      const {
+        fileUid, cdUid, rId, molId, atomId
+      } = action;
 
-    const ids = response.get('reactions');
-    const val = response.get('val');
-    if (!ids) return state;
+      const rIndex = state.findIndex(r => (
+        r.get('id') === rId && r.get('fileUid') === fileUid && r.get('cdUid') === cdUid
+      ));
+      if (rIndex < 0) return state;
 
-    return state.map((r) => {
-      if (ids.includes(r.get('id'))) return r.set('isApproved', val || false);
+      const findMol = (reaction, mId) => {
+        const rGroup = ['reactants', 'reagents', 'products'];
+        return rGroup.reduce((map, group) => {
+          const idx = reaction.get(group).findIndex(m => m.get('id') === mId);
+          if (idx < 0) return map;
 
-      return r;
-    });
-  },
-  [types.APPROVE_SCHEME]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
+          return { [group]: idx };
+        }, {});
+      };
 
-    const ids = response.get('reactions');
-    const val = response.get('val');
-    if (!ids) return state;
+      const molPos = findMol(state.get(rIndex), molId);
+      const group = Object.keys(molPos)[0];
+      const groupIdx = molPos[group];
 
-    return state.map((r) => {
-      if (ids.includes(r.get('id'))) return r.set('isApproved', val || false);
-
-      return r;
-    });
-  },
-  [types.UPDATE_ITEM_FIELD]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    const {
-      id, type, field, value
-    } = JSON.parse(action['Call API'].options.body);
-    if (type !== 'reactions') return state;
-
-    const rIndex = state.findIndex(r => r.get('id') === id);
-    if (rIndex < 0) return state;
-
-    return state.update(rIndex, r => r.set(field, value));
-  },
-  [types.FETCH_SVG]: (state, action) => {
-    const { response } = action;
-    if (!response) return state;
-
-    let newState = state;
-
-    response.reactions.forEach((reaction) => {
-      const rIndex = newState.findIndex(r => r.get('id') === reaction.id);
-      if (rIndex < 0) return;
-
-      newState = newState.update(rIndex, r => r.set('svg', reaction.svg));
-    });
-
-    return newState;
-  },
-});
-
-export default reactions;
+      return state.update(rIndex, r => r.updateIn([group, groupIdx, 'alias'], (aliases) => {
+        const index = aliases.findIndex(alias => alias.get('id') === atomId);
+        return aliases.update(index, (alias) => {
+          const resin = alias.get('resin') || false;
+          return alias.set('resin', !resin);
+        });
+      }));
+    }
+    default:
+      return state;
+  }
+}

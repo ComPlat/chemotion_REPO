@@ -2,7 +2,7 @@ import React from 'react'
 import {Button, FormControl, ButtonGroup, OverlayTrigger, Tooltip} from 'react-bootstrap'
 import Select from 'react-select'
 import UIActions from 'src/stores/alt/actions/UIActions';
-import PublicFetcher from '../fetchers/PublicFetcher';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 
 export default class SearchFilter extends React.Component {
   constructor(props) {

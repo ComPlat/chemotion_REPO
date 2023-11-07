@@ -21,7 +21,7 @@ import EditableTable from 'src/components/lineChart/EditableTable';
 import { permitOn } from 'src/components/common/uis';
 
 // For REPO
-import HelpInfo from '../components/common/HelpInfo';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 export default class ReactionDetailsMainProperties extends Component {
   constructor(props) {

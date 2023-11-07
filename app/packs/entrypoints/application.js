@@ -1,7 +1,7 @@
 // see https://github.com/rackt/react-router/issues/1067
 
 var React = require('react');
-var Home = require('src/apps/home');
+var Home = require('src/apps/home/Home');
 var CnC = require('src/apps/commandAndControl');
 var AdminHome = require('src/apps/admin');
 var ChemScanner = require('src/apps/chemscanner/');
@@ -20,8 +20,8 @@ var GenericDatasetsAdmin = require('src/apps/generic/GenericDatasetsAdmin');
 var mydb = require('src/apps/mydb');
 
 // Fro REPO
-var RepoNewsEditor = require('./libHome/RepoNewsEditor');
-var RepoNewsReader = require('./libHome/RepoNewsReader');
-var RepoHowToEditor = require('./libHome/RepoHowToEditor');
-var RepoHowToReader = require('./libHome/RepoHowToReader');
+var RepoNewsEditor = require('src/repoHome/RepoNewsEditor');
+var RepoNewsReader = require('src/repoHome/RepoNewsReader');
+var RepoHowToEditor = require('src/repoHome/RepoHowToEditor');
+var RepoHowToReader = require('src/repoHome/RepoHowToReader');
 

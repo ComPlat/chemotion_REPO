@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Col, FormControl, FormGroup, ControlLabel } from 'react-bootstrap';
 import Select from 'react-select'
-import ContainerDatasets from '../components/ContainerDatasets';
-import QuillViewer from '../components/QuillViewer'
+import ContainerDatasets from 'src/components/container/ContainerDatasets';
+import QuillViewer from 'src/components/QuillViewer';
 
-import {sampleAnalysesContentSymbol} from '../components/utils/quillToolbarSymbol'
-import {confirmOptions} from '../components/staticDropdownOptions/options';
+import { sampleAnalysesContentSymbol } from 'src/utilities/quillToolbarSymbol';
+import { confirmOptions } from 'src/components/staticDropdownOptions/options';
 
 export default class ContainerComponent extends Component {
   constructor(props) {
