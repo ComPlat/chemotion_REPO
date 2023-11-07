@@ -143,7 +143,11 @@ class Material extends Component {
               metricPrefix={metric}
               metricPrefixes={metricPrefixes}
               precision={3}
-              disabled={!permitOn(this.props.reaction) || ((this.props.materialGroup !== 'products') && !material.reference && this.props.lockEquivColumn)}
+              disabled={
+                !permitOn(this.props.reaction) ||
+                !permitOn(material) ||
+                ((this.props.materialGroup !== 'products') && !material.reference && this.props.lockEquivColumn)
+              }
               onChange={this.handleAmountUnitChange}
               onMetricsChange={this.handleMetricsChange}
               bsStyle={material.amount_unit === 'l' ? 'success' : 'default'}
@@ -172,7 +176,11 @@ class Material extends Component {
           metricPrefixes={['n']}
           bsStyle={material.error_loading ? 'error' : 'success'}
           precision={3}
-          disabled={!permitOn(this.props.reaction) || (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))}
+          disabled={
+            !permitOn(this.props.reaction) ||
+            !permitOn(material) ||
+            (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
+          }
           onChange={loading => this.handleLoadingChange(loading)}
         />
       </td>
@@ -185,7 +193,7 @@ class Material extends Component {
         ? <td />
         : <td>
           <Radio
-            disabled={!permitOn(this.props.reaction)}
+            disabled={!permitOn(this.props.reaction) || !permitOn(material)}
             name="reference"
             checked={material.reference}
             onChange={e => this.handleReferenceChange(e)}
@@ -245,7 +253,11 @@ class Material extends Component {
       <NumeralInputWithUnitsCompo
         precision={4}
         value={material.equivalent}
-        disabled={!permitOn(this.props.reaction) || ((((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn)}
+        disabled={
+          !permitOn(this.props.reaction) ||
+          !permitOn(material) ||
+          ((((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn)
+        }
         onChange={e => this.handleEquivalentChange(e)}
       />
     );
@@ -479,7 +491,11 @@ class Material extends Component {
                 metricPrefix={metric}
                 metricPrefixes={metricPrefixes}
                 precision={4}
-                disabled={!permitOn(reaction) || (this.props.materialGroup !== 'products' && !material.reference && this.props.lockEquivColumn)}
+                disabled={
+                  !permitOn(reaction) ||
+                  !permitOn(material) ||
+                  (this.props.materialGroup !== 'products' && !material.reference && this.props.lockEquivColumn)
+                }
                 onChange={this.handleAmountUnitChange}
                 onMetricsChange={this.handleMetricsChange}
                 bsStyle={material.error_mass ? 'error' : massBsStyle}
@@ -498,7 +514,11 @@ class Material extends Component {
             metricPrefix={metricMol}
             metricPrefixes={metricPrefixesMol}
             precision={4}
-            disabled={!permitOn(reaction) || (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))}
+            disabled={
+              !permitOn(reaction) ||
+              !permitOn(material) ||
+              (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
+            }
             onChange={this.handleAmountUnitChange}
             onMetricsChange={this.handleMetricsChange}
             bsStyle={material.amount_unit === 'mol' ? 'success' : 'default'}
@@ -574,7 +594,7 @@ class Material extends Component {
             >
               <div>
                 <FormControl
-                  disabled={!permitOn(reaction)}
+                  disabled={!permitOn(reaction) || !permitOn(material)}
                   type="text"
                   bsClass="bs-form--compact form-control"
                   bsSize="small"
@@ -587,7 +607,7 @@ class Material extends Component {
             <InputGroup.Button>
               <OverlayTrigger placement="bottom" overlay={refreshSvgTooltip}>
                 <Button
-                  disabled={!permitOn(reaction)}
+                  disabled={!permitOn(reaction) || !permitOn(material)}
                   active
                   disabled={this.props.reaction.is_published == true}
                   onClick={e => this.handleExternalLabelCompleted(e)}
@@ -612,7 +632,7 @@ class Material extends Component {
 
         <td>
           <Button
-            disabled={!permitOn(reaction)}
+            disabled={!permitOn(reaction) || !permitOn(material)}
             bsStyle="danger"
             bsSize="small"
             disabled={this.props.reaction.is_published == true}
@@ -715,7 +735,8 @@ class Material extends Component {
         <div style={{ display: 'inline-block', maxWidth: '100%' }}>
           <div className="inline-inside">
             <OverlayTrigger placement="top" overlay={AddtoDescToolTip}>
-              <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc} disabled={!permitOn(reaction)}>
+              <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc}
+                      disabled={!permitOn(reaction) || !permitOn(material)}>
                 {serialCode}
               </Button>
             </OverlayTrigger>&nbsp;

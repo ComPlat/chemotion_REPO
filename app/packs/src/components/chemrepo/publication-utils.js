@@ -8,6 +8,12 @@ export const getPublicationId = (element) => {
   return publishedId;
 };
 
+export const getPublication = (element) => {
+  const tag = element?.tag || {};
+  const tagData = tag.taggable_data || {};
+  return tagData.publication
+}
+
 export const getAuthorLabel = (authorIds) => {
   if (!authorIds) return '';
   return authorIds.length > 1 ? 'Authors:' : 'Author:';
