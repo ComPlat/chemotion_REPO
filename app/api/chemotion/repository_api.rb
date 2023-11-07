@@ -413,11 +413,6 @@ module Chemotion
             )
           )
 
-          reaction.reactions_samples.each  do |reaction_sample|
-            sample = current_user.versions_collection.samples.find_by(id: reaction_sample.sample_id)
-            submit_new_sample_version(sample, parent_publication_id = publication.id)
-          end
-
           reaction
         end
 

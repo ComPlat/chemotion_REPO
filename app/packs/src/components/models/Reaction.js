@@ -418,13 +418,6 @@ export default class Reaction extends Element {
     this._products = this._coerceToSamples(samples);
   }
 
-  get publication() {
-    return this._publication
-  }
-
-  set publication(publication) {
-    this._publication = publication
-  }
   get samples() {
     return [
       ...this.starting_materials || [],
@@ -433,6 +426,20 @@ export default class Reaction extends Element {
       ...this.purification_solvents || [],
       ...this.products || [],
     ];
+  }
+
+  get publication() {
+    return this._publication
+  }
+
+  set publication(publication) {
+    this._publication = publication
+  }
+
+  get previousVersion() {
+    const tag = this.tag || {};
+    const taggableData = tag.taggable_data || {};
+    return taggableData.previous_version
   }
 
   buildCopy(params = {}) {
@@ -886,8 +893,14 @@ export default class Reaction extends Element {
   get notPublishable() {
     // NB: in reaction samples, can_publish is only serialized for products
     // const unpublishableSamples = this.samples.filter(s => !s.can_publish);
-    const unpublishableSamples = this.products.filter(s => !s.can_publish);
-    return unpublishableSamples.length > 0 && unpublishableSamples;
+
+    if (this.previousVersion === undefined) {
+      const unpublishableSamples = this.products.filter(s => !s.can_publish);
+      return unpublishableSamples.length > 0 && unpublishableSamples;
+    } else {
+      // publishing a new version will link the reactions if they are already published
+      return false
+    }
   }
 
   analysisArray() {
