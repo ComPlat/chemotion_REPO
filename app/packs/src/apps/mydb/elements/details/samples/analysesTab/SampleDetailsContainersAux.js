@@ -62,13 +62,6 @@ const qCheckMsg = (sample, container) => {
   return '';
 };
 
-const isNMRKind = (container) => {
-  if (container.extended_metadata.kind) {
-    return container.extended_metadata.kind.includes('NMR');
-  }
-  return false;
-}
-
 const SpectraEditorBtn = ({
   sample, spcInfos, hasJcamp, hasChemSpectra,
   toggleSpectraModal, confirmRegenerate, confirmRegenerateEdited, hasEditedJcamp,
