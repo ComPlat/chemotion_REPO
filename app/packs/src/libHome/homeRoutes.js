@@ -34,11 +34,14 @@ const routes = {
     target: {
       show: function(e) {
         LoadingActions.start();
+        PublicActions.setSearchParams({
+          advType: 'Authors', advValue: [], page: 1, searchOptions: []
+        });
         PublicActions.getReactions.defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.REACTION}`)
       },
     },
-    '/': 'show'
+    '/': 'show',
   },
   '/genericHub': {
     target: {
@@ -52,6 +55,9 @@ const routes = {
     target: {
       show: function(e) {
         LoadingActions.start();
+        PublicActions.setSearchParams({
+          advType: 'Authors', advValue: [], page: 1, searchOptions: []
+        });
         PublicActions.getMolecules({ listType: RepoNavListTypes.MOLECULE_ARCHIVE }); // .defer();
         PublicActions.openRepositoryPage(`publications=${RepoNavListTypes.MOLECULE_ARCHIVE}`)
       },

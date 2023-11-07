@@ -97,6 +97,7 @@
     "react-redux": "^7.2.4",
     "react-select": "npm:react-select@1.1.0",
     "react-select3": "npm:react-select@^3.1.1",
+    "react-select5": "npm:react-select@^5.7.0",
     "react-stickydiv": "^3.4.19",
     "react-svg-file-zoom-pan": "0.1.5",
     "react-svg-file-zoom-pan-latest": "npm:@complat/react-svg-file-zoom-pan@1.1.2",

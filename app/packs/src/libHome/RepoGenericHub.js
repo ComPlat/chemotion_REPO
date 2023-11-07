@@ -4,6 +4,7 @@ import { GenGridBase } from 'chem-generic-ui';
 import GenericBaseFetcher from '../components/fetchers/GenericBaseFetcher';
 import Utils from '../components/utils/Functions';
 import RepoGenericHubDesc from './RepoGenericHubDesc';
+import capitalizeFirstLetter from '../components/chemrepo/format-utils';
 
 const getCurrentDateTimeString = () => {
   const now = new Date();
@@ -22,10 +23,7 @@ const downloadFile = (data, filename) => {
   Utils.downloadFile({ contents: href, name: `${filename}_${getCurrentDateTimeString()}.json` });
 };
 
-const capitalizeFirstLetter = str => str.replace(/^[a-z]/, match => match.toUpperCase());
-
 const RepoGenericHub = () => {
-  const [expanded, setExpanded] = useState(false);
   const [state, setState] = useState({
     menuSelected: '',
     gridData: [],
@@ -145,10 +143,6 @@ const RepoGenericHub = () => {
     element: elColumnDefs,
     segment: sgColumnDefs,
     dataset: dsColumnDefs,
-  };
-
-  const clickExpand = () => {
-    setExpanded(!expanded);
   };
 
   const clickMenu = (e, type) => {

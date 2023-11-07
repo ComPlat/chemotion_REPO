@@ -450,9 +450,25 @@ $bs-successcolor: #5cb85c;
   }
 }
 
+.search-keyword {
+  display: inline-flex;
+  flex: 1;
+  .well {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 5px;
+    justify-content: center;
+    background-color: unset;
+    .form-group {
+      margin-bottom: unset;
+    }
+  }
+}
+
 .home-adv-search {
   display: flex;
   align-items: center;
+  width: 100%;
   div {
     .o-author {
       min-width: 120px;

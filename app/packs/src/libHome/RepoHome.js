@@ -6,7 +6,8 @@ import { HomeFeature } from './RepoCommon';
 import RepoCardStaticsBoard from './RepoCardStaticsBoard';
 import RepoCardIntro from './RepoCardIntro';
 import RepoCardMoleculeArchive from './RepoCardMoleculeArchive';
-import { RepoCardReviewerIntro, RepoCardReviewerIntroBtn, ReviewGuidelines } from './RepoCardReviewerIntro';
+import { RepoCardReviewerIntro, RepoCardReviewerIntroBtn } from './RepoCardReviewerIntro';
+import PublicSearchIcons from '../components/chemrepo/search/PublicSearchIcons';
 
 const PartnersInfo = (info) => {
   const { header, img, content } = info;
@@ -154,13 +155,14 @@ class RepoHome extends Component {
 
     return (
       <Row className="repo-welcome">
-        <Col lg={12} md={12} sm={12} style={{ display: 'flex', justifyContent: 'center' }}>
+        <Col lg={12} md={12} sm={12} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <img
             className="icon-chemotion"
             src="/images/repo/Chemotion-V1.png"
             key="chemotion_full"
             alt="Chemotion Repository"
           />
+          <PublicSearchIcons />
         </Col>
         <Col md={12} sm={12}>
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>

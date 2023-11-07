@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import {
   Pagination, Table, Form, Col, Row, InputGroup, ButtonGroup, Button,
-  Glyphicon, Grid, Radio, DropdownButton, MenuItem,
+  Grid, Radio, DropdownButton, MenuItem,
   FormGroup, FormControl, Navbar, Tooltip, OverlayTrigger,
   Tabs, Tab
 } from 'react-bootstrap';
 import Select from 'react-select';
+import AsyncSelect from 'react-select5/async';
 import uuid from 'uuid';
 import UIActions from '../components/actions/UIActions';
 import PublicActions from '../components/actions/PublicActions';
@@ -20,6 +21,7 @@ import RepoReactionList from './RepoReactionList';
 import RepoMoleculeList from './RepoMoleculeList';
 import RepoMoleculeArchive from './RepoMoleculeArchive';
 import RepoNavListTypes from './RepoNavListTypes';
+import capitalizeFirstLetter from '../components/chemrepo/format-utils';
 
 const renderMoleculeArchive =
   (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
@@ -90,6 +92,10 @@ const TabTip = props => (
   </OverlayTrigger>
 );
 
+const handleSelectAdvType = (val) => {
+  if (val) PublicActions.setSearchParams({ advFlag: true, advType: val, advValue: null });
+};
+
 export default class RepoPubl extends Component {
   constructor(props) {
     super(props);
@@ -111,7 +117,7 @@ export default class RepoPubl extends Component {
       advValue: [],
       selectUsers: [],
       key: uuid.v4(),
-      showSearch: false
+      showSearch: false,
     };
 
     this.onChange = this.onChange.bind(this);
@@ -123,7 +129,6 @@ export default class RepoPubl extends Component {
     this.closeAdvancedSearch = this.closeAdvancedSearch.bind(this);
     this.renderAdvancedSearch = this.renderAdvancedSearch.bind(this);
     this.advSearchClick = this.advSearchClick.bind(this);
-    this.handleSelectAdvType = this.handleSelectAdvType.bind(this);
     this.loadAdvValuesByName = this.loadAdvValuesByName.bind(this);
     this.handleElementSelection = this.handleElementSelection.bind(this);
     this.handleShowSearch = this.handleShowSearch.bind(this);
@@ -132,7 +137,6 @@ export default class RepoPubl extends Component {
   componentDidMount() {
     PublicActions.selectPublicCollection.defer();
     PublicStore.listen(this.onChange);
-    // PublicActions.getReactions.defer();
   }
 
   componentWillUnmount() {
@@ -140,7 +144,10 @@ export default class RepoPubl extends Component {
   }
 
   onChange(state) {
-    this.setState(prevState => ({ ...prevState, ...state }));
+    const { searchOptions, advFlag } = state;
+    this.setState(prevState => ({
+      ...prevState, ...state, searchOptions: searchOptions || [], showSearch: (advFlag || false)
+    }));
   }
 
   handleSearchTypeChange(e) {
@@ -153,23 +160,31 @@ export default class RepoPubl extends Component {
   }
 
   showStructureEditor() {
-    this.setState({ showStructureEditor: true });
+    this.setState(
+      { showStructureEditor: true },
+      () => PublicActions.setSearchParams({ showStructureEditor: true, advFlag: true })
+    );
   }
 
   hideStructureEditor() {
-    this.setState({ showStructureEditor: false });
+    this.setState(
+      { showStructureEditor: false },
+      () => {
+        PublicActions.setSearchParams({ showStructureEditor: false });
+        LoadingActions.stop();
+      }
+    );
   }
 
   showAdvancedSearch() {
     this.setState({ advFlag: true });
   }
 
-  handleSelectAdvType(val) {
-    if (val) { this.setState({ advType: val, advValue: null }); }
-  }
-
   onPerPageChange(e) {
-    this.setState({ perPage: e.target.value }, () => this.getList());
+    this.setState({ perPage: e.target.value }, () => {
+      PublicActions.setSearchParams({ perPage: e.target.value });
+      this.getList();
+    });
   }
 
   getList(ps = {}) {
@@ -236,7 +251,18 @@ export default class RepoPubl extends Component {
       isSearch: false,
       key: uuid.v4(),
       page: 1
-    }, () => this.getList());
+    }, () => {
+      PublicActions.setSearchParams({
+        defaultSearchValue: null,
+        searchType: 'similar',
+        tanimotoThreshold: 0.7,
+        queryMolfile: null,
+        isSearch: false,
+        key: uuid.v4(),
+        page: 1
+      });
+      this.getList();
+    });
   }
 
   handleElementSelection(event) {
@@ -245,26 +271,35 @@ export default class RepoPubl extends Component {
 
   handleShowSearch() {
     const { showSearch, advFlag } = this.state;
-    this.setState({ showSearch: !showSearch, advFlag: !advFlag });
+    PublicActions.setSearchParams({
+      showSearch: !showSearch, advFlag: !advFlag
+    });
   }
 
   closeAdvancedSearch() {
-    this.setState({ advType: 'Authors', advValue: null, page: 1 }, () => this.getList());
+    this.setState({
+      advType: 'Authors', advValue: [], page: 1, searchOptions: []
+    }, () => {
+      PublicActions.setSearchParams({
+        advType: 'Authors', advValue: [], page: 1, searchOptions: []
+      });
+      this.getList();
+    });
   }
 
 
   loadAdvValuesByName(input) {
     if (!input || input.length < 3) {
-      return Promise.resolve({ options: [] });
+      this.setState({ searchOptions: [] });
+      return Promise.resolve([]);
     }
-    return PublicFetcher.fetchAdvancedValues(this.state.advType, input)
-      .then(res => ({
-        options: res.result?.map(u => ({
-          value: u.key,
-          name: u.name,
-          label: u.label
-        }))
-      })).catch((errorMessage) => {
+    return PublicFetcher.fetchAdvancedValues(capitalizeFirstLetter(this.state.advType), input)
+      .then((res) => {
+        const result = res.result.map(u => ({ value: u.key, name: u.name, label: u.label }))
+        this.setState({ searchOptions: result });
+        return result;
+      })
+      .catch((errorMessage) => {
         console.log(errorMessage);
       });
   }
@@ -302,7 +337,14 @@ export default class RepoPubl extends Component {
       isSearch: true,
       selection,
       page: 1
-    }, () => this.getList());
+    }, () => {
+      PublicActions.setSearchParams({
+        isSearch: true,
+        selection,
+        page: 1,
+      });
+      this.getList();
+    });
   }
 
   structureSearch(molfile) {
@@ -325,7 +367,17 @@ export default class RepoPubl extends Component {
         defaultSearchValue: 'structure',
         queryMolfile: molfile
       },
-      () => this.getList()
+      () => {
+        PublicActions.setSearchParams({
+          isSearch: true,
+          selection,
+          page: 1,
+          defaultSearchValue: 'structure',
+          queryMolfile: molfile,
+          showStructureEditor: false
+        });
+        this.getList();
+      }
     );
   }
 
@@ -399,7 +451,6 @@ export default class RepoPubl extends Component {
     return <div className="list-pagination"><Pagination>{items}</Pagination></div>;
   }
 
-
   renderSwitch() {
     const { listType } = this.state;
     if (listType === RepoNavListTypes.MOLECULE_ARCHIVE) {
@@ -426,35 +477,35 @@ export default class RepoPubl extends Component {
     );
   }
 
-  renderSelectValues() {
-    const { advValue } = this.state;
-    return (
-      <Select.Async
-        multi
-        isLoading
-        backspaceRemoves
-        value={advValue}
-        valueKey="value"
-        labelKey="label"
-        loadOptions={this.loadAdvValuesByName}
-        onChange={this.handleSelectAdvValue}
-      />
-    );
-  }
-
   handleSelectAdvValue(val) {
-    if (val) {
-      this.setState({ advValue: val });
+    if (val && val.length > 0) {
+      this.setState({ advValue: val }, () => {
+        PublicActions.setSearchParams({ advValue: val });
+      });
+    } else {
+      this.setState({ advValue: [], searchOptions: [] }, () => {
+        PublicActions.setSearchParams({ advValue: [], searchOptions: [] });
+      });
     }
   }
 
   advSearchClick() {
-    this.setState({ page: 1 }, () => this.getList());
+    const {
+      advType, advValue, searchOptions = []
+    } = this.state;
+    this.setState({ page: 1 }, () => {
+      PublicActions.setSearchParams({
+        advFlag: true, advType: advType || 'Authors', advValue, searchOptions, page: 1
+      });
+      this.getList();
+    });
   }
 
   renderAdvancedSearch() {
-    const { advFlag, advType, advValue } = this.state;
-    if (advFlag === true) {
+    const {
+      advFlag, advType, advValue, searchOptions = []
+    } = this.state;
+    if (advFlag) {
       this.listOptions = [
         { value: 'Authors', label: 'by authors' },
         { value: 'Ontologies', label: 'by analysis type' },
@@ -471,23 +522,41 @@ export default class RepoPubl extends Component {
               clearable={false}
               valueKey="value"
               labelKey="label"
-              onChange={this.handleSelectAdvType}
+              onChange={handleSelectAdvType}
               defaultValue="Authors"
               value={advType}
               className="o-author"
             />
           </div>
           <div>
-            <Select.Async
-              multi
-              isLoading
-              backspaceRemoves
+            <AsyncSelect
+              isMulti
+              backspaceRemovesValue
               value={advValue}
               valueKey="value"
               labelKey="label"
+              defaultOptions={searchOptions}
               loadOptions={this.loadAdvValuesByName}
               onChange={this.handleSelectAdvValue}
-              className="o-name"
+              styles={{
+                control: base => ({
+                  ...base,
+                  height: '36px',
+                  minHeight: '36px',
+                  minWidth: '200px',
+                  borderRadius: 'unset',
+                  border: '1px solid #ccc',
+                }),
+                multiValue: styles => ({
+                  ...styles,
+                  backgroundColor: '#00b8d91a',
+                  opacity: '0.8',
+                }),
+                multiValueLabel: styles => ({
+                  ...styles,
+                  color: '#0052CC',
+                }),
+              }}
             />
           </div>
           <div className="btns-grp">
@@ -521,7 +590,7 @@ export default class RepoPubl extends Component {
       <ButtonGroup className="home-search">
         <OverlayTrigger placement="bottom" delayShow={1000} overlay={stSearchTooltip}>
           <Button bsStyle={customClass ? null : 'primary'} className={customClass} onClick={() => this.showStructureEditor()}>
-            <Glyphicon glyph="pencil" id="AutoCompletedrawAddon" />
+            <i className="fa fa-paint-brush" aria-hidden="true" />
           </Button>
         </OverlayTrigger>
         <OverlayTrigger placement="right" delayShow={1000} overlay={clearTooltip}>

@@ -14,7 +14,7 @@ class LoadingStore {
     this.state = { filePool: [] };
 
     this.bindListeners({
-      handleStart: LoadingActions.start,
+      handleStart: [LoadingActions.start, PublicActions.openRepositoryPage],
       handleStop:
         [
           LoadingActions.stop,
@@ -59,8 +59,11 @@ class LoadingStore {
     });
   }
 
-  handleStart() {
-    this.setState({ loading: true });
+  handleStart(page = '') {
+    const regex = /^$|\bpublications/i;
+    if (!page || regex.test(page)) {
+      this.setState({ loading: true });
+    }
   }
 
   handleStop() {

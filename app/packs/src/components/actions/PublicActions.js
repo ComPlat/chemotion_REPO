@@ -321,6 +321,14 @@ class PublicActions {
         }).catch((errorMessage) => { console.log(errorMessage); });
     };
   }
+
+  publicSearch(params) {
+    return params;
+  }
+
+  setSearchParams(params) {
+    return params;
+  }
 }
 
 export default alt.createActions(PublicActions)

@@ -55,7 +55,8 @@ class PublicStore {
       handleGetElements: PublicActions.getElements,
       handleRefreshPubElements: PublicActions.refreshPubElements,
       handleDisplayCollection: PublicActions.displayCollection,
-
+      handlePublicSearch: PublicActions.publicSearch,
+      handleSetSearchParams: PublicActions.setSearchParams,
     });
   }
 
@@ -128,6 +129,23 @@ class PublicStore {
     this.setState({
       reactions, page, pages, perPage, listType
     });
+  }
+
+  handlePublicSearch(results) {
+    this.setState({
+      guestPage: 'publications',
+      listType: results.listType || 'reaction',
+      currentElement: null,
+      elementType: null,
+      searchOptions: results.searchOptions,
+      advType: results.advType || 'Authors',
+      advFlag: results.advFlag || true,
+      advValue: results.advValue || [],
+      defaultSearchValue: results.defaultSearchValue || '',
+      isSearch: results.isSearch || false,
+      selection: results.selection || {},
+    });
+    Aviator.navigate('/publications', { silent: true });
   }
 
   handlePublishedStatics(publishedStatics) {
@@ -278,6 +296,10 @@ class PublicStore {
     this.setState({
       elements, page, perPage, pages, selectType, selectState, searchType, searchValue
     });
+  }
+
+  handleSetSearchParams(params) {
+    this.setState(params);
   }
 }
 

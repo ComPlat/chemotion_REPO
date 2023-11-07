@@ -67,8 +67,11 @@ class Home extends Component {
 
   onChange(publicState) {
     if ((publicState.guestPage && publicState.guestPage !== this.state.guestPage)
-    || (publicState.listType && publicState.listType !== this.state.listType)) {
-      this.setState(prevState => ({ ...prevState, guestPage: publicState.guestPage, listType: publicState.listType }));
+    || (publicState.listType && publicState.listType !== this.state.listType)
+    || (publicState.searchOptions)) {
+      this.setState(prevState => ({
+        ...prevState, guestPage: publicState.guestPage, listType: publicState.listType
+      }));
     }
   }
 
