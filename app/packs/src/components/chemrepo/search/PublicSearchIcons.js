@@ -168,8 +168,7 @@ const PublicSearchIcons = () => {
 
   return (
     <Row style={{ width: '100%' }}>
-      <Col md={1} smHidden xsHidden>&nbsp;</Col>
-      <Col md={10} sm={12} xs={12}>
+      <Col md={12} sm={12} xs={12}>
         <Row>
           <Col md={2} smHidden xsHidden>&nbsp;</Col>
           <Col md={8} sm={12} xs={12} className="search-keyword">
@@ -228,7 +227,6 @@ const PublicSearchIcons = () => {
           <Col md={2}>&nbsp;</Col>
         </Row>
       </Col>
-      <Col md={1} smHidden xsHidden>&nbsp;</Col>
     </Row>
   );
 };
