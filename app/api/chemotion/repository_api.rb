@@ -538,8 +538,12 @@ module Chemotion
         after_validation do
           element = Reaction.find_by(id: params[:id])
           error!('404 No data found', 404) unless element
+
           element_policy = ElementPolicy.new(current_user, element)
           error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
+
+          pub = Publication.find_by(element_type: 'Reaction', element_id: params[:id])
+          error!('401 Unauthorized', 401) if (params[:is_public] == false && pub.state == 'completed')
         end
         get do
           reaction = Reaction.where(id: params[:id])
@@ -588,8 +592,12 @@ module Chemotion
         after_validation do
           element = Sample.find_by(id: params[:id])
           error!('401 No data found', 401) unless element
+
           element_policy = ElementPolicy.new(current_user, element)
           error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
+
+          pub = Publication.find_by(element_type: 'Sample', element_id: params[:id])
+          error!('401 Unauthorized', 401) if (params[:is_public] == false && pub.state == 'completed')
         end
         get do
           sample = Sample.where(id: params[:id]).includes(:molecule, :tag).last

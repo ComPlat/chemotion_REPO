@@ -117,8 +117,8 @@ class ReviewStore {
 
   handleDisplayReviewReaction(result) {
     const publication = (result.element && result.element.reaction && result.element.reaction.publication) || {};
-    if (result.element && result.element?.review_info?.review_level === 0) {
-      Aviator.navigate('/home');
+    if (result.element?.review_info == null || result.element?.review_info?.review_level === 0) {
+      //Aviator.navigate('/home');
     } else {
       this.setState({
         guestPage: 'review',
@@ -136,10 +136,10 @@ class ReviewStore {
   }
 
   handleDisplayReviewSample(result) {
-    const publication = (result.element && result.element.publication) || {};
+    const publication = result?.element?.publication || {};
 
-    if (result.element && result.element?.review_info?.review_level === 0) {
-      Aviator.navigate('/home');
+    if (result.element?.review_info == null || result.element?.review_info?.review_level === 0) {
+      //Aviator.navigate('/home');
     } else {
       this.setState({
         guestPage: 'review',
