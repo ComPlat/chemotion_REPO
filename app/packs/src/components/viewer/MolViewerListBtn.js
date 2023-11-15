@@ -3,10 +3,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { filter } from 'lodash';
-import MolViewerListModal from './MolViewerListModal';
-import ArrayUtils from '../../components/utils/ArrayUtils';
+import MolViewerListModal from 'src/components/viewer/MolViewerListModal';
+import ArrayUtils from 'src/utilities/ArrayUtils';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import UIStore from '../stores/UIStore';
+import UIStore from 'src/stores/alt/stores/UIStore';
 
 export default class MolViewerListBtn extends Component {
   constructor(props) {

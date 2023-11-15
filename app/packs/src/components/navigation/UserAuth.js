@@ -31,8 +31,8 @@ import MatrixCheck from 'src/components/common/MatrixCheck';
 import GroupElement from 'src/components/navigation/GroupElement';
 import { formatDate } from 'src/utilities/timezoneHelper';
 
-import Functions from './utils/Functions';
-import AuthorModal from './users/AuthorModal';
+import Functions from 'src/utilities/Functions';
+import AuthorModal from 'src/components/users/AuthorModal';
 
 export default class UserAuth extends Component {
   constructor(props) {

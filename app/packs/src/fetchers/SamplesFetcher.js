@@ -6,7 +6,7 @@ import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import BaseFetcher from 'src/fetchers/BaseFetcher';
 import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
 import Container from 'src/models/Container';
-import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
+import defaultAnalysisPublish from 'src/components/utils/defaultAnalysisPublish';
 
 export default class SamplesFetcher {
   static fetchSamplesByUIStateAndLimit(params) {
@@ -70,7 +70,7 @@ export default class SamplesFetcher {
     ).then((response) => response.json()).catch(errorMessage => console.log(errorMessage))
   }
 
-  static update(sample) {
+  static update(s) {
     const sample = defaultAnalysisPublish(s);
     const files = AttachmentFetcher.getFileListfrom(sample.container);
     const promise = () => fetch(`/api/v1/samples/${sample.id}`, {

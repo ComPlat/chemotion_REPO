@@ -4,10 +4,10 @@ import { Row, Col, OverlayTrigger, Tooltip, Modal, Button, Table, Panel, Form, F
 import { findIndex, filter } from 'lodash';
 import uuid from 'uuid';
 import Select from 'react-select';
-import CollaboratorFetcher from '../fetchers/CollaboratorFetcher';
-import PublicFetcher from '../fetchers/PublicFetcher';
-import SelectionField from '../common/SelectionField';
-import DeleteConfirmBtn from '../common/DeleteConfirmBtn';
+import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
+import SelectionField from 'src/components/common/SelectionField';
+import DeleteConfirmBtn from 'src/components/common/DeleteConfirmBtn';
 
 const sortList = data => data?.sort((a, b) => a?.name?.localeCompare(b.name));
 const addUserTooltip = <Tooltip id="addUser_tooltip">Save to my collaboration</Tooltip>;

@@ -2,9 +2,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import MolViewerModal from './MolViewerModal';
+import MolViewerModal from 'src/components/viewer/MolViewerModal';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import UIStore from '../stores/UIStore';
+import UIStore from 'src/stores/alt/stores/UIStore';
 
 export default class MolViewerBtn extends Component {
   constructor(props) {

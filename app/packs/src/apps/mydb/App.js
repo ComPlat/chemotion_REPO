@@ -15,17 +15,10 @@ import UIStore from 'src/stores/alt/stores/UIStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import Calendar from 'src/components/calendar/Calendar';
 import SampleTaskInbox from 'src/components/sampleTaskInbox/SampleTaskInbox';
-import { DragDropContext } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
-import Aviator from 'aviator';
 import { RepoReviewModal, RepoCommentModal } from 'repo-review-ui';
-import { FlowViewerModal } from 'chem-generic-ui';
-import alt from 'src/stores/alt/alt';
-import initRoutes from './routes';
-import ReviewActions from './actions/ReviewActions';
-import ReviewStore from './stores/ReviewStore';
-import ProgressModal from './common/ProgressModal';
-import ContactEmail from './chemrepo/core/ContactEmail';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
+import ContactEmail from 'src/components/chemrepo/core/ContactEmail';
 
 class App extends Component {
   constructor(_props) {

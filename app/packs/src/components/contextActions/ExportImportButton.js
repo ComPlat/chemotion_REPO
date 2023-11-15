@@ -31,17 +31,62 @@ function ExportImportButton({ isDisabled, updateModalProps, customClass }) {
       >
         Publish current collection via RADAR
       </MenuItem>
-      <MenuItem onSelect={() => importCollectionFunction(updateModalProps)}
-        title='Import collections from ZIP archive'>
-        Import collections
-      </MenuItem>
-      {/* <MenuItem onSelect={() => importChemScannerFunction(updateModalProps)} disabled={isDisabled} */}
-      {/*   title='Import from Docs'> */}
-      {/*   Import elements from Docs */}
-      {/* </MenuItem> */}
-    </Dropdown.Menu>
-  </Dropdown>
-);
+    </>
+  ) : <span />;
+
+  return (
+    <Dropdown id="export-dropdown">
+      <Dropdown.Toggle className={customClass}>
+        <Glyphicon glyph="import" />
+        <Glyphicon glyph="export" />
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        <MenuItem
+          onSelect={() => exportFunction(updateModalProps)}
+          title="Export to spreadsheet"
+        >
+          Export samples from selection
+        </MenuItem>
+        <MenuItem
+          onSelect={() => exportReactionFunction(updateModalProps)}
+          title="Export reaction smiles to csv"
+        >
+          Export reactions from selection
+        </MenuItem>
+        <MenuItem divider />
+        <MenuItem
+          onSelect={() => importSampleFunction(updateModalProps, false)}
+          disabled={isDisabled}
+          title="Import from spreadsheet or sdf"
+        >
+          Import samples to collection
+        </MenuItem>
+        <MenuItem
+          onSelect={() => importSampleFunction(updateModalProps, true)}
+          disabled={isDisabled}
+          title="Import chemicals from spreadsheet"
+        >
+          Import chemicals to collection
+        </MenuItem>
+        <MenuItem divider />
+        <MenuItem
+          onSelect={() => exportCollectionFunction(updateModalProps)}
+          title="Export as ZIP archive"
+        >
+          Export collections
+        </MenuItem>
+        <MenuItem
+          onSelect={() => importCollectionFunction(updateModalProps)}
+          title="Import collections from ZIP archive"
+        >
+          Import collections
+        </MenuItem>
+
+        {showRadar}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+}
 
 ExportImportButton.propTypes = {
   isDisabled: PropTypes.bool,

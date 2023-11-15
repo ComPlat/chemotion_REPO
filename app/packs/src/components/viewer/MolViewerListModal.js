@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Alert, Button, ButtonGroup, Col, Modal, PanelGroup, Panel, ProgressBar, Nav, NavItem } from 'react-bootstrap';
 import { ReactNglViewer } from 'react-nglviewer';
-import MolViewer from './MolViewer';
-import MolViewerSet from './MolViewerSet';
+import MolViewer from 'src/components/viewer/MolViewer';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
 
 const MolViewerListModal = (props) => {
   const {

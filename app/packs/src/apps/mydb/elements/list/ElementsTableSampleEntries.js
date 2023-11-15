@@ -26,7 +26,7 @@ import SvgWithPopover from 'src/components/common/SvgWithPopover';
 import { ShowUserLabels } from 'src/components/UserLabels';
 import CommentIcon from 'src/components/comments/CommentIcon';
 
-import { LabelPublication, PublishedTag, ChemotionTag } from './PublishCommon';
+import { LabelPublication, PublishedTag, ChemotionTag } from 'src/components/PublishCommon';
 
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;

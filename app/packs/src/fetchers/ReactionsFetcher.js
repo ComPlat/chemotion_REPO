@@ -6,8 +6,8 @@ import Reaction from 'src/models/Reaction';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import Literature from 'src/models/Literature';
 import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
-import UIStore from '../stores/UIStore';
-import defaultAnalysisPublish from '../utils/defaultAnalysisPublish';
+import UIStore from 'src/stores/alt/stores/UIStore';
+import defaultAnalysisPublish from 'src/components/utils/defaultAnalysisPublish';
 
 // TODO: Extract common base functionality into BaseFetcher
 export default class ReactionsFetcher {
