@@ -5,7 +5,7 @@ import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { filter } from 'lodash';
 import MolViewerListModal from './MolViewerListModal';
 import ArrayUtils from '../../components/utils/ArrayUtils';
-import PublicStore from '../stores/PublicStore';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import UIStore from '../stores/UIStore';
 
 export default class MolViewerListBtn extends Component {

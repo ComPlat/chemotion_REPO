@@ -27,13 +27,13 @@ import RepoHowTo from './RepoHowTo';
 import RepoHowToReader from './RepoHowToReader';
 import RepoHowToEditor from './RepoHowToEditor';
 
-import PublicStore from '../components/stores/PublicStore';
-import RStore from '../components/stores/RStore';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
+import RStore from 'src/stores/alt/repo/stores/RStore';
 import RepoElementDetails from './RepoElementDetails';
 import NavFooter from './NavFooter';
 import LoadingModal from '../components/common/LoadingModal';
 
-import PublicActions from '../components/actions/PublicActions';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from './RepoGenericHub';
 
 const extraHomes = () => {

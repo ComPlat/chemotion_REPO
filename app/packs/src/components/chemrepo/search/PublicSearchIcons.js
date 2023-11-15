@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Row, Col, Radio, Well, Button, FormGroup } from 'react-bootstrap';
 import AsyncSelect from 'react-select5/async';
-import PublicFetcher from '../../fetchers/PublicFetcher';
-import capitalizeFirstLetter from '../format-utils';
-import PublicActions from '../../actions/PublicActions';
-import RepoNavListTypes from '../../../libHome/RepoNavListTypes';
-import SuggestionsFetcher from '../../fetchers/SuggestionsFetcher';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
+import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
+import SuggestionsFetcher from 'src/fetchers/SuggestionsFetcher';
 
 const constructHolder = (searchBy, searchIn) => {
   const holder = { authors: "author's name", ontologies: 'chemical methods ontology (1H NMR, mass spectrometry, ...)', sample: 'IUPAC, InChI, SMILES, ...' };

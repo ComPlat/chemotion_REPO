@@ -10,7 +10,7 @@ import {
   FormControl,
 } from 'react-bootstrap';
 import NotificationSystem from 'react-notification-system';
-import RepositoryFetcher from '../../fetchers/RepositoryFetcher';
+import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import MAGrid from './MAGrid';
 
 export const CompoundList = (xvialCom, data = '', selectXvial) => {

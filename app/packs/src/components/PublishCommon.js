@@ -2,13 +2,13 @@ import React from 'react';
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
-import Sample from './models/Sample';
-import { sampleShowOrNew, reactionShow } from './routesUtils';
-import Reaction from './models/Reaction';
-import { isNmrPass, isDatasetPass } from './utils/ElementUtils';
-import { getFormattedISODate } from './chemrepo/date-utils';
-import { getElementType, getPublicationId } from './chemrepo/publication-utils';
-import UnsealBtn from './chemrepo/UnsealButton';
+import Sample from 'src/models/Sample';
+import { sampleShowOrNew, reactionShow } from 'src/utilities/routesUtils';
+import Reaction from 'src/models/Reaction';
+import { isNmrPass, isDatasetPass } from 'src/utilities/ElementUtils';
+import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
+import { getElementType, getPublicationId } from 'src/components/chemrepo/publication-utils';
+import UnsealBtn from 'src/components/chemrepo/UnsealButton';
 
 const labelStyle = {
   display: 'inline-block',

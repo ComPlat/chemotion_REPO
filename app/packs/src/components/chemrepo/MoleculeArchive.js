@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Panel } from 'react-bootstrap';
-import { ToggleIndicator } from '../../libHome/RepoCommon';
+import { ToggleIndicator } from '../../repoHome/RepoCommon';
 import { MARegisteredTooltip } from './ma/MAComs';
 import { MADataModal, MARequestModal } from './ma/MAModals';
 

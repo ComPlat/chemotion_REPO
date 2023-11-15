@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import MolViewerModal from './MolViewerModal';
-import PublicStore from '../stores/PublicStore';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import UIStore from '../stores/UIStore';
 
 export default class MolViewerBtn extends Component {

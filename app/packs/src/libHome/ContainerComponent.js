@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Col, FormControl, FormGroup, ControlLabel } from 'react-bootstrap';
 import Select from 'react-select'
 import ContainerDatasets from '../components/ContainerDatasets';
-import QuillViewer from '../components/QuillViewer'
+import QuillViewer from 'src/components/QuillViewer'
 
 import {sampleAnalysesContentSymbol} from '../components/utils/quillToolbarSymbol'
 import {confirmOptions} from '../components/staticDropdownOptions/options';

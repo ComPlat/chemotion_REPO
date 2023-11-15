@@ -20,7 +20,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import Aviator from 'aviator';
 import { RepoReviewModal, RepoCommentModal } from 'repo-review-ui';
 import { FlowViewerModal } from 'chem-generic-ui';
-import alt from './alt';
+import alt from 'src/stores/alt/alt';
 import initRoutes from './routes';
 import ReviewActions from './actions/ReviewActions';
 import ReviewStore from './stores/ReviewStore';

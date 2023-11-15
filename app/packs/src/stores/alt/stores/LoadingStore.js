@@ -4,9 +4,9 @@ import ReportActions from 'src/stores/alt/actions/ReportActions';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 import InboxActions from 'src/stores/alt/actions/InboxActions';
 import PredictionActions from 'src/stores/alt/actions/PredictionActions';
-import RepositoryActions from '../actions/RepositoryActions';
-import PublicActions from '../actions/PublicActions';
-import ReviewActions from '../actions/ReviewActions';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 
 class LoadingStore {
   constructor() {

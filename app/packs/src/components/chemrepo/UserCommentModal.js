@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
-import RepositoryFetcher from '../fetchers/RepositoryFetcher';
+import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 
 const UserCommentModal = (props) => {
   const {

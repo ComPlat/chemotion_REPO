@@ -40,7 +40,7 @@ import GenericEl from 'src/models/GenericEl';
 
 import MessagesFetcher from 'src/fetchers/MessagesFetcher';
 
-import RepositoryActions from '../actions/RepositoryActions';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 
 
 const fetchOls = (elementType) => {
