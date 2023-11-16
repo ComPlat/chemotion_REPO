@@ -670,14 +670,6 @@ export default class UserAuth extends Component {
     if (MatrixCheck(this.state.currentUser.matrix, 'userLabel')) {
       userLabel = <MenuItem onClick={this.handleLabelShow}>My Labels</MenuItem>;
     }
-    let converterBtn = <span />;
-    if (UIStore.getState().hasConverter === true) {
-      converterBtn = (
-        <MenuItem eventKey="12" href="/converter_admin">
-          Converter Profile
-        </MenuItem>
-      );
-    }
 
     return (
       <div>
