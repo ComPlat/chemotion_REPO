@@ -7,12 +7,11 @@ import SvgFileZoomPan from 'react-svg-file-zoom-pan';
 import DeleteBtn from 'src/apps/chemscanner/components/DeleteBtn';
 import SelectBtn from 'src/apps/chemscanner/components/SelectBtn';
 import CopyClipboardBtn from 'src/apps/chemscanner/components/CopyClipboardBtn';
-import EditCommentBtn from 'src/apps/chemscanner/components/EditCommentBtn';
 import MoleculeDescription from 'src/apps/chemscanner/components/MoleculeDescription';
 import MoleculeDetails from 'src/apps/chemscanner/components/MoleculeDetails';
-import EditMdlBtn from './EditMdlBtn';
+import EditMdlBtn from 'src/components/chemscanner/components/EditMdlBtn';
 
-import { sortMoleculesByClone } from '../utils';
+import { sortMoleculesByClone } from 'src/apps/chemscanner/utils';
 
 const renderSvg = (svg) => {
   const newSvg = svg.replace(/height="[^"]+"/, '').replace(/width="[^"]+"/, 'width="100%"');

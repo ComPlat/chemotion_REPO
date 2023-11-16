@@ -9,7 +9,7 @@ import CollectionActions from 'src/stores/alt/actions/CollectionActions';
 import UserInfos from 'src/apps/mydb/collections/UserInfos';
 import GatePushBtn from 'src/components/common/GatePushBtn';
 import { collectionShow, scollectionShow } from 'src/utilities/routesUtils';
-import { CollectionDesc } from '../libHome/RepoCommon';
+import { CollectionDesc } from 'src/repoHome/RepoCommon';
 
 const labeling = (label) => {
   if (typeof (label) === 'string' && (label.startsWith('Reviewing') || label.startsWith('Element To Review') || label.startsWith('Reviewed'))) {

@@ -4,7 +4,7 @@ import uuid from 'uuid';
 import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 import { CALL_API } from 'src/apps/chemscanner/middleware/api';
 
-import { isPngImage, isSvgImage } from '../utils';
+import { isPngImage, isSvgImage } from 'src/apps/chemscanner/utils';
 
 export const scanFileNormalizer = (res, store) => {
   const { schemes } = res;

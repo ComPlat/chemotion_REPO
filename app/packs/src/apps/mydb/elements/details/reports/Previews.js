@@ -6,7 +6,7 @@ import SectionSiSynthesis from 'src/apps/mydb/elements/details/reports/SectionSi
 import SectionSpectrum from 'src/apps/mydb/elements/details/reports/SectionSpectrum';
 import SectionReactionList from 'src/apps/mydb/elements/details/reports/SectionReactionList';
 import SectionSiSynthesisStdRxn from 'src/apps/mydb/elements/details/reports/SectionSiSynthesisStdRxn';
-import SectionDoiList from './SectionDoiList';
+import SectionDoiList from 'src/components/report/SectionDoiList';
 
 const objToKeyValPairs = (obj = []) => (
   obj.reduce((ob, { text, checked }) => {

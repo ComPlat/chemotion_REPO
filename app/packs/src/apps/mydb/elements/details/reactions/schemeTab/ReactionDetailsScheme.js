@@ -27,7 +27,7 @@ import TextTemplateActions from 'src/stores/alt/actions/TextTemplateActions';
 import TextTemplateStore from 'src/stores/alt/stores/TextTemplateStore';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 
-import HelpInfo from '../components/common/HelpInfo';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 export default class ReactionDetailsScheme extends Component {
   constructor(props) {

@@ -7,13 +7,12 @@ import SvgFileZoomPan from 'react-svg-file-zoom-pan';
 import DeleteBtn from 'src/apps/chemscanner/components/DeleteBtn';
 import SelectBtn from 'src/apps/chemscanner/components/SelectBtn';
 import CopyClipboardBtn from 'src/apps/chemscanner/components/CopyClipboardBtn';
-import EditCommentBtn from 'src/apps/chemscanner/components/EditCommentBtn';
-import EditMdlBtn from './EditMdlBtn';
+import EditMdlBtn from 'src/components/chemscanner/components/EditMdlBtn';
 import ReactionDescription from 'src/apps/chemscanner/components/ReactionDescription';
 import ReactionDetails from 'src/apps/chemscanner/components/ReactionDetails';
 
 
-import { getReactionGroups } from '../reactionUtils';
+import { getReactionGroups } from 'src/components/chemscanner/reactionUtils';
 
 const mapListMdl = arr => arr.map(m => `$MOL\n${m.get('mdl')}`).join('\n');
 

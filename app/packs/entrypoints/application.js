@@ -20,8 +20,8 @@ var GenericDatasetsAdmin = require('src/apps/generic/GenericDatasetsAdmin');
 var mydb = require('src/apps/mydb');
 
 // Fro REPO
-var RepoNewsEditor = require('./repoHome/RepoNewsEditor');
-var RepoNewsReader = require('./repoHome/RepoNewsReader');
-var RepoHowToEditor = require('./repoHome/RepoHowToEditor');
-var RepoHowToReader = require('./repoHome/RepoHowToReader');
+var RepoNewsEditor = require('src/repoHome/RepoNewsEditor');
+var RepoNewsReader = require('src/repoHome/RepoNewsReader');
+var RepoHowToEditor = require('src/repoHome/RepoHowToEditor');
+var RepoHowToReader = require('src/repoHome/RepoHowToReader');
 

@@ -17,7 +17,7 @@ import PrivateNoteElement from 'src/apps/mydb/elements/details/PrivateNoteElemen
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
 // For REPO
-import { permitOn } from './common/uis';
+import { permitOn } from 'src/components/common/uis';
 
 
 export default class SampleForm extends React.Component {

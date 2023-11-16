@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { setArchivedValue } from '../actions/storedFileActions';
-import * as types from '../actions/ActionTypes';
+import { setArchivedValue } from 'src/components/chemscanner/actions/storedFileActions';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
-import ArchivedManagement from '../components/ArchivedManagement';
+import ArchivedManagement from 'src/components/chemscanner/components/ArchivedManagement';
 
 const mapStateToProps = state => ({
   files: state.get('files'),

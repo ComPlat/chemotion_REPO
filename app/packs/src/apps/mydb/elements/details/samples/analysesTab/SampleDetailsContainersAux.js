@@ -17,10 +17,10 @@ import UIStore from 'src/stores/alt/stores/UIStore';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import { chmoConversions } from 'src/components/OlsComponent';
 import { previewContainerImage } from 'src/utilities/imageHelper';
-import MolViewerListBtn from './viewer/MolViewerListBtn';
-import MolViewerSet from './viewer/MolViewerSet';
-import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
-import MatrixCheck from './common/MatrixCheck';
+import MolViewerListBtn from 'src/components/viewer/MolViewerListBtn';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
+import { isNmrPass, isDatasetPass } from 'src/repoHome/RepoCommon';
+import MatrixCheck from 'src/components/common/MatrixCheck';
 
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>

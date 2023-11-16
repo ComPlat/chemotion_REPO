@@ -10,7 +10,7 @@ import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import UsersFetcher from 'src/fetchers/UsersFetcher';
 import SelectionField from 'src/components/common/SelectionField';
 import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
-import CollaboratorFetcher from 'src/fetchers/CollaboratorFetcher';
+import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import DeleteConfirmBtn from 'src/components/common/DeleteConfirmBtn';
 

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Label } from 'react-bootstrap';
 
 import MoleculeDescription from 'src/apps/chemscanner/components/MoleculeDescription';
-import EditableText from './EditableText';
+import EditableText from 'src/components/chemscanner/components/EditableText';
 
 export default class ReactionDescription extends React.Component {
   constructor(props) {

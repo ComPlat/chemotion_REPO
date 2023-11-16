@@ -3,26 +3,26 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { AgGridReact } from 'ag-grid-react';
 
-import FileItemActionsHeader from './FileItemActionsHeader';
+import FileItemActionsHeader from 'src/components/chemscanner/components/FileItemActionsHeader';
 
-import FileItemActionsRenderer from './FileItemActionsRenderer';
-import FileItemApproveRenderer from './FileItemApproveRenderer';
-import FileItemImportedRenderer from './FileItemImportedRenderer';
-import FileItemInformationRenderer from './FileItemInformationRenderer';
+import FileItemActionsRenderer from 'src/components/chemscanner/components/FileItemActionsRenderer';
+import FileItemApproveRenderer from 'src/components/chemscanner/components/FileItemApproveRenderer';
+import FileItemImportedRenderer from 'src/components/chemscanner/components/FileItemImportedRenderer';
+import FileItemInformationRenderer from 'src/components/chemscanner/components/FileItemInformationRenderer';
 
-import FileItemApproveFilter from './FileItemApproveFilter';
-import FileItemImportedFilter from './FileItemImportedFilter';
-import FileItemVersionFilter from './FileItemVersionFilter';
-import FileItemFileNameFilter from './FileItemFileNameFilter';
+import FileItemApproveFilter from 'src/components/chemscanner/components/FileItemApproveFilter';
+import FileItemImportedFilter from 'src/components/chemscanner/components/FileItemImportedFilter';
+import FileItemVersionFilter from 'src/components/chemscanner/components/FileItemVersionFilter';
+import FileItemFileNameFilter from 'src/components/chemscanner/components/FileItemFileNameFilter';
 
-import FileItemInformationEditor from './FileItemInformationEditor';
+import FileItemInformationEditor from 'src/components/chemscanner/components/FileItemInformationEditor';
 
 import {
   buildRowData,
   versionGetter,
   fileNameGetter,
   getNodeChildDetails,
-} from './fileStorageUtils';
+} from 'src/components/chemscanner/components/fileStorageUtils';
 
 export default class FileStorage extends React.Component {
   constructor(props) {

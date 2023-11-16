@@ -1,6 +1,6 @@
 import React from 'react';
 import { Panel, Modal } from 'react-bootstrap';
-import QuillViewer from '../../components/QuillViewer';
+import QuillViewer from 'src/components/QuillViewer';
 
 const NewsPreviewModal = ({ showModal, article, onClick }) => {
   return (

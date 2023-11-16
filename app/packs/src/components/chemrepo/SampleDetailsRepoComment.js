@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import LoadingActions from './actions/LoadingActions';
-import ReviewStore from '../components/stores/ReviewStore';
-import RepoSampleDetails from '../libHome/RepoSampleDetails';
-import ReviewActions from './actions/ReviewActions';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
+import RepoSampleDetails from 'src/repoHome/RepoSampleDetails';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 
 export default class SampleDetailsRepoComment extends Component {
   constructor(props) {

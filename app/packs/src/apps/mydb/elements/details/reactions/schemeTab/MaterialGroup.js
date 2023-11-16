@@ -12,7 +12,7 @@ import { defaultMultiSolventsSmilesOptions } from 'src/components/staticDropdown
 import { ionic_liquids } from 'src/components/staticDropdownOptions/ionic_liquids';
 import { reagents_kombi } from 'src/components/staticDropdownOptions/reagents_kombi';
 import { permitOn } from 'src/components/common/uis';
-import HelpInfo from '../components/common/HelpInfo';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 const MaterialGroup = ({
   materials, materialGroup, deleteMaterial, onChange,

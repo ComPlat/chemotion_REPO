@@ -1,6 +1,6 @@
 import { List, Map, fromJS } from 'immutable';
 
-import * as types from '../actions/ActionTypes';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 import { createReducer } from '../utils';
 
 const addSchemes = (state, action) => {

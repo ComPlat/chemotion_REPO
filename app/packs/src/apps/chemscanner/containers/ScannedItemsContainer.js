@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 
 import ScannedMolecules from 'src/apps/chemscanner/components/ScannedMolecules';
 import ScannedReactions from 'src/apps/chemscanner/components/ScannedReactions';
-import * as types from '../actions/ActionTypes';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
 
 import {
@@ -18,7 +18,7 @@ import {
   toggleMoleculeResin
 } from 'src/apps/chemscanner/actions/scannedItemActions';
 
-import { updateItemField, toggleAliasPolymer } from '../actions/storedFileActions';
+import { updateItemField, toggleAliasPolymer } from 'src/components/chemscanner/actions/storedFileActions';
 
 const ScannedItemsContainer = (props) => {
   const { display } = props;

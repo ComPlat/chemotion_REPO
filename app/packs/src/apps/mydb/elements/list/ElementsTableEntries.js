@@ -157,6 +157,15 @@ function topSecretIcon(element) {
   return null;
 }
 
+const reactionPublished = (element) => {
+  if (element.type === 'reaction') {
+    return (
+      <PublishedTag element={element} />
+    );
+  }
+  return (<span />);
+};
+
 export default class ElementsTableEntries extends Component {
   constructor(props) {
     super(props);
@@ -402,6 +411,7 @@ export default class ElementsTableEntries extends Component {
                     {reactionVariations(element)}
                     <br />
                     {sampleMoleculeName}
+                    {reactionPublished(element)}
                     <CommentIcon commentCount={element.comment_count} />
                     <ElementCollectionLabels element={element} key={element.id} />
                     {sampleAnalysesLabels(element)}

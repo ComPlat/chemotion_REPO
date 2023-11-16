@@ -3,7 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Label, Button } from 'react-bootstrap';
 
-import EditableText from './EditableText';
+import EditableText from 'src/components/chemscanner/components/EditableText';
 
 class PolymerLabel extends React.Component {
   constructor() {

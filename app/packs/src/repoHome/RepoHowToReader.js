@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { Panel, Row, Col } from 'react-bootstrap';
 import uuid from 'uuid';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import QuillViewer from '../components/QuillViewer';
-import { DateFormatYMDLong } from './RepoCommon';
+import QuillViewer from 'src/components/QuillViewer';
+import { DateFormatYMDLong } from 'src/repoHome/RepoCommon';
 
 export default class RepoHowToReader extends Component {
   constructor(props) {

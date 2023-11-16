@@ -1,8 +1,8 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
-import { Citation, literatureContent, RefByUserInfo } from '../LiteratureCommon';
-import { ChemotionId, CommentBtn, Doi } from '../../repoHome/RepoCommon';
-import { formatPhysicalProps } from './publication-utils';
+import { Citation, literatureContent, RefByUserInfo } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
+import { ChemotionId, CommentBtn, Doi } from 'src/repoHome/RepoCommon';
+import { formatPhysicalProps } from 'src/components/chemrepo/publication-utils';
 
 const PublicSample = (_props) => {
   const {

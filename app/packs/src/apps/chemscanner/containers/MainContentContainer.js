@@ -5,9 +5,9 @@ import MainContent from 'src/apps/chemscanner/components/MainContent';
 
 import { removeFile } from 'src/apps/chemscanner/actions/fileActions';
 
-import * as types from '../actions/ActionTypes';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
-import { updateItemField, fetchSvg } from '../actions/storedFileActions';
+import { updateItemField, fetchSvg } from 'src/components/chemscanner/actions/storedFileActions';
 
 const MainContentContainer = props => <MainContent {...props} />;
 

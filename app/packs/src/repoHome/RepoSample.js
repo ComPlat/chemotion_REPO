@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Jumbotron, Panel } from 'react-bootstrap';
 import { AffiliationMap } from 'repo-review-ui';
-import ArrayUtils from '../components/utils/ArrayUtils';
+import ArrayUtils from 'src/utilities/ArrayUtils';
 import {
   AffiliationList,
   AnalysesTypeJoinLabel,
@@ -16,7 +16,7 @@ import {
   SidToPubChem,
   ToggleIndicator,
   ElStateLabel,
-} from './RepoCommon';
+} from 'src/repoHome/RepoCommon';
 import DateInfo from 'src/components/chemrepo/DateInfo';
 import LicenseIcon from 'src/components/chemrepo/LicenseIcon';
 import MAPanel from 'src/components/chemrepo/MoleculeArchive';

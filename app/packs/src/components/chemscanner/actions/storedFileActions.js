@@ -1,8 +1,8 @@
 import uuid from 'uuid';
 
-import * as types from './ActionTypes';
-import { scanFileNormalizer } from './fileActions';
-import { CALL_API } from '../middleware/api';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
+import { scanFileNormalizer } from 'src/apps/chemscanner/actions/fileActions';
+import { CALL_API } from 'src/apps/chemscanner/middleware/api';
 
 export const retrieveStoredFiles = () => dispatch => (
   dispatch({

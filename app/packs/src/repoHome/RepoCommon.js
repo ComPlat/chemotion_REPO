@@ -33,7 +33,7 @@ import Formula from 'src/components/common/Formula';
 import HelpInfo from 'src/components/common/HelpInfo';
 import PubchemLabels from 'src/components/pubchem/PubchemLabels';
 import QuillViewer from 'src/components/QuillViewer';
-import { ChemotionTag } from 'src/components/PublishCommon';
+import { ChemotionTag } from 'src/components/chemrepo/PublishCommon';
 import Sample from 'src/models/Sample';
 import Reaction from 'src/models/Reaction';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';

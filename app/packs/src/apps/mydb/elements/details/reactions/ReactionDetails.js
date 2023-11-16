@@ -43,8 +43,8 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
-import RepositoryActions from './actions/RepositoryActions';
-import PublishReactionModal from './PublishReactionModal';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublishReactionModal from 'src/components/chemrepo/PublishReactionModal';
 import {
   PublishedTag,
   OrigElnTag,
@@ -53,10 +53,10 @@ import {
   ReviewPublishBtn,
   validateMolecule,
   validateYield
-} from './PublishCommon';
-import ReactionDetailsRepoComment from './ReactionDetailsRepoComment';
-import { contentToText } from './utils/quillFormat';
-import HelpInfo from './common/HelpInfo';
+} from 'src/components/chemrepo/PublishCommon';
+import ReactionDetailsRepoComment from 'src/components/chemrepo/ReactionDetailsRepoComment';
+import { contentToText } from 'src/utilities/quillFormat';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 export default class ReactionDetails extends Component {
   constructor(props) {

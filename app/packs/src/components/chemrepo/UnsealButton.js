@@ -2,8 +2,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { permitOn } from '../common/uis';
-import { getElementType } from './publication-utils';
+import { permitOn } from 'src/components/common/uis';
+import { getElementType } from 'src/components/chemrepo/publication-utils';
 
 const UnsealBtn = (props) => {
   const { element, fnUnseal } = props;

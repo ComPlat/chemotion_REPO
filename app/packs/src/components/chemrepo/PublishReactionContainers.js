@@ -5,9 +5,9 @@ import {
   Panel,
   Button,
 } from 'react-bootstrap';
-import ContainerComponent from './ContainerComponent';
-import PrintCodeButton from './common/PrintCodeButton';
-import Reaction from './models/Reaction';
+import ContainerComponent from 'src/libHome/ContainerComponent';
+import PrintCodeButton from 'src/components/common/PrintCodeButton';
+import Reaction from 'src/models/Reaction';
 
 export default class PublishReactionContainers extends Component {
   constructor(props) {

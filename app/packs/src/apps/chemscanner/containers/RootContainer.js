@@ -3,8 +3,7 @@ import { connect } from 'react-redux';
 
 import Root from 'src/apps/chemscanner/components/Root';
 import setCddInstance from 'src/apps/chemscanner/actions/chemdrawInstanceActions';
-import Root from '../components/Root';
-import { getCurrentVersion } from '../actions/uiActions';
+import { getCurrentVersion } from 'src/components/chemscanner/actions/uiActions';
 
 const RootContainer = props => <Root {...props} />;
 

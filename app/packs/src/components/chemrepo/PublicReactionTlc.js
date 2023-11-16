@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Col, Panel, Row } from 'react-bootstrap';
-import { ToggleIndicator } from '../../repoHome/RepoCommon';
+import { ToggleIndicator } from 'src/repoHome/RepoCommon';
 
 const PublicReactionTlc = ({
   reaction, toggle, show, isPublished

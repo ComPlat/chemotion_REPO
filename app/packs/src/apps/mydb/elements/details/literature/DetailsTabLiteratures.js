@@ -20,7 +20,7 @@ import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import CitationPanel from 'src/apps/mydb/elements/details/literature/CitationPanel';
 import { CitationTypeMap } from 'src/apps/mydb/elements/details/literature/CitationType';
 
-import CitationTable from './CitationTable';
+// import CitationTable from 'src/apps/mydb/elements/details/reactions/analysesTab/CitationTable';
 
 const Cite = require('citation-js');
 require('@citation-js/plugin-isbn');

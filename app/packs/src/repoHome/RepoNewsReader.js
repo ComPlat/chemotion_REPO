@@ -3,7 +3,7 @@ import { Panel, Row, Col } from 'react-bootstrap';
 import uuid from 'uuid';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import QuillViewer from 'src/components/QuillViewer';
-import { DateFormatYMDLong } from 'src/RepoHome/RepoCommon';
+import { DateFormatYMDLong } from 'src/repoHome/RepoCommon';
 
 export default class RepoNewsReader extends Component {
   constructor(props) {

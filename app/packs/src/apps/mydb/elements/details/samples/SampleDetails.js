@@ -77,9 +77,9 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
-import RepositoryActions from './actions/RepositoryActions';
-import PublishSampleModal from './PublishSampleModal';
-import RepoXvialButton from './common/RepoXvialButton';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
+import RepoXvialButton from 'src/components/chemrepo/common/RepoXvialButton';
 import {
   PublishedTag,
   OrigElnTag,
@@ -87,9 +87,9 @@ import {
   PublishBtn,
   ReviewPublishBtn,
   validateMolecule,
-} from './PublishCommon';
-import SampleDetailsRepoComment from './SampleDetailsRepoComment';
-import { permitOn } from './common/uis';
+} from 'src/components/chemrepo/PublishCommon';
+import SampleDetailsRepoComment from 'src/components/chemrepo/SampleDetailsRepoComment';
+import { permitOn } from 'src/components/common/uis';
 
 const MWPrecision = 6;
 

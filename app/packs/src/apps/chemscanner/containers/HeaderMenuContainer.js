@@ -7,9 +7,8 @@ import HeaderMenu from 'src/apps/chemscanner/components/HeaderMenu';
 import { CALL_API } from 'src/apps/chemscanner/middleware/api';
 
 import { extractReaction } from 'src/apps/chemscanner/utils';
-import { saveImage } from '../actions/storedFileActions';
-import { changeView } from '../actions/uiActions';
-import * as types from '../actions/ActionTypes';
+import { saveImage } from 'src/components/chemscanner/actions/storedFileActions';
+import { changeView } from 'src/components/chemscanner/actions/uiActions';
 
 const HeaderMenuContainer = props => <HeaderMenu {...props} />;
 

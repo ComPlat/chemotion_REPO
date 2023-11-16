@@ -8,13 +8,12 @@ import AbbreviationContainer from 'src/apps/chemscanner/containers/AbbreviationC
 import HeaderMenuContainer from 'src/apps/chemscanner/containers/HeaderMenuContainer';
 import MainContentContainer from 'src/apps/chemscanner/containers/MainContentContainer';
 import LoadingModalContainer from 'src/apps/chemscanner/containers/LoadingModalContainer';
-import AbbreviationContainer from '../containers/AbbreviationContainer';
 
-import ArchivedManagementContainer from '../containers/ArchivedManagementContainer';
-import ImportModalContainer from '../containers/ImportModalContainer';
-import FileStorageContainer from '../containers/FileStorageContainer';
+import ArchivedManagementContainer from 'src/components/chemscanner/containers/ArchivedManagementContainer';
+import ImportModalContainer from 'src/components/chemscanner/containers/ImportModalContainer';
+import FileStorageContainer from 'src/components/chemscanner/containers/FileStorageContainer';
 
-import * as types from '../actions/ActionTypes';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
 class Root extends Component {
   componentDidMount() {

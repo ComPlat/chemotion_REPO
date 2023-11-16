@@ -9,7 +9,7 @@ import {
 
 import PreviewFileZoomPan from 'src/apps/chemscanner/components/PreviewFileZoomPan';
 import ScannedItemsContainer from 'src/apps/chemscanner/containers/ScannedItemsContainer';
-import StructureEditorModal from '../../structure_editor/StructureEditorModal';
+import StructureEditorModal from 'src/components/structureEditor/StructureEditorModal';
 
 import DeleteBtn from 'src/apps/chemscanner/components/DeleteBtn';
 

@@ -44,7 +44,7 @@ import {
   getSchemeMolecules,
   getReactionReagents,
   getReactionGroups
-} from '../reactionUtils';
+} from 'src/components/chemscanner/reactionUtils';
 
 const SUPPORTED_FILE_TYPES = ['cdx', 'cdxml', 'doc', 'docx', 'xml', 'zip'];
 

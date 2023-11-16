@@ -15,20 +15,30 @@ import {
 import { head, filter, findIndex, flatten, sortedUniq } from 'lodash';
 import Select from 'react-select';
 import Immutable from 'immutable';
-import { validateYield } from './PublishCommon';
-import Reaction from './models/Reaction';
-import UserStore from './stores/UserStore';
-import UsersFetcher from './fetchers/UsersFetcher';
-import ReactionsFetcher from './fetchers/ReactionsFetcher';
-import RepositoryActions from './actions/RepositoryActions';
-import { ReactionInfo, ReactionSchemeOnlyInfo, AnalysisHeaderSample, PublishAnalysesTag, EmbargoCom, isNmrPass, isDatasetPass, PublishTypeAs, OrcidIcon } from '../libHome/RepoCommon';
-import LoadingActions from './actions/LoadingActions';
-import { groupByCitation, Citation } from '../components/LiteratureCommon';
-import LiteraturesFetcher from '../components/fetchers/LiteraturesFetcher';
-import CollaboratorFetcher from '../components/fetchers/CollaboratorFetcher';
-import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
-import { CitationTypeMap, CitationTypeEOL } from './CitationType';
-import SubmissionCheck from './chemrepo/SubmissionCheck';
+import { validateYield } from 'src/components/chemrepo/PublishCommon';
+import Reaction from 'src/models/Reaction';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import UsersFetcher from 'src/fetchers/UsersFetcher';
+import ReactionsFetcher from 'src/fetchers/ReactionsFetcher';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import {
+  ReactionInfo,
+  ReactionSchemeOnlyInfo,
+  AnalysisHeaderSample,
+  PublishAnalysesTag,
+  EmbargoCom,
+  isNmrPass,
+  isDatasetPass,
+  PublishTypeAs,
+  OrcidIcon
+} from 'src/repoHome/RepoCommon';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import { groupByCitation, Citation } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
+import LiteraturesFetcher from 'src/fetchers/LiteraturesFetcher';
+import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
+import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
+import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
+import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)

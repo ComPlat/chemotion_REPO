@@ -7,7 +7,7 @@ import {
 import 'moment-precise-range-plugin';
 import Clipboard from 'clipboard';
 import { permitOn } from 'src/components/common/uis';
-import HelpInfo from '../components/common/HelpInfo';
+import HelpInfo from 'src/components/common/HelpInfo';
 
 export default class ReactionDetailsDuration extends Component {
   constructor(props) {

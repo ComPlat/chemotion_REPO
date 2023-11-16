@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import ReviewStore from '../components/stores/ReviewStore';
-import ReviewActions from '../components/actions/ReviewActions';
-import RepoReactionDetails from '../libHome/RepoReactionDetails';
+import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+import RepoReactionDetails from 'src/repoHome/RepoReactionDetails';
 
 export default class ReactionDetailsRepoComment extends Component {
   constructor(props) {

@@ -21,12 +21,12 @@ import {
   setArchivedValue,
   setExpand,
   // updatePreview
-} from '../actions/storedFileActions';
-import * as types from '../actions/ActionTypes';
+} from 'src/components/chemscanner/actions/storedFileActions';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
-import FileStorage from '../components/FileStorage';
+import FileStorage from 'src/components/chemscanner/components/FileStorage';
 
-import { isPngImage, isSvgImage } from '../utils';
+import { isPngImage, isSvgImage } from 'src/apps/chemscanner/utils';
 
 const mapStateToProps = state => ({
   files: state.get('files'),

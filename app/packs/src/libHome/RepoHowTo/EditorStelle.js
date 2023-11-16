@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'react-bootstrap';
-import RepoHowToDragSource from '../RepoHowToDragSource';
-import RepoHowToDropTarget from '../RepoHowToDropTarget';
-import EditorRichText from '../RepoHowTo/EditorRichText';
-import EditorImage from '../RepoHowTo/EditorImage';
-import { FaBtn } from './EditorBtn';
+import RepoHowToDragSource from 'src/repoHome/RepoHowToDragSource';
+import RepoHowToDropTarget from 'src/repoHome/RepoHowToDropTarget';
+import EditorRichText from 'src/libHome/RepoHowTo/EditorRichText';
+import EditorImage from 'src/libHome/RepoHowTo/EditorImage';
+import { FaBtn } from 'src/libHome/RepoHowTo/EditorBtn';
 
 export default class EditorStelle extends Component {
   handleChange(t, e) {

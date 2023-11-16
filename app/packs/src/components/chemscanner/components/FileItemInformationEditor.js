@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { ControlLabel, FormControl, Panel, Radio } from 'react-bootstrap';
 
-import PreviewFileZoomPan from './PreviewFileZoomPan';
+import PreviewFileZoomPan from 'src/apps/chemscanner/components/PreviewFileZoomPan';
 
 const PreviewEditor = ({ imageData, fileName }) => {
   if (!imageData) return <span />;

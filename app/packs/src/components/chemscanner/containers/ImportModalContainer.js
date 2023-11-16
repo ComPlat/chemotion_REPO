@@ -1,10 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import * as types from '../actions/ActionTypes';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
 
-import { importData } from '../actions/storedFileActions';
-import ImportModal from '../components/ChemscannerImportModal';
+import { importData } from 'src/components/chemscanner/actions/storedFileActions';
+import ImportModal from 'src/components/chemscanner//components/ChemscannerImportModal';
 
 const ImportModalContainer = props => <ImportModal {...props} />;
 

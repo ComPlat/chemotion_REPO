@@ -9,19 +9,19 @@ import Select from 'react-select';
 import Immutable from 'immutable';
 import { sortedUniq } from 'lodash';
 
-import Sample from './models/Sample';
-import SampleDetailsContainers from './SampleDetailsContainers';
-import UserStore from './stores/UserStore';
-import UsersFetcher from './fetchers/UsersFetcher';
-import RepositoryActions from './actions/RepositoryActions';
-import { groupByCitation, Citation } from '../components/LiteratureCommon';
-import { MoleculeInfo, EmbargoCom, isNmrPass, isDatasetPass, OrcidIcon } from '../libHome/RepoCommon';
-import LoadingActions from './actions/LoadingActions';
-import SamplesFetcher from './fetchers/SamplesFetcher';
-import CollaboratorFetcher from './fetchers/CollaboratorFetcher';
-import LiteraturesFetcher from './fetchers/LiteraturesFetcher';
-import EmbargoFetcher from './fetchers/EmbargoFetcher';
-import { CitationTypeMap, CitationTypeEOL } from './CitationType';
+import Sample from 'src/models/Sample';
+import SampleDetailsContainers from 'src/apps/mydb/elements/details/samples/analysesTab/SampleDetailsContainers';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import UsersFetcher from 'src/fetchers/UsersFetcher';
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import { groupByCitation, Citation } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
+import { MoleculeInfo, EmbargoCom, isNmrPass, isDatasetPass, OrcidIcon } from 'src/repoHome/RepoCommon';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import SamplesFetcher from 'src/fetchers/SamplesFetcher';
+import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
+import LiteraturesFetcher from 'src/fetchers/LiteraturesFetcher';
+import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
+import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
 
 export default class PublishSampleModal extends Component {
   constructor(props) {

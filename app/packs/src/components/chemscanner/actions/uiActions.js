@@ -1,7 +1,7 @@
 /* eslint-disable no-prototype-builtins */
 
-import * as types from './ActionTypes';
-import { CALL_API } from '../middleware/api';
+import * as types from 'src/apps/chemscanner/actions/ActionTypes';
+import { CALL_API } from 'src/apps/chemscanner/middleware/api';
 
 export const changeView = view => dispatch => (
   dispatch({ type: types.CHANGE_VIEW, view })
