@@ -11,19 +11,31 @@ const NewVersionModal = (props) => {
   } = props;
   const [modalShow, setModalShow] = useState(false);
 
+  const currentUserId = UserStore.getState().currentUser.id;
+
   const isElementPublisher = element.publication && (
-    element.publication.published_by === UserStore.getState().currentUser.id
+    element.publication.published_by === currentUserId
   );
 
   const isElementLatestVersion = element.tag && !element.tag.taggable_data.new_version;
 
   const isPending = element.publication && element.publication.state !== 'completed';
 
-  const show = (isPublisher || isElementPublisher) && !isPending;
-
   const openModal = () => {
     if (isLatestVersion || isElementLatestVersion) {
       setModalShow(true);
+    }
+  };
+
+  const redirectAfterSubmit = (newElement) => {
+    const collection = newElement.tag.taggable_data.collection_labels
+      .find(c => c.user_id === currentUserId);
+
+    if (window.location.pathname.startsWith('/mydb/')) {
+      // eslint-disable-next-line no-undef
+      Aviator.navigate(`/scollection/${collection.id}/${newElement.type}/${newElement.id}`);
+    } else {
+      window.location = `/mydb/scollection/${collection.id}/${newElement.type}/${newElement.id}`;
     }
   };
 
@@ -33,14 +45,14 @@ const NewVersionModal = (props) => {
         RepositoryFetcher.createNewReactionVersion({ id: element.id })
           .then((reaction) => {
             setModalShow(false);
-            window.location = `/mydb/collection/all/reaction/${reaction.id}`;
+            redirectAfterSubmit(reaction);
           });
         break;
       case 'Sample':
         RepositoryFetcher.createNewSampleVersion({ id: element.id, reactionId: parent.id })
           .then((sample) => {
             setModalShow(false);
-            window.location = `/mydb/collection/all/sample/${sample.id}`;
+            redirectAfterSubmit(sample);
           });
         break;
       default:
