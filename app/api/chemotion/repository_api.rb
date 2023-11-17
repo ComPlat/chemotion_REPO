@@ -420,6 +420,14 @@ module Chemotion
             )
           )
 
+          reaction.reactions_samples.each  do |reaction_sample|
+            # check if this sample is a new version of a sample
+            new_sample_version = current_user.versions_collection.samples.find_by(id: reaction_sample.sample_id)
+            if new_sample_version
+              submit_new_sample_version(new_sample_version, parent_publication_id = publication.id)
+            end
+          end
+
           reaction
         end
 
@@ -475,7 +483,9 @@ module Chemotion
 
           new_reaction.create_publication_tag(current_user, @author_ids, @license)
           new_reaction.samples.each do |new_sample|
-            new_sample.create_publication_tag(current_user, @author_ids, @license)
+            unless new_sample.publication_tag.present?
+              new_sample.create_publication_tag(current_user, @author_ids, @license)
+            end
           end
           pub = Publication.where(element: new_reaction).first
           add_submission_history(pub)
