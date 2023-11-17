@@ -976,7 +976,6 @@ const RenderAnalysisHeader = (props) => {
 
   const rinchiStyle = { borderStyle: 'none', boxShadow: 'none' };
   const crsId = (element.publication && element.publication.id) || '';
-  console.log(element.type, element.id, element.publication);
   const xvial = (element.tag && element.tag.taggable_data && element.tag.taggable_data.xvial && element.tag.taggable_data.xvial.num) || '';
   const references = literatures ? literatures.map(lit => (
     <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
