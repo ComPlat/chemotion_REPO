@@ -110,7 +110,10 @@ module SubmissionHelpers
 
     when 'Reaction'
       root.element.products.each do |pd|
-        Publication.find_by(element_type: 'Sample', element_id: pd.id)&.destroy! if pd.analyses&.length == 0
+        if (pd.analyses&.length + pd.links&.length == 0)
+          Publication.find_by(element_type: 'Sample', element_id: pd.id)&.destroy!
+        end
+
         next if pd.analyses&.length == 0
         pd.reserve_suffix
         pd.reserve_suffix_analyses(pd.analyses)
