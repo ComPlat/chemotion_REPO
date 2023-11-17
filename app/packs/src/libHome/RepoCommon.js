@@ -976,6 +976,7 @@ const RenderAnalysisHeader = (props) => {
 
   const rinchiStyle = { borderStyle: 'none', boxShadow: 'none' };
   const crsId = (element.publication && element.publication.id) || '';
+  console.log(element.type, element.id, element.publication);
   const xvial = (element.tag && element.tag.taggable_data && element.tag.taggable_data.xvial && element.tag.taggable_data.xvial.num) || '';
   const references = literatures ? literatures.map(lit => (
     <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
@@ -1737,7 +1738,7 @@ class RenderPublishAnalysesPanel extends Component {
     const insText = instrumentText(analysis);
     const crdLink = (isPublic === false) ? (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1747,7 +1748,7 @@ class RenderPublishAnalysesPanel extends Component {
       </div >
     ) : (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1857,7 +1858,7 @@ class RenderPublishAnalyses extends Component {
               <DownloadJsonBtn type="container" id={analysis.id} />
             </div>
             <div className="sub-title" inline="true">
-              <b>Reaction ID: </b>
+              <b>Analysis ID: </b>
               <Button bsStyle="link" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
                 CRD-{ analysis.pub_id }
               </Button>
