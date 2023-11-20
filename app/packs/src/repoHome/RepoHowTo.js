@@ -3,8 +3,8 @@ import { Col, Row } from 'react-bootstrap';
 import { orderBy } from 'lodash';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import ArticleFetcher from '../components/fetchers/ArticleFetcher';
-import { BackSoonPage, DateFormatYMDLong } from './RepoCommon';
+import ArticleFetcher from 'src/repo/fetchers/ArticleFetcher';
+import { BackSoonPage, DateFormatYMDLong } from 'src/repoHome/RepoCommon';
 
 const renderEditRead = (article, isEditor) => {
   if (isEditor === true) {

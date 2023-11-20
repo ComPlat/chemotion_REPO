@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import EmbargoStore from 'src/stores/alt/repo/stores/EmbargoStore';
-import RepoReactionDetails from 'src/libHome/RepoReactionDetails';
-import RepoSampleDetails from 'src/libHome/RepoSampleDetails';
+import RepoReactionDetails from 'src/repoHome/RepoReactionDetails';
+import RepoSampleDetails from 'src/repoHome/RepoSampleDetails';
 
 export default class RepoEmbargoDetails extends Component {
   constructor(props) {

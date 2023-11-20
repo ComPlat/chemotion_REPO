@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import ReviewStore from '../components/stores/ReviewStore';
-import RepoReactionDetails from './RepoReactionDetails';
-import RepoSampleDetails from './RepoSampleDetails';
+import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
+import RepoReactionDetails from 'src/repoHome/RepoReactionDetails';
+import RepoSampleDetails from 'src/repoHome/RepoSampleDetails';
 
 export default class RepoReviewDetails extends Component {
   constructor(props) {

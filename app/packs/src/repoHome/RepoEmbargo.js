@@ -2,14 +2,14 @@ import React, { Component } from 'react';
 import { Table, Col, Row, Navbar, ButtonGroup, Button, ButtonToolbar, Modal, Panel } from 'react-bootstrap';
 import Select from 'react-select';
 import { filter } from 'lodash';
-import RepoEmbargoDetails from 'src/libHome/RepoEmbargoDetails';
+import RepoEmbargoDetails from 'src/repoHome/RepoEmbargoDetails';
 import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
 import EmbargoStore from 'src/stores/alt/repo/stores/EmbargoStore';
-import { ElAspect } from './RepoCommon';
-import { ConfirmModal } from '../components/common/ConfirmModal';
-import { MetadataModal, InfoModal } from './RepoEmbargoModal';
-import RepoReviewAuthorsModal from '../components/common/RepoReviewAuthorsModal';
-import EmbargoFetcher from '../components/fetchers/EmbargoFetcher';
+import { ElAspect } from 'src/repoHome/RepoCommon';
+import { ConfirmModal } from 'src/components/common/ConfirmModal';
+import { MetadataModal, InfoModal } from 'src/repoHome/RepoEmbargoModal';
+import RepoReviewAuthorsModal from 'src/components/chemrepo/common/RepoReviewAuthorsModal';
+import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 
 export default class RepoEmbargo extends Component {
   constructor(props) {

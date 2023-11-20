@@ -222,9 +222,7 @@ class Reaction < ApplicationRecord
         collection = public_send(resource).includes(sample: :molecule)
         paths[prop] = collection.map do |reactions_sample|
           sample = reactions_sample.sample
-          params = [
-            svg_path(sample&.sample_svg_file, sample&.molecule&.molecule_svg_file)
-          ]
+          params = [ sample.get_svg_path ]
           params[0] = sample.svg_text_path if reactions_sample.show_label
           params.append(yield_amount(sample.id)) if prop == :products
           params

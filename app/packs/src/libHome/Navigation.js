@@ -1,12 +1,12 @@
 import React from 'react';
 import { Button, Nav, Navbar, NavItem, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import UserAuth from '../components/UserAuth';
-import UserStore from '../components/stores/UserStore';
-import UIStore from '../components/stores/UIStore';
-import UserActions from '../components/actions/UserActions';
-import NavNewSession from './NavNewSession';
-import NavHead from './NavHead';
-import DocumentHelper from '../components/utils/DocumentHelper';
+import UserAuth from 'src/components/navigation/UserAuth';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import UIStore from 'src/stores/alt/stores/UIStore';
+import UserActions from 'src/stores/alt/actions/UserActions';
+import NavNewSession from 'src/components/navigation/NavNewSession';
+import NavHead from 'src/libHome/NavHead';
+import DocumentHelper from 'src/utilities/DocumentHelper';
 
 export default class Navigation extends React.Component {
   constructor(props) {

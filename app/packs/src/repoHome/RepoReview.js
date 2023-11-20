@@ -8,7 +8,7 @@ import RepoReviewDetails from 'src/repoHome/RepoReviewDetails';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
 import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
-import UserStore from 'src/stores/alt/repo/stores/UserStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import { getFormattedISODateTime } from 'src/components/chemrepo/date-utils';

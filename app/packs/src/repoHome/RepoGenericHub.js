@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button, ButtonGroup, Col, Row } from 'react-bootstrap';
 import { GenGridBase } from 'chem-generic-ui';
-import GenericBaseFetcher from '../components/fetchers/GenericBaseFetcher';
-import Utils from '../components/utils/Functions';
-import RepoGenericHubDesc from './RepoGenericHubDesc';
-import capitalizeFirstLetter from '../components/chemrepo/format-utils';
+import GenericBaseFetcher from 'src/repo/fetchers/GenericBaseFetcher';
+import Utils from 'src/utilities/Functions';
+import RepoGenericHubDesc from 'src/repoHome/RepoGenericHubDesc';
+import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
 
 const getCurrentDateTimeString = () => {
   const now = new Date();

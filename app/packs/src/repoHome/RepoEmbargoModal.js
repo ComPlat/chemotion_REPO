@@ -8,7 +8,7 @@ import {
   AuthorList,
   ContributorInfo,
   DownloadMetadataBtn
-} from './RepoCommon';
+} from 'src/repoHome/RepoCommon';
 
 const Doi = (props) => {
   const { type, id, doi } = props;

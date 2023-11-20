@@ -4,10 +4,10 @@ import uuid from 'uuid';
 import PropTypes from 'prop-types';
 import { OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
-import Formula from '../components/common/Formula';
-import PubchemLabels from '../components/PubchemLabels';
-import { xvialTag, svgTag } from './RepoPubCommon';
-import { getFormattedISODate } from '../components/chemrepo/date-utils';
+import Formula from 'src/components/common/Formula';
+import PubchemLabels from 'src/components/pubchem/PubchemLabels';
+import { xvialTag, svgTag } from 'src/repoHome/RepoPubCommon';
+import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
 
 const pubchemTag = (molecule) => {
   if (molecule && molecule.tag &&

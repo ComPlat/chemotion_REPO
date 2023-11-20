@@ -1,9 +1,8 @@
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
-import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
-import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
-
 import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 const routes = {
