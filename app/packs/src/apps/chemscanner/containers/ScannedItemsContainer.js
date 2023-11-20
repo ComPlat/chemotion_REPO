@@ -4,8 +4,6 @@ import { connect } from 'react-redux';
 
 import ScannedMolecules from 'src/apps/chemscanner/components/ScannedMolecules';
 import ScannedReactions from 'src/apps/chemscanner/components/ScannedReactions';
-import * as types from 'src/apps/chemscanner/actions/ActionTypes';
-
 
 import {
   removeMolecule,
@@ -18,62 +16,49 @@ import {
   toggleMoleculeResin
 } from 'src/apps/chemscanner/actions/scannedItemActions';
 
-import { updateItemField, toggleAliasPolymer } from 'src/components/chemscanner/actions/storedFileActions';
-
 const ScannedItemsContainer = (props) => {
   const { display } = props;
+  if (display === 'molecules') {
+    return <ScannedMolecules {...props} />;
+  } else if (display === 'reactions') {
+    return <ScannedReactions {...props} />;
+  }
 
-  if (display === 'molecules') return <ScannedMolecules {...props} />;
-  if (display !== 'reactions') return <span />;
-
-  return <ScannedReactions {...props} />;
+  return <span />;
 };
 
-const mapStateToProps = state => ({
-  reactions: state.get('reactions'),
-  molecules: state.get('molecules'),
+const mapStateToProps = (state, ownProps) => ({
+  [ownProps.display]: state.get(ownProps.display)
 });
 
 const mapDispatchToProps = dispatch => ({
-  editComment: (itemType, fileUid, schemeIdx, id, comment) => {
+  editComment: (itemType, fileUid, cdUid, id, comment) => {
     if (itemType === 'molecules') {
-      dispatch(editMoleculeComment(id, fileUid, schemeIdx, comment));
+      dispatch(editMoleculeComment(id, fileUid, cdUid, comment));
     } else if (itemType === 'reactions') {
-      dispatch(editReactionComment(id, fileUid, schemeIdx, comment));
+      dispatch(editReactionComment(id, fileUid, cdUid, comment));
     }
   },
-  removeItem: (itemType, fileUid, schemeIdx, id) => {
+  removeItem: (itemType, fileUid, cdUid, id) => {
     if (itemType === 'molecules') {
-      dispatch(removeMolecule(id, fileUid, schemeIdx));
+      dispatch(removeMolecule(id, fileUid, cdUid));
     } else if (itemType === 'reactions') {
-      dispatch(removeReaction(id, fileUid, schemeIdx));
+      dispatch(removeReaction(id, fileUid, cdUid));
     }
   },
-  selectItem: (itemType, fileUid, schemeIdx, id) => {
+  selectItem: (itemType, fileUid, cdUid, id, comment) => {
     if (itemType === 'molecules') {
-      dispatch(selectMolecule(id, fileUid, schemeIdx));
+      dispatch(selectMolecule(id, fileUid, cdUid, comment));
     } else if (itemType === 'reactions') {
-      dispatch(selectReaction(id, fileUid, schemeIdx));
+      dispatch(selectReaction(id, fileUid, cdUid, comment));
     }
   },
-  updateItemField: (id, type, field, value) => {
-    dispatch({ type: types.SET_LOADING });
-
-    return dispatch(updateItemField(id, type, field, value)).then(() => {
-      dispatch({ type: types.UNSET_LOADING });
-    });
-  },
-  toggleAliasPolymer: (moleculeId, atomIdx) => {
-    dispatch({ type: types.SET_LOADING });
-
-    return dispatch(toggleAliasPolymer(moleculeId, atomIdx)).then(() => {
-      dispatch({ type: types.UNSET_LOADING });
-    });
-  },
-  editMoleculeMdl: (moleculeId) => {
-    if (!moleculeId) return;
-
-    dispatch({ type: types.SET_EDITING_MOLECULE_ID, moleculeId });
+  toggleResin: (itemType, fileUid, cdUid, rId, molId, atomId) => {
+    if (itemType === 'molecules') {
+      dispatch(toggleMoleculeResin(fileUid, cdUid, molId, atomId));
+    } else if (itemType === 'reactions') {
+      dispatch(toggleResinInReaction(fileUid, cdUid, rId, molId, atomId));
+    }
   }
 });
 

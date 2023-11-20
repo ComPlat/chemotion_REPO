@@ -7,6 +7,34 @@ import {
   Form, FormGroup, FormControl,
 } from 'react-bootstrap';
 
+function ManagementTable({
+  columnDefs, defaultColDef, data, style, onGridReady
+}) {
+  return (
+    <div className="ag-theme-balham" style={style}>
+      <AgGridReact
+        floatingFilter
+        enableColResize
+        pagination
+        suppressHorizontalScroll
+        columnDefs={columnDefs}
+        defaultColDef={defaultColDef || {}}
+        rowData={data}
+        onGridReady={onGridReady}
+        domLayout="autoHeight"
+      />
+    </div>
+  );
+}
+
+ManagementTable.propTypes = {
+  columnDefs: PropTypes.arrayOf(PropTypes.object).isRequired,
+  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+  defaultColDef: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
+  style: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
+  onGridReady: PropTypes.func.isRequired,
+};
+
 export default class AbbreviationManagement extends React.Component {
   constructor() {
     super();
@@ -39,22 +67,10 @@ export default class AbbreviationManagement extends React.Component {
       abbColumnDefs, superatomColumnDefs, abbreviations, superatoms,
       defaultColDef, newAbb, changeTypeCreate
     } = this.props;
-
     const newText = newAbb ? 'Abbreviation' : 'Superatom';
 
-    const abbreviationStyle = {
-      width: '70%',
-      marginRight: '5px',
-      height: 'calc(100vh - 150px)'
-    };
-    const superatomStyle = {
-      width: '30%',
-      marginRight: '5px',
-      height: 'calc(100vh - 150px)'
-    };
-
     return (
-      <div style={{ marginTop: '20px' }}>
+      <div>
         <div className="chemscanner-abb-view-header">
           <Form inline style={{ marginRight: '20px' }}>
             <FormGroup controlId="formInlineName" style={{ marginRight: '20px' }}>
@@ -106,28 +122,20 @@ export default class AbbreviationManagement extends React.Component {
         </div>
         <br />
         <div className="abbreviation-management">
-          <div className="ag-theme-balham" style={abbreviationStyle}>
-            <AgGridReact
-              pagination
-              paginationAutoPageSize
-              floatingFilter
-              columnDefs={abbColumnDefs}
-              defaultColDef={defaultColDef || {}}
-              rowData={abbreviations}
-              onGridReady={this.onAbbGridReady}
-            />
-          </div>
-          <div className="ag-theme-balham" style={superatomStyle}>
-            <AgGridReact
-              pagination
-              paginationAutoPageSize
-              floatingFilter
-              columnDefs={superatomColumnDefs}
-              defaultColDef={defaultColDef || {}}
-              rowData={superatoms}
-              onGridReady={this.onSuperatomGridReady}
-            />
-          </div>
+          <ManagementTable
+            columnDefs={abbColumnDefs}
+            defaultColDef={defaultColDef}
+            data={abbreviations}
+            style={{ width: '70%', marginRight: '5px' }}
+            onGridReady={this.onAbbGridReady}
+          />
+          <ManagementTable
+            columnDefs={superatomColumnDefs}
+            defaultColDef={defaultColDef}
+            data={superatoms}
+            style={{ width: '30%', marginLeft: '5px' }}
+            onGridReady={this.onSuperatomGridReady}
+          />
         </div>
       </div>
     );

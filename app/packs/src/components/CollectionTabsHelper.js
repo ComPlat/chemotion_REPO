@@ -1,5 +1,5 @@
 import Immutable from 'immutable';
-import { getElementSegments } from './utils/ElementUtils';
+import { getElementSegments } from 'src/utilities/ElementUtils';
 
 const getVisibilityList = (layout, availableTabs, addInventoryTab) => {
   const layoutKeys = Object.keys(layout);

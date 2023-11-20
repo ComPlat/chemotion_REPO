@@ -11,7 +11,7 @@ import {
 } from 'react-bootstrap';
 import NotificationSystem from 'react-notification-system';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
-import MAGrid from './MAGrid';
+import MAGrid from 'src/components/chemrepo/ma/MAGrid';
 
 export const CompoundList = (xvialCom, data = '', selectXvial) => {
   if (typeof xvialCom === 'undefined' || !xvialCom.allowed) return <br />;

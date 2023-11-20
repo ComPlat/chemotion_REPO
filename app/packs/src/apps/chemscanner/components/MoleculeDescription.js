@@ -3,9 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Label, Button } from 'react-bootstrap';
 
-import EditableText from 'src/components/chemscanner/components/EditableText';
-
-class PolymerLabel extends React.Component {
+class ResinLabel extends React.Component {
   constructor() {
     super();
 
@@ -13,19 +11,21 @@ class PolymerLabel extends React.Component {
   }
 
   onClickLabel() {
-    const { onClick, atomId } = this.props;
-    onClick(atomId);
+    const {
+      onClick, moleculeId, atomId
+    } = this.props;
+    onClick(moleculeId, atomId);
   }
 
   render() {
-    const { label, isPolymer } = this.props;
+    const { label, resin } = this.props;
     if (!label) return <span />;
 
     return (
       <Button
         bsSize="xsmall"
         onClick={this.onClickLabel}
-        bsStyle={isPolymer ? 'info' : 'default'}
+        bsStyle={resin ? 'info' : 'default'}
       >
         {label}
       </Button>
@@ -33,59 +33,45 @@ class PolymerLabel extends React.Component {
   }
 }
 
-PolymerLabel.propTypes = {
+ResinLabel.propTypes = {
   label: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired,
   atomId: PropTypes.number.isRequired,
-  isPolymer: PropTypes.bool
+  moleculeId: PropTypes.number.isRequired,
+  resin: PropTypes.bool
 };
 
-PolymerLabel.defaultProps = {
-  isPolymer: false
+ResinLabel.defaultProps = {
+  resin: false
 };
 
-function MoleculeDescription({
-  molecule, label, toggleAliasPolymer, updateMoleculeField
-}) {
+function MoleculeDescription({ molecule, label, toggleResin }) {
   const description = {
+    text: molecule.get('description'),
     label: molecule.get('label'),
-    description: molecule.get('description'),
-  };
-  const mId = molecule.get('id');
-
-  const setPolymer = (atomIdx) => {
-    if (!mId) return;
-
-    toggleAliasPolymer(mId, atomIdx);
   };
 
   Object.keys(description).forEach((k) => {
     const value = description[k];
     if (!value) delete description[k];
   });
+  const aliases = molecule.get('alias').toArray().map(alias => alias.toObject());
 
-  const aliases = molecule.get('aliases').toJS();
-  const polymers = (
-    molecule.get('extendedMetadata').get('polymer') || Immutable.List()
-  ).toJS();
-
-  const descLength = Object.keys(description).length;
-  const aliasesLength = Object.keys(aliases).length;
-  if (descLength === 0 && aliasesLength === 0) return <span />;
+  if (Object.keys(description).length === 0 && aliases.length === 0) return <span />;
 
   let aliasList = <span />;
-  const aliasesKeys = Object.keys(aliases);
-  if (aliasesKeys.length > 0) {
+  if (aliases.length > 0) {
     aliasList = (
       <li key="alias">
         <b>alias: </b>
-        {aliasesKeys.map(k => (
-          <PolymerLabel
-            key={k}
-            label={aliases[k]}
-            onClick={setPolymer}
-            atomId={parseInt(k, 10)}
-            isPolymer={polymers.includes(parseInt(k, 10))}
+        {aliases.map(alias => (
+          <ResinLabel
+            key={alias.id}
+            label={alias.text}
+            onClick={toggleResin}
+            atomId={alias.id}
+            moleculeId={molecule.get('id')}
+            resin={alias.resin}
           />
         ))}
       </li>
@@ -96,17 +82,13 @@ function MoleculeDescription({
   if (label) moleculeLabel = <Label>{label}</Label>;
 
   return (
-    <div style={{ maxWidth: '30%' }}>
+    <div>
       {moleculeLabel}
       <ul>
         {Object.keys(description).map(k => (
           <li key={k}>
-            <EditableText
-              field={k}
-              value={description[k].toString()}
-              id={molecule.get('id')}
-              onFinishUpdate={updateMoleculeField}
-            />
+            <b>{`${k}: `}</b>
+            {description[k]}
           </li>
         ))}
         {aliasList}
@@ -117,8 +99,7 @@ function MoleculeDescription({
 
 MoleculeDescription.propTypes = {
   molecule: PropTypes.instanceOf(Immutable.Map).isRequired,
-  toggleAliasPolymer: PropTypes.func.isRequired,
-  updateMoleculeField: PropTypes.func.isRequired,
+  toggleResin: PropTypes.func.isRequired,
   label: PropTypes.string
 };
 

@@ -8,9 +8,6 @@ import UserActions from 'src/stores/alt/actions/UserActions';
 import NavNewSession from 'src/components/navigation/NavNewSession';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 
-// import NavNewSession from '../libHome/NavNewSession';
-// import DocumentHelper from '../components/utils/DocumentHelper';
-
 const NavHead = () => (
   <Navbar.Brand>
     <NavDropdown title="Chemotion" className="navig-brand" id="bg-nested-dropdown-brand">
