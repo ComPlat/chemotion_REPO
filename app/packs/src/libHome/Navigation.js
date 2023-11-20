@@ -124,7 +124,7 @@ export default class Navigation extends React.Component {
             {
               true ?
                 <NavItem eventKey={4} onClick={() => Aviator.navigate('/home/newsroom')} className="white-nav-item">
-                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom
+                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom1
                 </NavItem> : null
             }
             {

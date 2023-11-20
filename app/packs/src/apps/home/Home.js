@@ -147,6 +147,16 @@ class Home extends Component {
   }
 }
 
-
-export default Home;
-
+document.addEventListener('DOMContentLoaded', () => {
+  const domElement = document.getElementById('Home');
+  if (domElement) {
+    ReactDOM.render(
+      <DndProvider backend={HTML5Backend}>
+        <Home />
+      </DndProvider>,
+      domElement
+    );
+    initPublicRoutes();
+    Aviator.dispatch();
+  }
+});

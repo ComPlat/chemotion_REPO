@@ -2,6 +2,12 @@ import * as routesUtils from 'src/utilities/routesUtils';
 import { elementNames } from 'src/apps/generic/Utils';
 
 
+const allRoutes = (r) => {
+  let rts = { ...r };
+  for (let i = 0; i < rXr.count; i++) { rts = { ...rts, ...rXr[`content${i}`] }; }
+  return rts;
+}
+
 const routes = {
   '/': 'root',
   target: {
@@ -115,5 +121,5 @@ elementNames(false).forEach((klass) => {
 export default function() {
   Aviator.root = '/mydb';
   Aviator.pushStateEnabled = true;
-  Aviator.setRoutes(routes);
+  Aviator.setRoutes(allRoutes(routes));
 }
