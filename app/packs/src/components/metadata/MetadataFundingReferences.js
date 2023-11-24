@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
 
-import MetadataFundingReference from './MetadataFundingReference'
+import MetadataFundingReference from 'src/components/metadata/MetadataFundingReference'
 
 const MetadataFundingReferences = ({ metadata, onAdd, onChange, onRemove }) => {
   return (

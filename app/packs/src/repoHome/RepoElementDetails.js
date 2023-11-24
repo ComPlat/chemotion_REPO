@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import { DatasetDetail } from './RepoCommon';
-import RepoReactionDetails from './RepoReactionDetails';
-import RepoSampleDetails from './RepoSampleDetails';
+import { DatasetDetail } from 'src/repoHome/RepoCommon';
+import RepoReactionDetails from 'src/repoHome/RepoReactionDetails';
+import RepoSampleDetails from 'src/repoHome/RepoSampleDetails';
 
 export default class RepoElementDetails extends Component {
   constructor(props) {

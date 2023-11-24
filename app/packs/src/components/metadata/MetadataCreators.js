@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
 
-import MetadataCreator from './MetadataCreator';
+import MetadataCreator from 'src/components/metadata/MetadataCreator';
 
 const MetadataCreators = ({ metadata, onAdd, onChange, onRemove }) => (
   <div>

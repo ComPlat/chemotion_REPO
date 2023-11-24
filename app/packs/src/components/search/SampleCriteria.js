@@ -3,8 +3,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Row, Col } from 'react-bootstrap';
 import { findIndex } from 'lodash';
-import { GenFormGroup, GenFormGroupCb, GenFormGroupSel, SegmentCriteria } from 'chem-generic-ui';
-import { segmentsByKlass } from '../../generic/Utils';
+import { GenFormGroup, GenFormGroupCb, GenFormGroupSel, SegmentCriteria, segmentsByKlass } from 'chem-generic-ui';
 
 const buildCriteria = (props) => {
   const { sample } = props;

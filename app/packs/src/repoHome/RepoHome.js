@@ -2,12 +2,12 @@ import React, { Component } from 'react';
 import { Col, Row, Thumbnail } from 'react-bootstrap';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import { HomeFeature } from './RepoCommon';
-import RepoCardStaticsBoard from './RepoCardStaticsBoard';
-import RepoCardIntro from './RepoCardIntro';
-import RepoCardMoleculeArchive from './RepoCardMoleculeArchive';
-import { RepoCardReviewerIntro, RepoCardReviewerIntroBtn } from './RepoCardReviewerIntro';
-import PublicSearchIcons from '../components/chemrepo/search/PublicSearchIcons';
+import { HomeFeature } from 'src/repoHome/RepoCommon';
+import RepoCardStaticsBoard from 'src/repoHome/RepoCardStaticsBoard';
+import RepoCardIntro from 'src/repoHome/RepoCardIntro';
+import RepoCardMoleculeArchive from 'src/repoHome/RepoCardMoleculeArchive';
+import { RepoCardReviewerIntro, RepoCardReviewerIntroBtn } from 'src/repoHome/RepoCardReviewerIntro';
+import PublicSearchIcons from 'src/components/chemrepo/search/PublicSearchIcons';
 
 const PartnersInfo = (info) => {
   const { header, img, content } = info;

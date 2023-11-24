@@ -1,7 +1,5 @@
 import alt from 'src/stores/alt/alt';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
-import base64 from 'base-64';
-import ElementActions from '../actions/ElementActions';
 
 class SpectraActions {
   ToggleModal() {

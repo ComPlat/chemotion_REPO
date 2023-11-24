@@ -1,5 +1,5 @@
 import React from 'react';
-import ContactEmail from '../components/chemrepo/core/ContactEmail';
+import ContactEmail from 'src/components/chemrepo/core/ContactEmail';
 
 const RepoGenericHubDesc = () => (
   <div className="repo-generic-hub-desc">
