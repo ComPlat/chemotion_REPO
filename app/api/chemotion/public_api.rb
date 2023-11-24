@@ -8,26 +8,26 @@ module Chemotion
   # API for Public data
   class PublicAPI < Grape::API
     include Grape::Kaminari
-    # helpers do
-    #   def send_notification(attachment, user, status, has_error = false)
-    #     data_args = { 'filename': attachment.filename, 'comment': 'the file has been updated' }
-    #     level = 'success'
-    #     if has_error
-    #       data_args['comment'] = ' an error has occurred, the file is not changed.'
-    #       level = 'error'
-    #     elsif status == 4
-    #       data_args['comment'] = ' file has not changed.'
-    #       level = 'info'
-    #     elsif @status == 7
-    #       data_args['comment'] = ' an error has occurred while force saving the document, please review your changes.'
-    #       level = 'error'
-    #     end
-    #     message = Message.create_msg_notification(
-    #       channel_subject: Channel::EDITOR_CALLBACK, message_from: user.id,
-    #       data_args: data_args, attach_id: attachment.id, research_plan_id: attachment.attachable_id, level: level
-    #     )
-    #   end
-    # end
+    helpers do
+      def send_notification(attachment, user, status, has_error = false)
+        data_args = { 'filename': attachment.filename, 'comment': 'the file has been updated' }
+        level = 'success'
+        if has_error
+          data_args['comment'] = ' an error has occurred, the file is not changed.'
+          level = 'error'
+        elsif status == 4
+          data_args['comment'] = ' file has not changed.'
+          level = 'info'
+        elsif @status == 7
+          data_args['comment'] = ' an error has occurred while force saving the document, please review your changes.'
+          level = 'error'
+        end
+        message = Message.create_msg_notification(
+          channel_subject: Channel::EDITOR_CALLBACK, message_from: user.id,
+          data_args: data_args, attach_id: attachment.id, research_plan_id: attachment.attachable_id, level: level
+        )
+      end
+    end
     helpers CompoundHelpers
     helpers PublicHelpers
 
@@ -289,17 +289,17 @@ module Chemotion
 
         desc 'Return all countries available'
         get 'countries' do
-          ISO3166::Country.all_translated
+          { affiliations: ISO3166::Country.all_translated }
         end
 
         desc "Return all current organizations"
         get "organizations" do
-          Affiliation.where.not(organization: ENV['BLIST_ORGANIZATIONS']).pluck("DISTINCT organization")
+          { affiliations: Affiliation.where.not(organization: ENV['BLIST_ORGANIZATIONS']).pluck("DISTINCT organization")}
         end
 
         desc "Return all current departments"
         get "departments" do
-          Affiliation.where.not(department:  ENV['BLIST_DEPARTMENTS']).pluck("DISTINCT trim(department)")
+          { affiliations: Affiliation.where.not(department:  ENV['BLIST_DEPARTMENTS']).pluck('DISTINCT department')}
         end
 
         # desc "Return all current groups"
@@ -471,7 +471,7 @@ module Chemotion
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
             obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], req_xvial)
           end
-          entities
+          { molecules: entities }
         end
       end
 

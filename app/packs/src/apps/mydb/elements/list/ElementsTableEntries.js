@@ -21,6 +21,9 @@ import CommentIcon from 'src/components/comments/CommentIcon';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
 
+// for REPO
+import { PublishedTag } from 'src/components/chemrepo/PublishCommon';
+
 export function reactionRole(element) {
   let tooltip = null;
   if (element.type === 'reaction') {

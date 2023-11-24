@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import alt from 'src/stores/alt/alt';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 

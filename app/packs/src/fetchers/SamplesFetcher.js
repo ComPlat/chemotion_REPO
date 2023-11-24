@@ -5,7 +5,6 @@ import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
 import BaseFetcher from 'src/fetchers/BaseFetcher';
 import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
-import Container from 'src/models/Container';
 import defaultAnalysisPublish from 'src/components/utils/defaultAnalysisPublish';
 
 export default class SamplesFetcher {

@@ -63,11 +63,12 @@ module Entities
     end
 
     def inbox_count
-      inbox_obj = options[:root_container] ? object : object.parent
-      Container.where(id: inbox_obj.descendant_ids)
-               .joins(children: :attachments)
-               .count('attachments.id') +
-        unlinked_attachments.size.to_i
+      # inbox_obj = options[:root_container] ? object : object.parent
+      # Container.where(id: inbox_obj.descendant_ids)
+      #          .joins(children: :attachments)
+      #          .count('attachments.id') +
+      #   unlinked_attachments.size.to_i
+      0
     end
   end
 end
