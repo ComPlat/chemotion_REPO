@@ -509,10 +509,7 @@ class ReportStore {
         reactionIds: [...tmpRDTags, ...tmpRSTags]
       };
     }
-    dTags = {
-      sampleIds: [...new Set(dTags.sampleIds)],
-      reactionIds: [...new Set(dTags.reactionIds)]
-    };
+    dTags = { sampleIds: Array.from(new Set(dTags.sampleIds)), reactionIds: Array.from(new Set(dTags.reactionIds)) };
     sTags = { sampleIds: [], reactionIds: [] };
     const newObjs = UpdateSelectedObjs(sTags, currentObjs, dTags, currentObjs);
     const finalObjs = this.orderObjsForTemplate(this.template, newObjs);

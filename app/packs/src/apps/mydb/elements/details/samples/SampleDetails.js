@@ -1172,11 +1172,22 @@ export default class SampleDetails extends React.Component {
             </Button>
           </OverlayTrigger>
           <PrintCodeButton element={sample} />
+          <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+          <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />
           {sample.isNew
             ? null
             : <OpenCalendarButton isPanelHeader eventableId={sample.id} eventableType="Sample" />}
           {inventorySample}
           {decoupleCb}
+          <div style={{ display: 'inline-block', marginLeft: '10px' }}>
+            <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
+            {colLabel}
+            <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
+            <PubchemLabels element={sample} />
+            <OrigElnTag element={sample} />
+            <PublishedTag element={sample} fnUnseal={this.unseal} />
+            <LabelPublication element={sample} />
+          </div>
         </div>
         <ShowUserLabels element={sample} />
       </div>

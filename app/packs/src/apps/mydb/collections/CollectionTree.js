@@ -260,6 +260,60 @@ export default class CollectionTree extends React.Component {
     }
   }
 
+  // For Repository
+  publicRoots(roots, preservePublic) {
+    let newRoots =[]
+    roots.forEach((root) => {
+      if(preservePublic) {
+        if (root.is_public) newRoots.push(root)
+      } else {
+        if (!root.is_public) newRoots.push(root)
+      }
+    })
+
+    return newRoots
+  }
+
+
+  // For Repository
+  publicSubtrees() {
+    let {syncInRoots, syncChemotionVisible} = this.state
+    syncInRoots = this.removeOrphanRoots(syncInRoots)
+    syncInRoots = this.publicRoots(syncInRoots, true)
+
+    let orderedRoots = []
+    if (syncInRoots && syncInRoots[0] && syncInRoots[0].children) {
+      syncInRoots[0].children.map((e,idx) => {
+        if (e.label.match(/hemotion/) ) {
+          orderedRoots[0] = e;
+          orderedRoots[0].label = 'Chemotion';
+        } else if (typeof e.label === 'string' && e.label === 'Scheme-only reactions') {
+          orderedRoots[1] = e;
+        } else if (e.label.match(/Published Elements/)) {
+          orderedRoots[2] = e
+          orderedRoots[2].label = 'My Published Elements'
+        } else if (e.label === 'Pending Publications') {orderedRoots[3] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Reviewing')) {orderedRoots[4] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Element To Review')) {orderedRoots[5] = e  }
+        else if (typeof e.label === 'string' && e.label.startsWith('Reviewed')) { orderedRoots[6] = e }
+        else if (typeof e.label === 'string' && e.label === 'Embargo Accepted') { orderedRoots[7] = e }
+        else if (e.label === 'Embargoed Publications') {orderedRoots[8] = e  }
+        else {orderedRoots[idx+10] = e  }
+      })
+    }
+
+    let subTreeLabels = (
+      <div className="tree-view">
+        <div className={"title title-public " } style={{backgroundColor:'white'}}
+        >
+        </div>
+      </div>
+    )
+
+    return this.subtrees(orderedRoots, subTreeLabels,
+                         true, syncChemotionVisible)
+  }
+
   render() {
     const { ownCollectionVisible } = this.state;
 
@@ -268,14 +322,17 @@ export default class CollectionTree extends React.Component {
     return (
       <div>
         <div className="tree-view">
-          {this.collectionManagementButton()}
+        <div className="tree-wrapper">
+            {this.publicSubtrees()}
+          </div>
+
           <OverlayTrigger placement="top" delayShow={1000} overlay={colVisibleTooltip}>
             <div
               className="title"
               style={{ backgroundColor: 'white' }}
               onClick={() => this.handleSectionToggle('ownCollectionVisible')}
             >
-              <i className="fa fa-list" /> &nbsp;&nbsp; Collections
+              <i className="fa fa-list" /> &nbsp;&nbsp; My Collections
             </div>
           </OverlayTrigger>
         </div>
@@ -283,7 +340,7 @@ export default class CollectionTree extends React.Component {
           {this.lockedSubtrees()}
           {this.unsharedSubtrees()}
         </div>
-        <div className="tree-wrapper">
+        {/* <div className="tree-wrapper">
           {this.sharedSubtrees()}
         </div>
         <div className="tree-wrapper">
@@ -291,7 +348,7 @@ export default class CollectionTree extends React.Component {
         </div>
         <div className="tree-wrapper">
           {this.remoteSyncInSubtrees()}
-        </div>
+        </div> */}
       </div>
     );
   }

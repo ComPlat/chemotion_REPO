@@ -126,6 +126,7 @@ module Usecases
         container_info = attributes[:container]
         attributes.delete(:container)
         attributes.delete(:segments)
+        attributes.delete(:is_repo_public)
         new_sample = Sample.new(
           attributes
         )

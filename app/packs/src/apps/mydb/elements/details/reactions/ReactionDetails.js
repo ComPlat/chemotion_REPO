@@ -21,6 +21,7 @@ import ReactionDetailsProperties from 'src/apps/mydb/elements/details/reactions/
 import GreenChemistry from 'src/apps/mydb/elements/details/reactions/greenChemistryTab/GreenChemistry';
 import Utils from 'src/utilities/Functions';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import { setReactionByType } from 'src/apps/mydb/elements/details/reactions/ReactionDetailsShare';
@@ -630,7 +631,6 @@ export default class ReactionDetails extends Component {
           {this.productData(reaction)}
         </Tab>
       ),
-/*
       green_chemistry: (
         <Tab eventKey="green_chemistry" title="Green Chemistry" key={`green_chem_${reaction.id}`}>
           {
@@ -650,7 +650,6 @@ export default class ReactionDetails extends Component {
           />
         </Tab>
       )
-*/
     };
 
     const tabTitlesMap = {
@@ -667,6 +666,7 @@ export default class ReactionDetails extends Component {
       stb.push(value);
     });
 
+    // For REPO
     let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
     segmentKlasses =
       segmentKlasses.filter(s => s.element_klass && s.element_klass.name === reaction.type);
@@ -679,6 +679,7 @@ export default class ReactionDetails extends Component {
         stb.push(klass.label);
       }
     });
+
 
     const { showPublishReactionModal } = this.state;
     const submitLabel = (reaction && reaction.isNew) ? 'Create' : 'Save';

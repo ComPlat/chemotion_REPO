@@ -5,7 +5,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import NavNewSession from 'src/components/navigation/NavNewSession';
-import NavHead from 'src/libHome/NavHead';
+import NavHead from 'src/repoHome/NavHead';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 
 export default class Navigation extends React.Component {
@@ -124,7 +124,7 @@ export default class Navigation extends React.Component {
             {
               true ?
                 <NavItem eventKey={4} onClick={() => Aviator.navigate('/home/newsroom')} className="white-nav-item">
-                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom1
+                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom
                 </NavItem> : null
             }
             {

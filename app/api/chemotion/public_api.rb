@@ -548,7 +548,7 @@ module Chemotion
             obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:id])
           end
 
-          entities
+          { reactions: entities }
         end
       end
 
@@ -875,7 +875,7 @@ module Chemotion
       resource :published_statics do
         desc 'Return PUBLIC statics'
         get do
-          ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps')
+          { published_statics: ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps') }
         end
       end
 

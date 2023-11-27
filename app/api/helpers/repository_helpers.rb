@@ -39,7 +39,7 @@ module RepositoryHelpers
     end
 
     schemeList = get_reaction_table(reaction.id)
-    entities = Entities::ReactionEntity.represent(reaction, serializable: true)
+    entities = Entities::RepoReactionEntity.represent(reaction, serializable: true)
     entities[:products].each do |p|
       label_ids = p[:tag]['taggable_data']['user_labels'] || [] unless p[:tag]['taggable_data'].nil?
       p[:labels] = UserLabel.public_labels(label_ids) unless label_ids.nil?

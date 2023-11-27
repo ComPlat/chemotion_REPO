@@ -90,6 +90,8 @@ export default class PublishReactionModal extends Component {
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
     };
 
+    props.reaction.convertDurationDisplay();
+
     this.onUserChange = this.onUserChange.bind(this);
     this.handlePublishReaction = this.handlePublishReaction.bind(this);
     this.handleReserveDois = this.handleReserveDois.bind(this);
@@ -121,7 +123,11 @@ export default class PublishReactionModal extends Component {
     this.loadBundles();
   }
 
-  componentWillReceiveProps(nextProps) {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    if (!nextProps.reaction) { return; }
+    nextProps.reaction.convertDurationDisplay();
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({

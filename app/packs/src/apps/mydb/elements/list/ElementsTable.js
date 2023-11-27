@@ -304,10 +304,10 @@ export default class ElementsTable extends React.Component {
               style={
                 { textAlign: 'center', zIndex: 0 }
               }
-              onChange={event => this.handleNumberOfResultsChange(event, false)}
-              onBlur={event => this.handleNumberOfResultsChange(event, true)}
-              onKeyDown={event => this.handleKeyDown(event)}
-              value={ui.number_of_results ? ui.number_of_results : 0} />
+              onChange={(event) => this.handleNumberOfResultsChange(event, false)}
+              onBlur={(event) => this.handleNumberOfResultsChange(event, true)}
+              onKeyDown={(event) => this.handleKeyDown(event)}
+              value={ui.number_of_results ? ui.number_of_results : 0}
             />
           </InputGroup>
         </FormGroup>
