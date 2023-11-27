@@ -119,4 +119,12 @@ export default class GenericBaseFetcher {
         console.log(errorMessage);
       });
   }
+
+  // For REPO
+  static open(path, method) {
+    return fetch(`/api/v1/labimotion_hub/${path}`, { credentials: 'same-origin', method })
+      .then(response => response.json()).then(json => json).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
 }

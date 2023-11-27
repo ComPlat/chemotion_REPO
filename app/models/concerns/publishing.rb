@@ -72,7 +72,7 @@ module Publishing
     def create_publication_tag(contributor, author_ids, license)
       authors = User.where(id: author_ids, type: %w(Person Collaborator))
                       .includes(:affiliations)
-                      .order("position(users.id::text in '#{author_ids}')")
+                      .order(Arel.sql("position(users.id::text in '#{author_ids}')"))
       affiliations = authors.map(&:current_affiliations)
       affiliations_output = {}
       affiliations.flatten.each do |aff|

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, ButtonGroup, Col, Row } from 'react-bootstrap';
 import { GenGridBase } from 'chem-generic-ui';
-import GenericBaseFetcher from 'src/repo/fetchers/GenericBaseFetcher';
+import GenericBaseFetcher from 'src/fetchers/GenericBaseFetcher';
 import Utils from 'src/utilities/Functions';
 import RepoGenericHubDesc from 'src/repoHome/RepoGenericHubDesc';
 import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
@@ -147,9 +147,9 @@ const RepoGenericHub = () => {
 
   const clickMenu = (e, type) => {
     e.stopPropagation();
-    GenericBaseFetcher.open(`/list?klass=${capitalizeFirstLetter(type)}Klass&with_props=true`, 'GET')
+    GenericBaseFetcher.open(`list?klass=${capitalizeFirstLetter(type)}Klass&with_props=true`, 'GET')
       .then((result) => {
-        setState({ ...state, menuSelected: type, gridData: result.list });
+        setState({ ...state, menuSelected: type, gridData: result });
       })
       .catch((error) => {
         console.error('Error fetching dataset klasses:', error);
