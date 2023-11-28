@@ -338,7 +338,7 @@ export default class CollectionTree extends React.Component {
         </div>
         <div className="tree-wrapper" style={{ display: ownCollectionDisplay }}>
           {this.lockedSubtrees()}
-          {this.unsharedSubtrees()}
+          {/* {this.unsharedSubtrees()} */}
         </div>
         {/* <div className="tree-wrapper">
           {this.sharedSubtrees()}

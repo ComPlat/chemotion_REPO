@@ -416,7 +416,7 @@ export default class ReactionDetails extends Component {
   }
 
   reactionHeader(reaction) {
-    const hasChanged = reaction.changed ? '' : 'none';
+    let hasChanged = reaction.changed ? '' : 'none';
     const titleTooltip = formatTimeStampsOfElement(reaction || {});
 
     const { currentCollection } = UIStore.getState();

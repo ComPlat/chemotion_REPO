@@ -91,8 +91,8 @@ module Chemotion
 
       desc "Return all locked and unshared serialized collection roots of current user"
       get :locked do
-        roots = current_user.type == 'Anonymous' ? [] : current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
-        present roots, with: Entities::CollectionEntity, root: :collections
+        cols = current_user.type == 'Anonymous' ? [] : current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
+        present cols, with: Entities::CollectionEntity, root: :collections
       end
 
       get_child = Proc.new do |children, collects|

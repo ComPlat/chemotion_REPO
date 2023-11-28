@@ -67,15 +67,15 @@ export default class ContextActions extends React.Component {
         <ButtonGroup style={{ marginLeft: '10px' }}>
           <CreateButton isDisabled={this.isCreateDisabled()} customClass={customClass} />
         </ButtonGroup>
-        <ButtonGroup style={{ marginLeft: '10px' }}>
+        {/* <ButtonGroup style={{ marginLeft: '10px' }}>
           <ScanCodeButton customClass={customClass} />
-        </ButtonGroup>
+        </ButtonGroup> */}
         {/* <ButtonGroup style={{ marginLeft: '10px' }}>
           <InboxButton />
         </ButtonGroup> */}
-        <ButtonGroup style={{ marginLeft: '10px' }}>
+        {/* <ButtonGroup style={{ marginLeft: '10px' }}>
           <SampleTaskNavigationElement />
-        </ButtonGroup>
+        </ButtonGroup> */}
         <ButtonGroup style={{ marginLeft: '20px' }}>
           <NoticeButton />
         </ButtonGroup>
