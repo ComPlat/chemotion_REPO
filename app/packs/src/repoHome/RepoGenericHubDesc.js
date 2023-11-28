@@ -1,9 +1,18 @@
 import React from 'react';
+import { Button } from 'react-bootstrap';
 import ContactEmail from 'src/components/chemrepo/core/ContactEmail';
 
 const RepoGenericHubDesc = () => (
   <div className="repo-generic-hub-desc">
-    <h1>LabIMotion Template Hub<span className="contact"><ContactEmail email="chemotion-labimotion@lists.kit.edu" label="Send feedback about LabIMotion" /></span></h1>
+    <h1>
+      LabIMotion Template Hub
+      <span className="contact"><ContactEmail email="chemotion-labimotion@lists.kit.edu" label="Send feedback about LabIMotion" /></span>
+      <span className="contact">
+        <Button bsSize="small" onClick={() => { window.open('https://www.chemotion.net/docs/labimotion', '_blank'); }}>
+          <i className="fa fa-book" aria-hidden="true" />&nbsp;LabIMotion Docs
+        </Button>
+      </span>
+    </h1>
     <h3>
       Welcome to the <b>LabIMotion Template Hub</b>, your platform for sharing new elements, segments, and datasets templates.
     </h3>
