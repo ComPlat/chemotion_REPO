@@ -135,14 +135,14 @@ export default class Element {
   }
 
   // temporary alias for analyses. Still used by Report tool
-  get analyses() {
-    if (!this.container) { return []; }
+  // get analyses() {                                              ## TODO: Paggy
+  //   if (!this.container) { return []; }
 
-    const analysesContainer = this.container.children?.find((container) => container?.container_type === 'analyses');
-    if (!analysesContainer) { return []; }
+  //   const analysesContainer = this.container.children?.find((container) => container?.container_type === 'analyses');
+  //   if (!analysesContainer) { return []; }
 
-    return analysesContainer.children?.filter((container) => container?.container_type === 'analysis');
-  }
+  //   return analysesContainer.children?.filter((container) => container?.container_type === 'analysis');
+  // }
 
   // Default empty quill-delta
   static quillDefault() {

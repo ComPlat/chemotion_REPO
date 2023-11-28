@@ -238,7 +238,7 @@ module Chemotion
         def create_publication_tag(contributor, author_ids, license)
           authors = User.where(type: %w[Person Collaborator], id: author_ids)
                         .includes(:affiliations)
-                        .order("position(users.id::text in '#{author_ids}')")
+                        .order(Arel.sql("position(users.id::text in '#{author_ids}')"))
           affiliations = authors.map(&:current_affiliations)
           affiliations_output = {}
           affiliations.flatten.each do |aff|
@@ -413,7 +413,7 @@ module Chemotion
         end
 
         if User.reviewer_ids.include?(current_user.id) && params[:is_submit] == false
-          es = Publication.where(element_type: 'Collection', state: 'pending').order("taggable_data->>'label' ASC")
+          es = Publication.where(element_type: 'Collection', state: 'pending').order(Arel.sql("taggable_data->>'label' ASC"))
         else
           cols = if current_user.type == 'Anonymous'
                    Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
@@ -566,7 +566,7 @@ module Chemotion
           review_info = repo_review_info(publication, current_user&.id, false)
           publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
           published_user = User.find(publication.published_by) unless publication.nil?
-          entities = Entities::ReactionEntity.represent(reaction, serializable: true)
+          entities = Entities::RepoReactionEntity.represent(reaction, serializable: true)
           entities[:literatures] = literatures unless entities.nil? || literatures.blank?
           entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
           entities[:segments] = Labimotion::SegmentEntity.represent(reaction.segments)
@@ -830,8 +830,9 @@ module Chemotion
 
         post :comments do
           save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], nil, false)
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
+
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
           { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
@@ -850,8 +851,8 @@ module Chemotion
           @root_publication.process_element(Publication::STATE_REVIEWED)
           @root_publication.inform_users(Publication::STATE_REVIEWED)
           # @root_publication.element
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           { "#{params[:type]}": element, review: @root_publication.review, review_info: review_info }
         end
@@ -862,8 +863,8 @@ module Chemotion
           @root_publication.update_state(Publication::STATE_PENDING)
           @root_publication.process_element(Publication::STATE_PENDING)
           @root_publication.inform_users(Publication::STATE_PENDING)
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
@@ -871,8 +872,8 @@ module Chemotion
 
         post :approved do
           approve_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'approved', false)
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           { "#{params[:type]}": element, review: his || @root_publication.review, review_info: review_info }
@@ -888,8 +889,8 @@ module Chemotion
           @root_publication.process_element(Publication::STATE_ACCEPTED)
           @root_publication.inform_users(Publication::STATE_ACCEPTED)
 
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           { "#{params[:type]}": element, review: @root_publication.review, message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off', review_info: review_info }
         end
@@ -898,8 +899,8 @@ module Chemotion
           @root_publication.update_state('declined')
           @root_publication.process_element('declined')
           @root_publication.inform_users(Publication::STATE_DECLINED, current_user.id)
-          element = ReactionSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'reaction'
-          element = SampleSerializer.new(@root_publication.element).serializable_hash.deep_symbolize_keys if params[:type] == 'sample'
+          element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
+          element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id)
           { "#{params[:type]}": element, review: his || @root_publication.review }
         end
@@ -943,8 +944,9 @@ module Chemotion
           pub.inform_users
 
           @sample.reload
+          detail_levels = ElementDetailLevelCalculator.new(user: current_user, element: @sample).detail_levels
           {
-            sample: SampleSerializer.new(@sample).serializable_hash.deep_symbolize_keys,
+            sample: Entities::SampleEntity.represent(@sample, detail_levels: detail_levels),
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end
@@ -954,7 +956,8 @@ module Chemotion
           @sample.reserve_suffix_analyses(@analyses)
           @sample.reload
           @sample.tag_reserved_suffix(@analyses)
-          { sample: SampleSerializer.new(@sample).serializable_hash.deep_symbolize_keys }
+          ## { sample: SampleSerializer.new(@sample).serializable_hash.deep_symbolize_keys }
+          present @samples, with: Entities::SampleEntity, root: :sample
         end
       end
 
@@ -1002,7 +1005,7 @@ module Chemotion
 
           @reaction.reload
           {
-            reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            reaction: Entities::ReactionEntity.represent(@reaction, serializable: true),
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end
@@ -1022,7 +1025,7 @@ module Chemotion
           @reaction.tag_reserved_suffix(@analysis_set)
           @reaction.reload
           {
-            reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            reaction: Entities::ReactionEntity.represent(@reaction, serializable: true),
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end
@@ -1128,7 +1131,7 @@ module Chemotion
 
           @reaction.reload
           {
-            reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            reaction: Entities::ReactionEntity.represent(@reaction, serializable: true),
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end

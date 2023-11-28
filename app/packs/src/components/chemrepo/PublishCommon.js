@@ -3,7 +3,7 @@ import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
 import Sample from 'src/models/Sample';
-import { sampleShowOrNew, reactionShow } from 'src/utilities/routesUtils';
+//import { sampleShowOrNew, reactionShow } from 'src/utilities/routesUtils'; // TODO: Paggy
 import Reaction from 'src/models/Reaction';
 import { isNmrPass, isDatasetPass } from 'src/utilities/ElementUtils';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
@@ -24,12 +24,12 @@ const handleClick = (e, id, clickType) => {
   switch (clickType) {
     case 'Reaction':
       Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/reaction/${id}`, { silent: true });
-      reactionShow({ params: { reactionID: id } });
+      // reactionShow({ params: { reactionID: id } });   // TODO: Paggy
       break;
 
     default:
       Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/sample/${id}`, { silent: true });
-      sampleShowOrNew({ params: { sampleID: id } });
+      // sampleShowOrNew({ params: { sampleID: id } });   // TODO: Paggy
       break;
   }
 };
