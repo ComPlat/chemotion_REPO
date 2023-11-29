@@ -83,7 +83,7 @@ export default class RepoSample extends Component {
   renderAnalyses(analyses) {
     const { sample } = this.props;
     const specSample = new Sample(sample);
-    specSample.container = sample.analyses;
+    // specSample.container = sample.analyses;
     const orderAnalyses = ArrayUtils.sortArrByIndex(analyses);
     return orderAnalyses.map((analysis) => {
       const userInfo =
@@ -141,12 +141,8 @@ export default class RepoSample extends Component {
         </h5>
       );
     const userInfo = sample.pub_info || '';
-    const analyses =
-      (sample.analyses &&
-        sample.analyses.children &&
-        sample.analyses.children.length > 0 &&
-        sample.analyses.children[0].children) ||
-      [];
+    const analysesContainer = sample.container.children?.find((container) => container?.container_type === 'analyses');
+    const analyses = analysesContainer?.children?.filter((container) => container?.container_type === 'analysis') || [];
     let embargo = null;
     let colDoiPrefix = sample?.doi || '';
     colDoiPrefix =

@@ -2,7 +2,7 @@
 
 def fetch_molecule_viewer_config
   molecule_viewer_config = { 'feature' => { 'enabled' => false } }
-  begin
+  ActiveSupport.on_load(:active_record) do
     if ActiveRecord::Base.connection.table_exists?('matrices')
       molecule_viewer = Matrice.find_by(name: 'moleculeViewer')
       molecule_viewer_config = molecule_viewer_config.merge((molecule_viewer&.configs || {}))
