@@ -579,10 +579,10 @@ class User < ApplicationRecord
     Collection.find_or_create_by(user: self, label: 'ELN Gate', is_locked: true, position: 1)
     Collection.find_or_create_by(user: self, label: 'My Data', is_locked: true, position: 2)
 
-    sys_published_by = Collection.find_or_create_by(user_id: chemotion_user, label: 'Published by')
-    sys_pending_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Pending Publication from')
-    sys_reviewing_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Reviewing Publication from')
-    sys_ready_publish_from = Collection.find_or_create_by(user_id: chemotion_user, label: 'Embargoed Publications from')
+    sys_published_by = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Published by')
+    sys_pending_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Pending Publication from')
+    sys_reviewing_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Reviewing Publication from')
+    sys_ready_publish_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Embargoed Publications from')
 
     sys_reviewing_collection = self.reviewing_collection || Collection.create(user: chemotion_user, label: 'Reviewing', ancestry: "#{sys_reviewing_from.id}")
     sys_pending_collection = self.pending_collection || Collection.create(user: chemotion_user, label: 'Pending Publications', ancestry: "#{sys_pending_from.id}")

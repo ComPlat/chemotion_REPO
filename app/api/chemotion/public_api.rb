@@ -319,7 +319,7 @@ module Chemotion
       get 'collection' do
         pub_coll = Collection.public_collection
         if current_user
-          coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll.id)
+          coll = SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: pub_coll&.id)
           { id: coll&.id, is_sync_to_me: true  }
         else
           { id: nil }
@@ -374,11 +374,11 @@ module Chemotion
           return "/molecules/#{molecule.id.to_s}" if type.empty?
 
           version = params[:version] ? params[:version] : ""
-          analyses = Collection.public_collection.samples
+          analyses = Collection.public_collection&.samples
             .where("samples.molecule_id = ?", molecule.id.to_s)
             .map(&:analyses).flatten
 
-          analyses_filtered = analyses.select { |a|
+          analyses_filtered = analyses&.select { |a|
             em = a.extended_metadata
             check = em['kind'].to_s.gsub(/\s/, '') == type
             check = check && (em['analysis_version'] || '1') == version unless version.empty?
