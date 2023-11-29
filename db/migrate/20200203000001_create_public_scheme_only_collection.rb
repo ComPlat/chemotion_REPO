@@ -1,4 +1,4 @@
-class CreatePublicSchemeOnlyCollection < ActiveRecord::Migration
+class CreatePublicSchemeOnlyCollection < ActiveRecord::Migration[4.2]
   def change
     chemotion_user = User.chemotion_user
     unless chemotion_user.nil?
