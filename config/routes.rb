@@ -86,6 +86,7 @@ Rails.application.routes.draw do
 
   get 'home', to: 'pages#home'
   # get 'home', to: 'pages#home'
+  get 'jsmol', to: 'pages#jsmol'
   get 'directive', to: 'pages#directive'
   get 'welcome', to: 'pages#home'
   get 'about', to: 'pages#about'

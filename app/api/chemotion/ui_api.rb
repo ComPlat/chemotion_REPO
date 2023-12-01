@@ -24,7 +24,7 @@ module Chemotion
           has_sfn: sfn_config.present? && current_user.matrix_check_by_name('scifinderN'),
           has_converter: converter_config.present?,
           has_radar: radar_config.present?,
-          molecule_viewer: Rails.configuration.molecule_viewer_config
+          molecule_viewer: Matrice.molecule_viewer,
         }
       end
     end

@@ -21,8 +21,6 @@ class Matrice < ApplicationRecord
   acts_as_paranoid
   after_create :gen_json
 
-  after_update :reload_initializer, if: -> { (saved_change_to_configs? || saved_change_to_enabled?) && name == 'moleculeViewer' }
-
   def self.gen_matrices_json
     mx = pluck(:name, :id).to_h || {}
   rescue ActiveRecord::StatementInvalid, PG::ConnectionBad, PG::UndefinedTable
@@ -39,13 +37,14 @@ class Matrice < ApplicationRecord
     configs.dig('extra_rules', 'enable') == true ? configs['extra_rules'] : {}
   end
 
+  def self.molecule_viewer
+    rec = find_by(name: 'moleculeViewer')
+    { feature_enabled: rec&.enabled || false }.merge(rec&.configs || {}).deep_symbolize_keys
+  end
+
   private
 
   def gen_json
     Matrice.gen_matrices_json
-  end
-
-  def reload_initializer
-    load Rails.root.join('config/initializers/molecule_viewer.rb') if Rails.application.initialized?
   end
 end

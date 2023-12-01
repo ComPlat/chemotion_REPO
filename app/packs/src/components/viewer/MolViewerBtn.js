@@ -20,7 +20,7 @@ export default class MolViewerBtn extends Component {
 
   render() {
     const {
-      disabled, fileContent, isPublic
+      disabled, fileContent, isPublic, viewType
     } = this.props;
     const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
     const { show } = this.state;
@@ -36,11 +36,11 @@ export default class MolViewerBtn extends Component {
         {
           show ?
             <MolViewerModal
-              config={config}
               fileContent={fileContent}
               handleModalOpen={e => this.handleModalOpen(e)}
               isPublic={isPublic}
               show={show}
+              viewType={viewType}
             /> : null
         }
       </>
@@ -52,4 +52,5 @@ MolViewerBtn.propTypes = {
   disabled: PropTypes.bool.isRequired,
   fileContent: PropTypes.string.isRequired,
   isPublic: PropTypes.bool.isRequired,
+  viewType: PropTypes.string.isRequired,
 };

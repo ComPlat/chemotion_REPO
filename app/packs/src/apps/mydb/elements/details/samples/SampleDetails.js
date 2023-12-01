@@ -1825,6 +1825,7 @@ export default class SampleDetails extends React.Component {
               disabled={sample.isNew || !this.enableMoleculeViewer}
               fileContent={sample.molfile}
               isPublic={false}
+              viewType={`mol_${sample.id}`}
             />
             {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
             <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">

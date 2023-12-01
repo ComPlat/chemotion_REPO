@@ -56,7 +56,7 @@ module Chemotion
       end
       get 'initialize' do
         {
-          molecule_viewer: Rails.configuration.molecule_viewer_config
+          molecule_viewer: Matrice.molecule_viewer
         }
       end
 

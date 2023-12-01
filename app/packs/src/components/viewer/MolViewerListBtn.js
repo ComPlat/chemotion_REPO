@@ -25,14 +25,14 @@ export default class MolViewerListBtn extends Component {
     const btnStyle = disabled ? 'default' : 'info';
     const tipDesc = disabled ? ' (Nothing to view)' : '';
     const onClick = disabled ? e => e.stopPropagation() : e => this.handleModalOpen(e);
-    const className = this.props.isPublic ? '' : '';
+
     return (
       <OverlayTrigger
         placement="top"
         delayShow={500}
         overlay={<Tooltip id="_fast_create_btn">Click to view structure file in Viewer{tipDesc}</Tooltip>}
       >
-        <Button bsSize="xs" bsStyle={btnStyle} className={className} onClick={onClick} disabled={this.props.disabled}>
+        <Button bsSize="xs" bsStyle={btnStyle} onClick={onClick} disabled={this.props.disabled}>
           <i className="fa fa-cube" aria-hidden="true" />{' '}Viewer
         </Button>
       </OverlayTrigger>
@@ -69,7 +69,6 @@ export default class MolViewerListBtn extends Component {
         {
           openModal ?
             <MolViewerListModal
-              config={config}
               handleModalOpen={e => this.handleModalOpen(e)}
               show={openModal}
               title={el.short_label}
