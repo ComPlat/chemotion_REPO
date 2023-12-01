@@ -8,7 +8,6 @@ set -euo pipefail
 src5=$(node -e 'console.log(require.resolve("ag-grid-community/styles/ag-grid.css"))')
 src6=$(node -e 'console.log(require.resolve("ag-grid-community/styles/ag-grid-no-native-widgets.css"))')
 
-
 YEL='\033[0;33m'
 NOC='\033[0m'
 yellow() {
@@ -32,3 +31,10 @@ node_modules_folder="$(node -e 'const p = require.resolve("@svgedit/svgcanvas");
 rm -f ./public/svgedit && ln -s "$node_modules_folder"/svgedit/dist/editor ./public/svgedit
 
 yellow "Finished adding symbolic link to svg editor in public folder"
+
+
+# move molviewer to public folder
+yellow "Adding symbolic link to jsmol in public folder"
+node_modules_folder="$(node -e 'const p = require.resolve("react"); console.log(p.slice(0, p.indexOf("react")))')"
+rm -rf ./public/jsmol && ln -s "$node_modules_folder"/react-molviewer/dist/jsmol ./public/jsmol
+yellow "Finished adding symbolic link to jsmol in public folder"

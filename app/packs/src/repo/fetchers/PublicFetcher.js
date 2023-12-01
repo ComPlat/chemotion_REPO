@@ -282,7 +282,7 @@ export default class PublicFetcher {
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => {
       abortController.abort();
-    }, 5000); // 5 seconds timeout
+    }, 10000); // 10 seconds timeout
 
     return fetch('/api/v1/public/service/convert', {
       signal: abortController.signal, // pass the signal to the fetch function

@@ -1,26 +1,21 @@
 /* eslint-disable react/forbid-prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Alert, Button, ButtonGroup, Col, Modal, PanelGroup, Panel, ProgressBar, Nav, NavItem } from 'react-bootstrap';
-import { ReactNglViewer } from 'react-nglviewer';
-import MolViewer from 'src/components/viewer/MolViewer';
-import MolViewerSet from 'src/components/viewer/MolViewerSet';
+import { Alert, Col, Modal, PanelGroup, Panel, Nav, NavItem } from 'react-bootstrap';
+import { MolViewer } from 'react-molviewer';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 const MolViewerListModal = (props) => {
   const {
-    config, datasetContainer, handleModalOpen, isPublic, show
+    datasetContainer, handleModalOpen, isPublic, show
   } = props;
 
   const [activeKey, setActiveKey] = useState(1);
-  const [newContent, setNewContent] = useState(null);
-  const [progress, setProgress] = useState(0);
   const [selected, setSelected] = useState(() => {
     const ds = datasetContainer[0];
     const file = (ds?.attachments?.length > 0 && ds?.attachments[0]) || {};
     return { ...file, dsName: ds.name };
   });
-  const [switchViewer, setSwitchViewer] =
-    useState(config.viewerEndpoint ? MolViewerSet.JSMOL : MolViewerSet.NGL);
 
   const handleFile = (e, attachment, ds) => {
     e.stopPropagation();
@@ -73,63 +68,17 @@ const MolViewerListModal = (props) => {
     );
   };
 
-  const updateNewContent = (data) => {
-    setNewContent(new Blob([data], { type: 'text/plain' }));
-  };
-
-  const convertMolfile = () => {
-    const filePath = isPublic ?
-      `${window.location.origin}/api/v1/public/download/attachment?id=${selected?.id}`
-      : `${window.location.origin}/api/v1/attachments/${selected?.id}`;
-
-    return fetch(filePath)
-      .then((response) => {
-        if (!response.ok) {
-          return null;
-        }
-        const contentLength = response.headers.get('Content-Length');
-        const totalSize = parseInt(contentLength, 10);
-        let downloadedSize = 0;
-
-        const reader = response.body.getReader();
-        const chunks = [];
-
-        const pump = () => reader.read().then(({ done, value }) => {
-          if (done) {
-            return new Blob(chunks);
-          }
-
-          downloadedSize += value.byteLength;
-          const progressPercentage = (downloadedSize / totalSize) * 100;
-          setProgress(progressPercentage);
-
-          chunks.push(value);
-          return pump();
-        });
-
-        return pump();
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
-
-  useEffect(() => {
-    convertMolfile().then((result) => {
-      updateNewContent(result);
-    });
-  }, [selected]);
-
   if (show) {
     let modalBody = <Alert bsStyle="danger">This service is offline. Please contact your system administrator.</Alert>;
-    if (newContent) {
-      const viewer = switchViewer === MolViewerSet.NGL ?
-        <ReactNglViewer fileName={selected?.filename} filePath={newContent} /> :
-        (<MolViewer
-          cliendId={config.viewerClientId}
-          endpoint={config.viewerEndpoint}
-          molContent={newContent}
-        />);
+    if (selected?.id) {
+      const viewer = (<MolViewer
+        molContent={isPublic
+          ? `${window.location.origin}/api/v1/public/download/attachment?id=${selected?.id}`
+          : `${window.location.origin}/api/v1/attachments/${selected?.id}`}
+        viewType={`file_${selected?.id}`}
+        fnInit={() => LoadingActions.start()}
+        fnCb={() => LoadingActions.stop()}
+      />);
       modalBody = <div style={{ width: '100%', height: 'calc(100vh - 260px)' }}>{viewer}</div>;
     }
     return (
@@ -137,26 +86,10 @@ const MolViewerListModal = (props) => {
         <Modal.Header onClick={e => e.stopPropagation()} closeButton>
           <Modal.Title>
             Dataset: {selected.dsName} / File: {selected?.filename}
-            <ButtonGroup bsSize="xsmall" className="button-right">
-              <Button
-                active={switchViewer === MolViewerSet.JSMOL}
-                onClick={() => setSwitchViewer(MolViewerSet.JSMOL)}
-                disabled={!config.viewerEndpoint}
-              >
-                JSmol Viewer
-              </Button>
-              <Button
-                active={switchViewer === MolViewerSet.NGL}
-                onClick={() => setSwitchViewer(MolViewerSet.NGL)}
-              >
-                NGL Viewer
-              </Button>
-            </ButtonGroup>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body onClick={e => e.stopPropagation()}>
           <Col md={2} sm={2} lg={2}>
-            { (progress >= 100) ? null : <ProgressBar active now={progress} label="downloading..." /> }
             {list()}
           </Col>
           <Col md={10} sm={10} lg={10}>{modalBody}</Col>
@@ -168,7 +101,6 @@ const MolViewerListModal = (props) => {
 };
 
 MolViewerListModal.propTypes = {
-  config: PropTypes.object.isRequired,
   datasetContainer: PropTypes.array.isRequired,
   handleModalOpen: PropTypes.func.isRequired,
   isPublic: PropTypes.bool.isRequired,

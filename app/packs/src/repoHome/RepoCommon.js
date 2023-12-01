@@ -921,7 +921,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} />)}
+        {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
         {nameOrFormula}
@@ -988,7 +988,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} />)}
+          {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_el_${element.id}`} />)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">

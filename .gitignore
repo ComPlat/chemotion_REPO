@@ -96,7 +96,8 @@
 
 /public/intro/*
 !/public/intro/.keep
-
+/public/jsmol/*
+!/public/jsmol/.keep
 /public/editors/*
 !/public/editors/.keep
 /public/favicon.ico

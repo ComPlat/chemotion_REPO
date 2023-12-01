@@ -33,12 +33,12 @@ module PublicHelpers
   end
 
   def convert_to_3d(molfile)
-    molecule_viewer = Rails.configuration.molecule_viewer_config || {}
-    if molecule_viewer.blank? || molecule_viewer.chembox_endpoint.blank?
+    molecule_viewer = Matrice.molecule_viewer
+    if molecule_viewer.blank? || molecule_viewer[:chembox_endpoint].blank?
       { molfile: molfile }
     else
       options = { timeout: 10, body: { mol: molfile }.to_json, headers: { 'Content-Type' => 'application/json' } }
-      response = HTTParty.post(molecule_viewer.chembox_endpoint, options)
+      response = HTTParty.post(molecule_viewer[:chembox_endpoint], options)
       response.code == 200 ? { molfile: response.parsed_response } : { molfile: molfile }
     end
   end
