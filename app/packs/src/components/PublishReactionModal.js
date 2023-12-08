@@ -78,7 +78,11 @@ export default class PublishReactionModal extends Component {
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
-      publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
+      publishType: {
+        options: Object.values(publishOptions),
+        selected: publishOptions.f,
+        disabled: false
+      }
     };
 
     this.onUserChange = this.onUserChange.bind(this);
@@ -113,14 +117,25 @@ export default class PublishReactionModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const previous_license = get(nextProps.reaction, 'tag.taggable_data.previous_license');
+    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_license');
+    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_scheme_only');
+
+    const publishType = { ...this.state.publishType };
+    if (previousSchemeOnly === true) {
+      publishType.selected = publishOptions.s;
+      publishType.disabled = true;
+    } else if (previousSchemeOnly === false) {
+      publishType.selected = publishOptions.f;
+      publishType.disabled = true;
+    }
 
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
-      selectedLicense: isUndefined(previous_license) ? 'CC BY' : previous_license,
-      disableLicense: !isUndefined(previous_license)
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
+      publishType
     });
   }
 

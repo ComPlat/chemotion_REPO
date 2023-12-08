@@ -390,7 +390,7 @@ class EmbargoCom extends Component {
         <Form horizontal style={{ display: 'flex', marginBottom: 15 }}>
           <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
             {
-              this.props.disableLicense ? <ControlLabel>Licence (from Previous Version</ControlLabel>
+              this.props.disableLicense ? <ControlLabel>Licence (from Previous Version)</ControlLabel>
                                         : <ControlLabel>Choose license</ControlLabel>
             }
           </div>
@@ -452,6 +452,7 @@ const PublishTypeAs = props => (
     <DropdownButtonSelection
       options={props.options}
       selected={props.selected}
+      disabled={props.disabled}
       placeholder="Select publication type..."
       onSelect={e => props.onChange(e)}
     />
