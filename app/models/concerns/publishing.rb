@@ -169,7 +169,7 @@ module Publishing
       end
     end
 
-    def tag_as_new_version(previous_element)
+    def tag_as_new_version(previous_element, scheme_only: false)
       previous_license = previous_element&.tag&.taggable_data['publication']['license']
 
       element_tag = self.tag
@@ -177,7 +177,8 @@ module Publishing
         taggable_data: (element_tag.taggable_data || {}).merge(
           previous_version: previous_element.id,
           previous_doi: previous_element&.doi&.id,
-          previous_license: previous_license
+          previous_license: previous_license,
+          previous_scheme_only: scheme_only
         )
       )
     end

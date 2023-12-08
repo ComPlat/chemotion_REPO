@@ -336,7 +336,7 @@ module Chemotion
           new_reaction.reload
         end
 
-        def create_new_reaction_version(reaction = @reaction, scheme_only = false)
+        def create_new_reaction_version(reaction = @reaction, scheme_only = @scheme_only)
           new_reaction = reaction.dup
           new_reaction.previous_version = reaction
           new_reaction.collections << current_user.versions_collection
@@ -361,7 +361,7 @@ module Chemotion
 
           new_reaction.update_tag!(analyses_tag: true)
 
-          new_reaction.tag_as_new_version(reaction)
+          new_reaction.tag_as_new_version(reaction, scheme_only: scheme_only)
           reaction.tag_as_previous_version(new_reaction)
 
           reaction.reactions_samples.each  do |reaction_sample|
@@ -1277,7 +1277,7 @@ module Chemotion
         end
 
         after_validation do
-          # look for the reaction in all public reactions created by the current user
+          @scheme_only = false
           @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @reaction
         end
@@ -1349,9 +1349,12 @@ module Chemotion
         end
 
         after_validation do
-          @reaction = current_user.reactions.find_by(id: params[:reactionId])
           @scheme_only = true
-          error!('404 found no reaction to publish', 404) unless @reaction
+          @reaction = current_user.reactions.find_by(id: params[:reactionId])
+          unless @reaction
+            @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            error!('404 found no reaction to publish', 404) unless @reaction
+          end
           schemeYield = params[:products]&.map { |v| v.slice(:id, :_equivalent) }
           @reaction.reactions_samples.select { |rs| rs.type == 'ReactionsProductSample' }.map do |p|
             py = schemeYield.select { |o| o['id'] == p.sample_id }
@@ -1388,7 +1391,6 @@ module Chemotion
           pub = prepare_reaction_data
           pub.process_element
           pub.inform_users
-
           @reaction.reload
           {
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
@@ -1404,13 +1406,13 @@ module Chemotion
         end
 
         after_validation do
-          # look for the reaction in the public scheme only reactions collection
+          @scheme_only = true
           @reaction = Collection.scheme_only_reactions_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @reaction
         end
 
         post do
-          new_reaction = create_new_reaction_version(scheme_only: true)
+          new_reaction = create_new_reaction_version
           {
             reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
