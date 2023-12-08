@@ -517,6 +517,7 @@ export default class ReactionDetails extends Component {
           type="Reaction"
           element={reaction}
           className="button-right"
+          schemeOnly={schemeOnly}
         />
         <PublishBtnReaction
           reaction={reaction}

@@ -697,6 +697,7 @@ export default class RepoReactionDetails extends Component {
                 element={reaction}
                 isPublisher={idyPublisher}
                 isLatestVersion={!reaction.new_version}
+                schemeOnly={schemeOnly}
               />
             </h4>
             <br />

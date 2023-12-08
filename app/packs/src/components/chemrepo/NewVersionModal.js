@@ -7,7 +7,7 @@ import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const NewVersionModal = (props) => {
   const {
-    type, element, parent, className, bsSize, isPublisher, isLatestVersion
+    type, element, parent, className, bsSize, isPublisher, isLatestVersion, schemeOnly
   } = props;
   const [modalShow, setModalShow] = useState(false);
 
@@ -42,11 +42,19 @@ const NewVersionModal = (props) => {
   const handleSubmit = () => {
     switch (type) {
       case 'Reaction':
-        RepositoryFetcher.createNewReactionVersion({ id: element.id })
-          .then((reaction) => {
-            setModalShow(false);
-            redirectAfterSubmit(reaction);
-          });
+        if (schemeOnly) {
+          RepositoryFetcher.createNewReactionSchemeVersion({ id: element.id })
+            .then((reaction) => {
+              setModalShow(false);
+              redirectAfterSubmit(reaction);
+            });
+        } else {
+          RepositoryFetcher.createNewReactionVersion({ id: element.id })
+            .then((reaction) => {
+              setModalShow(false);
+              redirectAfterSubmit(reaction);
+            });
+        }
         break;
       case 'Sample':
         RepositoryFetcher.createNewSampleVersion({ id: element.id, reactionId: parent.id })
@@ -123,7 +131,8 @@ NewVersionModal.defaultProps = {
   className: '',
   bsSize: 'xsmall',
   isPublisher: false,
-  isLatestVersion: false
+  isLatestVersion: false,
+  schemeOnly: false
 };
 
 export default NewVersionModal;

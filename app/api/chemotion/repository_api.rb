@@ -336,7 +336,7 @@ module Chemotion
           new_reaction.reload
         end
 
-        def create_new_reaction_version(reaction = @reaction)
+        def create_new_reaction_version(reaction = @reaction, scheme_only = false)
           new_reaction = reaction.dup
           new_reaction.previous_version = reaction
           new_reaction.collections << current_user.versions_collection
@@ -368,8 +368,12 @@ module Chemotion
             # copy the reaction sample instance
             new_reaction_sample = reaction_sample.dup
 
-            # look for the sample in the public collection
-            sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            # look for the sample in the public collection or the scheme only reactions collection
+            unless scheme_only
+              sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            else
+              sample = Collection.scheme_only_reactions_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            end
             next unless sample
 
             # update the new reaction sample instance
@@ -1267,7 +1271,7 @@ module Chemotion
       end
 
       namespace :createNewReactionVersion do
-        desc 'Create a new version of a published Reaction'
+        desc 'Create a new version of a published reaction'
         params do
           requires :reactionId, type: Integer, desc: 'Reaction Id'
         end
@@ -1388,6 +1392,27 @@ module Chemotion
           @reaction.reload
           {
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionSchemeVersion do
+        desc 'Create a new version of a published scheme only reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          # look for the reaction in the public scheme only reactions collection
+          @reaction = Collection.scheme_only_reactions_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          new_reaction = create_new_reaction_version(scheme_only: true)
+          {
+            reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end
