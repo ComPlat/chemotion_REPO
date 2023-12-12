@@ -6,6 +6,7 @@
   float: right;
   right: 0px;
   margin-left: 2px;
+  text-align: center;
 }
 
 .no-margin {
@@ -140,4 +141,15 @@
   overflow-x: hidden;
   overflow-y: scroll;
   max-height: calc(100vh - 150px);
+}
+
+.header-button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  margin-left: 10px;
+  min-width: 25px;
+  height: 25px;
+  font-weight: bold;
 }
