@@ -11,7 +11,7 @@ module RepositoryHelpers
       reactions.rinchi_string, reactions.rinchi_long_key, reactions.rinchi_short_key,reactions.rinchi_web_key,
       (select label from publication_collections where (elobj ->> 'element_type')::text = 'Reaction' and (elobj ->> 'element_id')::integer = reactions.id) as embargo,
       (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
-      (select taggable_data -> 'new_version' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version,
+      (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version,
       reactions.duration
       SQL
     )
@@ -98,7 +98,7 @@ module RepositoryHelpers
         <<~SQL
         samples.*,
         (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at,
-        (select taggable_data -> 'new_version' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version
+        (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version
         SQL
       )
       .order('published_at desc')

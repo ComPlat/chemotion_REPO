@@ -185,26 +185,24 @@ module Chemotion
 
           if sample.analyses.or(sample.links).present?
             # create dois and publications for analyses
-            sample.analyses.each do |container|
-              if container.container_type == 'analysis'
-                # create doi for analysis
-                if (doi = container.doi)
-                  doi.update(doiable: container)
-                else
-                  doi = Doi.create_for_analysis!(container, sample.molecule.inchikey)
-                end
-
-                # create publication for analyses
-                Publication.create!(
-                  state: Publication::STATE_PENDING,
-                  element: container,
-                  published_by: current_user.id,
-                  doi: doi,
-                  taggable_data: @publication_tag.merge(
-                    author_ids: @author_ids
-                  )
-                )
+            sample.analyses.each do |analysis|
+              # create doi for analysis
+              if (doi = analysis.doi)
+                doi.update(doiable: analysis)
+              else
+                doi = Doi.create_for_analysis!(analysis, sample.molecule.inchikey)
               end
+
+              # create publication for analyses
+              Publication.create!(
+                state: Publication::STATE_PENDING,
+                element: analysis,
+                published_by: current_user.id,
+                doi: doi,
+                taggable_data: @publication_tag.merge(
+                  author_ids: @author_ids
+                )
+              )
             end
 
             # create doi for sample
@@ -400,6 +398,27 @@ module Chemotion
 
           princhi_string, princhi_long_key, princhi_short_key, princhi_web_key = reaction.products_rinchis
 
+          # create dois and publications for analyses
+          reaction.analyses.each do |analysis|
+            # create doi for analysis
+            if (doi = analysis.doi)
+              doi.update(doiable: analysis)
+            else
+              doi = Doi.create_for_analysis!(analysis)
+            end
+
+            # create publication for analyses
+            Publication.create!(
+              state: Publication::STATE_PENDING,
+              element: analysis,
+              published_by: current_user.id,
+              doi: doi,
+              taggable_data: @publication_tag.merge(
+                author_ids: @author_ids
+              )
+            )
+          end
+
           # create doi for reaction
           if (doi = reaction.doi)
             doi.update!(doiable: reaction)
@@ -433,6 +452,53 @@ module Chemotion
           end
 
           reaction
+        end
+
+        def create_new_container_version(element = @element, analysis = @analysis)
+          analyses = Container.analyses_container(element.container.id).first
+
+          previous_doi = Doi.find_by(doiable_type: 'Container', doiable_id: analysis.id)
+
+          new_analysis = analyses.children.create(
+            name: analysis.name,
+            container_type: analysis.container_type,
+            description: analysis.description
+          )
+          new_analysis.extended_metadata = analysis.extended_metadata
+          new_analysis.extended_metadata[:previous_version_id] = analysis.id
+          new_analysis.extended_metadata[:previous_version_doi_id] = previous_doi.id if previous_doi
+          new_analysis.save!
+
+          analysis.extended_metadata[:new_version_id] = new_analysis.id
+          analysis.save!
+
+          # duplicate datasets and copy attachments
+          analysis.children.where(container_type: 'dataset').each do |dataset|
+            new_dataset = new_analysis.children.create(container_type: 'dataset')
+            dataset.attachments.each do |attachment|
+              new_attachment = attachment.copy(
+                attachable_type: 'Container',
+                attachable_id: new_dataset.id,
+                transferred: true
+              )
+              new_attachment.save!
+              new_dataset.attachments << new_attachment
+
+              # copy publication image file to public/images/publications/{attachment.id}/{attachment.filename}
+              if MimeMagic.by_path(new_attachment.filename)&.type&.start_with?('image')
+                file_path = File.join('public/images/publications/', new_attachment.id.to_s, '/', new_attachment.filename)
+                public_path = File.join('public/images/publications/', new_attachment.id.to_s)
+                FileUtils.mkdir_p(public_path)
+                File.write(file_path, new_attachment.store.read_file.force_encoding('utf-8')) if new_attachment.store.file_exist?
+              end
+            end
+
+            new_dataset.name = dataset.name
+            new_dataset.extended_metadata = dataset.extended_metadata
+            new_dataset.save!
+          end
+
+          new_analysis
         end
 
         def create_publication_tag(contributor, author_ids, license)
@@ -1117,11 +1183,16 @@ module Chemotion
         after_validation do
           @sample = current_user.samples.find_by(id: params[:sampleId])
           unless @sample
-            @sample = current_user.versions_collection.samples.find_by(id: params[:reactionId])
+            @sample = current_user.versions_collection.samples.find_by(id: params[:sampleId])
           end
+          error!('401 Unauthorized', 401) unless @sample
+
           analyses = @sample&.analyses&.where(id: params[:analysesIds])
           links = @sample&.links&.where(id: params[:analysesIds])
-          @analyses = analyses.or(links)
+
+          @analyses = analyses ? analyses.or(links) : links
+          error!('404 analyses not found', 404) if @analyses.empty?
+
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
           ols_validation(@analyses)
           @author_ids = if params[:addMe]
@@ -1129,13 +1200,11 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
-          error!('401 Unauthorized', 401) unless @sample
-          error!('404 analyses not found', 404) if @analyses.empty?
           @group_reviewers = coauthor_validation(params[:reviewers])
 
-          previous_license = @sample&.tag&.taggable_data['previous_license']
-          if previous_license
-            error!('400 license does not match previous version', 400) unless previous_license == params[:license]
+          previous_version = @sample&.tag&.taggable_data['previous_version']
+          if previous_version['license']
+            error!('400 license does not match previous version', 400) unless previous_version['license'] == params[:license]
           end
         end
 
@@ -1417,6 +1486,55 @@ module Chemotion
             reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
+        end
+      end
+
+      namespace :createAnalysisVersion do
+        desc 'Create a new version of a linked analysis'
+        params do
+          requires :analysisId, type: Integer, desc: 'Analysis Id'
+          requires :linkId, type: Integer, desc: 'Link Id'
+          requires :parentType, type: String, desc: 'Parent Type'
+          requires :parentId, type: Integer, desc: 'Parent Id'
+        end
+
+        after_validation do
+          # look for the element in the versions samples/reactions created by the current user
+          if params[:parentType] == 'sample'
+            @element =  current_user.versions_collection.samples.find_by(id: params[:parentId], created_by: current_user.id)
+          elsif params[:parentType] == 'reaction'
+            @element =  current_user.versions_collection.reactions.find_by(id: params[:parentId], created_by: current_user.id)
+          end
+          error!('401 Unauthorized', 401) unless @element
+
+          # look for the link in the containers links (mainly for validation)
+          @link = @element.links.find_by(id: params[:linkId])
+          error!('401 Unauthorized', 401) unless @link or @link&.extended_metadata['target_id'] != params[:analysisId]
+
+          # look for the actual container
+          @analysis = Container.find_by(id: params[:analysisId])
+          error!('401 Unauthorized', 401) unless @analysis
+        end
+
+        post do
+          # duplicate the linked container for the element
+          create_new_container_version
+
+          # remove the link
+          Container.destroy(@link.id)
+
+          # return the sample or the reaction
+          if params[:parentType] == 'sample'
+            {
+              sample: SampleSerializer.new(@element).serializable_hash.deep_symbolize_keys,
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          elsif params[:parentType] == 'reaction'
+            {
+              reaction: ReactionSerializer.new(@element).serializable_hash.deep_symbolize_keys,
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          end
         end
       end
 

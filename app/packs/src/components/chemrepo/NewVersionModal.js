@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip } from 'react-bootstrap';
+import { get } from 'lodash';
 
 import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
@@ -16,15 +17,26 @@ const NewVersionModal = (props) => {
   const isElementPublisher = element.publication && (
     element.publication.published_by === currentUserId
   );
+  const canUpdateParent = parent && parent.can_update;
 
-  const isElementLatestVersion = element.tag && !element.tag.taggable_data.new_version;
+  let isElementLatestVersion;
+  if (type == 'Analysis') {
+    isElementLatestVersion = !get(element, 'extended_metadata.new_version_id')
+  } else {
+    isElementLatestVersion = !get(element, 'element.tag.taggable_data.new_version')
+  }
 
   const isPending = element.publication && element.publication.state !== 'completed';
 
-  const openModal = () => {
+  const openModal = (event) => {
+    event.stopPropagation();
     if (isLatestVersion || isElementLatestVersion) {
       setModalShow(true);
     }
+  };
+
+  const closeModal = () => {
+    setModalShow(false);
   };
 
   const redirectAfterSubmit = (newElement) => {
@@ -39,17 +51,18 @@ const NewVersionModal = (props) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (event) => {
+    event.stopPropagation();
     switch (type) {
       case 'Reaction':
         if (schemeOnly) {
-          RepositoryFetcher.createNewReactionSchemeVersion({ id: element.id })
+          RepositoryFetcher.createNewReactionSchemeVersion({ reactionId: element.id })
             .then((reaction) => {
               setModalShow(false);
               redirectAfterSubmit(reaction);
             });
         } else {
-          RepositoryFetcher.createNewReactionVersion({ id: element.id })
+          RepositoryFetcher.createNewReactionVersion({ reactionId: element.id })
             .then((reaction) => {
               setModalShow(false);
               redirectAfterSubmit(reaction);
@@ -57,11 +70,22 @@ const NewVersionModal = (props) => {
         }
         break;
       case 'Sample':
-        RepositoryFetcher.createNewSampleVersion({ id: element.id, reactionId: parent.id })
+        RepositoryFetcher.createNewSampleVersion({ sampleId: element.id, reactionId: parent.id })
           .then((sample) => {
             setModalShow(false);
             redirectAfterSubmit(sample);
           });
+        break;
+      case 'Analysis':
+        RepositoryFetcher.createNewAnalysisVersion({
+          analysisId: element.id,
+          linkId: element.link_id,
+          parentType: parent.type,
+          parentId: parent.id
+        }).then((sampleOrReaction) => {
+          setModalShow(false);
+          redirectAfterSubmit(sampleOrReaction);
+        });
         break;
       default:
         break;
@@ -69,13 +93,13 @@ const NewVersionModal = (props) => {
   };
 
   const tooltip = (isLatestVersion || isElementLatestVersion)
-    ? <Tooltip id="tt_metadata">Create a new version of this {type.toLowerCase()}</Tooltip>
-    : <Tooltip id="tt_metadata">A new version of this {type.toLowerCase()} has already been created</Tooltip>;
+    ? <Tooltip>Create a new version of this {type.toLowerCase()}</Tooltip>
+    : <Tooltip>A new version of this {type.toLowerCase()} has already been created</Tooltip>;
 
   // fake the disabled style since otherwise the overlay would not show
   const btnClassName = className + ((isLatestVersion || isElementLatestVersion) ? '' : ' new-version-btn-disabled');
 
-  if ((isPublisher || isElementPublisher) && !isPending) {
+  if ((isPublisher || isElementPublisher || canUpdateParent) && !isPending) {
     return (
       <>
         <OverlayTrigger placement="top" overlay={tooltip}>
@@ -85,8 +109,7 @@ const NewVersionModal = (props) => {
         </OverlayTrigger>
         <Modal
           show={modalShow}
-          onHide={() => setModalShow(false)}
-          dialogClassName="pub-info-dialog"
+          onHide={closeModal}
         >
           <Modal.Header closeButton>
             <Modal.Title>
@@ -97,7 +120,7 @@ const NewVersionModal = (props) => {
             <ButtonToolbar>
               <Button
                 bsStyle="warning"
-                onClick={() => setModalShow(false)}
+                onClick={closeModal}
               > Close
               </Button>
               <Button
@@ -122,7 +145,8 @@ NewVersionModal.propTypes = {
   className: PropTypes.string,
   bsSize: PropTypes.string,
   isPublisher: PropTypes.bool,
-  isLatestVersion: PropTypes.bool
+  isLatestVersion: PropTypes.bool,
+  schemeOnly: PropTypes.bool
 };
 
 

@@ -16,8 +16,8 @@ import { contentToText } from './utils/quillFormat';
 import UIStore from './stores/UIStore';
 import { chmoConversions } from './OlsComponent';
 import { previewContainerImage } from './utils/imageHelper';
-
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 
 import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
 
@@ -371,10 +371,6 @@ const headerBtnGroup = (
 
   return (
     <div className="upper-btn">
-      {
-        container.link_id &&
-        <Badge title="This analysis is a link to the already published analysis.">read only</Badge>
-      }
       <Button
         bsSize="xsmall"
         bsStyle="danger"
@@ -384,6 +380,16 @@ const headerBtnGroup = (
       >
         <i className="fa fa-trash" />
       </Button>
+      {
+        container.link_id &&
+        <NewVersionModal
+          type="Analysis"
+          element={container}
+          parent={sample}
+          bsSize="xsmall"
+          className="button-right"
+        />
+      }
       <PrintCodeButton
         element={sample}
         analyses={[container]}

@@ -415,11 +415,13 @@ class Publication < ActiveRecord::Base
   end
 
   def datacite_metadata_xml
-    previous_version_tag = ElementTag.find_by(taggable_type: element_type,
-                                              taggable_id: element.tag.taggable_data['previous_version'])
-    unless previous_version_tag.nil?
+    previous_version = element.tag.taggable_data['previous_version']
+    unless previous_version.nil?
+      previous_version_tag = ElementTag.find_by(taggable_type: element_type,
+                                                taggable_id: previous_version['id'])
       previous_version_doi = previous_version_tag.taggable_data.fetch('publication', {}).fetch('doi')
     end
+
     if parent.nil? && %w[Sample Reaction].include?(element_type)
       coly = element.collections.where(
         <<~SQL

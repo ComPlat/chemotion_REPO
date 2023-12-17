@@ -117,8 +117,8 @@ export default class PublishReactionModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_license');
-    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_scheme_only');
+    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_version.license');
+    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_version.scheme_only');
 
     const publishType = { ...this.state.publishType };
     if (previousSchemeOnly === true) {

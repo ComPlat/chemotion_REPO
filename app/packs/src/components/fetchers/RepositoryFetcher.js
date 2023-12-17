@@ -1,4 +1,6 @@
 import 'whatwg-fetch';
+import { isUndefined } from 'lodash';
+
 import Sample from '../models/Sample';
 import Reaction from '../models/Reaction';
 import NotificationActions from '../actions/NotificationActions';
@@ -180,19 +182,15 @@ export default class RepositoryFetcher {
     });
   }
 
-  static createNewSampleVersion(params, option = null) {
-    const { id, reactionId } = params;
+  static createNewSampleVersion(params) {
     return fetch(`/api/v1/repository/createNewSampleVersion/`, {
       credentials: 'same-origin',
-      method: option ? 'PUT' : 'POST',
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        sampleId: id,
-        reactionId: reactionId
-      })
+      body: JSON.stringify(params)
     }).then((response) => {
       return response.json()
     }).then((json) => {
@@ -214,18 +212,15 @@ export default class RepositoryFetcher {
     });
   }
 
-  static createNewReactionVersion(params, option = null) {
-    const { id } = params;
+  static createNewReactionVersion(params) {
     return fetch(`/api/v1/repository/createNewReactionVersion/`, {
       credentials: 'same-origin',
-      method: option ? 'PUT' : 'POST',
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        reactionId: id
-      })
+      body: JSON.stringify(params)
     }).then((response) => {
       return response.json()
     }).then((json) => {
@@ -247,18 +242,15 @@ export default class RepositoryFetcher {
     });
   }
 
-  static createNewReactionSchemeVersion(params, option = null) {
-    const { id } = params;
+  static createNewReactionSchemeVersion(params) {
     return fetch(`/api/v1/repository/createNewReactionSchemeVersion/`, {
       credentials: 'same-origin',
-      method: option ? 'PUT' : 'POST',
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        reactionId: id
-      })
+      body: JSON.stringify(params)
     }).then((response) => {
       return response.json()
     }).then((json) => {
@@ -275,6 +267,41 @@ export default class RepositoryFetcher {
         return null;
       }
       return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
+  static createNewAnalysisVersion(params) {
+    return fetch(`/api/v1/repository/createAnalysisVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new analysis version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_analysis_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+
+      if (!isUndefined(json.sample)) {
+        return new Sample(json.sample);
+      } else if (!isUndefined(json.reaction)) {
+        return new Reaction(json.reaction);
+      }
     }).catch((errorMessage) => {
       console.log(errorMessage);
     });

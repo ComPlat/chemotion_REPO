@@ -175,10 +175,14 @@ module Publishing
       element_tag = self.tag
       element_tag.update!(
         taggable_data: (element_tag.taggable_data || {}).merge(
-          previous_version: previous_element.id,
-          previous_doi: previous_element&.doi&.id,
-          previous_license: previous_license,
-          previous_scheme_only: scheme_only
+          previous_version: {
+            id: previous_element.id,
+            doi: {
+              id: previous_element&.doi&.id
+            },
+            license: previous_license,
+            scheme_only: scheme_only
+          }
         )
       )
     end
@@ -186,7 +190,10 @@ module Publishing
     def tag_as_previous_version(new_element)
       element_tag = self.tag
       element_tag.update!(
-        taggable_data: (element_tag.taggable_data || {}).merge(new_version: new_element.id)
+        taggable_data: (element_tag.taggable_data || {}).merge(
+          new_version: {
+            id: new_element.id
+          })
       )
     end
 

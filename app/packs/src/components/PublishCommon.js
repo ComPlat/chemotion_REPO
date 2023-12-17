@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
+import { get } from 'lodash';
 import Sample from './models/Sample';
 import { sampleShowOrNew, reactionShow } from './routesUtils';
 import Reaction from './models/Reaction';
@@ -208,7 +209,7 @@ const OrigElnTag = ({ element }) => {
 
 const NewVersionTag = ({ element }) => {
   const tagType = getElementType(element) || '';
-  const previousVersionId = element.tag.taggable_data.previous_version
+  const previousVersionId = get(element, 'tag.taggable_data.previous_version.id')
 
   return (previousVersionId !== undefined) && (
     <ButtonGroup bsSize="xsmall">
