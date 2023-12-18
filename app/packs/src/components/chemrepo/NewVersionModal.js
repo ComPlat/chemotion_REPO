@@ -23,7 +23,7 @@ const NewVersionModal = (props) => {
   if (type == 'Analysis') {
     isElementLatestVersion = !get(element, 'extended_metadata.new_version_id')
   } else {
-    isElementLatestVersion = !get(element, 'element.tag.taggable_data.new_version')
+    isElementLatestVersion = element.tag && !get(element.tag, 'taggable_data.new_version')
   }
 
   const isPending = element.publication && element.publication.state !== 'completed';
