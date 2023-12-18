@@ -84,10 +84,15 @@ module Chemotion
               container_type: 'link',
               description: analysis.description
             )
-            analysis_link.extended_metadata = {
-              target_id: analysis.id,
-              target_type: analysis.container_type,
-            }
+
+            if analysis.container_type == 'link'
+              analysis_link.extended_metadata = analysis.extended_metadata
+            else
+              analysis_link.extended_metadata = {
+                target_id: analysis.id,
+                target_type: analysis.container_type,
+              }
+            end
             analysis_link.save!
           end
         end
@@ -159,7 +164,8 @@ module Chemotion
             duplicate_literals(new_sample, lits)
           end
 
-          link_analyses(new_sample, sample.analyses)
+          analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
+          link_analyses(new_sample, analyses)
 
           new_sample.update_tag!(analyses_tag: true)
 
