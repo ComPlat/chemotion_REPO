@@ -174,6 +174,8 @@ class Sample < ApplicationRecord
   after_create :create_root_container
   after_save :update_data_for_reactions
 
+  before_destroy :remove_from_previous_version
+
   has_many :collections_samples, inverse_of: :sample, dependent: :destroy
   has_many :collections, through: :collections_samples
 
@@ -645,5 +647,13 @@ private
 
   def has_density
     density.present? && density.positive? && (!molarity_value.present? || molarity_value.zero?)
+  end
+
+  def remove_from_previous_version
+    previous_version = self.tag&.taggable_data['previous_version']
+      if previous_version
+        previous_element = Sample.find_by(id: previous_version['id'])
+        previous_element.untag_as_previous_version
+      end
   end
 end

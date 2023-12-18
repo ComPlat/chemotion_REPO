@@ -149,8 +149,9 @@ class Reaction < ApplicationRecord
   before_save :check_doi
   before_create :auto_set_short_label
 
-
   after_create :update_counter
+
+  before_destroy :remove_from_previous_version
 
   has_one :container, :as => :containable
 
@@ -280,5 +281,13 @@ class Reaction < ApplicationRecord
 
   def update_counter
     self.creator.increment_counter 'reactions'
+  end
+
+  def remove_from_previous_version
+    previous_version = self.tag&.taggable_data['previous_version']
+      if previous_version
+        previous_element = Reaction.find_by(id: previous_version['id'])
+        previous_element.untag_as_previous_version
+      end
   end
 end

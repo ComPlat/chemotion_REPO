@@ -197,6 +197,13 @@ module Publishing
       )
     end
 
+    def untag_as_previous_version
+      element_tag = self.tag
+      taggable_data = element_tag.taggable_data || {}
+      taggable_data.delete('new_version')
+      element_tag.update!(taggable_data: taggable_data)
+    end
+
     def tag_reserved_suffix(ori_analyses)
       et = self.tag
       et.update!(
