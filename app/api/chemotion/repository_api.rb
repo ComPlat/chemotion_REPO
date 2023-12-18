@@ -1203,7 +1203,7 @@ module Chemotion
           @group_reviewers = coauthor_validation(params[:reviewers])
 
           previous_version = @sample&.tag&.taggable_data['previous_version']
-          if previous_version['license']
+          if previous_version
             error!('400 license does not match previous version', 400) unless previous_version['license'] == params[:license]
           end
         end
