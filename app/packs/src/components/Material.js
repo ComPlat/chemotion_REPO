@@ -147,7 +147,7 @@ class Material extends Component {
               precision={3}
               disabled={
                 !permitOn(this.props.reaction) ||
-                !permitOn(material) ||
+                material.sealed ||
                 ((this.props.materialGroup !== 'products') && !material.reference && this.props.lockEquivColumn)
               }
               onChange={this.handleAmountUnitChange}
@@ -180,7 +180,7 @@ class Material extends Component {
           precision={3}
           disabled={
             !permitOn(this.props.reaction) ||
-            !permitOn(material) ||
+            material.sealed ||
             (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
           }
           onChange={loading => this.handleLoadingChange(loading)}
@@ -195,7 +195,7 @@ class Material extends Component {
         ? <td />
         : <td>
           <Radio
-            disabled={!permitOn(this.props.reaction) || !permitOn(material)}
+            disabled={!permitOn(this.props.reaction) || material.sealed}
             name="reference"
             checked={material.reference}
             onChange={e => this.handleReferenceChange(e)}
@@ -257,7 +257,7 @@ class Material extends Component {
         value={material.equivalent}
         disabled={
           !permitOn(this.props.reaction) ||
-          !permitOn(material) ||
+          material.sealed ||
           ((((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn)
         }
         onChange={e => this.handleEquivalentChange(e)}
@@ -495,7 +495,7 @@ class Material extends Component {
                 precision={4}
                 disabled={
                   !permitOn(reaction) ||
-                  !permitOn(material) ||
+                  material.sealed ||
                   (this.props.materialGroup !== 'products' && !material.reference && this.props.lockEquivColumn)
                 }
                 onChange={this.handleAmountUnitChange}
@@ -518,7 +518,7 @@ class Material extends Component {
             precision={4}
             disabled={
               !permitOn(reaction) ||
-              !permitOn(material) ||
+              material.sealed ||
               (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
             }
             onChange={this.handleAmountUnitChange}
@@ -607,7 +607,7 @@ class Material extends Component {
             >
               <div>
                 <FormControl
-                  disabled={!permitOn(reaction) || !permitOn(material)}
+                  disabled={!permitOn(reaction) || material.sealed}
                   type="text"
                   bsClass="bs-form--compact form-control"
                   bsSize="small"
@@ -620,7 +620,7 @@ class Material extends Component {
             <InputGroup.Button>
               <OverlayTrigger placement="bottom" overlay={refreshSvgTooltip}>
                 <Button
-                  disabled={!permitOn(reaction) || !permitOn(material)}
+                  disabled={!permitOn(reaction) || material.sealed}
                   active
                   disabled={this.props.reaction.is_published == true}
                   onClick={e => this.handleExternalLabelCompleted(e)}
@@ -645,7 +645,7 @@ class Material extends Component {
 
         <td>
           <Button
-            disabled={!permitOn(reaction) || !permitOn(material)}
+            disabled={!permitOn(reaction) || material.sealed}
             bsStyle="danger"
             bsSize="small"
             disabled={this.props.reaction.is_published == true}
@@ -749,7 +749,7 @@ class Material extends Component {
           <div className="inline-inside">
             <OverlayTrigger placement="top" overlay={AddtoDescToolTip}>
               <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc}
-                      disabled={!permitOn(reaction) || !permitOn(material)}>
+                      disabled={!permitOn(reaction) || material.sealed}>
                 {serialCode}
               </Button>
             </OverlayTrigger>&nbsp;
