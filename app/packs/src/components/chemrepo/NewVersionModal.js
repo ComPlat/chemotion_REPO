@@ -28,9 +28,15 @@ const NewVersionModal = (props) => {
 
   const isPending = element.publication && element.publication.state !== 'completed';
 
+  // disable the modal button if the element is not the latest version
+  const disable = !(isLatestVersion || isElementLatestVersion)
+
+  // only display the modal button if the user is the publisher or can change the parent of the analysis
+  const display = isPublisher || isElementPublisher || (type == 'Analysis' && canUpdateParent) && !isPending
+
   const openModal = (event) => {
     event.stopPropagation();
-    if (isLatestVersion || isElementLatestVersion) {
+    if (!disable) {
       setModalShow(true);
     }
   };
@@ -92,14 +98,14 @@ const NewVersionModal = (props) => {
     }
   };
 
-  const tooltip = (isLatestVersion || isElementLatestVersion)
-    ? <Tooltip>Create a new version of this {type.toLowerCase()}</Tooltip>
-    : <Tooltip>A new version of this {type.toLowerCase()} has already been created</Tooltip>;
+  const tooltip = disable
+    ? <Tooltip>A new version of this {type.toLowerCase()} has already been created</Tooltip>
+    : <Tooltip>Create a new version of this {type.toLowerCase()}</Tooltip>;
 
   // fake the disabled style since otherwise the overlay would not show
-  const btnClassName = className + ((isLatestVersion || isElementLatestVersion) ? '' : ' new-version-btn-disabled');
+  const btnClassName = className + (disable ? ' new-version-btn-disabled' : '');
 
-  if ((isPublisher || isElementPublisher || canUpdateParent) && !isPending) {
+  if (display) {
     return (
       <>
         <OverlayTrigger placement="top" overlay={tooltip}>
