@@ -1,5 +1,5 @@
-// PLEASE check carefully when performing ELN rebasing
-import React, { Component, useState, useEffect } from 'react';
+/* eslint-disable react/destructuring-assignment */
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
@@ -41,9 +41,20 @@ export default class ImageModal extends Component {
     }
   }
 
+  shouldComponentUpdate(nextState) {
+    if (this.state.numOfPages === nextState.numOfPages
+      && this.state.numOfPages !== 0
+      && this.state.pageIndex === nextState.pageIndex
+      && this.state.showModal === nextState.showModal) {
+      return false;
+    }
+
+    return true;
+  }
+
   componentDidUpdate(prevProps) {
-    if (this.props.popObject.fetchNeeded &&
-      (this.props.popObject.fetchId !== prevProps.popObject.fetchId)) {
+    if (this.props.popObject.fetchNeeded
+      && (this.props.popObject.fetchId !== prevProps.popObject.fetchId)) {
       this.fetchImage();
     }
   }
@@ -66,19 +77,8 @@ export default class ImageModal extends Component {
     this.setState({ numOfPages: numPages });
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    if (this.state.numOfPages == nextState.numOfPages
-      && this.state.numOfPages != 0
-      && this.state.pageIndex == nextState.pageIndex
-      && this.state.showModal == nextState.showModal) {
-      return false;
-    }
-
-    return true;
-  }
-
   changePage(offset) {
-    this.setState({ pageIndex: (this.state.pageIndex + offset) });
+    this.setState((prevState) => ({ pageIndex: prevState.pageIndex + offset }));
   }
 
   previousPage() {
@@ -102,20 +102,6 @@ export default class ImageModal extends Component {
     }
   }
 
-  handleModalClose(e) {
-    stopEvent(e);
-    this.setState({ showModal: false });
-  }
-
-  handleModalShow(e) {
-    stopEvent(e);
-    this.setState({ showModal: true });
-  }
-
-  handleImageError() {
-    this.setState({ fetchSrc: this.props.previewObject.src });
-  }
-
   render() {
     const {
       hasPop, previewObject, popObject, imageStyle
@@ -137,30 +123,40 @@ export default class ImageModal extends Component {
             <Modal.Title>{popObject.title}</Modal.Title>
           </Modal.Header>
           <Modal.Body style={{ overflow: 'auto', position: 'relative' }}>
-            {this.state.isPdf ?
-              <div>
-                <Document file={{ url: this.state.fetchSrc }}
-                  onLoadSuccess={(pdf) => this.onDocumentLoadSuccess(pdf.numPages)}>
-                  <Page pageNumber={pageIndex} />
-                </Document>
+            {this.state.isPdf
+              ? (
                 <div>
-                  <p>
-                    Page {pageIndex || (numOfPages ? 1 : '--')} of {numOfPages || '--'}
-                  </p>
-                  <button
-                    type="button"
-                    disabled={pageIndex <= 1}
-                    onClick={() => this.previousPage()}
+                  <Document
+                    file={{ url: this.state.fetchSrc }}
+                    onLoadSuccess={(pdf) => this.onDocumentLoadSuccess(pdf.numPages)}
                   >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pageIndex >= numOfPages}
-                    onClick={() => this.nextPage()}
-                  >
-                    Next
-                  </button>
+                    <Page pageNumber={pageIndex} />
+                  </Document>
+                  <div>
+                    <p>
+                      Page
+                      {' '}
+                      {pageIndex || (numOfPages ? 1 : '--')}
+                      {' '}
+                      of
+                      {' '}
+                      {numOfPages || '--'}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={pageIndex <= 1}
+                      onClick={() => this.previousPage()}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pageIndex >= numOfPages}
+                      onClick={() => this.nextPage()}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
               :
@@ -198,4 +194,8 @@ ImageModal.propTypes = {
     fetchId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     fetchFilename: PropTypes.string,
   }).isRequired,
+};
+
+ImageModal.defaultProps = {
+  imageStyle: {},
 };
