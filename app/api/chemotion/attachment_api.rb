@@ -545,6 +545,7 @@ module Chemotion
         optional :cyclicvolta, type: String
         optional :curveIdx, type: Integer
         optional :simulatenmr, type: Boolean
+        optional :axesUnits, type: String
       end
       post 'save_spectrum' do
         jcamp_att = @attachment.generate_spectrum(

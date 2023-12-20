@@ -344,7 +344,8 @@ class ViewSpectra extends React.Component {
 
   writeCommon({
     peaks, shift, scan, thres, analysis, layout, isAscend, decimal, body,
-    keepPred, isIntensity, multiplicity, integration, cyclicvoltaSt, curveSt, waveLength
+    keepPred, isIntensity, multiplicity, integration, cyclicvoltaSt, curveSt,
+    waveLength, axesUnitsSt,
   }, isMpy = false) {
     const { sample, handleSampleChanged } = this.props;
     const si = this.getSpcInfo();
@@ -388,7 +389,7 @@ class ViewSpectra extends React.Component {
 
     const cb = () => (
       this.saveOp({
-        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, cyclicvoltaSt, curveSt, waveLength
+        peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, cyclicvoltaSt, curveSt, waveLength, axesUnitsSt,
       })
     );
     handleSampleChanged(sample, cb);
@@ -410,7 +411,7 @@ class ViewSpectra extends React.Component {
   }
 
   saveOp({
-    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, simulatenmr = false
+    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, simulatenmr = false, layout, axesUnitsSt,
   }) {
     const { handleSubmit } = this.props;
     const { curveIdx } = curveSt;
@@ -421,6 +422,7 @@ class ViewSpectra extends React.Component {
     const predict = JSON.stringify(rmRefreshed(analysis));
     const waveLengthStr = JSON.stringify(waveLength);
     const cyclicvolta = JSON.stringify(cyclicvoltaSt);
+    const axesUnitsStr = JSON.stringify(axesUnitsSt);
 
     const { shifts } = shift;
     const selectedShift = shifts[curveIdx];
@@ -428,7 +430,9 @@ class ViewSpectra extends React.Component {
     const selectedIntegration = integrations[curveIdx];
     const { multiplicities } = multiplicity;
     const selectedMutiplicity = multiplicities[curveIdx];
-
+  
+    const isSaveCombined = FN.isCyclicVoltaLayout(layout);
+    const { spcInfos } = this.state;
     LoadingActions.start.defer();
     SpectraActions.SaveToFile.defer(
       si,
@@ -445,14 +449,17 @@ class ViewSpectra extends React.Component {
       cyclicvolta,
       curveIdx,
       simulatenmr,
+      spcInfos,
+      isSaveCombined,
+      axesUnitsStr,
     );
   }
 
   refreshOp({
-    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
+    peaks, shift, scan, thres, analysis, keepPred, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, axesUnitsSt,
   }) {
     this.saveOp({
-      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, simulatenmr: true
+      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, simulatenmr: true, axesUnitsSt
     });
   }
 
@@ -478,10 +485,10 @@ class ViewSpectra extends React.Component {
   }
 
   saveCloseOp({
-    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
+    peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, layout, axesUnitsSt,
   }) {
     this.saveOp({
-      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt
+      peaks, shift, scan, thres, analysis, integration, multiplicity, waveLength, cyclicvoltaSt, curveSt, layout, axesUnitsSt,
     });
     this.closeOp();
   }
