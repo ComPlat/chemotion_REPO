@@ -93,12 +93,12 @@ module Import
         ## import_elemental_compositions if @gt == true
         import_reactions
         import_reactions_samples
- #       import_elements if @gt == false
- #       import_elements_samples if @gt == false
+        # import_elements if @gt == false
+        # import_elements_samples if @gt == false
         import_wellplates if @gt == false
         import_wells if @gt == false
-        import_screens if @gt == false
         import_research_plans if @gt == false
+        import_screens if @gt == false
         import_containers
         import_segments
         import_datasets
@@ -430,7 +430,6 @@ module Import
       end
     end
 
-
     def import_elements
       Labimotion::Import.import_elements(@data, @instances, @gt, @current_user_id, method(:fetch_many), &method(:update_instances!))
     end
@@ -473,7 +472,7 @@ module Import
           'additive',
         ).merge(
           wellplate: @instances.fetch('Wellplate').fetch(fields.fetch('wellplate_id')),
-          sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'), nil),
+          sample: @instances.fetch('Sample', nil)&.fetch(fields.fetch('sample_id'), nil),
         ))
 
         # add reaction to the @instances map
@@ -498,6 +497,9 @@ module Import
           ),
           wellplates: fetch_many(
             'Wellplate', 'ScreensWellplate', 'screen_id', 'wellplate_id', uuid
+          ),
+          research_plans: fetch_many(
+            'ResearchPlan', 'ResearchPlansScreen', 'screen_id', 'research_plan_id', uuid
           ),
         ))
 
