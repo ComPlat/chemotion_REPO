@@ -4506,11 +4506,6 @@ adler-32@~1.3.0:
   dependencies:
     printj "~1.2.2"
 
-ag-grid-community@^27.3.0:
-  version "27.3.0"
-  resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-27.3.0.tgz#b1e94a58026aaf2f0cd7920e35833325b5e762c7"
-  integrity sha512-R5oZMXEHXnOLrmhn91J8lR0bv6IAnRcU6maO+wKLMJxffRWaAYFAuw1jt7bdmcKCv8c65F6LEBx4ykSOALa9vA==
-
 ag-grid-community@^28.2.1:
   version "28.2.1"
   resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-28.2.1.tgz#50778cb2254ee79497222781909d8364007dd91e"
@@ -4520,13 +4515,6 @@ ag-grid-community@^29.0.0:
   version "29.3.5"
   resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-29.3.5.tgz#16897896d10fa3ecac79279aad50d3aaa17c5f33"
   integrity sha512-LxUo21f2/CH31ACEs1C7Q/ggGGI1fQPSTB4aY5OThmM+lBkygZ7QszBE8jpfgWOIjvjdtcdIeQbmbjkHeMsA7A==
-
-ag-grid-react@^27.3.0:
-  version "27.3.0"
-  resolved "https://registry.yarnpkg.com/ag-grid-react/-/ag-grid-react-27.3.0.tgz#fe06647653f8b0b349b8e613aab8ea2e07915562"
-  integrity sha512-2bs9YfJ/shvBZQLLjny4NFvht+ic6VtpTPO0r3bHHOhlL3Fjx2rGvS6AHSwfvu+kJacHCta30PjaEbX8T3UDyw==
-  dependencies:
-    prop-types "^15.8.1"
 
 ag-grid-react@^28.2.1:
   version "28.2.1"
@@ -5591,25 +5579,22 @@ cheerio@^1.0.0-rc.3:
     parse5-htmlparser2-tree-adapter "^6.0.1"
     tslib "^2.2.0"
 
-chem-generic-ui-viewer@~0.0.4:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-0.0.8.tgz#0a84df55a0967ff3953bec121bca638871c41a59"
-  integrity sha512-unrH4weuNB0Att0KA6X77jjegOny9kodDdIt/XM9GxAC10zJitpd31742/JU0ajUUPHQOjHJZSmAaclcd2QP0Q==
+chem-generic-ui-viewer@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-1.0.2.tgz#769e0af781b6ee0cd113cdf5b0e690ac835a3835"
+  integrity sha512-lKQF5jPtAdAYs5Q4Q8vvdhuTd3IP7HB77QOisuR8DT/ufPkmKPK+K3Mv7qrWAB6p8qB91eg9dVZCtCpB8WgDgw==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"
     "@fortawesome/free-solid-svg-icons" "^6.1.2"
     "@fortawesome/react-fontawesome" "^0.2.0"
-    ag-grid-community "^27.3.0"
-    ag-grid-react "^27.3.0"
+    chem-units "^0.0.5"
     lodash "^4.17.21"
     numeral "^2.0.6"
     prop-types "^15.8.1"
-    react-redux "^7.2.4"
+    react "^17.0.2"
+    react-dom "^17.0.2"
     react-select "5.2.2"
-    redux "^4.1.0"
-    redux-immutable "^4.0.0"
-    redux-thunk "^2.0.0"
     uuid "^8.3.2"
 
 chem-generic-ui@^1.0.10:
