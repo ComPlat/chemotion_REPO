@@ -100,6 +100,9 @@ module Chemotion
           new_sample.collections << @embargo_collection unless @embargo_collection.nil?
           new_sample.save!
           new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
+          duplicate_residues(new_sample, sample) if sample.residues
+          duplicate_elemental_compositions(new_sample, sample) if sample.elemental_compositions
+          duplicate_user_labels(new_sample, sample) ## if sample.tag.taggable_data['user_labels']
           unless @literals.nil?
             lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
             duplicate_literals(new_sample, lits)
@@ -285,6 +288,30 @@ module Chemotion
           pub = Publication.where(element: new_reaction).first
           add_submission_history(pub)
           pub
+        end
+
+        def duplicate_user_labels(newSample, originalSample)
+          user_labels = originalSample.tag&.taggable_data.dig('user_labels')
+          return if user_labels.nil?
+
+          tag = newSample.tag
+          taggable_data = tag.taggable_data || {}
+          taggable_data['user_labels'] = user_labels
+          tag.update!(taggable_data: taggable_data)
+        end
+
+        def duplicate_elemental_compositions(newSample, originalSample)
+          originalSample&.elemental_compositions&.each do |ec|
+            newComposition = ElementalComposition.find_or_create_by(sample_id: newSample.id, composition_type: ec.composition_type)
+            newComposition.update_columns(data: ec.data, loading: ec.loading)
+          end
+        end
+
+        def duplicate_residues(newSample, originalSample)
+          originalSample&.residues&.each do |res|
+            newRes = Residue.find_or_create_by(sample_id: newSample.id, residue_type: res.residue_type)
+            newRes.update_columns(custom_info: res.custom_info)
+          end
         end
 
         def duplicate_literals(element, literals)

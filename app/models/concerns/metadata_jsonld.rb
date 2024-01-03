@@ -60,11 +60,12 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_defined_term_set(name,url)
+  def json_ld_defined_term_set(name, url, id=nil)
     json = {}
     json['@type'] = 'DefinedTermSet'
-    json['name'] = name
-    json['url'] = url
+    json['@id'] = id if id.present?
+    json['name'] = name if name.present?
+    ## json['url'] = url if url.present?
     json
   end
 
@@ -72,8 +73,8 @@ module MetadataJsonld
     json = {}
     json['@type'] = 'DefinedTerm'
     json['name'] = name
-    json['alternateName'] = alternate_name
-    json['url'] = url
+    json['alternateName'] = alternate_name if alternate_name.present?
+    json['url'] = url if url.present?
     json['inDefinedTermSet'] = defined_term_set
     json['@id'] = id
     json
@@ -89,17 +90,19 @@ module MetadataJsonld
   end
 
   def data_catalog_keywords(pub = self)
-    sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', 'https://raw.githubusercontent.com/micheldumontier/semanticscience/master/ontology/sio/release/sio-release.owl')
-    ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', 'http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl')
-    chmo = json_ld_defined_term_set('Chemical Methods Ontology', 'http://purl.obolibrary.org/obo/chmo/releases/2022-04-19/chmo.owl')
+    sio = json_ld_defined_term_set('Semanticscience Integrated Ontology', nil, 'http://semanticscience.org/ontology/sio.owl')
+    ncit = json_ld_defined_term_set('NCI Thesaurus OBO Edition', nil, 'http://purl.obolibrary.org/obo/ncit.owl')
+    chmo = json_ld_defined_term_set('Chemical Methods Ontology', nil, 'http://purl.obolibrary.org/obo/chmo.owl')
 
-    sample = json_ld_defined_term('sample', nil, 'http://semanticscience.org/resource/SIO_001050', sio, 'SIO:001050')
-    reaction = json_ld_defined_term('chemical reaction', nil, 'http://semanticscience.org/resource/SIO_010345', sio, 'SIO:010345')
-    analytical_chemistry = json_ld_defined_term('Analytical Chemistry',['Chemistry, Analytical'], 'http://purl.obolibrary.org/obo/NCIT_C16415', ncit, 'NCIT:C16415')
+##    def json_ld_defined_term(name, alternate_name, url, defined_term_set, id)
 
-#    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000591', chmo, 'CHMO:0000591')
+    sample = json_ld_defined_term('sample', nil, nil, sio, 'http://semanticscience.org/resource/SIO_001050')
+    reaction = json_ld_defined_term('chemical reaction', nil, nil, sio, 'http://semanticscience.org/resource/SIO_010345')
+    analytical_chemistry = json_ld_defined_term('Analytical Chemistry',['Chemistry, Analytical'], nil, ncit, 'http://purl.obolibrary.org/obo/NCIT_C16415')
+
+#    nmr = json_ld_defined_term('nuclear magnetic resonance spectroscopy', ['NMR', 'NMR spectroscopy', 'nuclear magnetic resonance (NMR) spectroscopy'], nil, chmo, 'http://purl.obolibrary.org/obo/CHMO_0000591')
 #    ms = json_ld_defined_term('mass spectrometry', ['MS'], 'http://purl.obolibrary.org/obo/CHMO_0000470', chmo, 'CHMO:0000470')
-#    ir = json_ld_defined_term('infrared absorption spectroscopy',['infrared (IR) spectroscopy, IR, infra-red absorption spectroscopy, IR spectroscopy, IR absorption spectroscopy, infrared spectroscopy'], 'http://purl.obolibrary.org/obo/CHMO_0000630', chmo, 'CHMO:0000630')
+#    ir = json_ld_defined_term('infrared absorption spectroscopy',['infrared (IR) spectroscopy, IR, infra-red absorption spectroscopy, IR spectroscopy, IR absorption spectroscopy, infrared spectroscopy'], nil, chmo, 'http://purl.obolibrary.org/obo/CHMO_0000630')
 
     arr = [sample, reaction, analytical_chemistry]
     arr
@@ -259,10 +262,29 @@ module MetadataJsonld
     json['publisher'] = json_ld_publisher
     json['license'] = pub.rights_data[:rightsURI]
     json['name'] = pub.element.extended_metadata['kind'] || '' if pub&.element&.extended_metadata.present?
+    measureInfo = json_ld_measurement_technique(pub) if pub&.element&.extended_metadata.present?
+    json['measurementTechnique'] = measureInfo if measureInfo.present?
     json['creator'] = json_ld_authors(pub.taggable_data)
     json['author'] = json['creator']
     json['description'] = json_ld_analysis_description(pub)
     json['includedInDataCatalog'] = json_ld_data_catalog(pub) if root == true
+    json
+  end
+
+  def json_ld_measurement_technique(pub = self)
+    json = {}
+    term_id = pub.element.extended_metadata['kind']&.split('|')&.first&.strip
+    res = Ontologies::TibService.load_term_info('CHMO', term_id)
+    data = (res.ok? && res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {}
+    return {} if data.blank?
+
+    json['@type'] = 'DefinedTerm'
+    json['@id'] = data['iri'] if data['iri'].present?
+    json['termCode'] = data['obo_id'] if data['obo_id'].present?
+    json['name'] = data['label'] if data['label'].present?
+    json['alternateName'] = data['synonyms'] if data['synonyms'].present?
+    json['url'] = "https://terminology.nfdi4chem.de/ts/ontologies/" + data['ontology_name'] + "/terms?iri=" + data['iri'] if data['ontology_name'] && data['iri'].present?
+    json['inDefinedTermSet'] = json_ld_defined_term_set(data['ontology_name'], nil, data['ontology_iri'])
     json
   end
 

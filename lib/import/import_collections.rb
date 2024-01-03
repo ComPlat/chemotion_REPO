@@ -89,6 +89,7 @@ module Import
         import_collections if @gt == false
         import_samples
         import_residues
+        ## import_elemental_compositions if @gt == true
         import_reactions
         import_reactions_samples
  #       import_elements if @gt == false
@@ -299,16 +300,25 @@ module Import
 
     def import_residues
       @data.fetch('Residue', {}).each do |uuid, fields|
-        # create the sample
         residue = Residue.create!(fields.slice(
           'residue_type',
           'custom_info',
         ).merge(
           sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id')),
         ))
-
-        # add reaction to the @instances map
         update_instances!(uuid, residue)
+      end
+    end
+
+    def import_elemental_compositions
+      @data.fetch('ElementalComposition', {}).each do |uuid, fields|
+        ec = ElementalComposition.find_or_create_by!(fields.slice(
+          'composition_type',
+        ).merge(
+          sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'))
+        ))
+        ec.update_columns(fields.slice('data', 'loading'))
+        update_instances!(uuid, ec)
       end
     end
 
