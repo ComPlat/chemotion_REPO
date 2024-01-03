@@ -122,7 +122,7 @@ export default class ImageModal extends Component {
     } = this.props;
     const { pageIndex, numOfPages } = this.state;
     if (!hasPop) {
-      return (<div className="preview-table"><img src={previewObject.src} alt="" style={{ cursor: 'default', ...imageStyle }} /></div>);
+      return (<div className="preview-table"><img src={previewObject.src} alt="" {...imageStyle || defaultImageStyle} /></div>);
     }
 
     return (
