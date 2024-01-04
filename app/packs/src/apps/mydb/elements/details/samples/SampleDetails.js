@@ -1185,15 +1185,12 @@ export default class SampleDetails extends React.Component {
           {decoupleCb}
           <div style={{ display: 'inline-block', marginLeft: '10px' }}>
             <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
-            {colLabel}
             <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
-            <PubchemLabels element={sample} />
             <OrigElnTag element={sample} />
             <PublishedTag element={sample} fnUnseal={this.unseal} />
             <LabelPublication element={sample} />
           </div>
         </div>
-        <ShowUserLabels element={sample} />
       </div>
     );
   }

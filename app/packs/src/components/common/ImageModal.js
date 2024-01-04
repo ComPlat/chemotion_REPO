@@ -158,9 +158,8 @@ export default class ImageModal extends Component {
                     </button>
                   </div>
                 </div>
-              </div>
-              :
-              <img
+              )
+              : <img
                 src={this.state.fetchSrc}
                 style={{
                   display: 'block',

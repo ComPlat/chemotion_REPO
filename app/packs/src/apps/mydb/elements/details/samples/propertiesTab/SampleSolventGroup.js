@@ -10,7 +10,10 @@ import MoleculesFetcher from 'src/fetchers/MoleculesFetcher';
 import { ionic_liquids } from 'src/components/staticDropdownOptions/ionic_liquids';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
-function SolventDetails({ solvent, deleteSolvent, onChangeSolvent }) {
+// For REPO
+import { permitOn } from 'src/components/common/uis';
+
+function SolventDetails({ sample, solvent, deleteSolvent, onChangeSolvent }) {
   if (!solvent) {
     return null;
   }
@@ -43,6 +46,7 @@ function SolventDetails({ solvent, deleteSolvent, onChangeSolvent }) {
           name="solvent_ratio"
           value={solvent.ratio}
           onChange={changeRatio}
+          disabled={!permitOn(sample)}
         />
       </td>
       <td>
@@ -78,6 +82,7 @@ function SampleSolventGroup({
       contents.push((
         <SolventDetails
           key={key}
+          sample={sample}
           solvent={solv}
           deleteSolvent={deleteSolvent}
           onChangeSolvent={onChangeSolvent}
@@ -125,6 +130,7 @@ function SampleSolventGroup({
           <ListGroupItem style={minPadding}>
             <div className="properties-form">
               <VirtualizedSelect
+                disabled={!permitOn(sample)}
                 name="default solvents"
                 multi={false}
                 options={solventOptions}

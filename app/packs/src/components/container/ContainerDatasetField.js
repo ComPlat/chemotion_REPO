@@ -91,13 +91,13 @@ class ContainerDatasetField extends Component {
   }
 
   render() {
-    const { connectDropTarget, isOver, canDrop, dataset_container, handleUndo, kind, isPublic,
+    const { connectDropTarget, isOver, canDrop, datasetContainer, handleUndo, kind, isPublic,
       handleModalOpen, disabled
     } = this.props;
 
-    const downloadClick = isPublic ? () => PublicFetcher.downloadZip(dataset_container.id) : () => AttachmentFetcher.downloadZip(dataset_container.id);
+    const downloadClick = isPublic ? () => PublicFetcher.downloadZip(datasetContainer.id) : () => AttachmentFetcher.downloadZip(datasetContainer.id);
 
-    if (dataset_container.is_deleted) {
+    if (datasetContainer.is_deleted) {
       return (
         <div>
           <strike>{datasetContainer.name}</strike>
@@ -174,7 +174,7 @@ ContainerDatasetField.propTypes = {
 
 ContainerDatasetField.defaultProps = {
   readOnly: false,
-  isPublic: false
+  isPublic: false,
   handleRemove: () => {},
   disabled: false,
 };
