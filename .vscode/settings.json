@@ -21,4 +21,7 @@
           "password": ""
         }
       ],
+      "prettier.singleQuote": true,
+      "prettier.jsxSingleQuote": true,
+      "editor.codeActionsOnSave": {},
 }

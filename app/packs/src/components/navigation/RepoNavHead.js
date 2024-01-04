@@ -1,10 +1,15 @@
 import React from 'react';
 import { NavDropdown, Navbar, MenuItem } from 'react-bootstrap';
 
-const Title = <span><img alt="chemotion-" src="/images/repo/logo.png" style={{ width: '20%' }} /> Repository</span>
+const Title = (
+  <span>
+    <img alt="chemotion-" src="/images/repo/Repository_logo.png" style={{ width: '20%' }} />
+    {' '}
+    Repository
+  </span>
+);
 
 function NavHead() {
-  const isOnMydb = window.location.href.match(/\/mydb/);
   return (
     <Navbar.Brand>
       <NavDropdown title={Title} className="navig-brand navig-smaller-font" id="bg-nested-dropdown-brand">

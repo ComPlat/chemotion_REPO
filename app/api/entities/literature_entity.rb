@@ -17,6 +17,7 @@ module Entities
 
     # see Literature.with_user_info
     with_options(if: :with_user_info) do
+      expose! :element_type
       expose! :literal_id
       expose! :litype
       expose! :user_id

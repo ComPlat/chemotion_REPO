@@ -447,7 +447,7 @@ module Chemotion
                  else
                    Collection.where(ancestry: current_user.publication_embargo_collection.id)
                  end
-          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order("taggable_data->>'label' ASC") unless cols.empty?
+          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols.empty?
         end
 
         { repository: es, current_user: { id: current_user.id, type: current_user.type } }
@@ -804,8 +804,9 @@ module Chemotion
               review_history << next_node
               review['history'] = review_history
             else
+
               # is_leader = review.dig('reviewers')&.include?(current_user&.id)
-              if root.state == Publication::STATE_PENDING && action == Publication::STATE_REVIEWED # && (comment.present? || is_leader)
+              if root.state == Publication::STATE_PENDING && (action.nil? || action == Publication::STATE_REVIEWED)
                 next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' }
                 review_history << next_node
                 review['history'] = review_history

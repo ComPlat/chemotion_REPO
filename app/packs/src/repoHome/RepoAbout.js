@@ -1,7 +1,8 @@
 import React from 'react';
 import { Col, Row, Panel } from 'react-bootstrap';
+import { OrcidIcon } from 'src/repoHome/RepoCommon';
 
-const RepoAbout = () => {
+function RepoAbout() {
   const bodyStyle = {
     maxHeight: 'calc(100vh - 262px)',
     overflowY: 'auto',
@@ -27,25 +28,26 @@ const RepoAbout = () => {
       <Col md={3} />
     </Row>
   );
-};
+}
 
-const CardIcons = () =>
-  (
+function CardIcons() {
+  return (
     <div className="card-icons">
       <Col md={4}>
         <img src="/images/repo/KIT.png" alt="Karlsruhe Institute of Technology" />
       </Col>
       <Col md={4}>
-        <img src="/images/repo/chemotion_full.svg" alt="" />
+        <img src="/images/repo/Chemotion-V1.png" alt="" />
       </Col>
       <Col md={4}>
         <img src="/images/repo/dfg_logo.png" alt="" />
       </Col>
     </div>
   );
+}
 
-const CardAbout = () =>
-  (
+function CardAbout() {
+  return (
     <div>
       <p>This development is part of the work of the Stefan Bräse group at the KIT.</p>
       <br />
@@ -102,38 +104,70 @@ const CardAbout = () =>
       <h3>Imprint</h3>
       <h4>Karlsruhe Institute of Technology</h4>
       <h4>Leader of the research group</h4>
-      <p>Prof. Stefan Bräse </p>
+      <p>
+        <OrcidIcon orcid="0000-0003-4845-3191" />
+        {' Prof. Stefan Bräse'}
+      </p>
       <p>Institute of Organic Chemistry</p>
-      <p>Fritz-Haber-Weg 6, Geb. 30.42</p>
+      <p>Fritz-Haber-Weg 6, Building 30.42</p>
       <p>76131 Karlsruhe </p>
       <p>Germany</p>
       <br />
       <p>Institute of Biological and Chemical Systems – Functional Molecular Systems (IBCS-FMS)</p>
-      <p>Hermann-von-Helmholtz-Platz 1, Geb. 341</p>
+      <p>Hermann-von-Helmholtz-Platz 1, Building 341</p>
       <p>76344 Eggenstein-Leopoldshafen</p>
+      <p>Germany</p>
       <p>Phone: +49 721 608 42903</p>
       <p>Fax: +49 721 608 48581</p>
       <br />
       <p />
-      <a href="http://www.ioc.kit.edu/braese/" target="_blank" rel="noopener noreferrer">Homepage Prof. Bräse</a>
+      <a href="http://www.ioc.kit.edu/braese/" target="_blank" rel="noopener noreferrer">Research Group Bräse</a>
       <br />
       <h4>Office Campus North (KIT)</h4>
-      <p>Dr. Nicole Jung, Dr. Pierre Tremouilhac</p>
+      <p>
+        <OrcidIcon orcid="0000-0001-9513-2468" />
+        {' Dr. Nicole Jung'}
+      </p>
       <p>Institute of Organic Chemistry</p>
-      <p>Institute of Biological and Chemical Systems – Functional Molecular Systems</p>
-      <p>Hermann-von-Helmholtz-Platz 1</p>
+      <p>Institute of Biological and Chemical Systems – Functional Molecular Systems (IBCS-FMS)</p>
+      <p>Hermann-von-Helmholtz-Platz 1, Building 319</p>
       <p>76344 Eggenstein-Leopoldshafen </p>
       <p>Germany</p>
       <p>Phone: +49 721 608 24697 </p>
       <br />
       <h4>Authors</h4>
-      <p>Prof. Stefan Braese</p>
-      <p>Dr. Nicole Jung, Dr. Pierre Tremouilhac</p>
+      <p>
+        {' '}
+        <OrcidIcon orcid="0000-0003-4845-3191" />
+        {' Prof. Stefan Bräse'}
+      </p>
+      <p>
+        <OrcidIcon orcid="0000-0001-9513-2468" />
+        {' Dr. Nicole Jung'}
+      </p>
+      <p>
+        <OrcidIcon orcid="0000-0002-0487-3947" />
+        {' Dr. Pierre Tremouilhac '}
+        <OrcidIcon orcid="0000-0002-9976-4507" />
+        {' Pei-Chi Huang '}
+        <OrcidIcon orcid="0000-0002-9772-0455" />
+        {' Chia-Lin Lin '}
+        <OrcidIcon orcid="0000-0002-4261-9886" />
+        {' Dr. Yu-Chieh Huang '}
+        <OrcidIcon orcid="0000-0002-1692-6778" />
+        {' Dr. An Nguyen '}
+        <OrcidIcon orcid="0000-0002-5035-7978" />
+        {' Dr. Felix Bach'}
+      </p>
       <br />
       <h3>Copyright Notices</h3>
       <div style={{ textAlign: 'justify' }}>
         <p>
-          Unless otherwise stated, <i>chemotion-repository</i> and/or its contributors own
+          Unless otherwise stated,
+          {' '}
+          <i>chemotion-repository</i>
+          {' '}
+          and/or its contributors own
           the intellectual property rights in the website and material on the website.
           Subject to the license below, all these intellectual property rights are reserved.
           <br />
@@ -143,20 +177,47 @@ const CardAbout = () =>
         </p>
         <ul>
           <li>
-            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/" >
-              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by-sa.svg" style={{ borderStyle: 'none' }} alt="CC BY SA" />{' '}
+            <a
+              rel="license noopener noreferrer external"
+              target="_blank"
+              href="https://creativecommons.org/licenses/by-sa/4.0/"
+            >
+              <img
+                src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by-sa.svg"
+                style={{ borderStyle: 'none' }}
+                alt="CC BY SA"
+              />
+              {' '}
               Creative Commons Attribution-ShareAlike 4.0 International License
             </a>
           </li>
           <li>
-            <a rel="license noopener noreferrer external" target="_blank" href="https://creativecommons.org/licenses/by/4.0/" >
-              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by.svg" style={{ borderStyle: 'none' }} alt="CC BY" />{' '}
+            <a
+              rel="license noopener noreferrer external"
+              target="_blank"
+              href="https://creativecommons.org/licenses/by/4.0/"
+            >
+              <img
+                src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/by.svg"
+                style={{ borderStyle: 'none' }}
+                alt="CC BY"
+              />
+              {' '}
               Creative Commons Attribution 4.0
             </a>
           </li>
           <li>
-            <a rel="license noopener noreferrer external" target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/" >
-              <img src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/cc-zero.svg" style={{ borderStyle: 'none' }} alt="CC0" />{' '}
+            <a
+              rel="license noopener noreferrer external"
+              target="_blank"
+              href="http://creativecommons.org/publicdomain/zero/1.0/"
+            >
+              <img
+                src="https://mirrors.creativecommons.org/presskit/buttons/80x15/svg/cc-zero.svg"
+                style={{ borderStyle: 'none' }}
+                alt="CC0"
+              />
+              {' '}
               CC0 1.0 Universal
             </a>
           </li>
@@ -169,15 +230,26 @@ const CardAbout = () =>
           license if this is apparent.
         </p>
         <p>
-          The source code of the chemotion REPOSITORY web server and client is currently licensed under the <a rel="license" href="https://github.com/ComPlat/chemotion_REPO/blob/chemotion_REPO/LICENSE" > GNU Affero General Public License v3.0</a>.
-          The code can be found on <a href="https://github.com/complat/chemotion_REPO" target="_blank" rel="noopener noreferrer">github</a>.
+          The source code of the chemotion REPOSITORY web server and client is currently licensed under the
+          {' '}
+          <a
+            rel="license"
+            href="https://github.com/ComPlat/chemotion_REPO/blob/chemotion_REPO/LICENSE"
+          >
+            GNU Affero General Public License v3.0
+          </a>
+          .
+          The code can be found on
+          {' '}
+          <a href="https://github.com/complat/chemotion_REPO" target="_blank" rel="noopener noreferrer">github</a>
+          .
         </p>
         <p>DOI®, DOI.ORG®, and shortDOI® are trademarks of the International DOI Foundation.</p>
         <br />
       </div>
 
       <h3>Content</h3>
-      <div style={{ textAlign: 'justify' }} >
+      <div style={{ textAlign: 'justify' }}>
         <p>
           All texts, pictures and other information published here are subject to
           copyright. The logo may not be used without the prior consent
@@ -191,5 +263,6 @@ const CardAbout = () =>
       </div>
     </div>
   );
+}
 
 export default RepoAbout;

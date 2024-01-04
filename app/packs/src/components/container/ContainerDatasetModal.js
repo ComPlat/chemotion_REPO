@@ -14,7 +14,7 @@ export default class ContainerDatasetModal extends Component {
     this.state = {
       mode: 'attachments',
       isNameEditing: false,
-      localName: props.datasetContainer.name,
+      localName: props.datasetContainer?.name,
     };
 
     this.handleSave = this.handleSave.bind(this);
@@ -31,8 +31,8 @@ export default class ContainerDatasetModal extends Component {
     this.datasetInput.current.handleSave();
     this.props.onChange({
       ...this.props.datasetContainer,
-      ...this.datasetInput.current.state.datasetContainer,
-      name: this.state.localName
+      ...this.datasetInput.current?.state?.datasetContainer,
+      name: this.state?.localName
     });
   }
 

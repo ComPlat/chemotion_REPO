@@ -38,7 +38,7 @@ const SubmissionCheck = (props) => {
 SubmissionCheck.propTypes = {
   validates: PropTypes.arrayOf(PropTypes.shape({
     name: PropTypes.string,
-    value: PropTypes.string,
+    value: PropTypes.bool,
     message: PropTypes.string,
   })).isRequired,
 };

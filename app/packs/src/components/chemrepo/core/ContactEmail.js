@@ -2,23 +2,28 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { Button } from 'react-bootstrap';
 
-const ContactEmail = (props) => {
+function ContactEmail(props) {
+  const { label, email } = props;
   const handleSendEmail = () => {
-    window.location.href = `mailto:${props.email}`;
+    window.location.href = `mailto:${email}`;
   };
 
   return (
     <Button bsSize="small" onClick={handleSendEmail}>
-      <i className="fa fa-envelope-o" aria-hidden="true" />{` ${props.label}`}
+      <i className="fa fa-envelope-o" aria-hidden="true" />
+      {` ${label}`}
     </Button>
   );
-};
+}
 
 ContactEmail.propTypes = {
   label: PropTypes.string,
   email: PropTypes.string,
 };
 
-ContactEmail.defaultProps = { label: 'Contact Us', email: 'chemotion-repository@lists.kit.edu' };
+ContactEmail.defaultProps = {
+  label: 'Contact Us',
+  email: 'chemotion-repository@lists.kit.edu',
+};
 
 export default ContactEmail;

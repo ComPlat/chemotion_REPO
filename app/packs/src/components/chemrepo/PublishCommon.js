@@ -23,12 +23,12 @@ const handleClick = (e, id, clickType) => {
   const uriArray = uri.split(/\//);
   switch (clickType) {
     case 'Reaction':
-      Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/reaction/${id}`, { silent: true });
+      Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/reaction/${id}`, { silent: false });
       // reactionShow({ params: { reactionID: id } });   // TODO: Paggy
       break;
 
     default:
-      Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/sample/${id}`, { silent: true });
+      Aviator.navigate(`/${uriArray[1]}/${uriArray[2]}/sample/${id}`, { silent: false });
       // sampleShowOrNew({ params: { sampleID: id } });   // TODO: Paggy
       break;
   }

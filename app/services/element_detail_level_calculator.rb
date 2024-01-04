@@ -37,12 +37,14 @@ class ElementDetailLevelCalculator
 
   # taken from API#group_ids
   def user_ids
+    return nil if user.nil?
     @user_ids ||= user.group_ids + [user.id]
   end
 
   # All collections containing the element that belong to the user or were shared to them
   def user_collections_with_element
-    @user_collections_with_element ||= element.collections.where(user_id: user_ids)
+    col = user_ids.nil? ? [Collection.public_collection] : element.collections.where(user_id: user_ids)
+    @user_collections_with_element ||= col
   end
 
   # All collections containing the element that were synced to the current user

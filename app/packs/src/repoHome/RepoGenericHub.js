@@ -149,7 +149,7 @@ const RepoGenericHub = () => {
     e.stopPropagation();
     GenericBaseFetcher.open(`list?klass=${capitalizeFirstLetter(type)}Klass&with_props=true`, 'GET')
       .then((result) => {
-        setState({ ...state, menuSelected: type, gridData: result });
+        setState({ ...state, menuSelected: type, gridData: result?.list || [] });
       })
       .catch((error) => {
         console.error('Error fetching dataset klasses:', error);

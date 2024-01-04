@@ -2,7 +2,8 @@
   "parser": "@babel/eslint-parser",
   "plugins": [
     "react",
-    "no-relative-import-paths"
+    "no-relative-import-paths",
+    "prettier"
   ],
   "env": {
     "browser": true,
@@ -10,6 +11,8 @@
   },
   "extends": [
     "airbnb",
+    "prettier",
+    "plugin:prettier/recommended",
     "plugin:react/recommended"
   ],
   "rules": {
@@ -27,7 +30,8 @@
         "code": 120,
         "ignoreComments": true
       }
-    ]
+    ],
+    "prettier/prettier": "error"
   },
   "settings": {
     "import/resolver": {

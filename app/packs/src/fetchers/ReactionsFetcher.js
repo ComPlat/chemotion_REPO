@@ -29,7 +29,7 @@ export default class ReactionsFetcher {
             }
             reaction.updateMaxAmountOfProducts();
             reaction.publication = json.publication || {};
-            return reaction;
+            return new Reaction(defaultAnalysisPublish(reaction));
           }
           const rReaction = new Reaction(json.reaction);
           rReaction.publication = json.publication || {};

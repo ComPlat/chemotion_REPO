@@ -129,7 +129,7 @@ export default class SampleForm extends React.Component {
   }
 
   drySolventCheckbox(sample) {
-    if (sample.can_update) {
+    if (permitOn(sample)) {
       return (
         <Checkbox
           checked={sample.dry_solvent}
@@ -365,10 +365,14 @@ export default class SampleForm extends React.Component {
   inputWithUnit(sample, field, label) {
     const value = sample.xref[field.split('xref_')[1]] ? sample.xref[field.split('xref_')[1]].value : '';
     const unit = sample.xref[field.split('xref_')[1]] ? sample.xref[field.split('xref_')[1]].unit : '°C';
+    const isPolymer = (sample.molfile || '').indexOf(' R# ') !== -1;
+    const isDisabled = !permitOn(sample);
+    const polyDisabled = isPolymer || isDisabled;
+
     return (
       <NumericInputUnit
         field="flash_point"
-        inputDisabled={false}
+        inputDisabled={polyDisabled}
         onInputChange={
           (newValue, newUnit) => this.handleFieldChanged(field, newValue, newUnit)
         }
@@ -614,7 +618,7 @@ export default class SampleForm extends React.Component {
 
   additionalProperties(sample) {
     const isPolymer = (sample.molfile || '').indexOf(' R# ') !== -1;
-    const isDisabled = !sample.can_update;
+    const isDisabled = !permitOn(sample);
     const polyDisabled = isPolymer || isDisabled;
     const minPadding = { padding: '4px 4px 4px 4px' };
 

@@ -547,7 +547,7 @@ export default class PublishReactionModal extends Component {
             const chkDesc = chkDisabled ? 'citation type is uncategorized, cannot publish this reference' : 'publish this reference';
             return (
               <tr key={id}>
-                <td className="padding-right" style={{ display: 'inline-flex;' }}>
+                <td className="padding-right" style={{ display: 'inline-flex' }}>
                   <i className={`icon-${citation.element_type.toLowerCase()}`} style={{ fontSize: '1.5em' }} />&nbsp;&nbsp;
                   <Citation literature={citation} />
                 </td>
@@ -579,7 +579,7 @@ export default class PublishReactionModal extends Component {
   selectReferences() {
     const { selectedRefs, literatures, sortedIds } = this.state;
     return (
-      <div >
+      <div>
         <ListGroup fill="true">
           <ListGroupItem>
             {this.citationTable(literatures, sortedIds, selectedRefs)}

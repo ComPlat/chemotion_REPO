@@ -183,8 +183,8 @@ module Chemotion
 
       def serialization_by_elements_and_page(elements, page = 1, molecule_sort = false)
         element_ids = elements.fetch(:element_ids, [])
-        reaction_ids = elements.fetch(:reactions, [])
-        sample_ids = elements.fetch(:sample_ids, [])
+        reaction_ids = elements.fetch(:reaction_ids, [0])
+        sample_ids = elements.fetch(:sample_ids, [0])
         samples_data = serialize_samples(sample_ids, page, search_by_method, molecule_sort)
         wellplates = elements.fetch(:wellplates, [])
         screen_ids = elements.fetch(:screen_ids, [])
@@ -199,7 +199,7 @@ module Chemotion
               SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
               FROM samples, publications pub
               WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
-                and samples.id IN (#{samples.join(',')})) s where rownum = 1
+                and samples.id IN (#{sample_ids.join(',')})) s where rownum = 1
             ) s on s.molecule_id = molecules.id
           SQL
 
@@ -210,7 +210,7 @@ module Chemotion
               and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
               select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
             (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
-            (select to_char(published_at, 'DD-MM-YYYY') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
+            (select published_at from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
             (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
           SQL
 
@@ -237,17 +237,18 @@ module Chemotion
             obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], true)
           end
 
-          filter_reactions = Reaction.where("reactions.id in (?)", reactions)
+          filter_reactions = Reaction.where("reactions.id in (?)", reaction_ids)
 
           embargo_rsql = <<~SQL
-            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'DD-MM-YYYY') as published_at, publications.taggable_data,
+            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, publications.published_at as published_at, publications.taggable_data,
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
             (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
             select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
           SQL
 
-          reaction_list = paginate(filter_reactions.joins(:publication).select(embargo_rsql).order('publications.published_at desc'))
+          ttl_reactions = filter_reactions.joins(:publication).select(embargo_rsql).order('publications.published_at desc')
+          reaction_list = paginate(ttl_reactions)
           reaction_entities = Entities::ReactionPublicationListEntity.represent(reaction_list, serializable: true)
           reaction_ids = reaction_entities.map { |e| e[:id] }
 
@@ -280,7 +281,7 @@ module Chemotion
             },
             publicReactions: {
               reactions: reaction_entities,
-              totalElements: reactions.size,
+              totalElements: ttl_reactions.size,
               page: page,
               perPage: page_size,
               ids: reaction_ids
@@ -498,24 +499,24 @@ module Chemotion
         when Sample
           elements[:sample_ids] = scope&.ids
           elements[:reaction_ids] = user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id).uniq
-          elements[:wellplate_ids] = user_wellplates.by_sample_ids(elements[:sample_ids]).uniq.pluck(:id)
-          elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
+          # elements[:wellplate_ids] = user_wellplates.by_sample_ids(elements[:sample_ids]).uniq.pluck(:id)
+          # elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
           elements[:element_ids] = user_elements.by_sample_ids(elements[:sample_ids]).pluck(:id).uniq
         when Reaction
           elements[:reaction_ids] = scope&.ids
           elements[:sample_ids] = user_samples.by_reaction_ids(elements[:reaction_ids]).pluck(:id).uniq
-          elements[:wellplate_ids] = user_wellplates.by_sample_ids(elements[:sample_ids]).uniq.pluck(:id)
-          elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
-        when Wellplate
-          elements[:wellplate_ids] = scope&.ids
-          elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
-          elements[:sample_ids] = user_samples.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
-          elements[:reaction_ids] = user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id).uniq
-        when Screen
-          elements[:screen_ids] = scope&.ids
-          elements[:wellplate_ids] = user_wellplates.by_screen_ids(elements[:screen_ids]).uniq.pluck(:id)
-          elements[:sample_ids] = user_samples.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
-          elements[:reaction_ids] = user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id)
+          # elements[:wellplate_ids] = user_wellplates.by_sample_ids(elements[:sample_ids]).uniq.pluck(:id)
+          # elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
+        # when Wellplate
+        #   elements[:wellplate_ids] = scope&.ids
+        #   elements[:screen_ids] = user_screens.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
+        #   elements[:sample_ids] = user_samples.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
+        #   elements[:reaction_ids] = user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id).uniq
+        # when Screen
+        #   elements[:screen_ids] = scope&.ids
+        #   elements[:wellplate_ids] = user_wellplates.by_screen_ids(elements[:screen_ids]).uniq.pluck(:id)
+        #   elements[:sample_ids] = user_samples.by_wellplate_ids(elements[:wellplate_ids]).uniq.pluck(:id)
+        #   elements[:reaction_ids] = user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id)
         when Labimotion::Element
           elements[:element_ids] = scope&.ids
           sids = Labimotion::ElementsSample.where(element_id: elements[:element_ids]).pluck(:sample_id)
@@ -528,15 +529,15 @@ module Chemotion
             user_reactions.by_sample_ids(elements[:sample_ids]).pluck(:id)
           ).uniq
 
-          elements[:wellplate_ids] = (
-            scope&.wellplates_ids +
-            user_wellplates.by_sample_ids(elements[:sample_ids]).pluck(:id)
-          ).uniq
+          # elements[:wellplate_ids] = (
+          #   scope&.wellplates_ids +
+          #   user_wellplates.by_sample_ids(elements[:sample_ids]).pluck(:id)
+          # ).uniq
 
-          elements[:screen_ids] = (
-            scope&.screens_ids +
-            user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
-          ).uniq
+          # elements[:screen_ids] = (
+          #   scope&.screens_ids +
+          #   user_screens.by_wellplate_ids(elements[:wellplate_ids]).pluck(:id)
+          # ).uniq
           elements[:element_ids] = (scope&.element_ids).uniq
         end
         elements

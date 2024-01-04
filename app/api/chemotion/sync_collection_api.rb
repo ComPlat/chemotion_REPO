@@ -24,7 +24,8 @@ module Chemotion
       namespace :publication do
         desc "Return the 'All' collection of the current user"
         get do
-          current_user.sync_published_collection
+          col = current_user.sync_published_collection
+          present col, with: Entities::SyncCollectionsUserEntity, root: 'sync_collections_user'
         end
       end
 
@@ -32,10 +33,11 @@ module Chemotion
         desc "Return the 'All' collection of the current user"
         get do
           if User.reviewer_ids.include?(current_user.id)
-            current_user.sync_element_to_review_collection
+            col = current_user.sync_element_to_review_collection
           else
-            current_user.sync_reviewing_collection
+            col = current_user.sync_reviewing_collection
           end
+          present col, with: Entities::SyncCollectionsUserEntity, root: 'sync_collections_user'
         end
       end
 
@@ -115,10 +117,7 @@ module Chemotion
                                SQL
                              ).as_json
 
-        col_tree.each do |obj|
-          child = collections.select { |dt| dt['ancestry'] == obj['id'].to_s }
-          obj[:children] = child if child.count.positive?
-        end
+        get_child.call(col_tree, collections)
         present col_tree, with: Entities::CollectionSyncEntity, root: 'syncCollections'
       end
 

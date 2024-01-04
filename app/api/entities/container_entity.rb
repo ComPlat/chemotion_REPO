@@ -17,6 +17,7 @@ module Entities
     expose :children, using: 'Entities::ContainerEntity'
     expose :dataset, using: 'Labimotion::DatasetEntity'
     expose :dataset_doi
+    expose :pub_id
 
     def dataset_doi
       object.full_doi

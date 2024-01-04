@@ -421,7 +421,7 @@ module Import
           if reactions_sample.type == 'ReactionsProductSample'
             onm = reactions_sample.reaction.tag&.taggable_data&.dig('eln_info', 'short_label')
             nnm = reactions_sample.reaction.short_label
-            reactions_sample.sample.update!(name:reactions_sample.sample.name.sub!(onm, nnm)) if onm.present? && nnm.present?
+            reactions_sample.sample.update!(name:reactions_sample.sample.name.sub!(onm, nnm)) if onm.present? && nnm.present? && reactions_sample.sample&.name.present?
           end
 
           # add reactions_sample to the @instances map

@@ -430,7 +430,7 @@ class ViewSpectra extends React.Component {
     const selectedIntegration = integrations[curveIdx];
     const { multiplicities } = multiplicity;
     const selectedMutiplicity = multiplicities[curveIdx];
-  
+
     const isSaveCombined = FN.isCyclicVoltaLayout(layout);
     const { spcInfos } = this.state;
     LoadingActions.start.defer();
@@ -443,7 +443,7 @@ class ViewSpectra extends React.Component {
       JSON.stringify(selectedIntegration),
       JSON.stringify(selectedMutiplicity),
       predict,
-      sample.can_update === true ? handleSubmit : this.updateROPredict,
+      handleSubmit,
       keepPred,
       waveLengthStr,
       cyclicvolta,
@@ -745,20 +745,6 @@ class ViewSpectra extends React.Component {
             maxTagCount={1}
             onChange={onSelectChange}
           />
-          <TreeSelect
-            treeData={options}
-            value={isShowMultiSelect ? arrSpcIdx : idx}
-            treeCheckable={isShowMultiSelect}
-            style={{ width: 500 }}
-            onChange={onSelectChange}
-          />
-          <TreeSelect
-            treeData={options}
-            value={isShowMultiSelect ? arrSpcIdx : idx}
-            treeCheckable={isShowMultiSelect}
-            style={{ width: 500 }}
-            maxTagCount={1}
-            onChange={onSelectChange} />
         </div>
         <Button
           bsStyle="danger"

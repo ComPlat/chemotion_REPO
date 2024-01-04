@@ -7,7 +7,9 @@ module Entities
     expose_timestamps
 
     def thumbnail
-      object.thumb ? Base64.encode64(object.read_thumbnail) : nil
+      return nil unless object.thumb && object.read_thumbnail
+
+      Base64.encode64(object.read_thumbnail)
     end
   end
 end

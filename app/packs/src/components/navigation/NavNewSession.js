@@ -27,7 +27,7 @@ function omniauthLabel(icon, name) {
 function NewSession({ authenticityToken, omniauthProviders, extraRules={} }) {
   const signUp = extraRules?.disable_signup === true ? null : (<NavItem href="/users/sign_up"> or Sign Up </NavItem>);
   const items = omniauthProviders && Object.keys(omniauthProviders).map((key) => (
-    <Button key={uuid.v4()} className="omniauth-btn" style={{ textAlign: 'left', marginRight: '10px' }} href={`/users/auth/${key}`}>
+    <Button key={uuid.v4()} style={{ textAlign: 'left', marginRight: '10px' }} href={`/users/auth/${key}`}>
       Login with &nbsp;
       {omniauthLabel(omniauthProviders[key].icon, omniauthProviders[key].label || key)}
     </Button>

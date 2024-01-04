@@ -4,7 +4,8 @@ import { orderBy, slice } from 'lodash';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import ArticleFetcher from 'src/repo/fetchers/ArticleFetcher';
-import { BackSoonPage, DateFormatYMDLong } from 'src/repoHome/RepoCommon';
+import { DateFormatYMDLong } from 'src/repoHome/RepoCommon';
+import BackSoonPage from 'src/components/chemrepo/BackSoonPage';
 
 const renderEditRead = (article, isEditor) => {
   if (isEditor === true) {

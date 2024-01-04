@@ -107,7 +107,7 @@ const extractNMRiumFiles = (container) => {
 
 const extractAnalysesId = (sample, container) => {
   let idAe = null;
-  sample && sample.analysesContainers().forEach((ae) => {
+  sample && (sample.constructor.name != 'Object') && sample.analysesContainers()?.forEach((ae) => {
     ae.children.forEach((ai) => {
       if (container.id === ai.id) {
         idAe = ae.id;

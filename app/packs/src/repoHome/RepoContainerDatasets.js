@@ -11,7 +11,7 @@ export default class RepoContainerDatasets extends Component {
       container,
       modal: {
         show: false,
-        dataset_container: null
+        datasetContainer: null
       }
     };
   }
@@ -24,7 +24,7 @@ export default class RepoContainerDatasets extends Component {
 
   handleModalOpen(datasetContainer) {
     const { modal } = this.state;
-    modal.dataset_container = datasetContainer;
+    modal.datasetContainer = datasetContainer;
     modal.show = true;
     this.setState({ modal });
   }
@@ -32,7 +32,7 @@ export default class RepoContainerDatasets extends Component {
   handleModalHide() {
     const { modal } = this.state;
     modal.show = false;
-    modal.dataset_container = null;
+    modal.datasetContainer = null;
     this.setState({ modal });
     // https://github.com/react-bootstrap/react-bootstrap/issues/1137
     document.body.className = document.body.className.replace('modal-open', '');
@@ -49,7 +49,7 @@ export default class RepoContainerDatasets extends Component {
               return (
                 <ListGroupItem key={`datasetContainer-${datasetContainer.id}`} className="repo-analysis-listgroup">
                   <ContainerDatasetField
-                    dataset_container={datasetContainer}
+                    datasetContainer={datasetContainer}
                     handleModalOpen={() => this.handleModalOpen(datasetContainer)}
                     disabled
                     isPublic={this.props.isPublic}
@@ -63,7 +63,7 @@ export default class RepoContainerDatasets extends Component {
             onHide={() => this.handleModalHide()}
             show={modal.show}
             readOnly
-            dataset_container={modal.dataset_container}
+            datasetContainer={modal.datasetContainer}
             disabled
           />
         </div>

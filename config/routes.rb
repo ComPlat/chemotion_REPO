@@ -207,7 +207,8 @@ Rails.application.routes.draw do
   # end
 
   #root to: redirect('home')
-  root to: 'pages#root_page' # , as: :unauthenticated_root
+  # root to: 'pages#root_page' # , as: :unauthenticated_root
+  root to: redirect('welcome')
 
   get 'test', to: 'pages#test'
 end

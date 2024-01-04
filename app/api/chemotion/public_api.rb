@@ -606,12 +606,15 @@ module Chemotion
           if cids.include?(Collection.public_collection_id)
             molecule = sample.molecule if sample.class.name == 'Sample'
 
-            ds_json = ContainerSerializer.new(dataset).serializable_hash.deep_symbolize_keys
-            ds_json[:dataset_doi] = dataset.full_doi
-            ds_json[:pub_id] = dataset.publication&.id
+            ## ds_json = ContainerSerializer.new(dataset).serializable_hash.deep_symbolize_keys
+            ds_json = Entities::ContainerEntity.represent(dataset)
+            # ds_json[:dataset_doi] = dataset.full_doi
+            # ds_json[:pub_id] = dataset.publication&.id
 
             res = {
               dataset: ds_json,
+              isLogin: current_user.present?,
+              element: sample,
               sample_svg_file: sample.class.name == 'Sample' ? sample.sample_svg_file : sample.reaction_svg_file,
               molecule: {
                 sum_formular: molecule&.sum_formular,
@@ -875,7 +878,13 @@ module Chemotion
       resource :published_statics do
         desc 'Return PUBLIC statics'
         get do
-          { published_statics: ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps') }
+          result = ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps')
+          published_statics = result.map do |row|
+            row.map do |key, value|
+              [key, value.is_a?(BigDecimal) ? value.to_i : value]
+            end.to_h
+          end
+          { published_statics: published_statics }
         end
       end
 
