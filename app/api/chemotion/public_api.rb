@@ -606,12 +606,15 @@ module Chemotion
           if cids.include?(Collection.public_collection_id)
             molecule = sample.molecule if sample.class.name == 'Sample'
 
-            ds_json = ContainerSerializer.new(dataset).serializable_hash.deep_symbolize_keys
-            ds_json[:dataset_doi] = dataset.full_doi
-            ds_json[:pub_id] = dataset.publication&.id
+            ## ds_json = ContainerSerializer.new(dataset).serializable_hash.deep_symbolize_keys
+            ds_json = Entities::ContainerEntity.represent(dataset)
+            # ds_json[:dataset_doi] = dataset.full_doi
+            # ds_json[:pub_id] = dataset.publication&.id
 
             res = {
               dataset: ds_json,
+              isLogin: current_user.present?,
+              element: sample,
               sample_svg_file: sample.class.name == 'Sample' ? sample.sample_svg_file : sample.reaction_svg_file,
               molecule: {
                 sum_formular: molecule&.sum_formular,

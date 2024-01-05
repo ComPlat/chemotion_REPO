@@ -804,8 +804,9 @@ module Chemotion
               review_history << next_node
               review['history'] = review_history
             else
+
               # is_leader = review.dig('reviewers')&.include?(current_user&.id)
-              if root.state == Publication::STATE_PENDING && action == Publication::STATE_REVIEWED # && (comment.present? || is_leader)
+              if root.state == Publication::STATE_PENDING && (action.nil? || action == Publication::STATE_REVIEWED)
                 next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' }
                 review_history << next_node
                 review['history'] = review_history

@@ -1681,7 +1681,7 @@ class RenderPublishAnalysesPanel extends Component {
     const insText = instrumentText(analysis);
     const crdLink = (isPublic === false) ? (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1691,7 +1691,7 @@ class RenderPublishAnalysesPanel extends Component {
       </div >
     ) : (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1752,9 +1752,11 @@ class RenderPublishAnalyses extends Component {
   }
 
   header() {
-    const { analysis } = this.props;
+    const { analysis, element } = this.props;
     const content = analysis.extended_metadata['content'];
     const previewImg = previewContainerImage(analysis);
+
+    const idyLogin = typeof element.isLogin === 'undefined' ? true : element.isLogin;
 
     const kind = (analysis.extended_metadata['kind'] || '').split('|').pop().trim();
 
@@ -1772,23 +1774,15 @@ class RenderPublishAnalyses extends Component {
 
     return (
       <div
-        className="analysis-header"
+        className="repo-analysis-header"
       >
-        <div className="preview">
-          <ImageModal
-            hasPop={hasPop}
-            previewObject={{
-              src: previewImg
-            }}
-            popObject={{
-              title: kind,
-              src: previewImg,
-              fetchNeeded,
-              fetchId,
-              fetchFilename
-            }}
-          />
-        </div>
+        <RepoPreviewImage
+          element={element}
+          analysis={analysis}
+          isLogin={idyLogin}
+          previewImg={previewImg}
+          title={kind}
+        />
         <div className="abstract">
           <div className="lower-text">
             <div className="sub-title" inline="true">
@@ -1801,7 +1795,7 @@ class RenderPublishAnalyses extends Component {
               <DownloadJsonBtn type="container" id={analysis.id} />
             </div>
             <div className="sub-title" inline="true">
-              <b>Reaction ID: </b>
+              <b>Analysis ID: </b>
               <Button bsStyle="link" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
                 CRD-{ analysis.pub_id }
               </Button>
@@ -2007,7 +2001,7 @@ class PublishAnalysesTag extends Component {
                   >
                     {
                       (typeMissing || statusMissing || nmrMissing || datasetMissing) ?
-                        <span style={{ color: 'red' }}>Add to publication</span>
+                        <span style={{ color: 'red' }}>Add to publication4</span>
                       :
                         <span>Add to publication</span>
                     }
@@ -2125,6 +2119,7 @@ const DatasetDetail = ({ isPublished, element }) => {
     <RenderPublishAnalyses
       key={`${element.id}-${element.updated_at}`}
       analysis={element.dataset}
+      element={element.element}
       expanded
       elementType="Sample"
       license={element.license}
