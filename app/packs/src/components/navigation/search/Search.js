@@ -1,39 +1,28 @@
 import React from 'react';
-import {
-  Glyphicon, ButtonGroup, Button, DropdownButton, MenuItem,
-  Form, FormControl, Radio, Grid, Row, Col
-} from 'react-bootstrap';
+import { ButtonGroup, Button, DropdownButton, MenuItem } from 'react-bootstrap';
 import PropTypes from 'prop-types';
-import { GenericElCriteriaModal, clsInputGroup } from 'chem-generic-ui';
 
 import AutoCompleteInput from 'src/components/navigation/search/AutoCompleteInput';
-import StructureEditorModal from 'src/components/structureEditor/StructureEditorModal';
+import SearchModal from 'src/components/searchModal/SearchModal';
 import SuggestionsFetcher from 'src/fetchers/SuggestionsFetcher';
 import ElementActions from 'src/stores/alt/actions/ElementActions';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import UserStore from 'src/stores/alt/stores/UserStore';
-import GenericElCriteria from 'src/components/generic/GenericElCriteria';
+import { StoreContext } from 'src/stores/mobx/RootStore';
 
 export default class Search extends React.Component {
+  static contextType = StoreContext;
+
   constructor(props) {
     super(props);
     this.state = {
       elementType: 'all',
-      showStructureEditor: false,
       queryMolfile: null,
       searchType: 'sub',
       tanimotoThreshold: 0.7,
-      showGenericElCriteria: false,
-      genericEl: null,
-      sample: {},
-      segments: []
     };
     this.handleClearSearchSelection = this.handleClearSearchSelection.bind(this);
-    this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
-    this.hideGenericElCriteria = this.hideGenericElCriteria.bind(this);
-    this.genericElSearch = this.genericElSearch.bind(this);
-    this.sampleSearch = this.sampleSearch.bind(this);
   }
 
   handleSelectionChange(selection) {
@@ -58,119 +47,12 @@ export default class Search extends React.Component {
     );
   }
 
-  structureSearch(molfile) {
-    const uiState = UIStore.getState();
-    const { currentCollection } = uiState;
-    const collectionId = currentCollection ? currentCollection.id : null;
-    const isSync = currentCollection ? currentCollection.is_sync_to_me : false;
-    const isPublic = this.props.isPublic;
-    let tanimoto = this.state.tanimotoThreshold;
-    if (tanimoto <= 0 || tanimoto > 1) { tanimoto = 0.3; }
-    const selection = {
-      elementType: this.state.elementType,
-      molfile,
-      search_type: this.state.searchType,
-      tanimoto_threshold: tanimoto,
-      page_size: uiState.number_of_results,
-      search_by_method: 'structure',
-      structure_search: true
-    };
-    UIActions.setSearchSelection(selection);
-    ElementActions.fetchBasedOnSearchSelectionAndCollection(
-      {
-        selection, collectionId, isSync, isPublic
-      });
-  }
-
-  genericElSearch() {
-    const uiState = UIStore.getState();
-    const { currentCollection } = uiState;
-    const collectionId = currentCollection ? currentCollection.id : null;
-    const isSync = currentCollection ? currentCollection.is_sync_to_me : false;
-    const { genericEl } = this.state;
-
-    const segSearch = (genericEl.segments || []).map(segment => ({ id: segment.id, searchProperties: segment.search_properties }));
-
-    const selection = {
-      elementType: this.state.elementType,
-      searchName: genericEl.search_name,
-      genericKlassId: genericEl.id,
-      searchShowLabel: genericEl.search_short_label,
-      genericElName: genericEl.name,
-      genericKlassId: genericEl.id,
-      search_by_method: genericEl.name,
-      genericElProperties: genericEl.properties,
-      searchProperties: genericEl.search_properties,
-      segSearchProperties: segSearch,
-      page_size: uiState.number_of_results
-    };
-
-    UIActions.setSearchSelection(selection);
-    ElementActions.fetchBasedOnSearchSelectionAndCollection({
-      selection,
-      genericElName: genericEl.name,
-      collectionId,
-      isSync,
-    });
-    this.setState({ showGenericElCriteria: false });
-  }
-
-  sampleSearch() {
-    const uiState = UIStore.getState();
-    const { currentCollection } = uiState;
-    const collectionId = currentCollection ? currentCollection.id : null;
-    const isSync = currentCollection ? currentCollection.is_sync_to_me : false;
-    const { sample } = this.state;
-
-    console.log(sample);
-    console.log(sample && sample.name);
-
-    const segSearch = ((sample && sample.segments) || []).map(segment => ({ id: segment.id, searchProperties: segment.search_properties }));
-    delete sample.segments;
-
-    const selection = {
-      elementType: 'samples',
-      searchProperties: sample,
-      segSearchProperties: segSearch,
-      page_size: uiState.number_of_results
-    };
-
-    UIActions.setSearchSelection(selection);
-    ElementActions.fetchBasedOnSearchSelectionAndCollection({
-      selection,
-      collectionId,
-      isSync,
-    });
-    this.setState({ showGenericElCriteria: false, elementType: 'samples' });
-  }
-
   handleClearSearchSelection() {
     const { currentCollection, isSync } = UIStore.getState();
     this.setState({ elementType: 'all' })
     currentCollection['clearSearch'] = true;
     isSync ? UIActions.selectSyncCollection(currentCollection)
       : UIActions.selectCollection(currentCollection);
-  }
-
-  showStructureEditor() {
-    this.setState({ showStructureEditor: true });
-  }
-
-  showAdvancedSearch() {
-    UIActions.toggleAdvancedSearch(true);
-  }
-
-  hideStructureEditor() {
-    this.setState({ showStructureEditor: false });
-  }
-
-  showGenericElCriteria() {
-    this.setState({ showGenericElCriteria: true });
-  }
-
-  hideGenericElCriteria() {
-    this.setState({ showGenericElCriteria: false });
-    this.handleClearSearchSelection();
   }
 
   handleElementSelection(event, element = null) {
@@ -183,32 +65,6 @@ export default class Search extends React.Component {
     } else {
       this.setState({ elementType: event });
     }
-  }
-
-  handleStructureEditorSave(molfile) {
-    if (molfile) { this.setState({ queryMolfile: molfile }); }
-    // Check if blank molfile
-    const molfileLines = molfile.match(/[^\r\n]+/g);
-    // If the first character ~ num of atoms is 0, we will not search
-    if (molfileLines[1].trim()[0] !== 0) {
-      this.structureSearch(molfile);
-    }
-    this.hideStructureEditor();
-  }
-
-  handleStructureEditorCancel() {
-    this.hideStructureEditor();
-  }
-
-  handleTanimotoChange(e) {
-    const val = e.target && e.target.value;
-    if (!isNaN(val - val)) {
-      this.setState({ tanimotoThreshold: val });
-    }
-  }
-
-  handleSearchTypeChange(e) {
-    this.setState({ searchType: e.target && e.target.value });
   }
 
   renderMenuItems() {
@@ -224,32 +80,6 @@ export default class Search extends React.Component {
       </MenuItem>
     ));
 
-    menu.push(<MenuItem key="divider" divider />);
-    menu.push(
-      <MenuItem key="advanced" onSelect={this.showAdvancedSearch}>
-        Advanced Search
-      </MenuItem>
-    );
-
-    menu.push(<MenuItem key="divider" divider />);
-    menu.push(
-      <MenuItem key="embargo" onSelect={() => this.handleElementSelection('embargo')}>
-        Embargo Bundle#
-      </MenuItem>
-    );
-
-    menu.push(<MenuItem key="divider-generic" divider />);
-
-    const genericEls = UserStore.getState().genericEls || [];
-    const profile = UserStore.getState().profile || {};
-
-    genericEls.forEach((el) => {
-      const idx = profile.data && profile.data.layout && profile.data.layout[el.name];
-      if (idx >= 0) {
-        menu.push(<MenuItem key={`menu-el-${el.name}`} onSelect={() => this.handleElementSelection(`elements-${el.name}`, el)}>{el.label}</MenuItem>);
-      }
-    });
-
     return menu;
   }
 
@@ -260,50 +90,13 @@ export default class Search extends React.Component {
 
     const buttonAfter = (
       <ButtonGroup>
-        <Button bsStyle={customClass ? null : 'primary'} className={customClass} onClick={() => this.showStructureEditor()}>
-          <Glyphicon glyph="pencil" id="AutoCompletedrawAddon" />
+        <Button bsStyle={customClass ? null : 'info'} className={customClass} id="open-search-modal" onClick={() => this.context.search.showSearchModal()}>
+          <i className="fa fa-search" />
         </Button>
         <Button bsStyle={customClass ? null : 'danger'} className={customClass} onClick={this.handleClearSearchSelection}>
           <i className="fa fa-times" />
         </Button>
       </ButtonGroup>
-    );
-
-    const submitAddons = (
-      <Grid>
-        <Row>
-          <Col sm={6} md={4}>
-            <Form inline>
-              <Radio
-                ref={(input) => { this.searchSimilarRadio = input; }}
-                value="similar"
-                checked={this.state.searchType === 'similar'}
-                onChange={e => this.handleSearchTypeChange(e)}
-              >
-                &nbsp; Similarity Search &nbsp;
-              </Radio>
-              &nbsp;&nbsp;
-              <FormControl
-                style={{ width: '40%' }}
-                type="text"
-                value={this.state.tanimotoThreshold}
-                ref={(input) => { this.searchTanimotoInput = input; }}
-                onChange={e => this.handleTanimotoChange(e)}
-              />
-            </Form>
-          </Col>
-          <Col sm={4} md={2}>
-            <Radio
-              ref={(input) => { this.searchSubstructureRadio = input; }}
-              value="sub"
-              checked={this.state.searchType === 'sub'}
-              onChange={e => this.handleSearchTypeChange(e)}
-            >
-              Substructure Search
-            </Radio>
-          </Col>
-        </Row>
-      </Grid>
     );
 
     const inputAttributes = {
@@ -339,44 +132,10 @@ export default class Search extends React.Component {
       </DropdownButton>
     );
 
-    let mofProps = {};
-
-    if (this.state.showGenericElCriteria === true) {
-      switch (this.state.elementType) {
-        case 'elements':
-          mofProps = {
-            show: this.state.showGenericElCriteria,
-            type: this.state.elementType,
-            component: <GenericElCriteria genericEl={clsInputGroup(this.state.genericEl)} onHide={this.hideGenericElCriteria} onSearch={this.genericElSearch} />,
-            title: `Please input your search criteria for ${this.state.elementType}`,
-            onHide: this.hideGenericElCriteria
-          };
-          break;
-        case 'sample':
-          mofProps = {
-            show: this.state.showGenericElCriteria,
-            type: this.state.elementType,
-            component: <SampleCriteria sample={this.state.sample} onHide={this.hideGenericElCriteria} onSearch={this.sampleSearch} />,
-            title: `Please input your search criteria for ${this.state.elementType}`,
-            onHide: this.hideGenericElCriteria
-          };
-          break;
-        default:
-          break;
-      }
-    }
-
     return (
       <div className="chemotion-search">
-        <div className="search-structure-draw">
-          <StructureEditorModal
-            showModal={this.state.showStructureEditor}
-            onSave={this.props.noSubmit ? null : this.handleStructureEditorSave.bind(this)}
-            onCancel={this.handleStructureEditorCancel}
-            molfile={this.state.queryMolfile}
-            submitBtnText="Search"
-            submitAddons={submitAddons}
-          />
+        <div className="search-modal-draw">
+          <SearchModal />
         </div>
         <div className="search-autocomplete">
           <AutoCompleteInput
@@ -389,9 +148,6 @@ export default class Search extends React.Component {
             buttonAfter={buttonAfter}
           />
         </div>
-        {
-          this.state.showGenericElCriteria ? <GenericElCriteriaModal {...mofProps} /> : <div />
-        }
       </div>
     );
   }
