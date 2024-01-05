@@ -14,7 +14,7 @@ export default class ContainerDatasetModal extends Component {
     this.state = {
       mode: 'attachments',
       isNameEditing: false,
-      localName: props.datasetContainer.name,
+      localName: props.datasetContainer?.name,
     };
 
     this.handleSave = this.handleSave.bind(this);
