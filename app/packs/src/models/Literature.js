@@ -8,7 +8,7 @@ export default class Literature extends Element {
       url: '',
       doi: '',
       isbn: '',
-      litype: 'citedOwn',
+      litype: CitationType[0],
       type: 'literature',
       is_new: false,
       refs: {},

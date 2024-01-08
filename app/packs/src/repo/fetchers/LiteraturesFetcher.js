@@ -33,8 +33,8 @@ export default class LiteraturesFetcher {
       body: JSON.stringify({ element_type: type, element_id: id, ref: literature })
     }).then((response) => response.json())
       .then((json) => { if (json.error) { throw json; } return json.literatures; })
-      .then((literatures) => literatures.map((lits) => new Literature(lits)))
       .then((lits) => lits.reduce((acc, l) => acc.set(l.literal_id, l), new Immutable.Map()))
+      .then((literatures) => literatures.map((lits) => new Literature(lits)))
       .catch((errorMessage) => { console.log(errorMessage); throw errorMessage; });
   }
 

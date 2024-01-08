@@ -137,19 +137,6 @@ export default class DetailsTabLiteratures extends Component {
       });
   }
 
-  handleTypeUpdate(updId, rType) {
-    const { element } = this.props;
-    if (!checkElementStatus(element)) { return; }
-    LoadingActions.start();
-    const params = {
-      element_id: element.id, element_type: element.type, id: updId, litype: rType
-    };
-    LiteraturesFetcher.updateReferenceType(params)
-      .then((literatures) => {
-        this.setState({ literatures, sortedIds: groupByCitation(literatures), sorting: 'literature_id' }, LoadingActions.stop());
-      });
-  }
-
   handleLiteratureRemove(literature) {
     const { element } = this.props;
     if (!checkElementStatus(element)) { return; }
@@ -247,18 +234,25 @@ export default class DetailsTabLiteratures extends Component {
       if (json.data && json.data.length > 0) {
         const data = json.data[0];
         const citation = new Cite(data);
-        this.setState((prevState) => ({
-          ...prevState,
-          literature: {
-            ...prevState.literature,
-            doi,
-            title: data.title || '',
-            year: (data && data.issued && data.issued['date-parts'][0]) || '',
-            refs: { citation, bibtex: citation.format('bibtex'), bibliography: json.format('bibliography') }
-          }
-        }));
+        // this.setState((prevState) => ({
+        //   ...prevState,
+        //   literature: new Literature({
+        //     ...prevState.literature,
+        //     doi,
+        //     title: data.title || '',
+        //     year: (data && data.issued && data.issued['date-parts'][0]) || '',
+        //     refs: { citation, bibtex: citation.format('bibtex'), bibliography: json.format('bibliography') }
+        //   })
+        // }));
         const { literature } = this.state;
-        this.handleLiteratureAdd(literature);
+        const newLiterature = new Literature({
+          ...literature,
+          doi,
+          title: data.title || '',
+          year: (data && data.issued && data.issued['date-parts'][0]) || '',
+          refs: { citation, bibtex: citation.format('bibtex'), bibliography: json.format('bibliography') }
+        });
+        this.handleLiteratureAdd(newLiterature);
       }
     }).catch((errorMessage) => {
       NotificationActions.add(notification(`unable to fetch metadata for this doi: ${doi}, error: ${errorMessage}`));
