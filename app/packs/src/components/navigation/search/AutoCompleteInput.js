@@ -302,8 +302,11 @@ export default class AutoCompleteInput extends React.Component {
       requirements : {icon: 'icon-screen', label: 'Requirement'},
       conditions : {icon: 'icon-screen', label: 'Condition'},
       element_short_label: {icon: 'icon-element', label: 'Element Short Label'},
-      embargo : {icon: 'fa fa-object-group', label: 'Embargo Bundle Number'}
+      embargo : {icon: 'fa fa-object-group', label: 'Embargo Bundle Number'},
+      cell_line_material_name: {icon: 'icon-cell_line', label: 'Cell line name'},
+      cell_line_sample_name: {icon: 'icon-cell_line', label: 'Cell line sample name'}
     }
+
     if(suggestions) {
       return (
         <div>

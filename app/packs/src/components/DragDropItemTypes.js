@@ -17,5 +17,6 @@ export default {
   GENERALPROCEDURE: 'generalProcedure',
   ELEMENT_FIELD: 'element_field',
   GENERIC_GRID: 'generic_grid',
-  HOWTO: 'howto'
+  HOWTO: 'howto',
+  CELL_LINE: 'cell_line'
 };

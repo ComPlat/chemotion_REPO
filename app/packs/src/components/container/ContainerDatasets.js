@@ -114,7 +114,7 @@ export default class ContainerDatasets extends Component {
 
   render() {
     const { container, modal } = this.state;
-    const {readOnly, disabled} = this.props;
+    const { readOnly, disabled } = this.props;
 
     if (container.children.length > 0) {
       const kind = container.extended_metadata && container.extended_metadata.kind;
@@ -132,6 +132,7 @@ export default class ContainerDatasets extends Component {
                     handleUndo={() => this.handleUndo(datasetContainer)}
                     handleModalOpen={() => this.handleModalOpen(datasetContainer)}
                     disabled={disabled}
+                    readOnly={readOnly}
                   />
                 </ListGroupItem>
               ))}

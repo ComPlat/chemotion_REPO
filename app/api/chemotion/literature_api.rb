@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
-# rubocop:disable Rails/SkipsModelValidations
+# rubocop:disable Metrics/ClassLength, Rails/SkipsModelValidations, Style/MultilineIfThen
 
 module Chemotion
   class LiteratureAPI < Grape::API
@@ -21,9 +20,18 @@ module Chemotion
         @is_owned = nil
         @is_public = nil
         unless %r{doi/metadata|ui_state|collection}.match?(request.url)
-          @element_klass = params[:element_type].classify
-          @element = @element_klass.constantize.find_by(id: params[:element_id])
-          @element_policy = ElementPolicy.new(current_user, @element)
+          if params[:element_type] == 'cell_line'
+            cell_line_sample = CelllineSample.find(params[:element_id])
+            @element = CelllineMaterial.find(cell_line_sample.cellline_material_id)
+            @element_policy = ElementPolicy.new(current_user, cell_line_sample)
+            @element_klass = 'CelllineMaterial'
+            params[:element_id] = @element.id
+          else
+            @element_klass = params[:element_type].classify
+            @element = @element_klass.constantize.find_by(id: params[:element_id])
+            @element_policy = ElementPolicy.new(current_user, @element)
+          end
+
           allowed = if /get/i.match?(request.env['REQUEST_METHOD'])
                       @element_policy.read?
                     else
@@ -43,9 +51,9 @@ module Chemotion
       desc 'Update type of literals by element'
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan]
+        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
         requires :id, type: Integer
-        requires :litype, type: String, values: %w[citedOwn citedRef referTo]
+        requires :litype, type: String, values: %w[citedOwn citedRef referTo literatureOfSource additionalLiterature]
       end
       put do
         Literal.find(params[:id])&.update(litype: params[:litype])
@@ -62,7 +70,7 @@ module Chemotion
       desc 'Return the literature list for the given element'
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan]
+        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
         optional :is_all, type: Boolean, default: false
       end
 
@@ -96,7 +104,7 @@ module Chemotion
       desc 'create a literature entry'
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan]
+        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
         requires :ref, type: Hash do
           optional :is_new, type: Boolean
           optional :id, types: [Integer, String]
@@ -149,7 +157,7 @@ module Chemotion
 
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan]
+        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
         requires :id, type: Integer
       end
 
@@ -317,4 +325,4 @@ module Chemotion
   end
 end
 # rubocop:enable Metrics/ClassLength
-# rubocop:enable Rails/SkipsModelValidations
+# rubocop:enable Rails/SkipsModelValidations, Style/MultilineIfThen

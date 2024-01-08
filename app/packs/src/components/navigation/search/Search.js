@@ -69,10 +69,10 @@ export default class Search extends React.Component {
 
   renderMenuItems() {
     const elements = [
-      "All",
-      "Samples", "Reactions",
-      // "Wellplates", "Screens"
-    ]
+      'All',
+      'Samples', 'Reactions',
+      // 'Wellplates', 'Screens','Cell lines'
+    ];
 
     const menu = elements.map(element => (
       <MenuItem key={element} onSelect={() => this.handleElementSelection(element.toLowerCase())}>
@@ -117,6 +117,9 @@ export default class Search extends React.Component {
       // console.log(elementType);
       if (this.state.elementType === 'embargo') return (<i className="fa fa-object-group" />);
       if (['samples', 'reactions', 'screens', 'wellplates'].includes(elementType.toLowerCase())) return (<i className={`icon-${elementType.toLowerCase().slice(0, -1)}`} />);
+      if(elementType == 'cell lines'){
+        return (<i className={`icon-cell_line`} />);
+      }
       if (this.state.genericEl) return (<i className={this.state.genericEl.icon_name} />);
       return elementType;
     }

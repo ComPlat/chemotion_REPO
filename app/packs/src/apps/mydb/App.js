@@ -45,6 +45,7 @@ class App extends Component {
     ReviewStore.listen(this.handleReviewStoreChange);
     UserActions.fetchOlsRxno();
     UserActions.fetchOlsChmo();
+    UserActions.fetchOlsBao();
     UserActions.fetchProfile();
     UserActions.fetchUserLabels();
     UserActions.fetchGenericEls();
