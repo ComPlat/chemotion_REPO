@@ -2001,7 +2001,7 @@ class PublishAnalysesTag extends Component {
                   >
                     {
                       (typeMissing || statusMissing || nmrMissing || datasetMissing) ?
-                        <span style={{ color: 'red' }}>Add to publication4</span>
+                        <span style={{ color: 'red' }}>Add to publication</span>
                       :
                         <span>Add to publication</span>
                     }
