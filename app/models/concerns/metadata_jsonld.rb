@@ -274,7 +274,7 @@ module MetadataJsonld
   def json_ld_measurement_technique(pub = self)
     json = {}
     term_id = pub.element.extended_metadata['kind']&.split('|')&.first&.strip
-    res = Ontologies::TibService.load_term_info('CHMO', term_id)
+    res = tib_load_term_info('CHMO', term_id)
     data = (res.ok? && res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {}
     return {} if data.blank?
 
@@ -388,6 +388,17 @@ module MetadataJsonld
     json['molecularWeight'] = json_ld_molecular_weight(mol)
     json['iupacName'] = mol.iupac_name
     json
+  end
+
+  def tib_load_term_info(schema, term_id)
+    http_s = "https://" # Rails.env.test? && "http://" || "https://"
+    options = { :timeout => 10, :headers => {'Content-Type' => 'text/json'}  }
+    api = 'service.tib.eu/ts4tib/api/'
+    link = http_s + api + '/ontologies/' + schema + '/terms?obo_id=' + term_id
+    HTTParty.get(link, options)
+  rescue StandardError => e
+    Rails.logger.error ["API call", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
   end
 
 end
