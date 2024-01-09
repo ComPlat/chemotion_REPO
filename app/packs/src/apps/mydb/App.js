@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Col, Grid, Row } from 'react-bootstrap';
+import { Button, Col, Grid, Row } from 'react-bootstrap';
 import { FlowViewerModal } from 'chem-generic-ui';
 import CollectionManagement from 'src/apps/mydb/collections/CollectionManagement';
 import CollectionTree from 'src/apps/mydb/collections/CollectionTree';
@@ -149,10 +149,22 @@ class App extends Component {
       <Col className="small-col collec-tree">
         <CollectionTree />
         <div className="news-box">
-          <p>New to the Repository? Explore our <a href="https://chemotion.net/docs/repo/settings_preparation" target="_blank" rel="noreferrer">Preparation</a> & <a href="https://chemotion.net/docs/repo/workflow" target="_blank" rel="noreferrer">Workflow</a> </p>
+          <p>New to the Repository? Explore the <a href="https://chemotion.net/docs/repo/settings_preparation" target="_blank" rel="noreferrer">Preparation</a> & <a href="https://chemotion.net/docs/repo/workflow" target="_blank" rel="noreferrer">Workflow</a> guide.</p>
           <p>Guidelines: Discover <a href="https://chemotion.net/docs/repo/details_standards/reactions" target="_blank" rel="noreferrer">Details and Standards</a></p>
-          <p>Learn More: Visit <a href="https://chemotion.net/docs/repo/references" target="_blank" rel="noreferrer">here</a></p>
-          <ContactEmail />
+          <p>Learn More: Refer to our <a href="https://chemotion.net/docs/repo/references" target="_blank" rel="noreferrer">Documentation</a></p>
+          <div>
+            {'Questions? Contact us via '}
+            <Button bsSize="small" onClick={() => window.open('https://github.com/ComPlat/chemotion_REPO', '_blank')}>
+              <img
+                src="/images/repo/github-mark.svg"
+                className="pubchem-logo"
+                alt="Chemotion Repository at GitHub"
+                title="Chemotion Repository at GitHub"
+              />
+            </Button>
+            {' or '}
+            <ContactEmail label="" />
+          </div>
         </div>
       </Col>
     );
