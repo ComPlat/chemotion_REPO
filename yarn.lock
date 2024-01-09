@@ -4813,10 +4813,10 @@ chem-generic-ui-viewer@^1.0.2:
     react-select "5.2.2"
     uuid "^8.3.2"
 
-chem-generic-ui@^1.0.11:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/chem-generic-ui/-/chem-generic-ui-1.1.0.tgz#af4c8514519d918d050e918d98d628cc0dd249e4"
-  integrity sha512-hcmzFen/dm06xhrS/bK3/zW6e5w0jEseIW6l0EHeZfKNqoMhXMsdc9tGtTqTMIpFz0jdM7MvBffFpkTFGDx3bw==
+chem-generic-ui@^1.0.12:
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/chem-generic-ui/-/chem-generic-ui-1.0.12.tgz#bd06d479d56672e0dca4c560cca9716c1b0f9185"
+  integrity sha512-ks4SXmOl4ohpZUednVpt9J2ZtIxBrghZwSkGFjRI0RqwlpQ7esA/R+mWCE037EhE6qjrX2ExZdk6DoM+M9prQw==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"
