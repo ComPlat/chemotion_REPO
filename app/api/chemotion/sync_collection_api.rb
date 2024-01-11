@@ -115,10 +115,7 @@ module Chemotion
                                SQL
                              ).as_json
 
-        col_tree.each do |obj|
-          child = collections.select { |dt| dt['ancestry'] == obj['id'].to_s }
-          obj[:children] = child if child.count.positive?
-        end
+        get_child.call(col_tree, collections)
         present col_tree, with: Entities::CollectionSyncEntity, root: 'syncCollections'
       end
 
