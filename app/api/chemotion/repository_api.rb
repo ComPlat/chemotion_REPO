@@ -447,7 +447,7 @@ module Chemotion
                  else
                    Collection.where(ancestry: current_user.publication_embargo_collection.id)
                  end
-          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order("taggable_data->>'label' ASC") unless cols.empty?
+          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols.empty?
         end
 
         { repository: es, current_user: { id: current_user.id, type: current_user.type } }
