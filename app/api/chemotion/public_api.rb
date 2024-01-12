@@ -878,7 +878,13 @@ module Chemotion
       resource :published_statics do
         desc 'Return PUBLIC statics'
         get do
-          { published_statics: ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps') }
+          result = ActiveRecord::Base.connection.exec_query('select * from publication_statics as ps')
+          published_statics = result.map do |row|
+            row.map do |key, value|
+              [key, value.is_a?(BigDecimal) ? value.to_i : value]
+            end.to_h
+          end
+          { published_statics: published_statics }
         end
       end
 
