@@ -3,6 +3,10 @@ import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip } from 'react-bootstrap';
 import { get, isNil, isEmpty } from 'lodash';
 
+import ElementActions from '../actions/ElementActions';
+import DetailActions from '../actions/DetailActions';
+import UIActions from '../actions/UIActions';
+
 import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
@@ -16,18 +20,21 @@ const NewVersionModal = (props) => {
 
   // the props isPublisher and isLatestVersion are used in the publication interface,
   // while isElementPublisher and isElementLatestVersion are used in the ELN detail view
-  const isElementPublisher = element.publication && get(element, 'publication.published_by') === currentUserId
-  const isElementLatestVersion = element.tag && isNil(get(element.tag, 'taggable_data.new_version'))
+  const isElementPublisher = element.publication && get(element, 'publication.published_by') === currentUserId;
+  const isElementLatestVersion = element.tag && isNil(get(element.tag, 'taggable_data.new_version'));
 
   // if a publication is present in the element, we check if the review process is completed,
-  // otherwise we assume the publication is complete, since the button is on the publication interface
-  const isComplete = isNil(element.publication) || get(element.publication, 'state') === 'completed'
+  // otherwise we assume the publication is complete (the button is on the publication interface)
+  const isComplete = isNil(element.publication) || get(element.publication, 'state') === 'completed';
+
+  // chek if the element (a sample) belongs to a reaction or not
+  const belongsToReaction = !isNil(get(element, 'tag.taggable_data.reaction_id')) || !isEmpty(element.reaction_ids);
 
   // init variables for the render function
-  let display = false,
-      disable = false,
-      title = <span>Create a new version of this {type.toLowerCase()}</span>,
-      tooltip = <Tooltip>Create a new version of this {type.toLowerCase()}.</Tooltip>;
+  let display = false;
+  let disable = false;
+  let title = <span>Create a new version of this {type.toLowerCase()}</span>;
+  let tooltip = <Tooltip>Create a new version of this {type.toLowerCase()}.</Tooltip>;
 
   switch (type) {
     case 'Reaction':
@@ -43,12 +50,11 @@ const NewVersionModal = (props) => {
       tooltip = <Tooltip>Create a new versions of all samples of this reaction.</Tooltip>;
       break;
     case 'Sample':
-      const belongsToReaction = !isNil(get(element, 'tag.taggable_data.reaction_id')) || !isEmpty(element.reaction_ids);
-
       display = (isPublisher || isElementPublisher) && isComplete;
       disable = !(isLatestVersion || isElementLatestVersion) || belongsToReaction;
       if (disable) {
         tooltip = belongsToReaction
+          // eslint-disable-next-line max-len
           ? <Tooltip>This sample belongs to a reaction. Please create a new version of the reaction.</Tooltip>
           : <Tooltip>A new version of this sample has already been created.</Tooltip>;
       }
@@ -75,9 +81,14 @@ const NewVersionModal = (props) => {
     const collection = newElement.tag.taggable_data.collection_labels
       .find(c => c.user_id === currentUserId);
 
+    // this is a bit hacky but I don't know how to find the collection in the state
+    collection.is_sync_to_me = true;
+
     if (window.location.pathname.startsWith('/mydb/')) {
       // eslint-disable-next-line no-undef
-      Aviator.navigate(`/scollection/${collection.id}/${newElement.type}/${newElement.id}`);
+      UIActions.selectSyncCollection(collection);
+      ElementActions.setCurrentElement(newElement);
+      DetailActions.close(element);
     } else {
       window.location = `/mydb/scollection/${collection.id}/${newElement.type}/${newElement.id}`;
     }
@@ -105,7 +116,6 @@ const NewVersionModal = (props) => {
         RepositoryFetcher.createNewReactionSamplesVersion({ reactionId: element.id })
           .then((reaction) => {
             setModalShow(false);
-            redirectAfterSubmit(reaction);
           });
         break;
       case 'Sample':
@@ -123,7 +133,6 @@ const NewVersionModal = (props) => {
           parentId: parent.id
         }).then((sampleOrReaction) => {
           setModalShow(false);
-          redirectAfterSubmit(sampleOrReaction);
         });
         break;
       default:
