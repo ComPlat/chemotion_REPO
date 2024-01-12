@@ -153,7 +153,7 @@ module Chemotion
           new_sample
         end
 
-        def create_new_sample_version(sample = @sample, reaction = @reaction)
+        def create_new_sample_version(sample = @sample)
           new_sample = sample.dup
           new_sample.previous_version = sample
           new_sample.collections << current_user.versions_collection
@@ -171,13 +171,6 @@ module Chemotion
 
           new_sample.tag_as_new_version(sample)
           sample.tag_as_previous_version(new_sample)
-
-          # replace previous sample in reaction
-          unless reaction.nil?
-            reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
-            reaction_sample.sample_id = new_sample.id
-            reaction_sample.save!
-          end
 
           new_sample
         end
@@ -393,6 +386,17 @@ module Chemotion
           new_reaction.save!
           new_reaction.reload
           new_reaction
+        end
+
+        def create_new_reaction_samples_version(reaction = @reaction)
+          reaction.reactions_samples.each  do |reaction_sample|
+            # create a new sample version
+            new_sample = create_new_sample_version(reaction_sample.sample)
+
+            # replace previous sample in reaction
+            reaction_sample.sample_id = new_sample.id
+            reaction_sample.save!
+          end
         end
 
         def submit_new_reaction_version(reaction = @reaction)
@@ -1243,16 +1247,12 @@ module Chemotion
         desc 'Create a new version of a published Sample'
         params do
           requires :sampleId, type: Integer, desc: 'Sample Id'
-          optional :reactionId, type: Integer, desc: 'Reaction Id'
         end
 
         after_validation do
           # look for the sample in all public samples created by the current user
           @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @sample
-
-          # look for an optional reaction in the versions_collection of the current user
-          @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId]) unless params[:reactionId].nil?
         end
 
         post do
@@ -1361,6 +1361,29 @@ module Chemotion
           new_reaction = create_new_reaction_version
           {
             reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionSamplesVersion do
+        desc 'Create a new versions for the samples of a published reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          @scheme_only = false
+
+          # look for an the reaction in the versions_collection of the current user
+          @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId]) unless params[:reactionId].nil?
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          create_new_reaction_samples_version
+          {
+            reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
         end

@@ -242,6 +242,36 @@ export default class RepositoryFetcher {
     });
   }
 
+  static createNewReactionSamplesVersion(params) {
+    return fetch(`/api/v1/repository/createNewReactionSamplesVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new reaction samples version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_reaction_samples_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
   static createNewReactionSchemeVersion(params) {
     return fetch(`/api/v1/repository/createNewReactionSchemeVersion/`, {
       credentials: 'same-origin',

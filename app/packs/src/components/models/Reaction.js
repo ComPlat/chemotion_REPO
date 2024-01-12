@@ -439,7 +439,7 @@ export default class Reaction extends Element {
   get previousVersion() {
     const tag = this.tag || {};
     const taggableData = tag.taggable_data || {};
-    return taggableData.previous_version
+    return taggableData.previous_version;
   }
 
   buildCopy(params = {}) {

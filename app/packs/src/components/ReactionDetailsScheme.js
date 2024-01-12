@@ -739,9 +739,14 @@ export default class ReactionDetailsScheme extends Component {
       <div>
         <ListGroup fill="true">
           {
-            permitOn(reaction) && reaction.previousVersion && <ListGroupItem style={minPadding}>
-              <div style={{padding: '2px 5px'}}>
-                <span>In order to update the materials for this reaction, new versions of the samples need to be created first.</span>
+            permitOn(reaction) && reaction.previousVersion &&
+            reaction.samples.some(sample => sample.sealed) &&
+            <ListGroupItem style={minPadding}>
+              <div style={{ padding: '2px 5px' }}>
+                <span>
+                  In order to update the materials for this reaction, new versions of
+                  the samples need to be created first.
+                </span>
                 <NewVersionModal
                   type="ReactionSamples"
                   element={reaction}

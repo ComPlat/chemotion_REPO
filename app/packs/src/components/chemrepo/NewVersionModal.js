@@ -101,8 +101,15 @@ const NewVersionModal = (props) => {
             });
         }
         break;
+      case 'ReactionSamples':
+        RepositoryFetcher.createNewReactionSamplesVersion({ reactionId: element.id })
+          .then((reaction) => {
+            setModalShow(false);
+            redirectAfterSubmit(reaction);
+          });
+        break;
       case 'Sample':
-        RepositoryFetcher.createNewSampleVersion({ sampleId: element.id, reactionId: parent.id })
+        RepositoryFetcher.createNewSampleVersion({ sampleId: element.id })
           .then((sample) => {
             setModalShow(false);
             redirectAfterSubmit(sample);
