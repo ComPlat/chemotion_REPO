@@ -22,6 +22,7 @@ import OlsTreeSelect from './OlsComponent';
 import ReactionDetailsDuration from './ReactionDetailsDuration';
 import { permitOn } from './common/uis';
 import HelpInfo from '../components/common/HelpInfo';
+import NewVersionModal from './chemrepo/NewVersionModal';
 
 import NotificationActions from './actions/NotificationActions';
 import TextTemplateActions from './actions/TextTemplateActions';
@@ -737,6 +738,18 @@ export default class ReactionDetailsScheme extends Component {
     return (
       <div>
         <ListGroup fill="true">
+          {
+            permitOn(reaction) && reaction.previousVersion && <ListGroupItem style={minPadding}>
+              <div style={{padding: '2px 5px'}}>
+                <span>In order to update the materials for this reaction, new versions of the samples need to be created first.</span>
+                <NewVersionModal
+                  type="ReactionSamples"
+                  element={reaction}
+                  className="button-right"
+                />
+              </div>
+            </ListGroupItem>
+          }
           <ListGroupItem style={minPadding}>
             <MaterialGroupContainer
               reaction={reaction}

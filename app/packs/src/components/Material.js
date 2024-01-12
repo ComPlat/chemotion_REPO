@@ -546,17 +546,6 @@ class Material extends Component {
         <td>
           {this.equivalentOrYield(material)}
         </td>
-        {
-          permitOn(reaction) && reaction.previousVersion && <td>
-            <NewVersionModal
-              type="Sample"
-              element={material}
-              parent={reaction}
-              isPublisher={material.sealed}
-              bsSize="small"
-            />
-          </td>
-        }
         <td>
           <Button
             disabled={!permitOn(reaction)}

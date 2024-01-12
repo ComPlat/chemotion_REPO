@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip } from 'react-bootstrap';
-import { get } from 'lodash';
+import { get, isNil, isEmpty } from 'lodash';
 
 import UserStore from '../stores/UserStore';
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
@@ -14,25 +14,51 @@ const NewVersionModal = (props) => {
 
   const currentUserId = UserStore.getState().currentUser.id;
 
-  const isElementPublisher = element.publication && (
-    element.publication.published_by === currentUserId
-  );
-  const canUpdateParent = parent && parent.can_update;
+  // the props isPublisher and isLatestVersion are used in the publication interface,
+  // while isElementPublisher and isElementLatestVersion are used in the ELN detail view
+  const isElementPublisher = element.publication && get(element, 'publication.published_by') === currentUserId
+  const isElementLatestVersion = element.tag && isNil(get(element.tag, 'taggable_data.new_version'))
 
-  let isElementLatestVersion;
-  if (type == 'Analysis') {
-    isElementLatestVersion = !get(element, 'extended_metadata.new_version_id')
-  } else {
-    isElementLatestVersion = element.tag && !get(element.tag, 'taggable_data.new_version')
+  // if a publication is present in the element, we check if the review process is completed,
+  // otherwise we assume the publication is complete, since the button is on the publication interface
+  const isComplete = isNil(element.publication) || get(element.publication, 'state') === 'completed'
+
+  // init variables for the render function
+  let display = false,
+      disable = false,
+      title = <span>Create a new version of this {type.toLowerCase()}</span>,
+      tooltip = <Tooltip>Create a new version of this {type.toLowerCase()}.</Tooltip>;
+
+  switch (type) {
+    case 'Reaction':
+      display = (isPublisher || isElementPublisher) && isComplete;
+      disable = !(isLatestVersion || isElementLatestVersion);
+      if (disable) {
+        tooltip = <Tooltip>A new version of this reaction has already been created.</Tooltip>;
+      }
+      break;
+    case 'ReactionSamples':
+      display = true;
+      title = <span>Create a new versions of all samples of this reaction.</span>
+      tooltip = <Tooltip>Create a new versions of all samples of this reaction.</Tooltip>;
+      break;
+    case 'Sample':
+      const belongsToReaction = !isNil(get(element, 'tag.taggable_data.reaction_id')) || !isEmpty(element.reaction_ids);
+
+      display = (isPublisher || isElementPublisher) && isComplete;
+      disable = !(isLatestVersion || isElementLatestVersion) || belongsToReaction;
+      if (disable) {
+        tooltip = belongsToReaction
+          ? <Tooltip>This sample belongs to a reaction. Please create a new version of the reaction.</Tooltip>
+          : <Tooltip>A new version of this sample has already been created.</Tooltip>;
+      }
+      break;
+    case 'Analysis':
+      display = element.link_id && parent && parent.can_update;
+      break;
+    default:
+      break;
   }
-
-  const isPending = element.publication && element.publication.state !== 'completed';
-
-  // disable the modal button if the element is not the latest version
-  const disable = !(isLatestVersion || isElementLatestVersion)
-
-  // only display the modal button if the user is the publisher or can change the parent of the analysis
-  const display = isPublisher || isElementPublisher || (type == 'Analysis' && canUpdateParent) && !isPending
 
   const openModal = (event) => {
     event.stopPropagation();
@@ -98,10 +124,6 @@ const NewVersionModal = (props) => {
     }
   };
 
-  const tooltip = disable
-    ? <Tooltip>A new version of this {type.toLowerCase()} has already been created</Tooltip>
-    : <Tooltip>Create a new version of this {type.toLowerCase()}</Tooltip>;
-
   // fake the disabled style since otherwise the overlay would not show
   const btnClassName = className + (disable ? ' new-version-btn-disabled' : '');
 
@@ -119,7 +141,7 @@ const NewVersionModal = (props) => {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              Create a new version of this {type.toLowerCase()}
+              {title}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body style={{ overflow: 'auto' }}>
