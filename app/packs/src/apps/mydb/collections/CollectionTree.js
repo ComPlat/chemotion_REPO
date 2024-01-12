@@ -201,9 +201,9 @@ export default class CollectionTree extends React.Component {
   }
 
   subtrees(roots, label, isRemote, visible = true) {
-
+    const { currentCollection } = UIStore.getState();
     const subtrees = roots && roots.map((root, index) => {
-      return <CollectionSubtree root={root} key={index} isRemote={isRemote} />
+      return <CollectionSubtree root={root} key={index} isRemote={isRemote} currentCollection={currentCollection} />
     });
 
     let subtreesVisible = visible ? "" : "none"

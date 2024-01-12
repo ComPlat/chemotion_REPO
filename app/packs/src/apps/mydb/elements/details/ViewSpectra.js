@@ -443,7 +443,7 @@ class ViewSpectra extends React.Component {
       JSON.stringify(selectedIntegration),
       JSON.stringify(selectedMutiplicity),
       predict,
-      sample.can_update === true ? handleSubmit : this.updateROPredict,
+      handleSubmit,
       keepPred,
       waveLengthStr,
       cyclicvolta,
