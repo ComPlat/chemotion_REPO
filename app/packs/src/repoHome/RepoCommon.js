@@ -582,22 +582,6 @@ const EditorTips = () => (
   </ol>
 );
 
-const BackSoonPage = () => {
-  return (
-    <div>
-      <h1>We&rsquo;ll be back soon!</h1>
-      <h3><i className="fa fa-cog fa-spin fa-5x" /></h3>
-      <h3>
-        Sorry for the inconvenience but we&rsquo;re performing some maintenance at the moment.
-      </h3>
-      <h3>
-        If you need to you can always <a href="mailto:chemotion@ioc.kit.edu">contact us</a>, otherwise we&rsquo;ll be back online shortly!
-      </h3>
-      <h4>&mdash; ComPlat Team</h4>
-    </div>
-  );
-};
-
 const IconToMyDB = ({
   id, type, tooltipTitle = 'Link to My DB', isLogin = false, isPublished = true
 }) => {
@@ -2252,7 +2236,6 @@ export {
   AnalysesTypeJoinLabel,
   AffiliationList,
   AuthorList,
-  BackSoonPage,
   CalcDuration,
   ChemotionId,
   ClipboardCopyLink,

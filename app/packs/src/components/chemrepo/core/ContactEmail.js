@@ -21,6 +21,9 @@ ContactEmail.propTypes = {
   email: PropTypes.string,
 };
 
-ContactEmail.defaultProps = { label: 'Contact Us', email: 'chemotion-repository@lists.kit.edu' };
+ContactEmail.defaultProps = {
+  label: 'Contact Us',
+  email: 'chemotion-repository@lists.kit.edu',
+};
 
 export default ContactEmail;
