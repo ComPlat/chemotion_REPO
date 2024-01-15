@@ -113,6 +113,7 @@
 /public/directives/*
 !/public/images/directives/.keep
 !/public/images/directives/directives.html
+/public/data_type.json
 
 /uploads/*
 !/public/attachments/.keep
