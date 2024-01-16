@@ -20,10 +20,8 @@ export default class MoleculeDetails extends React.Component {
 
   render() {
     const { molecule } = this.props;
-    let details = molecule.get('details');
-    if (!details) return <span />;
+    const details = molecule.get('details').toJS();
 
-    details = details.toJS();
     const detailsList = Object.keys(details).filter(k => details[k]).map(k => (
       <li key={k}> <b>{`${pascalize(k)}: `}</b> {details[k]} </li>
     ));

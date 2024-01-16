@@ -14,11 +14,6 @@ const previewStyle = {
   width: '200px'
 };
 
-const previewStyle = {
-  background: 'white',
-  width: '200px'
-};
-
 export default class ComputedPropsGraph extends React.Component {
   constructor(props) {
     super(props);

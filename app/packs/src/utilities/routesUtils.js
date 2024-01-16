@@ -263,26 +263,6 @@ const genericElShowOrNew = (e, type) => {
   }
 };
 
-const genericElShowOrNew = (e, type) => {
-  const { collectionID } = e.params;
-  let itype = '';
-  if (typeof type === 'undefined' || typeof type === 'object' || type == null || type == '') {
-    const keystr = e.params && Object.keys(e.params).filter(k => k != 'collectionID' && k.includes('ID'));
-    itype = keystr && keystr[0] && keystr[0].slice(0,-2);
-  } else {
-    itype = type;
-  }
-
-  const genericElID = e.params[`${itype}ID`];
-  if (genericElID === 'new') {
-    ElementActions.generateEmptyGenericEl(collectionID, itype);
-  } else if (genericElID === 'copy') {
-    //
-  } else {
-    ElementActions.fetchGenericElById(genericElID, itype);
-  }
-};
-
 const elementShowOrNew = (e) => {
   const type = e.type;
   switch(type) {

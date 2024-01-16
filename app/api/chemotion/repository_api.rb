@@ -1311,6 +1311,7 @@ module Chemotion
                 else 'development'
                 end
 
+
                 { message: "Embargo #{@embargo_collection.label} has been released" }
               end
             end

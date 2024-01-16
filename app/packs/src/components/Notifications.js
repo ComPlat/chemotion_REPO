@@ -14,7 +14,7 @@ class Notifications extends Component {
   render() {
     return (
       <div>
-        <NotificationSystem key={uuid.v4()} ref={(notification) => { this.notificationSystem = notification; }} />
+        <NotificationSystem ref={(notification) => { this.notificationSystem = notification; }} />
       </div>
     );
   }

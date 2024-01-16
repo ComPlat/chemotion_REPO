@@ -33,7 +33,6 @@ export default class AdminNavigation extends React.Component {
   componentDidMount() {
     UserStore.listen(this.onChange);
     UserActions.fetchCurrentUser();
-    UserActions.fetchUnitsSystem();
   }
 
   componentWillUnmount() {

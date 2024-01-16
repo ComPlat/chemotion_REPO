@@ -20,9 +20,6 @@ import { isNmrPass, isDatasetPass } from 'src/repoHome/RepoCommon';
 import MatrixCheck from 'src/components/common/MatrixCheck';
 import SpectraEditorButton from 'src/components/common/SpectraEditorButton';
 
-import { PublishedTag } from './PublishCommon';
-import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
-
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
     &nbsp;
@@ -62,13 +59,6 @@ const qCheckMsg = (sample, container) => {
   }
   return '';
 };
-
-const isNMRKind = (container) => {
-  if (container.extended_metadata.kind) {
-    return container.extended_metadata.kind.includes('NMR');
-  }
-  return false;
-}
 
 const SpectraEditorBtn = ({
   sample, spcInfos, hasJcamp, hasChemSpectra,

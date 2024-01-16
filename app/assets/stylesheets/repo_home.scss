@@ -175,30 +175,6 @@ $bs-successcolor: #5cb85c;
   background-color: white;
 }
 
-.card-nfdi4chem {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: white;
-  > h3 {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 0px 10px;
-  }
-  > h4 {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 0px 10px;
-  }
-}
-
-.card-latest {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: white;
-}
-
 .card-well-competition {
   @extend .card-well;
   display: flex;
@@ -640,7 +616,7 @@ $bs-successcolor: #5cb85c;
         font-size: 1.8vmax;
       }
       .list {
-        font-size: larger;
+        font-size: 1vmax;
       }
     }
     .row .even {
@@ -700,7 +676,7 @@ $bs-successcolor: #5cb85c;
         font-size: 5vmin;
       }
       .tit {
-        font-size: large;
+        font-size: 1.8vmin;
       }
       .i-ext {
         font-size: 4vmin;
@@ -709,6 +685,7 @@ $bs-successcolor: #5cb85c;
     }
     .dtl .rr {
       text-align: left;
+      font-size: 1.5vmin;
       .tit {
         font-size: 14px;
         font-weight: 400;
@@ -717,7 +694,7 @@ $bs-successcolor: #5cb85c;
         }
       }
       .cnt {
-        font-size: xx-large;
+        font-size: 3vmin;
         font-weight: bolder;
       }
       .italic-desc {

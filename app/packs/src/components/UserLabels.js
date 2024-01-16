@@ -34,6 +34,7 @@ class UserLabelModal extends Component {
     this.handleEditLabelClick = this.handleEditLabelClick.bind(this);
   }
 
+
   componentDidMount() {
     UserStore.listen(this.onChange);
   }

@@ -295,34 +295,6 @@ class Molecule < ApplicationRecord
     file_path&.file? ? file_path : nil
   end
 
-  def self.svg_reprocess(svg, molfile)
-    return svg unless Rails.configuration.try(:ketcher_service).try(:url).present?
-    return svg if svg.present? && !svg&.include?('Open Babel')
-
-    svg = KetcherService::RenderSvg.svg(molfile)
-
-    if svg&.present?
-      svg = Ketcherails::SVGProcessor.new(svg)
-      svg.centered_and_scaled_svg
-    else
-      Chemotion::OpenBabelService.svg_from_molfile(molfile)
-    end
-  end
-
-  def self.svg_reprocess(svg, molfile)
-    return svg unless Rails.configuration.try(:ketcher_service).try(:url).present?
-    return svg if svg.present? && !svg&.include?('Open Babel')
-
-    svg = KetcherService::RenderSvg.svg(molfile)
-
-    if svg&.present?
-      svg = Ketcherails::SVGProcessor.new(svg)
-      svg.centered_and_scaled_svg
-    else
-      Chemotion::OpenBabelService.svg_from_molfile(molfile)
-    end
-  end
-
 private
 
   # TODO: check that molecules are OK and remove this method. fix is in editor
