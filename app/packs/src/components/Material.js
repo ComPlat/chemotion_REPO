@@ -6,7 +6,6 @@ import { compose } from 'redux';
 import DragDropItemTypes from './DragDropItemTypes';
 import NumeralInputWithUnitsCompo from './NumeralInputWithUnitsCompo';
 import SampleName from './common/SampleName';
-import NewVersionModal from './chemrepo/NewVersionModal';
 import ElementActions from './actions/ElementActions';
 import { UrlSilentNavigation, SampleCode } from './utils/ElementUtils';
 import { correctPrefix, validDigit } from './utils/MathUtils';

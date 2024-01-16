@@ -7,20 +7,51 @@ import ElementActions from '../actions/ElementActions';
 import DetailActions from '../actions/DetailActions';
 import UIActions from '../actions/UIActions';
 
+import ElementStore from '../stores/ElementStore';
 import UserStore from '../stores/UserStore';
+
 import RepositoryFetcher from '../fetchers/RepositoryFetcher';
 
 const NewVersionModal = (props) => {
+  // this component is used in several other components to create new version of
+  // already published elements/containers. it is easy to loose track, so they are listed here:
+  //
+  // app/packs/src/components/SampleDetails.js
+  //   create new sample version
+  //
+  // app/packs/src/components/ReactionDetails.js
+  //   create new reaction version
+  //
+  // app/packs/src/components/ReactionDetailsScheme.js
+  //   create new samples for a new reaction version
+  //
+  // app/packs/src/components/SampleDetailsContainersAux.js
+  //   create new analysis version for a new sample version
+  //
+  // app/packs/src/components/ReactionDetailsContainers.js
+  //   create new analysis version for a new reaction version
+  //
+  // app/packs/src/libHome/RepoSample.js
+  //   create new sample version from publication view
+  //
+  // app/packs/src/libHome/RepoReactionDetails.js
+  //   create new reaction version from publication view
+  //
+  // Since the different "parent" components use different API endpoints, this component
+  // needs to use different props and attributes of element to determine if it should be
+  // displayed, disabled, or which tooltip is displayed.
+
   const {
     type, element, parent, className, bsSize, isPublisher, isLatestVersion, schemeOnly
   } = props;
   const [modalShow, setModalShow] = useState(false);
 
-  const currentUserId = UserStore.getState().currentUser.id;
+  const currentUser = UserStore.getState().currentUser;
+  const currentElement = ElementStore.getState().currentElement;
 
   // the props isPublisher and isLatestVersion are used in the publication interface,
   // while isElementPublisher and isElementLatestVersion are used in the ELN detail view
-  const isElementPublisher = element.publication && get(element, 'publication.published_by') === currentUserId;
+  const isElementPublisher = element.publication && get(element, 'publication.published_by') === currentUser.id;
   const isElementLatestVersion = element.tag && isNil(get(element.tag, 'taggable_data.new_version'));
 
   // if a publication is present in the element, we check if the review process is completed,
@@ -39,24 +70,32 @@ const NewVersionModal = (props) => {
   switch (type) {
     case 'Reaction':
       display = (isPublisher || isElementPublisher) && isComplete;
-      disable = !(isLatestVersion || isElementLatestVersion);
+      disable = !(isLatestVersion || isElementLatestVersion) || element.changed;
       if (disable) {
-        tooltip = <Tooltip>A new version of this reaction has already been created.</Tooltip>;
+        tooltip = element.changed
+          ? <Tooltip>A new version cannot be created from an unsaved reaction.</Tooltip>
+          : <Tooltip>A new version of this reaction has already been created.</Tooltip>;
       }
       break;
     case 'ReactionSamples':
       display = true;
+      disable = element.changed;
       title = <span>Create a new versions of all samples of this reaction.</span>
-      tooltip = <Tooltip>Create a new versions of all samples of this reaction.</Tooltip>;
+      if (disable) {
+        tooltip = <Tooltip>A new versions cannot be created from an unsaved reaction.</Tooltip>;
+      }
       break;
     case 'Sample':
       display = (isPublisher || isElementPublisher) && isComplete;
-      disable = !(isLatestVersion || isElementLatestVersion) || belongsToReaction;
+      disable = !(isLatestVersion || isElementLatestVersion) || belongsToReaction || element.changed;
       if (disable) {
-        tooltip = belongsToReaction
-          // eslint-disable-next-line max-len
-          ? <Tooltip>This sample belongs to a reaction. Please create a new version of the reaction.</Tooltip>
-          : <Tooltip>A new version of this sample has already been created.</Tooltip>;
+        if (belongsToReaction) {
+          tooltip = <Tooltip>This sample belongs to a reaction. Please create a new version of the reaction.</Tooltip>;
+        } else if (element.changed) {
+          tooltip = <Tooltip>A new version cannot be created from an unsaved sample.</Tooltip>;
+        } else {
+          tooltip = <Tooltip>A new version of this sample has already been created.</Tooltip>;
+        }
       }
       break;
     case 'Analysis':
@@ -77,52 +116,64 @@ const NewVersionModal = (props) => {
     setModalShow(false);
   };
 
-  const redirectAfterSubmit = (newElement) => {
+  const getNewVersionCollection = (newElement) => {
     const collection = newElement.tag.taggable_data.collection_labels
       .find(c => c.user_id === currentUserId);
 
     // this is a bit hacky but I don't know how to find the collection in the state
     collection.is_sync_to_me = true;
 
-    if (window.location.pathname.startsWith('/mydb/')) {
-      // eslint-disable-next-line no-undef
-      UIActions.selectSyncCollection(collection);
-      ElementActions.setCurrentElement(newElement);
-      DetailActions.close(element);
-    } else {
-      window.location = `/mydb/scollection/${collection.id}/${newElement.type}/${newElement.id}`;
-    }
-  };
+    return collection;
+  }
 
   const handleSubmit = (event) => {
     event.stopPropagation();
+
+    let promise;
     switch (type) {
       case 'Reaction':
         if (schemeOnly) {
-          RepositoryFetcher.createNewReactionSchemeVersion({ reactionId: element.id })
-            .then((reaction) => {
-              setModalShow(false);
-              redirectAfterSubmit(reaction);
-            });
+          promise = RepositoryFetcher.createNewReactionSchemeVersion({ reactionId: element.id })
         } else {
-          RepositoryFetcher.createNewReactionVersion({ reactionId: element.id })
-            .then((reaction) => {
-              setModalShow(false);
-              redirectAfterSubmit(reaction);
-            });
+          promise = RepositoryFetcher.createNewReactionVersion({ reactionId: element.id })
         }
+        promise.then((reaction) => {
+            setModalShow(false);
+
+            const collection = getNewVersionCollection(reaction);
+
+            if (window.location.pathname.startsWith('/mydb/')) {
+              UIActions.selectSyncCollection(collection);
+              DetailActions.close(element);
+              ElementActions.fetchReactionById(reaction.id);
+            } else {
+              window.location = `/mydb/scollection/${collection.id}/reaction/${reaction.id}`;
+            }
+          });
         break;
       case 'ReactionSamples':
         RepositoryFetcher.createNewReactionSamplesVersion({ reactionId: element.id })
           .then((reaction) => {
             setModalShow(false);
+
+            DetailActions.close(element);
+            ElementActions.fetchReactionById(reaction.id);
           });
         break;
       case 'Sample':
         RepositoryFetcher.createNewSampleVersion({ sampleId: element.id })
           .then((sample) => {
             setModalShow(false);
-            redirectAfterSubmit(sample);
+
+            const collection = getNewVersionCollection(sample);
+
+            if (window.location.pathname.startsWith('/mydb/')) {
+              UIActions.selectSyncCollection(collection);
+              DetailActions.close(element);
+              ElementActions.fetchSampleById(sample.id);
+            } else {
+              window.location = `/mydb/scollection/${collection.id}/sample/${sample.id}`;
+            }
           });
         break;
       case 'Analysis':
@@ -131,8 +182,16 @@ const NewVersionModal = (props) => {
           linkId: element.link_id,
           parentType: parent.type,
           parentId: parent.id
-        }).then((sampleOrReaction) => {
+        }).then((analysis) => {
           setModalShow(false);
+
+          DetailActions.close(currentElement);
+
+          if (currentElement.type == 'sample') {
+            ElementActions.fetchSampleById(currentElement.id);
+          } else if (currentElement.type == 'reaction') {
+            ElementActions.fetchReactionById(currentElement.id);
+          }
         });
         break;
       default:
