@@ -761,7 +761,6 @@ describe Chemotion::CollectionAPI do
 
         it 'responds with 401 status code' do
           status = post '/api/v1/collections/imports', params: file_upload
-<<<<<<< HEAD
           expect(response.status).to eq(401)
         end
       end
@@ -802,8 +801,6 @@ describe Chemotion::CollectionAPI do
 
         it 'with a valid collection id, but without existing metadata' do
           post '/api/v1/collections/%s/metadata' % c1.id, params: post_params
-=======
->>>>>>> Repo update (#45)
           expect(response.status).to eq(401)
         end
       end

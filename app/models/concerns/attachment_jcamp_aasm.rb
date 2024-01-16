@@ -74,22 +74,6 @@ module AttachmentJcampAasm
         transitions from: %i[idle peaked edited non_jcamp queueing regenerating], to: :nmrium
       end
 
-      event :set_csv do
-        transitions from: %i[idle peaked non_jcamp], to: :csv
-      end
-
-      event :set_nmrium do
-        transitions from: %i[idle peaked edited non_jcamp queueing regenerating], to: :nmrium
-      end
-
-      event :set_csv do
-        transitions from: %i[idle peaked non_jcamp], to: :csv
-      end
-
-      event :set_nmrium do
-        transitions from: %i[idle peaked edited non_jcamp queueing regenerating], to: :nmrium
-      end
-
       event :set_failure do
         transitions from: %i[idle queueing regenerating failure nmrium], to: :failure
       end
@@ -207,14 +191,6 @@ module AttachmentJcampProcess
       new_csv_tmp.rewind
       generate_att(new_csv_tmp, addon, to_edit, 'csv')
     end
-  end
-
-  def generate_nmrium_att(nmrium_tmp, addon, to_edit = false)
-    generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
-  end
-
-  def generate_nmrium_att(nmrium_tmp, addon, to_edit = false)
-    generate_att(nmrium_tmp, addon, to_edit, 'nmrium')
   end
 
   def generate_nmrium_att(nmrium_tmp, addon, to_edit = false)

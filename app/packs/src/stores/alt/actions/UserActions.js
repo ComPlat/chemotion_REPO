@@ -140,18 +140,6 @@ class UserActions {
     };
   }
 
-  fetchUnitsSystem() {
-    return (dispatch) => {
-      fetch('/units_system/units_system.json', {
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { 'cache-control': 'no-cache' }
-      }).then(response => response.json()).then(json => dispatch(json)).catch((errorMessage) => {
-        console.log(errorMessage);
-      });
-    }
-  }
-
   fetchOmniauthProviders() {
     return (dispatch) => {
       UsersFetcher.fetchOmniauthProviders()

@@ -41,19 +41,14 @@ export default class ReactionDetails extends React.Component {
       return acc.concat(keyList);
     }, []);
 
-    const detailsList = [
-      'reactants', 'reagents', 'solvents', 'products'
-    ].reduce((acc, group) => {
-      const groupMol = this.props[group];
+    const detailsList = ['reactants', 'reagents', 'products'].reduce((acc, group) => {
+      const groupMol = reaction.get(group);
       if (!groupMol || groupMol.size === 0) return acc;
 
       const keyList = groupMol.reduce((mAcc, m, idx) => {
-        let mDetails = m.get('details');
-        if (!mDetails) return mAcc;
-
-        mDetails = mDetails.toJS();
-        const mDetailEls = Object.keys(mDetails).filter(k => mDetails[k]).map(k => (
-          <li key={k}> <b>{`${pascalize(k)}: `}</b> {mDetails[k]} </li>
+        const mDetail = m.get('details').toJS();
+        const mDetailEls = Object.keys(mDetail).filter(k => mDetail[k]).map(k => (
+          <li key={k}> <b>{`${pascalize(k)}: `}</b> {mDetail[k]} </li>
         ));
         if (mDetailEls.length === 0) return mAcc;
 

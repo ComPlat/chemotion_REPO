@@ -17,8 +17,6 @@ import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 
 import TextTemplateActions from 'src/stores/alt/actions/TextTemplateActions';
 
-import TextTemplateActions from '../actions/TextTemplateActions';
-
 const SpectraEditorBtn = ({
   element, spcInfos, hasJcamp, hasChemSpectra,
   toggleSpectraModal, confirmRegenerate,

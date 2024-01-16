@@ -27,34 +27,6 @@ module Chemotion
         end
       end
 
-      namespace :all_as_tree do
-        desc "Return the 'All' collection of the current user"
-        get do
-          current_user.collections.arrange_serializable do |parent, children|
-            {
-              title: parent.label,
-              value: parent.id,
-              key: parent.id,
-              children: children
-            }
-          end
-        end
-      end
-
-      namespace :all_as_tree do
-        desc "Return the 'All' collection of the current user"
-        get do
-          current_user.collections.arrange_serializable do |parent, children|
-            {
-              title: parent.label,
-              value: parent.id,
-              key: parent.id,
-              children: children
-            }
-          end
-        end
-      end
-
       desc "Return collection by id"
       params do
         requires :id, type: Integer, desc: "Collection id"
@@ -350,6 +322,7 @@ module Chemotion
             ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
             ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
             next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
+
             collections_element_klass = ('collections_' + element).classify.constantize
             element_klass = element.classify.constantize
             ids = element_klass.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)

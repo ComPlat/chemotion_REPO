@@ -155,27 +155,4 @@ module CollectionHelpers
       researchplan_detail_level: 0
     }
   end
-
-  def check_params_collection_id
-    params[:collection_id] = case params[:collection_id]
-                             when 'public'
-                               Collection.public_collection_id
-                             when 'schemeOnly'
-                               Collection.scheme_only_reactions_collection_id
-                             else
-                               params[:collection_id]
-                             end
-  end
-
-  def set_var_for_unsigned_user
-    params[:is_sync] = false
-    @dl = {
-      permission_level: 0,
-      sample_detail_level: 10,
-      reaction_detail_level: 10,
-      wellplate_detail_level: 0,
-      screen_detail_level: 0,
-      researchplan_detail_level: 0
-    }
-  end
 end

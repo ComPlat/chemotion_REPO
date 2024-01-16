@@ -584,7 +584,6 @@ class Material extends Component {
             disabled={!permitOn(reaction)}
             bsStyle="danger"
             bsSize="small"
-            disabled={this.props.reaction.is_published == true}
             onClick={() => deleteMaterial(material)}
           >
             <i className="fa fa-trash-o" />
@@ -664,7 +663,6 @@ class Material extends Component {
                 <Button
                   disabled={!permitOn(reaction)}
                   active
-                  disabled={this.props.reaction.is_published == true}
                   onClick={e => this.handleExternalLabelCompleted(e)}
                   bsSize="small"
                 ><i className="fa fa-refresh" /></Button>
@@ -690,7 +688,6 @@ class Material extends Component {
             disabled={!permitOn(reaction)}
             bsStyle="danger"
             bsSize="small"
-            disabled={this.props.reaction.is_published == true}
             onClick={() => deleteMaterial(material)}
           ><i className="fa fa-trash-o" /></Button>
         </td>

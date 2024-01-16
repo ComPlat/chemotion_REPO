@@ -56,33 +56,43 @@ export default class CollaboratorFetcher {
   static deleteCollaboration(params) {
     return fetch('/api/v1/collaborators/delete', {
       credentials: 'same-origin',
-      method: 'PUT',
+      method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(params)
-    }).then(response => response.json()).then(json => json).catch((errorMessage) => {
-      console.log(errorMessage);
-    });
-    return promise;
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 
   static deleteCollaboratorAff(params) {
     return fetch('/api/v1/collaborators/delete_aff', {
       credentials: 'same-origin',
-      method: 'PUT',
-    });
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 
   static refreshOrcidAff(params) {
     return fetch('/api/v1/collaborators/refresh_orcid_aff', {
       credentials: 'same-origin',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' }
-    }).then(response => response.json()).then(json => json).catch((errorMessage) => {
-      console.log(errorMessage);
-    });
-    return promise;
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 
 

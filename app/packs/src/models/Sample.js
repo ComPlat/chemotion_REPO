@@ -927,10 +927,6 @@ export default class Sample extends Element {
     return this.name || this.molecule_formula || this.molecule.iupac_name;
   }
 
-  get labelText() {
-    return this.name || this.molecule_formula || this.molecule.iupac_name;
-  }
-
   set equivalent(equivalent) {
     this._equivalent = equivalent;
   }
@@ -1067,82 +1063,6 @@ export default class Sample extends Element {
       tmpSolvents[filteredIndex] = solventToUpdate;
     }
     this.solvent = tmpSolvents;
-  }
-
-  analysisArray() {
-    const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
-    return analyses ? analyses.children : [];
-  }
-
-  get solvent() {
-    try {
-      //handle the old solvent data
-      const jsonSolvent = JSON.parse(this._solvent)
-      let solv = []
-      if (jsonSolvent) {
-        solv.push(jsonSolvent)
-      }
-      return solv
-    }
-    catch (e) {}
-    return this._solvent
-  }
-
-  set solvent(solvent) {
-    this._solvent = solvent
-  }
-
-  addSolvent(newSolvent) {
-    const molecule = newSolvent.molecule
-    if (molecule) {
-      let tmpSolvents = []
-      if (this.solvent) {
-        Object.assign(tmpSolvents, this.solvent)
-      }
-      const solventData = { label: molecule.iupac_name, smiles: molecule.cano_smiles, inchikey: molecule.inchikey, ratio: 1 }
-      const filtered = tmpSolvents.find((solv) => {
-        return (solv && solv.label === solventData.label &&
-          solv.smiles === solventData.smiles &&
-          solv.inchikey && solventData.inchikey)
-      })
-      if (!filtered) {
-        tmpSolvents.push(solventData)
-      }
-      this.solvent = tmpSolvents
-    }
-  }
-
-  deleteSolvent(solventToDelete) {
-    let tmpSolvents = []
-    if (this.solvent) {
-      Object.assign(tmpSolvents, this.solvent)
-    }
-
-    const filteredIndex = tmpSolvents.findIndex((solv) => {
-      return (solv.label === solventToDelete.label &&
-        solv.smiles === solventToDelete.smiles &&
-        solv.inchikey === solventToDelete.inchikey)
-    })
-    if (filteredIndex >= 0) {
-      tmpSolvents.splice(filteredIndex, 1);
-    }
-    this.solvent = tmpSolvents
-  }
-
-  updateSolvent(solventToUpdate) {
-    let tmpSolvents = []
-    if (this.solvent) {
-      Object.assign(tmpSolvents, this.solvent)
-    }
-
-    const filteredIndex = tmpSolvents.findIndex((solv) => {
-      return (solv.smiles === solventToUpdate.smiles &&
-        solv.inchikey && solventToUpdate.inchikey)
-    })
-    if (filteredIndex >= 0) {
-      tmpSolvents[filteredIndex] = solventToUpdate
-    }
-    this.solvent = tmpSolvents
   }
 
   analysisArray() {

@@ -52,17 +52,9 @@ describe Chemotion::LiteratureAPI do
     end
   end
 
-<<<<<<< HEAD
   describe 'POST /api/v1/literatures' do
     context 'with valid parameters' do
       before { post '/api/v1/literatures', params: params }
-=======
-    describe 'GET /api/v1/literatures' do
-      context 'with valid parameters' do
-        before do
-          get '/api/v1/literatures', params: { element_id: r1.id, element_type: 'reaction' }
-        end
->>>>>>> Repo update (#45)
 
       it 'responds 201' do
         expect(response).to have_http_status :created
@@ -79,7 +71,6 @@ describe Chemotion::LiteratureAPI do
     end
   end
 
-<<<<<<< HEAD
   describe 'DELETE /api/v1/literatures' do
     let!(:element_id) { -1 }
     let(:params) do
@@ -89,11 +80,6 @@ describe Chemotion::LiteratureAPI do
         id: literal.id,
       }
     end
-=======
-    describe 'POST /api/v1/literatures' do
-      context 'with valid parameters' do
-        before { post '/api/v1/literatures', params: params }
->>>>>>> Repo update (#45)
 
     context 'with valid parameter' do
       let!(:literal)    { create(:literal, literature: l1, element: r1, user: user) }

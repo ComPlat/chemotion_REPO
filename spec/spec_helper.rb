@@ -6,21 +6,12 @@ require 'rspec/repeat'
 require 'webmock/rspec'
 
 require 'factory_bot_rails'
-<<<<<<< HEAD
 require 'faker'
-=======
->>>>>>> Repo update (#45)
 require 'capybara'
 require 'webdrivers'
 # require 'capybara/rspec'
 require 'rails_helper'
 
-<<<<<<< HEAD
-=======
-
-Webdrivers.logger.level = :DEBUG
-
->>>>>>> Repo update (#45)
 Capybara.register_driver :selenium do |app|
   http_client = Selenium::WebDriver::Remote::Http::Default.new(
     open_timeout: nil,
@@ -58,7 +49,6 @@ hostname = 'http://pubchem.ncbi.nlm.nih.gov'
 inchi_path = '/rest/pug/compound/inchikey/'
 
 RSpec.configure do |config|
-<<<<<<< HEAD
   config.after do |example|
     if example.metadata[:type] == :feature && example.exception.present?
       metadata = example.metadata
@@ -66,9 +56,6 @@ RSpec.configure do |config|
       save_screenshot(filename)
     end
   end
-=======
-  config.example_status_persistence_file_path = "spec/examples.txt"
->>>>>>> Repo update (#45)
 
   config.include FactoryBot::Syntax::Methods
 
@@ -104,19 +91,11 @@ RSpec.configure do |config|
     stub_request(:get, 'http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/YMWUJEATGCHHMB-UHFFFAOYSA-N/record/JSON')
       .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'text/json' })
       .to_return(status: 200, body: '', headers: {})
-<<<<<<< HEAD
 
     stub_request(:get, 'http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/UHOVQNZJYSORNB-UHFFFAOYSA-N/record/JSON')
       .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'text/json' })
       .to_return(status: 200, body: '', headers: {})
 
-=======
-    
-    stub_request(:get, 'http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/UHOVQNZJYSORNB-UHFFFAOYSA-N/record/JSON')
-      .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'text/json' })
-      .to_return(status: 200, body: '', headers: {})
-      
->>>>>>> Repo update (#45)
     stub_request(:get, 'http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/PNNRZXFUPQQZSO-UHFFFAOYSA-N/record/JSON')
       .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'text/json' })
       .to_return(status: 200, body: '', headers: {})
