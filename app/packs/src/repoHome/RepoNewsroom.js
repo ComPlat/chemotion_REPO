@@ -26,7 +26,7 @@ const renderEditRead = (article, isEditor) => {
 
 
 const mainImage = (article) => {
-  let imageUrl = '/images/chemnews.png';
+  let imageUrl = '/images/repo/news_cover.png';
   if (typeof (article) !== 'undefined' && article
    && typeof (article.cover_image) !== 'undefined' && article.cover_image) {
     imageUrl = `/newsroom/${article.cover_image}`;

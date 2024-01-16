@@ -31,7 +31,7 @@ export default class RepoNewsReader extends Component {
   }
 
   coverImage() {
-    let imageUrl = '/images/chemnews.png';
+    let imageUrl = '/images/repo/news_cover.png';
     const { news } = this.state;
     if (typeof (news) !== 'undefined' && news &&
       typeof (news.cover_image) !== 'undefined' && news.cover_image) {
@@ -60,7 +60,7 @@ export default class RepoNewsReader extends Component {
           <Col md={2} />
           <Col md={8} sm={12}>
             <div className="chemotion_news">
-              <img alt="Chemotion-Repository" src="/images/logo.png" style={{ width: '50px', height: 'auto', marginTop: '-10px' }} />
+              <img alt="Chemotion-Repository" src="/images/repo/Chemotion-V1.png" style={{ width: '180px', height: 'auto', marginTop: '-10px' }} />
               &nbsp;Chemotion&nbsp;News
             </div>
           </Col>
