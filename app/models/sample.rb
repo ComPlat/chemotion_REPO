@@ -77,6 +77,8 @@ class Sample < ApplicationRecord
     :molecule_iupac_name, :molecule_inchistring, :molecule_inchikey, :molecule_cano_smiles
   ]
 
+  attr_accessor :previous_version
+
   # search scopes for exact matching
   pg_search_scope :search_by_sum_formula,  against: :sum_formula, associated_against: {
     molecule: :sum_formular
@@ -172,6 +174,8 @@ class Sample < ApplicationRecord
   after_create :create_root_container
   after_save :update_data_for_reactions
 
+  before_destroy :remove_from_previous_version
+
   has_many :collections_samples, inverse_of: :sample, dependent: :destroy
   has_many :collections, through: :collections_samples
 
@@ -259,6 +263,10 @@ class Sample < ApplicationRecord
 
   def analyses
     self.container ? self.container.analyses : Container.none
+  end
+
+  def links
+    self.container ? self.container.links : Container.none
   end
 
   #TODO move to molecule (chemotion_ELN)
@@ -572,20 +580,24 @@ private
   end
 
   def auto_set_short_label
-    sh_label = self['short_label']
-    return if sh_label =~ /solvents?|reactants?/
-    return if short_label && !short_label_changed?
+    unless self.previous_version.present?
+      sh_label = self['short_label']
+      return if sh_label =~ /solvents?|reactants?/
+      return if short_label && !short_label_changed?
 
-    if sh_label && Sample.find_by(short_label: sh_label)
-      if parent && !((parent_label = parent.short_label) =~ /solvents?|reactants?/)
-        self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
-      elsif creator && creator.counters['samples']
+      if sh_label && Sample.find_by(short_label: sh_label)
+        if parent && !((parent_label = parent.short_label) =~ /solvents?|reactants?/)
+          self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
+        elsif creator && creator.counters['samples']
+          abbr = self.creator.name_abbreviation
+          self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
+        end
+      elsif !sh_label && creator && creator.counters['samples']
         abbr = self.creator.name_abbreviation
         self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
       end
-    elsif !sh_label && creator && creator.counters['samples']
-      abbr = self.creator.name_abbreviation
-      self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
+    else
+      self.short_label = get_new_version_short_label
     end
   end
 
@@ -635,5 +647,13 @@ private
 
   def has_density
     density.present? && density.positive? && (!molarity_value.present? || molarity_value.zero?)
+  end
+
+  def remove_from_previous_version
+    previous_version = self.tag&.taggable_data['previous_version']
+      if previous_version
+        previous_element = Sample.find_by(id: previous_version['id'])
+        previous_element.untag_as_previous_version
+      end
   end
 end

@@ -23,31 +23,54 @@ class ContainerSerializer < ActiveModel::Serializer
 
   def get_attachment_ids(arr, containers)
     containers.map do |container, subcontainers|
-      arr.push(container.id)
-      get_attachment_ids(arr, subcontainers)
+      if container.container_type == 'link'
+        target_container = Container.find(container.extended_metadata['target_id'])
+        target_subcontainers = target_container.hash_tree[target_container]
+        get_attachment_ids(arr, target_subcontainers)
+      else
+        arr.push(container.id)
+        get_attachment_ids(arr, subcontainers)
+      end
     end
   end
 
   def json_tree(attachments, containers)
     containers.map do |container, subcontainers|
-      current_attachments = attachments.select do |att|
-        att.content_type = att.content_type || MimeMagic.by_path(att.filename)&.type
-        att.for_container? && att.attachable_id == container.id
+      if container.container_type == 'link'
+        get_link(attachments, container)
+      else
+        get_analysis(attachments, container, subcontainers)
       end
-      j_s = {
-        id: container.id,
-        name: container.name,
-        attachments: current_attachments,
-        children: json_tree(attachments, subcontainers).compact,
-        description: container.description,
-        container_type: container.container_type,
-        extended_metadata: get_extended_metadata(container),
-        preview_img: preview_img(container)
-      }
-      gds = Dataset.find_by(element_type: 'Container', element_id: container.id)
-      j_s['dataset'] = Entities::DatasetEntity.represent(gds) if gds.present?
-      j_s
     end
+  end
+
+  def get_link(attachments, container)
+    target_container = Container.find(container.extended_metadata['target_id'])
+    target_subcontainers = target_container.hash_tree[target_container]
+    link = get_analysis(attachments, target_container, target_subcontainers)
+    link['link_id'] = container.id
+    link
+  end
+
+  def get_analysis(attachments, container, subcontainers)
+    current_attachments = attachments.select do |att|
+      att.content_type = att.content_type || MimeMagic.by_path(att.filename)&.type
+      att.for_container? && att.attachable_id == container.id
+    end
+
+    j_s = {
+      id: container.id,
+      name: container.name,
+      attachments: current_attachments,
+      children: json_tree(attachments, subcontainers).compact,
+      description: container.description,
+      container_type: container.container_type,
+      extended_metadata: get_extended_metadata(container),
+      preview_img: preview_img(container)
+    }
+    gds = Dataset.find_by(element_type: 'Container', element_id: container.id)
+    j_s['dataset'] = Entities::DatasetEntity.represent(gds) if gds.present?
+    j_s
   end
 
   def get_extended_metadata(container)

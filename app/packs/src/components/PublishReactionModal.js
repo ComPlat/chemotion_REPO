@@ -12,7 +12,7 @@ import {
   Grid,
   ControlLabel
 } from 'react-bootstrap';
-import { head, filter, findIndex, flatten, sortedUniq } from 'lodash';
+import { head, filter, findIndex, flatten, sortedUniq, get, isUndefined } from 'lodash';
 import Select from 'react-select';
 import Immutable from 'immutable';
 import { validateYield } from './PublishCommon';
@@ -71,13 +71,18 @@ export default class PublishReactionModal extends Component {
       sortedIds: [],
       selectedEmbargo: '-1',
       selectedLicense: 'CC BY',
+      disableLicense: false,
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noSolvent: false,
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
-      publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
+      publishType: {
+        options: Object.values(publishOptions),
+        selected: publishOptions.f,
+        disabled: false
+      }
     };
 
     this.onUserChange = this.onUserChange.bind(this);
@@ -112,10 +117,25 @@ export default class PublishReactionModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_version.license');
+    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_version.scheme_only');
+
+    const publishType = { ...this.state.publishType };
+    if (previousSchemeOnly === true) {
+      publishType.selected = publishOptions.s;
+      publishType.disabled = true;
+    } else if (previousSchemeOnly === false) {
+      publishType.selected = publishOptions.f;
+      publishType.disabled = true;
+    }
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
+      publishType
     });
   }
 
@@ -349,11 +369,11 @@ export default class PublishReactionModal extends Component {
 
   handlePublishReaction() {
     const {
-      selectedLicense, cc0Consent, publishType, selectedUsers
+      selectedLicense, disableLicense, cc0Consent, publishType, selectedUsers
     } = this.state;
     const authorCount = selectedUsers && selectedUsers.length;
 
-    if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
+    if (selectedLicense === 'CC0' && !disableLicense && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
       alert('Please check the license section before sending your data.');
       return true;
     }
@@ -691,7 +711,7 @@ export default class PublishReactionModal extends Component {
 
     if (show) {
       const analysesView = [];
-      const analysesReaction = head(filter(reaction.container.children, o => o.container_type === 'analyses')).children;
+      const analysesReaction = reaction.container ? head(filter(reaction.container.children, o => o.container_type === 'analyses')).children : [];
 
       selectedAnalysesCount = (analysesReaction || []).filter(a =>
         (a.extended_metadata && (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')) && a.extended_metadata.kind)).length;
@@ -739,7 +759,7 @@ export default class PublishReactionModal extends Component {
       });
 
       const {
-        selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
+        selectedEmbargo, selectedLicense, disableLicense, cc0Consent, noEmbargo
       } = this.state;
 
       const publishTypeAs = {
@@ -796,6 +816,7 @@ export default class PublishReactionModal extends Component {
                 selectedValue={selectedEmbargo}
                 onEmbargoChange={this.handleEmbargoChange}
                 selectedLicense={selectedLicense}
+                disableLicense={disableLicense}
                 onLicenseChange={this.handleLicenseChange}
                 onCC0ConsentChange={this.handleCC0ConsentChange}
                 cc0Deed={cc0Consent}

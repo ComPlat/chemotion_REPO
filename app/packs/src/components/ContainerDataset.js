@@ -461,8 +461,11 @@ export default class ContainerDataset extends Component {
           <label>Attachments: </label>
           {this.dropzone()}
           {this.attachments()}
-          <HyperLinksSection data={dataset_container.extended_metadata['hyperlinks']} onAddLink={this.handleAddLink} onRemoveLink={this.handleRemoveLink}
-          disabled={disabled}></HyperLinksSection>
+          <HyperLinksSection
+            data={dataset_container.extended_metadata['hyperlinks']}
+            onAddLink={this.handleAddLink}
+            onRemoveLink={this.handleRemoveLink}
+            disabled={readOnly || disabled} />
         </Col>
       </Row>
     );

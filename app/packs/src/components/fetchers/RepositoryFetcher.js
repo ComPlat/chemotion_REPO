@@ -1,4 +1,6 @@
 import 'whatwg-fetch';
+import { isUndefined } from 'lodash';
+
 import Sample from '../models/Sample';
 import Reaction from '../models/Reaction';
 import NotificationActions from '../actions/NotificationActions';
@@ -6,7 +8,9 @@ import NotificationActions from '../actions/NotificationActions';
 const AnalysisIdstoPublish = element => (
   element.analysisArray()
     .filter(a => (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')))
-    .map(x => x.id)
+    .map(container => {
+      return container.link_id ? container.link_id : container.id;
+    })
 );
 
 export default class RepositoryFetcher {
@@ -178,7 +182,160 @@ export default class RepositoryFetcher {
     });
   }
 
+  static createNewSampleVersion(params) {
+    return fetch(`/api/v1/repository/createNewSampleVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new sample version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_sample_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Sample(json.sample);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
 
+  static createNewReactionVersion(params) {
+    return fetch(`/api/v1/repository/createNewReactionVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new reaction version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_reaction_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
+  static createNewReactionSamplesVersion(params) {
+    return fetch(`/api/v1/repository/createNewReactionSamplesVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new reaction samples version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_reaction_samples_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
+  static createNewReactionSchemeVersion(params) {
+    return fetch(`/api/v1/repository/createNewReactionSchemeVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new reaction scheme version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_reaction_scheme_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+      return new Reaction(json.reaction);
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
+
+  static createNewAnalysisVersion(params) {
+    return fetch(`/api/v1/repository/createAnalysisVersion/`, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then((response) => {
+      return response.json()
+    }).then((json) => {
+      if (json.error) {
+        const notification = {
+          title: 'Create new analysis version fail',
+          message: `Error: ${json.error}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'create_new_analysis_version_error'};
+        NotificationActions.add(notification);
+        return null;
+      }
+
+      if (!isUndefined(json.sample)) {
+        return new Sample(json.sample);
+      } else if (!isUndefined(json.reaction)) {
+        return new Reaction(json.reaction);
+      }
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+  }
 
   static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
     const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';

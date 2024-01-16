@@ -166,7 +166,7 @@ module ReactionHelpers
 
             included_sample_ids << existing_sample.id
 
-            existing_association = ReactionsSample.find_by(sample_id: sample.id)
+            existing_association = ReactionsSample.find_by(reaction_id: reaction.id, sample_id: sample.id)
 
             # update existing associations
             if existing_association

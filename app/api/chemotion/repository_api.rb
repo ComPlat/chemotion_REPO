@@ -71,6 +71,32 @@ module Chemotion
           end
         end
 
+        def link_analyses(new_element, analyses_arr)
+          unless new_element.container
+            Container.create_root_container(containable: new_element)
+            new_element.reload
+          end
+          analyses = Container.analyses_container(new_element.container.id).first
+
+          analyses_arr&.each do |analysis|
+            analysis_link = analyses.children.create(
+              name: analysis.name,
+              container_type: 'link',
+              description: analysis.description
+            )
+
+            if analysis.container_type == 'link'
+              analysis_link.extended_metadata = analysis.extended_metadata
+            else
+              analysis_link.extended_metadata = {
+                target_id: analysis.id,
+                target_type: analysis.container_type,
+              }
+            end
+            analysis_link.save!
+          end
+        end
+
         def reviewer_collections
           c = current_user.pending_collection
           User.reviewer_ids.each do |rev_id|
@@ -123,7 +149,85 @@ module Chemotion
           new_sample.analyses.each do |ana|
             Publication.find_by(element: ana).update(parent: pub)
           end
+          new_sample.update_tag!(analyses_tag: true)
           new_sample
+        end
+
+        def create_new_sample_version(sample = @sample)
+          new_sample = sample.dup
+          new_sample.previous_version = sample
+          new_sample.collections << current_user.versions_collection
+          new_sample.save!
+          new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
+          unless @literals.nil?
+            lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
+            duplicate_literals(new_sample, lits)
+          end
+
+          analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
+          link_analyses(new_sample, analyses)
+
+          new_sample.update_tag!(analyses_tag: true)
+
+          new_sample.tag_as_new_version(sample)
+          sample.tag_as_previous_version(new_sample)
+
+          new_sample
+        end
+
+        def submit_new_sample_version(sample = @sample, parent_publication_id = nil)
+          sample.collections.clear
+          sample.collections << current_user.pending_collection
+          sample.collections << Collection.element_to_review_collection
+          sample.collections << @embargo_collection unless @embargo_collection.nil?
+          sample.save!
+
+          if sample.analyses.or(sample.links).present?
+            # create dois and publications for analyses
+            sample.analyses.each do |analysis|
+              # create doi for analysis
+              if (doi = analysis.doi)
+                doi.update(doiable: analysis)
+              else
+                doi = Doi.create_for_analysis!(analysis, sample.molecule.inchikey)
+              end
+
+              # create publication for analyses
+              Publication.create!(
+                state: Publication::STATE_PENDING,
+                element: analysis,
+                published_by: current_user.id,
+                doi: doi,
+                taggable_data: @publication_tag.merge(
+                  author_ids: @author_ids
+                )
+              )
+            end
+
+            # create doi for sample
+            if (doi = sample.doi)
+              doi.update!(doiable: sample)
+            else
+              doi = Doi.create_for_element!(sample)
+            end
+
+            # create publication for sample
+            publication = Publication.create!(
+              state: Publication::STATE_PENDING,
+              element: sample,
+              published_by: current_user.id,
+              doi: doi,
+              parent_id: parent_publication_id,
+              taggable_data: @publication_tag.merge(
+                author_ids: @author_ids,
+                analysis_ids: sample.analyses.pluck(:id)
+              )
+            )
+          end
+          sample.analyses.each do |analysis|
+            Publication.find_by(element: analysis).update(parent: publication)
+          end
+          sample
         end
 
         def concat_author_ids(coauthors = params[:coauthors])
@@ -229,6 +333,184 @@ module Chemotion
           new_reaction.reload
         end
 
+        def create_new_reaction_version(reaction = @reaction, scheme_only = @scheme_only)
+          new_reaction = reaction.dup
+          new_reaction.previous_version = reaction
+          new_reaction.collections << current_user.versions_collection
+          new_reaction.save!
+          new_reaction.copy_segments(segments: reaction.segments, current_user_id: current_user.id)
+          unless @literals.nil?
+            lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id }
+            duplicate_literals(new_reaction, lits)
+          end
+
+          dir = File.join(Rails.root, 'public', 'images', 'reactions')
+          rsf = reaction.reaction_svg_file
+          path = File.join(dir, rsf)
+          new_rsf = "#{Time.now.to_i}-#{rsf}"
+          dest = File.join(dir, new_rsf)
+          if File.exists? path
+            FileUtils.cp(path, dest)
+            new_reaction.update_columns(reaction_svg_file: new_rsf)
+          end
+
+          link_analyses(new_reaction, reaction.analyses)
+
+          new_reaction.update_tag!(analyses_tag: true)
+
+          new_reaction.tag_as_new_version(reaction, scheme_only: scheme_only)
+          reaction.tag_as_previous_version(new_reaction)
+
+          reaction.reactions_samples.each  do |reaction_sample|
+            # copy the reaction sample instance
+            new_reaction_sample = reaction_sample.dup
+
+            # look for the sample in the public collection or the scheme only reactions collection
+            unless scheme_only
+              sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            else
+              sample = Collection.scheme_only_reactions_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
+            end
+            next unless sample
+
+            # update the new reaction sample instance
+            new_reaction_sample.reaction_id = new_reaction.id
+            new_reaction_sample.save!
+
+            # remove sample from versions collectoin again, overriding the behaviour in ReactionSampleCollections
+            CollectionsSample.find_by(sample: sample, collection: @current_user.versions_collection).delete
+          end
+
+          new_reaction.update_svg_file!
+          new_reaction.reload
+          new_reaction.save!
+          new_reaction.reload
+          new_reaction
+        end
+
+        def create_new_reaction_samples_version(reaction = @reaction)
+          reaction.reactions_samples.each  do |reaction_sample|
+            # create a new sample version
+            new_sample = create_new_sample_version(reaction_sample.sample)
+
+            # replace previous sample in reaction
+            reaction_sample.sample_id = new_sample.id
+            reaction_sample.save!
+          end
+        end
+
+        def submit_new_reaction_version(reaction = @reaction)
+          reaction.collections.clear
+          reaction.collections << current_user.pending_collection
+          reaction.collections << Collection.element_to_review_collection
+          reaction.collections << @embargo_collection unless @embargo_collection.nil?
+          reaction.save!
+
+          princhi_string, princhi_long_key, princhi_short_key, princhi_web_key = reaction.products_rinchis
+
+          # create dois and publications for analyses
+          reaction.analyses.each do |analysis|
+            # create doi for analysis
+            if (doi = analysis.doi)
+              doi.update(doiable: analysis)
+            else
+              doi = Doi.create_for_analysis!(analysis)
+            end
+
+            # create publication for analyses
+            Publication.create!(
+              state: Publication::STATE_PENDING,
+              element: analysis,
+              published_by: current_user.id,
+              doi: doi,
+              taggable_data: @publication_tag.merge(
+                author_ids: @author_ids
+              )
+            )
+          end
+
+          # create doi for reaction
+          if (doi = reaction.doi)
+            doi.update!(doiable: reaction)
+          else
+            doi = Doi.create_for_element!(reaction)
+          end
+
+          # create publication for reaction
+          publication = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: reaction,
+            published_by: current_user.id,
+            doi: doi,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids,
+              products_rinchi: {
+                rinchi_string: princhi_string,
+                rinchi_long_key: princhi_long_key,
+                rinchi_short_key: princhi_short_key,
+                rinchi_web_key: princhi_web_key
+              }
+            )
+          )
+
+          reaction.reactions_samples.each  do |reaction_sample|
+            # check if this sample is a new version of a sample
+            new_sample_version = current_user.versions_collection.samples.find_by(id: reaction_sample.sample_id)
+            if new_sample_version
+              submit_new_sample_version(new_sample_version, parent_publication_id = publication.id)
+            end
+          end
+
+          reaction
+        end
+
+        def create_new_container_version(element = @element, analysis = @analysis)
+          analyses = Container.analyses_container(element.container.id).first
+
+          previous_doi = Doi.find_by(doiable_type: 'Container', doiable_id: analysis.id)
+
+          new_analysis = analyses.children.create(
+            name: analysis.name,
+            container_type: analysis.container_type,
+            description: analysis.description
+          )
+          new_analysis.extended_metadata = analysis.extended_metadata
+          new_analysis.extended_metadata[:previous_version_id] = analysis.id
+          new_analysis.extended_metadata[:previous_version_doi_id] = previous_doi.id if previous_doi
+          new_analysis.save!
+
+          analysis.extended_metadata[:new_version_id] = new_analysis.id
+          analysis.save!
+
+          # duplicate datasets and copy attachments
+          analysis.children.where(container_type: 'dataset').each do |dataset|
+            new_dataset = new_analysis.children.create(container_type: 'dataset')
+            dataset.attachments.each do |attachment|
+              new_attachment = attachment.copy(
+                attachable_type: 'Container',
+                attachable_id: new_dataset.id,
+                transferred: true
+              )
+              new_attachment.save!
+              new_dataset.attachments << new_attachment
+
+              # copy publication image file to public/images/publications/{attachment.id}/{attachment.filename}
+              if MimeMagic.by_path(new_attachment.filename)&.type&.start_with?('image')
+                file_path = File.join('public/images/publications/', new_attachment.id.to_s, '/', new_attachment.filename)
+                public_path = File.join('public/images/publications/', new_attachment.id.to_s)
+                FileUtils.mkdir_p(public_path)
+                File.write(file_path, new_attachment.store.read_file.force_encoding('utf-8')) if new_attachment.store.file_exist?
+              end
+            end
+
+            new_dataset.name = dataset.name
+            new_dataset.extended_metadata = dataset.extended_metadata
+            new_dataset.save!
+          end
+
+          new_analysis
+        end
+
         def create_publication_tag(contributor, author_ids, license)
           authors = User.where(type: %w[Person Collaborator], id: author_ids)
                         .includes(:affiliations)
@@ -269,12 +551,21 @@ module Chemotion
 
         def prepare_reaction_data
           reviewer_collections
-          new_reaction = duplicate_reaction(@reaction, @analysis_set)
+
+          if @reaction.tag.taggable_data['previous_version']
+            new_reaction = submit_new_reaction_version
+          else
+            new_reaction = duplicate_reaction(@reaction, @analysis_set)
+          end
+
           reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
           @reaction.tag_as_published(new_reaction, reaction_analysis_set)
+
           new_reaction.create_publication_tag(current_user, @author_ids, @license)
           new_reaction.samples.each do |new_sample|
-            new_sample.create_publication_tag(current_user, @author_ids, @license)
+            unless new_sample.publication_tag.present?
+              new_sample.create_publication_tag(current_user, @author_ids, @license)
+            end
           end
           pub = Publication.where(element: new_reaction).first
           add_submission_history(pub)
@@ -297,7 +588,13 @@ module Chemotion
 
         def prepare_sample_data
           reviewer_collections
-          new_sample = duplicate_sample(@sample, @analyses)
+
+          if @sample.tag.taggable_data['previous_version']
+            new_sample = submit_new_sample_version
+          else
+            new_sample = duplicate_sample(@sample, @analyses)
+          end
+
           @sample.tag_as_published(new_sample, @analyses)
           new_sample.create_publication_tag(current_user, @author_ids, @license)
           @sample.untag_reserved_suffix
@@ -895,7 +1192,17 @@ module Chemotion
 
         after_validation do
           @sample = current_user.samples.find_by(id: params[:sampleId])
-          @analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          unless @sample
+            @sample = current_user.versions_collection.samples.find_by(id: params[:sampleId])
+          end
+          error!('401 Unauthorized', 401) unless @sample
+
+          analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          links = @sample&.links&.where(id: params[:analysesIds])
+
+          @analyses = analyses ? analyses.or(links) : links
+          error!('404 analyses not found', 404) if @analyses.empty?
+
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
           ols_validation(@analyses)
           @author_ids = if params[:addMe]
@@ -903,9 +1210,12 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
-          error!('401 Unauthorized', 401) unless @sample
-          error!('404 analyses not found', 404) if @analyses.empty?
           @group_reviewers = coauthor_validation(params[:reviewers])
+
+          previous_version = @sample&.tag&.taggable_data['previous_version']
+          if previous_version
+            error!('400 license does not match previous version', 400) unless previous_version['license'] == params[:license]
+          end
         end
 
         post do
@@ -933,6 +1243,28 @@ module Chemotion
         end
       end
 
+      namespace :createNewSampleVersion do
+        desc 'Create a new version of a published Sample'
+        params do
+          requires :sampleId, type: Integer, desc: 'Sample Id'
+        end
+
+        after_validation do
+          # look for the sample in all public samples created by the current user
+          @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @sample
+          error!('400 Belongs to reaction', 400) unless @sample.tag['taggable_data']['reaction_id'].nil?
+        end
+
+        post do
+          new_sample = create_new_sample_version
+          {
+            sample: SampleSerializer.new(new_sample).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
       # desc: submit reaction data for publication
       namespace :publishReaction do
         desc 'Publish Reaction with chosen Dataset'
@@ -950,8 +1282,14 @@ module Chemotion
         after_validation do
           @scheme_only = false
           @reaction = current_user.reactions.find_by(id: params[:reactionId])
-          error!('404 found no reaction to publish', 404) unless @reaction
-          @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
+          unless @reaction
+            @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            error!('404 found no reaction to publish', 404) unless @reaction
+          end
+          @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | @reaction&.links&.where(id: params[:analysesIds]) \
+                          | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds])) \
+                          | Container.where(id: (@reaction.samples.map(&:links).flatten.map(&:id) & params[:analysesIds]))
+
           ols_validation(@analysis_set)
           @author_ids = if params[:addMe]
                           [current_user.id] + coauthor_validation(params[:coauthors])
@@ -964,6 +1302,11 @@ module Chemotion
           # error!('Reaction Publication not authorized', 401)
           @analysis_set_ids = @analysis_set.map(&:id)
           @literals = Literal.where(id: params[:refs]) unless params[:refs].nil? || params[:refs].empty?
+
+          previous_license = @reaction&.tag&.taggable_data['previous_license']
+          if previous_license
+            error!('400 license does not match previous version', 400) unless previous_license == params[:license]
+          end
         end
 
         post do
@@ -996,6 +1339,50 @@ module Chemotion
           @reaction.reload
           @reaction.tag_reserved_suffix(@analysis_set)
           @reaction.reload
+          {
+            reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionVersion do
+        desc 'Create a new version of a published reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          @scheme_only = false
+          @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          new_reaction = create_new_reaction_version
+          {
+            reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionSamplesVersion do
+        desc 'Create a new versions for the samples of a published reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          @scheme_only = false
+
+          # look for an the reaction in the versions_collection of the current user
+          @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId]) unless params[:reactionId].nil?
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          create_new_reaction_samples_version
           {
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
@@ -1061,9 +1448,12 @@ module Chemotion
         end
 
         after_validation do
-          @reaction = current_user.reactions.find_by(id: params[:reactionId])
           @scheme_only = true
-          error!('404 found no reaction to publish', 404) unless @reaction
+          @reaction = current_user.reactions.find_by(id: params[:reactionId])
+          unless @reaction
+            @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            error!('404 found no reaction to publish', 404) unless @reaction
+          end
           schemeYield = params[:products]&.map { |v| v.slice(:id, :_equivalent) }
           @reaction.reactions_samples.select { |rs| rs.type == 'ReactionsProductSample' }.map do |p|
             py = schemeYield.select { |o| o['id'] == p.sample_id }
@@ -1100,12 +1490,81 @@ module Chemotion
           pub = prepare_reaction_data
           pub.process_element
           pub.inform_users
-
           @reaction.reload
           {
             reaction: ReactionSerializer.new(@reaction).serializable_hash.deep_symbolize_keys,
             message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
           }
+        end
+      end
+
+      namespace :createNewReactionSchemeVersion do
+        desc 'Create a new version of a published scheme only reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          @scheme_only = true
+          @reaction = Collection.scheme_only_reactions_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          new_reaction = create_new_reaction_version
+          {
+            reaction: ReactionSerializer.new(new_reaction).serializable_hash.deep_symbolize_keys,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createAnalysisVersion do
+        desc 'Create a new version of a linked analysis'
+        params do
+          requires :analysisId, type: Integer, desc: 'Analysis Id'
+          requires :linkId, type: Integer, desc: 'Link Id'
+          requires :parentType, type: String, desc: 'Parent Type'
+          requires :parentId, type: Integer, desc: 'Parent Id'
+        end
+
+        after_validation do
+          # look for the element in the versions samples/reactions created by the current user
+          if params[:parentType] == 'sample'
+            @element =  current_user.versions_collection.samples.find_by(id: params[:parentId], created_by: current_user.id)
+          elsif params[:parentType] == 'reaction'
+            @element =  current_user.versions_collection.reactions.find_by(id: params[:parentId], created_by: current_user.id)
+          end
+          error!('401 Unauthorized', 401) unless @element
+
+          # look for the link in the containers links (mainly for validation)
+          @link = @element.links.find_by(id: params[:linkId])
+          error!('401 Unauthorized', 401) unless @link or @link&.extended_metadata['target_id'] != params[:analysisId]
+
+          # look for the actual container
+          @analysis = Container.find_by(id: params[:analysisId])
+          error!('401 Unauthorized', 401) unless @analysis
+        end
+
+        post do
+          # duplicate the linked container for the element
+          create_new_container_version
+
+          # remove the link
+          Container.destroy(@link.id)
+
+          # return the sample or the reaction
+          if params[:parentType] == 'sample'
+            {
+              sample: SampleSerializer.new(@element).serializable_hash.deep_symbolize_keys,
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          elsif params[:parentType] == 'reaction'
+            {
+              reaction: ReactionSerializer.new(@element).serializable_hash.deep_symbolize_keys,
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          end
         end
       end
 

@@ -5,8 +5,10 @@ module SubmissionHelpers
   extend Grape::API::Helpers
 
   def ols_validation(analyses)
-    analyses.each do |ana|
-      error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+    analyses&.each do |container|
+      if container.container_type == 'analysis'
+        error!('analyses check fail', 404) if (container.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+      end
     end
   end
 
@@ -108,7 +110,10 @@ module SubmissionHelpers
 
     when 'Reaction'
       root.element.products.each do |pd|
-        Publication.find_by(element_type: 'Sample', element_id: pd.id)&.destroy! if pd.analyses&.length == 0
+        if (pd.analyses&.length + pd.links&.length == 0)
+          Publication.find_by(element_type: 'Sample', element_id: pd.id)&.destroy!
+        end
+
         next if pd.analyses&.length == 0
         pd.reserve_suffix
         pd.reserve_suffix_analyses(pd.analyses)

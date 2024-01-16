@@ -5,7 +5,9 @@ class CreateDefaultElementToReviewedCollections < ActiveRecord::Migration[4.2]
    reviewer_ids = User.reviewer_ids
 
    reviewer_ids.each do |rid|
-       u = User.find(rid)
+       u = User.find_by(id: rid)
+       next unless u.present?
+
        sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Reviewed Publication from', is_locked: true, is_shared: false)
        sys_review_collection = Collection.create(user: chemotion_user, label: 'Reviewed', ancestry: "#{sys_review_from.id}")
 

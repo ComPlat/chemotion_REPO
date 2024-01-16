@@ -79,7 +79,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer, xvialCom
+      molecule, isLogin, isReviewer, isPublisher, xvialCom
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -135,7 +135,9 @@ export default class RepoSampleDetails extends Component {
         segments: s.segments || [],
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
+        new_version: s.new_version
       };
+      const isPublisher = s.isPublisher
 
       return (
         <RepoSample
@@ -146,6 +148,7 @@ export default class RepoSampleDetails extends Component {
           handleCommentBtn={this.handleCommentBtn}
           isLogin={idyLogin}
           isReviewer={idyReview}
+          isPublisher={isPublisher}
           {...this.props}
         />
       );

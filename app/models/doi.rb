@@ -17,11 +17,12 @@
 #  doiable_id     :integer
 #  doiable_type   :string
 #  suffix         :string
+#  version_count  :integer          default(0)
 #
 # Indexes
 #
 #  index_dois_on_suffix  (suffix) UNIQUE
-#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count) UNIQUE
+#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count,version_count) UNIQUE
 #
 # Foreign Keys
 #
@@ -44,6 +45,7 @@ class Doi < ApplicationRecord
       s += "/#{term_id}"
       s += ".#{analysis_count}" if analysis_count.to_i > 0
     end
+    s += "/#{version_count}" if version_count.to_i > 0
     s
   end
 
@@ -72,25 +74,39 @@ class Doi < ApplicationRecord
         (rt.is_a?(Reaction) && rt.products_short_rinchikey_trimmed)
       raise "only works with sample/reaction analysis" unless ik
     end
+
     type = analysis.extended_metadata['kind'].delete(' ')
     type = type.presence || 'nd'
-    ds = Doi.select("*, coalesce(analysis_count, 0) as real_count")
-            .where(inchikey: ik, analysis_type: type)
-            .order('real_count desc')
-    if ds.blank?
-      ac = 0
-      version = ''
-    else
-      ac = ds.first.analysis_count.to_i.next
-      version = ".#{ac}"
-    end
     term_id = type.split('|').first.sub!(':','')
-    suffix = "#{ik}/#{term_id}#{version}"
+
+    if (previous_version_doi_id = analysis.extended_metadata['previous_version_doi_id'])
+      previous_doi = Doi.find_by(id: previous_version_doi_id)
+      ac = previous_doi.analysis_count
+      ac_string = ".#{ac}"
+      vc = previous_doi.version_count.to_i + 1
+      vc_string = "/#{vc}"
+      suffix = "#{ik}/#{term_id}#{ac_string}#{vc_string}"
+    else
+      ds = Doi.select("*, coalesce(analysis_count, 0) as real_count")
+              .where(inchikey: ik, analysis_type: type)
+              .order('real_count desc')
+      if ds.blank?
+        ac = 0
+        ac_string = ''
+      else
+        ac = ds.first.analysis_count.to_i.next
+        ac_string = ".#{ac}"
+      end
+      vc = 0
+      suffix = "#{ik}/#{term_id}#{ac_string}"
+    end
+
     Doi.create!(
       inchikey: ik,
       doiable_id: analysis.id,
       doiable_type: analysis.class.name,
       analysis_count: ac,
+      version_count: vc,
       suffix: suffix,
       analysis_type: type
     )
@@ -107,22 +123,34 @@ class Doi < ApplicationRecord
              "reaction/" + element.products_short_rinchikey_trimmed
            end
 
-    ds = Doi.select("*, coalesce(molecule_count, 0) as real_count")
-            .where(inchikey: ik)
-            .order('real_count desc')
-    if ds.blank?
-      mc = 0
-      version = ''
+    if (previous_version = element.tag.taggable_data['previous_version'])
+      previous_doi = Doi.find_by(id: previous_version['doi']['id'])
+      mc = previous_doi.molecule_count
+      mc_string = ".#{mc}"
+      vc = previous_doi.version_count.to_i + 1
+      vc_string = "/#{vc}"
+      suffix = "#{ik}#{mc_string}#{vc_string}"
     else
-      mc = ds.first.molecule_count.to_i.next
-      version = ".#{mc}"
+      ds = Doi.select("*, coalesce(molecule_count, 0) as real_count")
+              .where(inchikey: ik)
+              .order('real_count desc')
+      if ds.blank?
+        mc = 0
+        mc_string = ''
+      else
+        mc = ds.first.molecule_count.to_i.next
+        mc_string = ".#{mc}"
+      end
+      vc = 0
+      suffix = "#{ik}#{mc_string}"
     end
-    suffix = "#{ik}#{version}"
+
     d = Doi.create!(
       inchikey: ik,
       doiable_id: element.id,
       doiable_type: klass,
       molecule_count: mc,
+      version_count: vc,
       suffix: suffix
     )
   end

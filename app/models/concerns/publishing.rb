@@ -169,6 +169,41 @@ module Publishing
       end
     end
 
+    def tag_as_new_version(previous_element, scheme_only: false)
+      previous_license = previous_element&.tag&.taggable_data['publication']['license']
+
+      element_tag = self.tag
+      element_tag.update!(
+        taggable_data: (element_tag.taggable_data || {}).merge(
+          previous_version: {
+            id: previous_element.id,
+            doi: {
+              id: previous_element&.doi&.id
+            },
+            license: previous_license,
+            scheme_only: scheme_only
+          }
+        )
+      )
+    end
+
+    def tag_as_previous_version(new_element)
+      element_tag = self.tag
+      element_tag.update!(
+        taggable_data: (element_tag.taggable_data || {}).merge(
+          new_version: {
+            id: new_element.id
+          })
+      )
+    end
+
+    def untag_as_previous_version
+      element_tag = self.tag
+      taggable_data = element_tag.taggable_data || {}
+      taggable_data.delete('new_version')
+      element_tag.update!(taggable_data: taggable_data)
+    end
+
     def tag_reserved_suffix(ori_analyses)
       et = self.tag
       et.update!(
@@ -223,6 +258,18 @@ module Publishing
         end
       end
       true
+    end
+
+    def get_new_version_short_label
+      m = self.previous_version.short_label.match /^(.*)-V(\d+)$/
+      if m
+        # increment the version part of the short_label of the previous version
+        version = Integer(m[2]) + 1
+        self.short_label = "#{m[1]}-V#{version}"
+      else
+        # append "-V1" to the short_label of the previous version
+        self.short_label = "#{self.previous_version.short_label}-V1"
+      end
     end
   end
 end

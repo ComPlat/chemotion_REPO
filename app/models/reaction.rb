@@ -58,6 +58,7 @@ class Reaction < ApplicationRecord
   multisearchable against: %i[name short_label rinchi_string]
 
   attr_accessor :can_copy
+  attr_accessor :previous_version
 
   # search scopes for exact matching
   pg_search_scope :search_by_reaction_name, against: :name
@@ -148,8 +149,9 @@ class Reaction < ApplicationRecord
   before_save :check_doi
   before_create :auto_set_short_label
 
-
   after_create :update_counter
+
+  before_destroy :remove_from_previous_version
 
   has_one :container, :as => :containable
 
@@ -159,6 +161,10 @@ class Reaction < ApplicationRecord
 
   def analyses
     self.container ? self.container.analyses : []
+  end
+
+  def links
+    self.container ? self.container.links : []
   end
 
   def auto_format_temperature!
@@ -264,12 +270,24 @@ class Reaction < ApplicationRecord
   end
 
   def auto_set_short_label
-    prefix = creator.reaction_name_prefix
-    counter = creator.counters['reactions'].succ
-    self.short_label = "#{creator.initials}-#{prefix}#{counter}"
+    unless self.previous_version.present?
+      prefix = creator.reaction_name_prefix
+      counter = creator.counters['reactions'].succ
+      self.short_label = "#{creator.initials}-#{prefix}#{counter}"
+    else
+      self.short_label = get_new_version_short_label
+    end
   end
 
   def update_counter
     self.creator.increment_counter 'reactions'
+  end
+
+  def remove_from_previous_version
+    previous_version = self.tag&.taggable_data['previous_version']
+      if previous_version
+        previous_element = Reaction.find_by(id: previous_version['id'])
+        previous_element.untag_as_previous_version
+      end
   end
 end

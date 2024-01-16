@@ -27,6 +27,7 @@ import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import RepoSegment from './RepoSegment';
 import Sample from '../components/models/Sample';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -124,6 +125,7 @@ export default class RepoSample extends Component {
       isPublished,
       isLogin,
       isReviewer,
+      isPublisher,
       element,
     } = this.props;
     const { xvialCom } = element;
@@ -221,6 +223,12 @@ export default class RepoSample extends Component {
               pageId={sample.molecule_id}
             />
             &nbsp;
+            <NewVersionModal
+              type="Sample"
+              element={sample}
+              isPublisher={isPublisher}
+              isLatestVersion={!sample.new_version}
+            />
           </span>
           {ElStateLabel(sample.embargo)}
         </span>
@@ -314,11 +322,13 @@ RepoSample.propTypes = {
   handleCommentBtn: PropTypes.func,
   isLogin: PropTypes.bool,
   isReviewer: PropTypes.bool,
+  isPublisher: PropTypes.bool
 };
 
 RepoSample.defaultProps = {
   canComment: false,
   isLogin: false,
   isReviewer: false,
+  isPublisher: false,
   handleCommentBtn: () => {},
 };

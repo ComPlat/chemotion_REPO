@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Badge,
   PanelGroup,
   Panel,
   Button,
@@ -20,6 +21,7 @@ import UIStore from './stores/UIStore';
 import SpectraActions from './actions/SpectraActions';
 import LoadingActions from './actions/LoadingActions';
 import ViewSpectra from './ViewSpectra';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 
 import TextTemplateActions from './actions/TextTemplateActions';
 
@@ -201,7 +203,6 @@ export default class ReactionDetailsContainers extends Component {
       SpectraActions.LoadSpectra.defer(spcInfo);
     };
 
-
     return (
       <div className="upper-btn">
         <Button
@@ -213,6 +214,16 @@ export default class ReactionDetailsContainers extends Component {
         >
           <i className="fa fa-trash" />
         </Button>
+        {
+          container.link_id &&
+          <NewVersionModal
+            type="Analysis"
+            element={container}
+            parent={reaction}
+            bsSize="xsmall"
+            className="button-right"
+          />
+        }
         <PrintCodeButton element={reaction} analyses={[container]} ident={container.id} />
         <SpectraEditorBtn
           element={reaction}

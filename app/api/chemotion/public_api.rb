@@ -533,14 +533,34 @@ module Chemotion
       resource :last_published do
         desc "Return Last PUBLIC serialized entities"
         get do
+          res = {
+            last_published: {}
+          }
+
           s_pub = Publication.where(element_type: 'Sample', state: 'completed').order(:published_at).last
-          sample = s_pub.element
+          unless s_pub.nil?
+            sample = s_pub.element
+            res["sample"] = {
+              id: sample.id,
+              sample_svg_file: sample.sample_svg_file,
+              molecule: sample.molecule,
+              tag: s_pub.taggable_data,
+              contributor: User.find(s_pub.published_by).name
+            }
+          end
 
           r_pub = Publication.where(element_type: 'Reaction', state: 'completed').order(:published_at).last
-          reaction = r_pub.element
+          unless r_pub.nil?
+            reaction = r_pub.element
+            res["reaction"] = {
+              id: reaction.id,
+              reaction_svg_file: reaction.reaction_svg_file,
+              tag: r_pub.taggable_data,
+              contributor: User.find(r_pub.published_by).name
+            }
+          end
 
-          { last_published: { sample: { id: sample.id, sample_svg_file: sample.sample_svg_file, molecule: sample.molecule, tag: s_pub.taggable_data, contributor: User.find(s_pub.published_by).name  },
-          reaction: { id: reaction.id, reaction_svg_file: reaction.reaction_svg_file, tag: r_pub.taggable_data, contributor: User.find(r_pub.published_by).name } } }
+          res
         end
       end
 

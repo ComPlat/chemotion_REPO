@@ -14,7 +14,9 @@ class CreateDefaultReviewingCollections < ActiveRecord::Migration[4.2]
      }
 
      rc = Collection.find_by(root_collection_attributes)
-     SyncCollectionsUser.find_or_create_by(user: u, shared_by_id: chemotion_user.id, collection_id: sys_reviewing_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+     unless rc.nil?
+      SyncCollectionsUser.find_or_create_by(user: u, shared_by_id: chemotion_user.id, collection_id: sys_reviewing_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+     end
    end
  end
 end

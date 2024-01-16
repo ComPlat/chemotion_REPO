@@ -79,6 +79,7 @@ const CollectionDesc = (props) => {
     'Scheme-only reactions': 'Collections of published scheme-only reactions (no associated analytical data).',
     'My Published Elements': 'Collection of the published samples and reactions you submitted. The samples/reactions that were embargoed are placed in sub-folders.',
     'Pending Publications': 'Collection of the samples and reactions you have submitted and are currently being reviewed.',
+    'New Versions': 'Collection of samples and reactions which are new versions of already published elements before resubmission.',
     Reviewing: 'Collection of the samples and reactions that have been reviewed by a reviewer and needs revision from your side.',
     'Element To Review': 'Collection of the samples and reactions that currently have to be reviewed.',
     Reviewed: 'Collection of the samples and reactions that were reviewed and sent back to the submitters for revision/corrections (Read-Only). Waiting for resubmission.',
@@ -367,7 +368,7 @@ class EmbargoCom extends Component {
       >
         {LicenseLegalCode(this.props.selectedLicense)}
         {
-        this.props.selectedLicense === 'CC0' ?
+        (this.props.selectedLicense === 'CC0' && !this.props.disableLicense) ?
           (
             <div stye={{ width: '100%' }}>
               <Checkbox checked={this.props.cc0Deed.consent1} onChange={e => this.handleCC0ConsentChange(e, 'consent1')}>
@@ -386,9 +387,12 @@ class EmbargoCom extends Component {
 
     return (
       <div>
-        <Form horizontal style={{ display: 'flex' }}>
-          <div style={{ width: '20%', textAlign: 'right' }}>
-            <ControlLabel>Choose license&nbsp;</ControlLabel>
+        <Form horizontal style={{ display: 'flex', marginBottom: 15 }}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            {
+              this.props.disableLicense ? <ControlLabel>Licence (from Previous Version)</ControlLabel>
+                                        : <ControlLabel>Choose license</ControlLabel>
+            }
           </div>
           <div style={{ width: '20%' }}>
             <Select
@@ -396,15 +400,16 @@ class EmbargoCom extends Component {
               onChange={e => this.handleLicenseChange(e)}
               options={licenses}
               className="select-assign-collection"
+              disabled={this.props.disableLicense}
             />
           </div>
-          <div style={{ width: '40%', textAlign: 'right' }}>
-            <ControlLabel>Publish with Embargo Bundle</ControlLabel>&nbsp;
-            <div role="button" style={{ display: 'inline' }} onClick={() => this.setState({ isShow: !isShow })}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            <ControlLabel>Publish with Embargo Bundle</ControlLabel>
+            <div role="button" style={{ display: 'inline', paddingLeft: 5 }} onClick={() => this.setState({ isShow: !isShow })}>
               <i className="fa fa-question-circle" aria-hidden="true" />
-            </div>&nbsp;
+            </div>
           </div>
-          <div style={{ width: '40%' }}>
+          <div style={{ width: '20%' }}>
             <Select
               value={this.props.selectedValue}
               onChange={e => this.handleEmbargoChange(e)}
@@ -447,6 +452,7 @@ const PublishTypeAs = props => (
     <DropdownButtonSelection
       options={props.options}
       selected={props.selected}
+      disabled={props.disabled}
       placeholder="Select publication type..."
       onSelect={e => props.onChange(e)}
     />
@@ -1732,7 +1738,7 @@ class RenderPublishAnalysesPanel extends Component {
     const insText = instrumentText(analysis);
     const crdLink = (isPublic === false) ? (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1742,7 +1748,7 @@ class RenderPublishAnalysesPanel extends Component {
       </div >
     ) : (
       <div className="sub-title" inline="true">
-        <b>Reaction ID: </b>
+        <b>Analysis ID: </b>
         <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
           CRD-{analysis.pub_id}
         </Button>
@@ -1852,7 +1858,7 @@ class RenderPublishAnalyses extends Component {
               <DownloadJsonBtn type="container" id={analysis.id} />
             </div>
             <div className="sub-title" inline="true">
-              <b>Reaction ID: </b>
+              <b>Analysis ID: </b>
               <Button bsStyle="link" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
                 CRD-{ analysis.pub_id }
               </Button>

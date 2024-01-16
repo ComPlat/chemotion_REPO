@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import Aviator from 'aviator';
+import { get } from 'lodash';
 import Sample from './models/Sample';
 import { sampleShowOrNew, reactionShow } from './routesUtils';
 import Reaction from './models/Reaction';
@@ -13,7 +14,8 @@ import UnsealBtn from './chemrepo/UnsealButton';
 const labelStyle = {
   display: 'inline-block',
   marginLeft: '5px',
-  marginRight: '5px'
+  marginRight: '5px',
+  borderColor: 'grey'
 };
 
 const handleClick = (e, id, clickType) => {
@@ -205,6 +207,32 @@ const OrigElnTag = ({ element }) => {
   );
 };
 
+const NewVersionTag = ({ element }) => {
+  const tagType = getElementType(element) || '';
+  const previousVersionId = get(element, 'tag.taggable_data.previous_version.id')
+
+  return (previousVersionId !== undefined) && (
+    <ButtonGroup bsSize="xsmall">
+      <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip id="data public">This is a new version of an already published {tagType.toLowerCase()}.</Tooltip>}
+      >
+        <Button
+          bsSize="xsmall"
+          bsStyle="success"
+          onClick={(event) => handleClick(event, previousVersionId, tagType)}
+        >
+          <i className="fa fa-newspaper-o" aria-hidden="true" />
+        </Button>
+      </OverlayTrigger>
+    </ButtonGroup>
+  )
+}
+
+NewVersionTag.propTypes = {
+  element: PropTypes.object
+};
+
 const PublishedTag = ({ element, fnUnseal }) => {
   const tag = (element && element.tag) || {};
   const tagData = (tag && tag.taggable_data) || {};
@@ -317,6 +345,7 @@ ChemotionTag.defaultProps = {
 export {
   LabelPublication,
   OrigElnTag,
+  NewVersionTag,
   PublishedTag,
   ChemotionTag,
   PublishBtn,

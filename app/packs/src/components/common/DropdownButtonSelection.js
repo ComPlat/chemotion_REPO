@@ -10,10 +10,11 @@ const DropdownButtonSelection = props =>
       key={props.selected}
       id={`dropdown-${uuid.v4()}`}
       onSelect={props.onSelect}
+      disabled={props.disabled}
     >
       {
         props.options.map(element => (
-          <MenuItem key={element} eventKey={element} disabled={props.disabled}>
+          <MenuItem key={element} eventKey={element}>
             {element}
           </MenuItem>
         ))

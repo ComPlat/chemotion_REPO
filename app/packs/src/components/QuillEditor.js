@@ -5,7 +5,9 @@ import PropTypes from 'prop-types';
 import Quill from 'quill';
 import Delta from 'quill-delta';
 
-import _ from 'lodash';
+import uniqueId from 'lodash/uniqueId';
+import isEqual from 'lodash/isEqual';
+
 import { ButtonToolbar, DropdownButton, MenuItem, OverlayTrigger, Popover, Button } from 'react-bootstrap';
 
 const toolbarOptions = [

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  Button, Checkbox, OverlayTrigger, Tooltip,
+  Badge, Button, Checkbox, OverlayTrigger, Tooltip,
   MenuItem, SplitButton, ButtonGroup
 } from 'react-bootstrap';
 import QuillViewer from './QuillViewer';
@@ -16,8 +16,8 @@ import { contentToText } from './utils/quillFormat';
 import UIStore from './stores/UIStore';
 import { chmoConversions } from './OlsComponent';
 import { previewContainerImage } from './utils/imageHelper';
-
 import { isNmrPass, isDatasetPass } from '../libHome/RepoCommon';
+import NewVersionModal from '../components/chemrepo/NewVersionModal';
 
 import RepoMolViewerListBtn from '../libHome/RepoMolViewerListBtn';
 
@@ -380,6 +380,16 @@ const headerBtnGroup = (
       >
         <i className="fa fa-trash" />
       </Button>
+      {
+        container.link_id &&
+        <NewVersionModal
+          type="Analysis"
+          element={container}
+          parent={sample}
+          bsSize="xsmall"
+          className="button-right"
+        />
+      }
       <PrintCodeButton
         element={sample}
         analyses={[container]}
@@ -414,9 +424,10 @@ const headerBtnGroup = (
 const HeaderNormal = ({
   sample, container, mode, readOnly, isDisabled, serial,
   handleRemove, handleSubmit, handleAccordionOpen, toggleAddToReport,
-  publish,isReviewer
+  publish, isReviewer
 }) => {
   const clickToOpen = () => handleAccordionOpen(serial);
+
 
   let kind = container.extended_metadata.kind || '';
   kind = (kind.split('|')[1] || kind).trim();

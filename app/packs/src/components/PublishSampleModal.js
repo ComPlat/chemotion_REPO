@@ -7,7 +7,7 @@ import {
 } from 'react-bootstrap';
 import Select from 'react-select';
 import Immutable from 'immutable';
-import { sortedUniq } from 'lodash';
+import { get, isUndefined, sortedUniq } from 'lodash';
 
 import Sample from './models/Sample';
 import SampleDetailsContainers from './SampleDetailsContainers';
@@ -43,6 +43,7 @@ export default class PublishSampleModal extends Component {
       sortedIds: [],
       selectedEmbargo: '-1',
       selectedLicense: 'CC BY',
+      disableLicense: false,
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noEmbargo: false
@@ -70,10 +71,14 @@ export default class PublishSampleModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    const previousLicense = get(nextProps.sample, 'tag.taggable_data.previous_version.license');
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       sample: nextProps.sample,
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
     });
   }
 
@@ -190,12 +195,12 @@ export default class PublishSampleModal extends Component {
   }
 
   handlePublishSample() {
-    const { selectedLicense, cc0Consent } = this.state;
+    const { selectedLicense, disableLicense, cc0Consent } = this.state;
     const authorCount = this.state.selectedUsers && this.state.selectedUsers.length;
     // const reviewerCount = this.state.selectedReviewers && this.state.selectedReviewers.length;
     const plural = authorCount > 0 ? 's' : '';
 
-    if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
+    if (selectedLicense === 'CC0' && !disableLicense && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
       alert('Please check the license section before sending your data.');
       return true;
     }
@@ -481,7 +486,7 @@ export default class PublishSampleModal extends Component {
     const { molecule } = sample;
 
     const {
-      selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
+      selectedEmbargo, selectedLicense, disableLicense, cc0Consent, noEmbargo
     } = this.state;
 
     const awareEmbargo = selectedEmbargo === '-1' ? (
@@ -516,6 +521,7 @@ export default class PublishSampleModal extends Component {
                 selectedValue={selectedEmbargo}
                 onEmbargoChange={this.handleEmbargoChange}
                 selectedLicense={selectedLicense}
+                disableLicense={disableLicense}
                 onLicenseChange={this.handleLicenseChange}
                 onCC0ConsentChange={this.handleCC0ConsentChange}
                 cc0Deed={cc0Consent}
