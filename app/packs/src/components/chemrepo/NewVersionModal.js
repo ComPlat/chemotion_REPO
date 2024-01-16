@@ -118,7 +118,7 @@ const NewVersionModal = (props) => {
 
   const getNewVersionCollection = (newElement) => {
     const collection = newElement.tag.taggable_data.collection_labels
-      .find(c => c.user_id === currentUserId);
+      .find(c => c.user_id === currentUser.id);
 
     // this is a bit hacky but I don't know how to find the collection in the state
     collection.is_sync_to_me = true;

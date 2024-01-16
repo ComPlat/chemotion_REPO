@@ -1253,6 +1253,7 @@ module Chemotion
           # look for the sample in all public samples created by the current user
           @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @sample
+          error!('400 Belongs to reaction', 400) unless @sample.tag['taggable_data']['reaction_id'].nil?
         end
 
         post do
