@@ -90,19 +90,6 @@ export default class GenericBaseFetcher {
       });
   }
 
-  static fetchUnitsSystem() {
-    return fetch('/units_system/units_system.json', {
-      credentials: 'same-origin',
-      cache: 'no-store',
-      headers: { 'cache-control': 'no-cache' },
-    })
-      .then((response) => response.json())
-      .then((json) => json)
-      .catch((errorMessage) => {
-        console.log(errorMessage);
-      });
-  }
-
   static updateTemplate(params) {
     return fetch('/api/v1/generic_elements/update_template', {
       credentials: 'same-origin',

@@ -101,7 +101,8 @@ class Report < ApplicationRecord
   handle_asynchronously(:create_docx, run_at: proc { 30.seconds.from_now }) unless Rails.env.development?
 
   def queue_name
-    "report_#{id}"
+    #"report_#{id}"
+    'report'
   end
 
   def self.create_reaction_docx(current_user, user_ids, params)
