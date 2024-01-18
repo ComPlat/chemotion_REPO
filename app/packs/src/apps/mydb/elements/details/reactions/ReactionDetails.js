@@ -59,6 +59,7 @@ import {
 import ReactionDetailsRepoComment from 'src/components/chemrepo/ReactionDetailsRepoComment';
 import { contentToText } from 'src/utilities/quillFormat';
 import HelpInfo from 'src/components/common/HelpInfo';
+import uuid from 'uuid';
 
 export default class ReactionDetails extends Component {
   constructor(props) {
