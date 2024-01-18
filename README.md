@@ -12,7 +12,7 @@ For a comprehensive understanding of the Chemotion Repository, refer to our onli
 
 Funded by the [Deutsche Forschungsgemeinschaft (DFG, German Research Foundation)](https://www.dfg.de/) under the [National Research Data Infrastructure – NFDI4Chem](https://nfdi4chem.de/) – Projektnummer **441958208**.
 
-<a href="https://www.dfg.de/" target="_blank"><img src="./public/img/dfg_logo_schriftzug_blau_foerderung_en.gif" width="50%" alt="DFG Logo"></a>
+<a href="https://www.dfg.de/" target="_blank"><img src="./public/images/repo/dfg_logo_schriftzug_blau_foerderung_en.jpg" width="50%" alt="DFG Logo"></a>
 
 ## License
 
