@@ -34,6 +34,7 @@ import LoadingModal from 'src/apps/chemscanner/components/LoadingModal';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from 'src/repoHome/RepoGenericHub';
 
+import embedMatomo from 'src/components/chemrepo/matomo';
 
 class Home extends Component {
   constructor(props) {
@@ -45,6 +46,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
+    embedMatomo();
     PublicStore.listen(this.onChange);
     RStore.listen(this.onChange);
     PublicActions.initialize();

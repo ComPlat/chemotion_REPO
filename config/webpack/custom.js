@@ -16,6 +16,7 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       'process.version': JSON.stringify(process.version),
+      'process.env.MATOMO_URL': JSON.stringify(process.env.MATOMO_URL),
       'process.env.SENTRY_FRONTEND_DSN': JSON.stringify(
         process.env.SENTRY_FRONTEND_DSN
       ),
