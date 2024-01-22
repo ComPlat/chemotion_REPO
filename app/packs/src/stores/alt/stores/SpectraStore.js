@@ -2,6 +2,7 @@ import base64 from 'base-64';
 import { FN } from '@complat/react-spectra-editor';
 
 import alt from 'src/stores/alt/alt';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
 
 const defaultPred = {
@@ -23,7 +24,10 @@ class SpectraStore {
 
     this.bindListeners({
       handleToggleModal: SpectraActions.ToggleModal,
-      handleLoadSpectra: SpectraActions.LoadSpectra,
+      handleLoadSpectra: [
+        SpectraActions.LoadSpectra,
+        PublicActions.loadSpectra,
+      ],
       handleSaveToFile: SpectraActions.SaveToFile,
       handleRegenerate: SpectraActions.Regenerate,
       handleInferSpectrum: SpectraActions.InferSpectrum,

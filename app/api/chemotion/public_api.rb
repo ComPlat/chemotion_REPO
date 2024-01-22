@@ -727,6 +727,20 @@ module Chemotion
         end
       end
 
+      resource :files do
+        desc 'Return Base64 encoded files'
+        params do
+          requires :ids, type: Array[Integer], desc: 'File ids'
+        end
+        post do
+          files = params[:ids].map do |a_id|
+            att = Attachment.find(a_id)
+            att&.container&.parent&.publication&.state == 'completed' ? raw_file_obj(att) : nil
+          end
+          { files: files }
+        end
+      end
+
       resource :download do
         desc 'download publication file'
         params do

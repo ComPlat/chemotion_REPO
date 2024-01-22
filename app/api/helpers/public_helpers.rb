@@ -42,4 +42,18 @@ module PublicHelpers
       response.code == 200 ? { molfile: response.parsed_response } : { molfile: molfile }
     end
   end
+
+  def raw_file(att)
+    Base64.encode64(att.read_file)
+  rescue StandardError
+    nil
+  end
+
+  def raw_file_obj(att)
+    {
+      id: att.id,
+      file: raw_file(att),
+      predictions: JSON.parse(att.get_infer_json_content),
+    }
+  end
 end

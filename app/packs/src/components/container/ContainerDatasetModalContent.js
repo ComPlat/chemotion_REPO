@@ -471,14 +471,14 @@ export default class ContainerDatasetModalContent extends Component {
     const {
       filteredAttachments, sortDirection, attachmentEditor, extension
     } = this.state;
-    const { datasetContainer } = this.props;
+    const { datasetContainer, readOnly, disabled } = this.props;
 
     return (
       <div className="attachment-main-container">
         {this.renderImageEditModal()}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ flex: '1', alignSelf: 'center' }}>
-            {this.customDropzone()}
+            {readOnly || disabled ? <span /> : this.customDropzone()}
           </div>
           <div style={{ marginLeft: '20px', alignSelf: 'center' }}>
             {datasetContainer.attachments.length > 0
