@@ -46,7 +46,7 @@ const NewVersionModal = (props) => {
   } = props;
   const [modalShow, setModalShow] = useState(false);
 
-  const currentUser = UserStore.getState().currentUser;
+  const currentUser = UserStore.getState().currentUser || {};
   const currentElement = ElementStore.getState().currentElement;
 
   // the props isPublisher and isLatestVersion are used in the publication interface,
