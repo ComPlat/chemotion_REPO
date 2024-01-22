@@ -169,8 +169,9 @@ module Chemotion
 
           new_sample.update_tag!(analyses_tag: true)
 
-          new_sample.tag_as_new_version(sample)
           sample.tag_as_previous_version(new_sample)
+          new_sample.tag_as_new_version(sample)
+          new_sample.update_versions_tag
 
           new_sample
         end
@@ -358,8 +359,9 @@ module Chemotion
 
           new_reaction.update_tag!(analyses_tag: true)
 
-          new_reaction.tag_as_new_version(reaction, scheme_only: scheme_only)
           reaction.tag_as_previous_version(new_reaction)
+          new_reaction.tag_as_new_version(reaction, scheme_only: scheme_only)
+          new_reaction.update_versions_tag
 
           reaction.reactions_samples.each  do |reaction_sample|
             # copy the reaction sample instance

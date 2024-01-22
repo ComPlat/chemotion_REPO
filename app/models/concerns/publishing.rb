@@ -187,6 +187,43 @@ module Publishing
       )
     end
 
+    def update_versions_tag
+      element_tag = self.tag
+
+      if element_tag.taggable_data['new_version'].nil?
+        # recursively find all versions of the latest element
+        versions = self.find_versions
+      else
+        # copy the list of versions from the latest element
+        new_version = self.class.find_by(id: element_tag.taggable_data['new_version']['id'])
+        versions = new_version&.tag&.taggable_data['versions']
+      end
+
+      element_tag.update!(
+        taggable_data: (element_tag.taggable_data || {}).merge(
+          versions: versions
+        )
+      )
+
+      # call this method recursively for all versions
+      unless element_tag.taggable_data['previous_version'].nil?
+        previous_version = self.class.find_by(id: element_tag.taggable_data['previous_version']['id'])
+        previous_version.update_versions_tag
+      end
+    end
+
+    def find_versions
+      element_tag = self.tag
+      versions = [self.id]
+
+      unless element_tag.taggable_data['previous_version'].nil?
+        previous_version = self.class.find_by(id: element_tag.taggable_data['previous_version']['id'])
+        versions += previous_version.find_versions
+      end
+
+      return versions
+    end
+
     def tag_as_previous_version(new_element)
       element_tag = self.tag
       element_tag.update!(
