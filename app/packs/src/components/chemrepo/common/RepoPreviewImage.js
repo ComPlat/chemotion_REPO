@@ -1,12 +1,14 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/require-default-props */
+/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable react/forbid-prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
 import ImageModal from 'src/components/common/ImageModal';
 import RepoSpectraBtn from 'src/components/chemrepo/common/RepoSpectra';
 
-const RepoPreviewImage = (props) => {
-  const {
-    element, analysis, isLogin, previewImg, title
-  } = props;
+function RepoPreviewImage(props) {
+  const { element, analysis, isLogin, isPublic, previewImg, title } = props;
   let hasPop = true;
   let fetchNeeded = false;
   let fetchId = 0;
@@ -23,31 +25,38 @@ const RepoPreviewImage = (props) => {
   return (
     <div className="preview">
       <div className="spectra" {...imageStyle}>
-        <RepoSpectraBtn element={element} analysis={analysis} isLogin={isLogin} />
+        <RepoSpectraBtn
+          element={element}
+          analysis={analysis}
+          isLogin
+          isPublic={isPublic}
+        />
       </div>
       <ImageModal
         imageStyle={imageStyle}
         hasPop={hasPop}
         previewObject={{ src: previewImg }}
         popObject={{
-          title, src: previewImg, fetchNeeded, fetchId, fetchFilename
+          title,
+          src: previewImg,
+          fetchNeeded,
+          fetchId,
+          fetchFilename,
         }}
       />
     </div>
   );
-};
+}
 
 RepoPreviewImage.propTypes = {
   element: PropTypes.object,
   analysis: PropTypes.object,
   isLogin: PropTypes.bool,
+  isPublic: PropTypes.bool,
   previewImg: PropTypes.string.isRequired,
-  title: PropTypes.string
+  title: PropTypes.string,
 };
 
-RepoPreviewImage.defaultProps = {
-  isLogin: false,
-  title: ''
-};
+RepoPreviewImage.defaultProps = { isLogin: false, isPublic: false, title: '' };
 
 export default RepoPreviewImage;

@@ -4,6 +4,7 @@ import uuid from 'uuid';
 import SVG from 'react-inlinesvg';
 import PropTypes from 'prop-types';
 import { Popover, OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
 
@@ -78,7 +79,7 @@ const RepoReactionList = (props) => {
   } = props;
   const listClass = (currentElement !== null && currentElement && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
   return (
-    <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => PublicActions.displayReaction(element.id)}>
+    <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => { LoadingActions.start(); PublicActions.displayReaction(element.id); }}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${element.id}`}>
           <Col md={12}>

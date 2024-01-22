@@ -6,6 +6,7 @@ import Select from 'react-select';
 import PropTypes from 'prop-types';
 import TreeSelect from 'antd/lib/tree-select';
 
+import ElementActions from 'src/stores/alt/actions/ElementActions'; // For REPO
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
 import SpectraStore from 'src/stores/alt/stores/SpectraStore';
@@ -400,6 +401,7 @@ class ViewSpectra extends React.Component {
     this.writeCommon(params, isMpy);
   }
 
+  // For REPO
   updateROPredict() {
     const { sample } = this.props;
     ElementActions.fetchSampleById(sample.id);
@@ -589,7 +591,7 @@ class ViewSpectra extends React.Component {
     }
 
     // TO BE CHECKED
-    if (baseOps.length === 0) {
+    if (baseOps.length === 0 && !this.props.isPublic) {
       baseOps = [{ name: 'predict', value: this.predictOp }];
     }
 
@@ -814,6 +816,9 @@ ViewSpectra.propTypes = {
   sample: PropTypes.object.isRequired,
   handleSampleChanged: PropTypes.func.isRequired,
   handleSubmit: PropTypes.func.isRequired,
+  isPublic: PropTypes.bool,
 };
+
+ViewSpectra.defaultProps = { isPublic: false };
 
 export default ViewSpectra;

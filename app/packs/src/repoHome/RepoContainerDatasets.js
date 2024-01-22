@@ -1,4 +1,6 @@
+/* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { ListGroup, ListGroupItem, Well } from 'react-bootstrap';
 import ContainerDatasetModal from 'src/components/container/ContainerDatasetModal';
 import ContainerDatasetField from 'src/components/container/ContainerDatasetField';
@@ -11,20 +13,24 @@ export default class RepoContainerDatasets extends Component {
       container,
       modal: {
         show: false,
-        datasetContainer: null
-      }
+        datasetContainer: {},
+      },
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      container: nextProps.container
-    });
+  static getDerivedStateFromProps(nextProps, prevState) {
+    if (nextProps.container !== prevState.container) {
+      return {
+        container: nextProps.container,
+      };
+    }
+    // Return null to indicate no change to state
+    return null;
   }
 
   handleModalOpen(datasetContainer) {
     const { modal } = this.state;
-    modal.datasetContainer = datasetContainer;
+    modal.datasetContainer = datasetContainer || {};
     modal.show = true;
     this.setState({ modal });
   }
@@ -32,7 +38,7 @@ export default class RepoContainerDatasets extends Component {
   handleModalHide() {
     const { modal } = this.state;
     modal.show = false;
-    modal.datasetContainer = null;
+    modal.datasetContainer = {};
     this.setState({ modal });
     // https://github.com/react-bootstrap/react-bootstrap/issues/1137
     document.body.className = document.body.className.replace('modal-open', '');
@@ -40,32 +46,43 @@ export default class RepoContainerDatasets extends Component {
 
   render() {
     const { container, modal } = this.state;
+    const { isPublic } = this.props;
 
     if (container.children.length > 0) {
       return (
         <div>
           <ListGroup style={{ marginBottom: 20 }}>
-            {container.children.map((datasetContainer) => {
+            {container.children.map(datasetContainer => {
               return (
-                <ListGroupItem key={`datasetContainer-${datasetContainer.id}`} className="repo-analysis-listgroup">
+                <ListGroupItem
+                  key={`datasetContainer-${datasetContainer.id}`}
+                  className="repo-analysis-listgroup"
+                >
                   <ContainerDatasetField
                     datasetContainer={datasetContainer}
-                    handleModalOpen={() => this.handleModalOpen(datasetContainer)}
                     disabled
-                    isPublic={this.props.isPublic}
+                    handleModalOpen={() =>
+                      this.handleModalOpen(datasetContainer)
+                    }
+                    handleUndo={() => {}}
+                    isPublic={isPublic}
                   />
                 </ListGroupItem>
               );
             })}
           </ListGroup>
           <hr style={{ borderColor: '#ddd' }} />
-          <ContainerDatasetModal
-            onHide={() => this.handleModalHide()}
-            show={modal.show}
-            readOnly
-            datasetContainer={modal.datasetContainer}
-            disabled
-          />
+          {modal.show && (
+            <ContainerDatasetModal
+              datasetContainer={modal.datasetContainer}
+              disabled
+              onChange={() => {}}
+              onHide={() => this.handleModalHide()}
+              readOnly
+              show={modal.show}
+              isPublic={isPublic} // for REPO
+            />
+          )}
         </div>
       );
     }
@@ -78,3 +95,10 @@ export default class RepoContainerDatasets extends Component {
     );
   }
 }
+
+RepoContainerDatasets.propTypes = {
+  container: PropTypes.object.isRequired,
+  isPublic: PropTypes.bool,
+};
+
+RepoContainerDatasets.defaultProps = { isPublic: true };

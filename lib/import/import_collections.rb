@@ -277,8 +277,8 @@ module Import
           melting_point: fetch_bound(fields.fetch('melting_point')),
           boiling_point: fetch_bound(fields.fetch('boiling_point')),
           molecule_id: molecule&.id,
-        ))
-
+        ))        
+        sample.reprocess_svg if sample.sample_svg_file.blank?
 
         solvent_value = fields.slice('solvent')['solvent']
         if solvent_value.is_a? String

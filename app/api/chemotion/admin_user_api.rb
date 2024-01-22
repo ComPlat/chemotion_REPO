@@ -4,6 +4,7 @@ module Chemotion
   # Publish-Subscription MessageAPI
   class AdminUserAPI < Grape::API
     resource :admin_user do
+      before { error!(401) unless current_user.is_a?(Admin) }
       namespace :listUsers do
         desc 'Find all users'
         get 'all' do

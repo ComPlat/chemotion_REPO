@@ -39,7 +39,7 @@ module Usecases
 
         update_attachment_data_column(attachment, result)
 
-        File.open(attachment.attachment(:conversion).url)
+        File.open(attachment.attachment(:conversion).url) unless attachment.attachment(:conversion).nil?
       end
 
       def self.update_attachment_data_column(attachment, result)
@@ -66,7 +66,7 @@ module Usecases
 
       def self.get_file_of_converted_image(attachment)
         create_converted_image(attachment) unless attachment.attachment_data['derivatives']['conversion']
-        File.open(attachment.attachment(:conversion).url)
+        File.open(attachment.attachment(:conversion).url) unless attachment.attachment(:conversion).nil?
       end
     end
   end

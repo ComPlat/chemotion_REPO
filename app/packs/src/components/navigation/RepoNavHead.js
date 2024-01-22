@@ -25,6 +25,9 @@ function NavHead() {
         <MenuItem eventKey="24" href="/home/directive">
           Directive
         </MenuItem>
+        <MenuItem eventKey="25" href="/home/preservation">
+          Preservation Strategy
+        </MenuItem>
       </NavDropdown>
     </Navbar.Brand>
   );

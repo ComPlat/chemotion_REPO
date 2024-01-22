@@ -42,4 +42,53 @@ module PublicHelpers
       response.code == 200 ? { molfile: response.parsed_response } : { molfile: molfile }
     end
   end
+
+  def raw_file(att)
+    Base64.encode64(att.read_file)
+  rescue StandardError
+    nil
+  end
+
+  def raw_file_obj(att)
+    {
+      id: att.id,
+      file: raw_file(att),
+      predictions: JSON.parse(att.get_infer_json_content),
+    }
+  end
+
+  def add_to_zip_and_update_file_text(zip, filename, file_content)
+    zip.put_next_entry filename
+    zip.write file_content
+    "#{filename} #{Digest::MD5.hexdigest(file_content)}\n"
+  end
+
+  def export_and_add_to_zip(container_id, zip, file_text)
+    if Labimotion::Dataset.find_by(element_id: container_id, element_type: 'Container').present?
+      export = Labimotion::ExportDataset.new
+      export.export(container_id)
+      export.spectra(container_id)
+      export_file_name = export.res_name(container_id)
+      zip.put_next_entry export_file_name
+      export_file_content = export.read
+      export_file_checksum = Digest::MD5.hexdigest(export_file_content)
+      zip.write export_file_content
+      file_text += "#{export_file_name} #{export_file_checksum}\n"
+    end
+    file_text
+  end
+
+  def prepare_and_export_dataset(container_id)
+    env['api.format'] = :binary
+    export = Labimotion::ExportDataset.new
+    export.export(container_id)
+    export.spectra(container_id)
+
+    content_type('application/vnd.ms-excel')
+    ds_filename = export.res_name(container_id)
+    filename = URI.encode_www_form_component(ds_filename)
+    header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+
+    export.read
+  end
 end

@@ -55,7 +55,7 @@ export default class BaseFetcher {
     const toDate = queryParams.toDate ? `&to_date=${queryParams.toDate.unix()}` : '';
     const productOnly = queryParams.productOnly === true ? '&product_only=true' : '&product_only=false';
     const api = `/api/v1/${type}.json?${isSync ? 'sync_' : ''}`
-              + `collection_id=${id}&page=${page}&per_page=${perPage}&`
+              + `collection_id=${id}&page=${page}&per_page=${perPage}`
               + `${fromDate}${toDate}${filterCreatedAt}${productOnly}`;
     let addQuery = '';
     let userState;

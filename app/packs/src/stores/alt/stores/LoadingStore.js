@@ -7,6 +7,7 @@ import PredictionActions from 'src/stores/alt/actions/PredictionActions';
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
 
 class LoadingStore {
   constructor() {
@@ -52,6 +53,10 @@ class LoadingStore {
           PublicActions.getSearchMolecules,
           PublicActions.getReactions,
           PublicActions.getMolecules,
+          PublicActions.displayMolecule,
+          PublicActions.displayReaction,
+          EmbargoActions.fetchEmbargoBundle,
+          PublicActions.openRepositoryPage,
         ],
       handleStartLoadingWithProgress: LoadingActions.startLoadingWithProgress,
       handleStopLoadingWithProgress: LoadingActions.stopLoadingWithProgress,
@@ -61,7 +66,8 @@ class LoadingStore {
 
   handleStart(page = '') {
     const regex = /^$|\bpublications/i;
-    if (!page || regex.test(page)) {
+    // temp. fix for loading spinner on embargo page
+    if (page === 'embargo' || !page || regex.test(page)) {
       this.setState({ loading: true });
     }
   }

@@ -552,7 +552,7 @@ export default class RepoReactionDetails extends Component {
       />
     );
     if (schemeOnly) {
-      buttons = ['Decline', 'Comments', 'Accept'];
+      buttons = ['Decline', 'Comments', 'Review', 'Submit', 'Accept'];
       showDOI = '';
     }
 

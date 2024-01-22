@@ -9,6 +9,7 @@ module Chemotion
     # TODO implement search cache?
     helpers CollectionHelpers
     helpers CompoundHelpers
+    helpers ParamsHelpers
     helpers do
       params :search_params do
         optional :page, type: Integer
@@ -215,6 +216,7 @@ module Chemotion
           SQL
 
           ttl_mol = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          reset_pagination_page(ttl_mol)
           slist = paginate(ttl_mol)
           sentities = Entities::MoleculePublicationListEntity.represent(slist, serializable: true)
 

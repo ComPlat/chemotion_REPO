@@ -56,7 +56,7 @@ module Chemotion
               user_ids,
               pl
             ).first
-            @collection = Collection.find(@s_collection.collection_id)
+            @collection = Collection.find(@s_collection&.collection_id) if @s_collection.present?
           else
             @collection = Collection.where(
               'id = ? AND ((user_id in (?) AND (is_shared IS NOT TRUE OR permission_level > ?)) OR shared_by_id = ?)',

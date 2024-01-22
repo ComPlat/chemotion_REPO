@@ -10,6 +10,7 @@ module Chemotion
     include Grape::Kaminari
     helpers CompoundHelpers
     helpers PublicHelpers
+    helpers ParamsHelpers
 
     namespace :public do
       get 'ping' do
@@ -433,7 +434,9 @@ module Chemotion
             (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
           SQL
 
-          list = paginate(Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql))
+          mol_scope = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          reset_pagination_page(mol_scope)
+          list = paginate(mol_scope)
 
           entities = Entities::MoleculePublicationListEntity.represent(list, serializable: true)
           sids = entities.map { |e| e[:sid] }
@@ -502,11 +505,12 @@ module Chemotion
           SQL
 
           if params[:scheme_only]
-            list = paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
+            col_scope = Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           else
-            list = paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
+            col_scope = Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           end
-
+          reset_pagination_page(col_scope)
+          list = paginate(col_scope)
           entities = Entities::ReactionPublicationListEntity.represent(list, serializable: true)
 
           ids = entities.map { |e| e[:id] }
@@ -546,7 +550,9 @@ module Chemotion
               GROUP BY samples.molecule_id
             ) s on s.molecule_id = molecules.id
           SQL
-          paginate(Molecule.joins(sample_join).order("s.max_updated_at desc"))
+          mol_scope = Molecule.joins(sample_join).order("s.max_updated_at desc")
+          reset_pagination_page(mol_scope)
+          paginate(mol_scope)
         end
       end
 
@@ -630,6 +636,7 @@ module Chemotion
         end
         get do
           pub = Publication.find_by(element_type: 'Collection', element_id: params[:id], state: 'completed')
+          pub.review = nil
           { col: pub }
         end
       end
@@ -669,7 +676,8 @@ module Chemotion
               published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
-          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
+          is_reviewer = User.reviewer_ids.include?(current_user&.id)
+          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type, is_reviewer: is_reviewer } }
         end
       end
 
@@ -684,7 +692,7 @@ module Chemotion
           pub = @embargo_collection.publication
           error!('401 Unauthorized', 401) if pub.nil?
 
-          if pub.state != 'completed'
+          if pub.state != Publication::STATE_COMPLETED
             error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
           end
 
@@ -705,6 +713,13 @@ module Chemotion
         params do
           requires :id, type: Integer, desc: "Reaction id"
         end
+        after_validation do
+          reaction = Reaction.find_by(id: params[:id])
+          pub = reaction&.publication
+          error!('404 Reaction not found', 404) unless reaction && pub
+
+          error!('404 Is not published yet', 404) unless pub&.state === Publication::STATE_COMPLETED
+        end
         get do
           r = CollectionsReaction.where(reaction_id: params[:id], collection_id: [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id])
           return nil unless r.present?
@@ -724,6 +739,20 @@ module Chemotion
         end
         get do
           get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val])
+        end
+      end
+
+      resource :files do
+        desc 'Return Base64 encoded files'
+        params do
+          requires :ids, type: Array[Integer], desc: 'File ids'
+        end
+        post do
+          files = params[:ids].map do |a_id|
+            att = Attachment.find(a_id)
+            att&.container&.parent&.publication&.state == 'completed' ? raw_file_obj(att) : nil
+          end
+          { files: files }
         end
       end
 
@@ -757,14 +786,37 @@ module Chemotion
           end
           get do
             content_type 'application/zip, application/octet-stream'
-            filename = URI.escape("#{@container.parent&.name.gsub(/\s+/, '_')}-#{@container.name.gsub(/\s+/, '_')}.zip")
+            parent_name = @container.parent&.name.to_s.gsub(/\s+/, '_')
+            container_name = @container.name.gsub(/\s+/, '_')
+            filename = "#{parent_name}-#{container_name}.zip"
+            filename = URI.encode_www_form_component(filename)
             header['Content-Disposition'] = "attachment; filename=#{filename}"
             env['api.format'] = :binary
             zip_f = Zip::OutputStream.write_buffer do |zip|
+              file_text = ''
               @container.attachments.each do |att|
-                zip.put_next_entry att.filename
-                zip.write att.read_file
+                file_text += add_to_zip_and_update_file_text(zip, att.filename, att.read_file)
+
+                next unless att.annotated?
+
+                begin
+                  annotated_file_name = "#{File.basename(att.filename, '.*')}_annotated#{File.extname(att.filename)}"
+                  File.open(att.annotated_file_location) do |annotated_file|
+                    annotated_file_content = annotated_file.read
+                    file_text += add_to_zip_and_update_file_text(zip, annotated_file_name, annotated_file_content)
+                  end
+                rescue => e
+                  Rails.logger.error "Failed to add annotated file for attachment #{att.id}: #{e.message}"
+                end
               end
+
+              file_text += export_and_add_to_zip(params[:id], zip, file_text)
+
+              hyperlinks_text = ''
+              JSON.parse(@container.extended_metadata.fetch('hyperlinks', '[]')).each do |link|
+                hyperlinks_text += "#{link} \n"
+              end
+
               zip.put_next_entry 'dataset_description.txt'
               zip.write <<~DESC
                 dataset name: #{@container.name}
@@ -773,13 +825,63 @@ module Chemotion
                 #{@container.description}
 
                 Files:
+                #{file_text}
+
+                Hyperlinks:
+                #{hyperlinks_text}
               DESC
-              @container.attachments.each do |att|
-                zip.write "#{att.filename} #{att.checksum}\n"
-              end
             end
             zip_f.rewind
             zip_f.read
+          end
+        end
+
+        resource :annotated_image do
+          desc 'download publication annotated image'
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            content_type 'application/octet-stream'
+
+            env['api.format'] = :binary
+            store = @attachment.attachment.storage.directory
+            file_location = store.join(
+              @attachment.attachment_data['derivatives']['annotation']['annotated_file_location'] || 'not available',
+            )
+
+            uploaded_file = if file_location.present? && File.file?(file_location)
+                              extension_of_annotation = File.extname(@attachment.filename)
+                              extension_of_annotation = '.png' if @attachment.attachment.mime_type == 'image/tiff'
+                              filename_of_annotated_image = @attachment.filename.gsub(
+                                File.extname(@attachment.filename),
+                                "_annotated#{extension_of_annotation}",
+                              )
+                              header['Content-Disposition'] = "attachment; filename=\"#{filename_of_annotated_image}\""
+                              File.open(file_location)
+                            else
+                              header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
+                              @attachment.attachment_attacher.file
+                            end
+            data = uploaded_file.read
+            uploaded_file.close
+
+            data
+          end
+        end
+
+        resource :thumbnail do
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            Base64.encode64(@attachment.read_thumbnail) if @attachment.thumb
           end
         end
       end
@@ -813,6 +915,22 @@ module Chemotion
           result
         end
 
+
+        desc 'Get dataset metadata of publication'
+        params do
+          requires :id, type: Integer, desc: "Dataset Id"
+        end
+        before do
+          @dataset_id = params[:id]
+          @container = Container.find_by(id: @dataset_id)
+          element = @container.root.containable
+          @publication = Publication.find_by(element: element, state: 'completed') if element.present?
+          error!('404 Publication not found', 404) unless @publication.present?
+        end
+        get :export do
+          export = prepare_and_export_dataset(@container.id)
+        end
+
         desc "metadata of publication"
         params do
           optional :id, type: Integer, desc: "Id"
@@ -833,7 +951,7 @@ module Chemotion
         end
         desc "Download metadata_xml"
         get :download do
-          filename = URI.escape("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+          filename = URI.encode_www_form_component("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
           content_type('application/octet-stream')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
@@ -842,7 +960,7 @@ module Chemotion
 
         desc "Download JSON-Link Data"
         get :download_json do
-          filename = URI.escape("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+          filename = URI.encode_www_form_component("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary

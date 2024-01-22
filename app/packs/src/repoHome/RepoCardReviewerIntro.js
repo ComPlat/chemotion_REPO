@@ -51,7 +51,7 @@ const RepoCardReviewers = () => {
     }).catch(err => console.log('error while loading reviewers, message =', err));
   }, []);
 
-  if (data.length < 1) return null;
+  if (!data || data?.length < 1) return null;
 
   const cards = data.map(item =>
     (<Col key={item.id} lg={3} md={6} sm={12}><ReviewerCard {...item} /></Col>));
@@ -82,7 +82,7 @@ export const RepoCardReviewerIntro = () => (
 export const RepoCardReviewerIntroBtn = (props) => {
   const { onClick, show } = props;
   return (
-    <Button style={{ backgroundColor: '#efefef', color: 'black', flex: 'auto' }} bsSize="small" onClick={onClick}>
+    <Button style={{ backgroundColor: '#efefef', color: 'black', flex: 'auto', fontWeight: 'bolder' }} bsSize="small" onClick={onClick}>
       Chemotion Repository Review Guidelines<br />
       <i style={{ color: 'black' }} className={`fa fa-caret-${show ? 'up' : 'down'}`} aria-hidden="true" />
     </Button>);

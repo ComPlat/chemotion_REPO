@@ -4,6 +4,7 @@
 module Chemotion
   # API: GateAPI to exchange data between two ELN servers
   class GateAPI < Grape::API
+    helpers GateHelpers
     class UriHTTPType
       def self.parse(value)
         URI.parse value
@@ -116,26 +117,9 @@ module Chemotion
         params do
           requires :data, type: File
         end
-
         before do
-          http_token = (request.headers['Authorization'].split(' ').last if request.headers['Authorization'].present?) # rubocop: disable Style/RedundantArgument
-          error!('Unauthorized', 401) unless http_token
-          secret = Rails.application.secrets.secret_key_base
-          begin
-            @auth_token = ActiveSupport::HashWithIndifferentAccess.new(
-              JWT.decode(http_token, secret)[0],
-            )
-          rescue JWT::VerificationError, JWT::DecodeError, JWT::ExpiredSignature => e
-            error!("#{e}", 401)
-          end
-          @user = Person.find_by(email: @auth_token[:iss])
-          error!('Unauthorized', 401) unless @user
-          @collection = Collection.find_by(
-            id: @auth_token[:collection], user_id: @user.id, is_shared: false,
-          )
-          error!('Unauthorized access to collection', 401) unless @collection
+          @user, @collection, @origin = prepare_for_receiving(request)
         end
-
         post do
           db_file = params[:data]&.fetch('tempfile', nil)
           imp = Import::ImportJson.new(
@@ -158,7 +142,6 @@ module Chemotion
         end
       end
 
-
       desc <<~DESC
         receive sample and reaction data from a remote eln and import them into a designated
         collection according to JWT info. (authentication through JWT)
@@ -167,28 +150,8 @@ module Chemotion
         params do
           requires :data, type: File
         end
-
         before do
-          http_token = if request.headers['Authorization'].present?
-                         request.headers['Authorization'].split(' ').last
-                       end
-          error!('Unauthorized', 401) unless http_token
-          secret = Rails.application.secrets.secret_key_base
-          begin
-            @auth_token = HashWithIndifferentAccess.new(
-              JWT.decode(http_token, secret)[0]
-            )
-          rescue JWT::VerificationError, JWT::DecodeError, JWT::ExpiredSignature => e
-            error!("#{e}", 401)
-          end
-          @user = Person.find_by(email: @auth_token[:iss])
-          error!('Unauthorized', 401) unless @user
-          @collection = Collection.find_by(
-            id: @auth_token[:collection], user_id: @user.id, is_shared: false
-          )
-          error!('Unauthorized access to collection', 401) unless @collection
-
-          @origin = @auth_token["origin"]
+          @user, @collection, @origin = prepare_for_receiving(request)
         end
 
         post do
@@ -211,22 +174,89 @@ module Chemotion
           end
 
           begin
-            import = Import::ImportCollections.new(att, @user.id, true, @collection.id, @origin)
-            import.extract
-            import.import!
-          rescue => e
-            Delayed::Worker.logger.error e
+            ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
             Message.create_msg_notification(
-              channel_subject: Channel::COLLECTION_ZIP_FAIL,
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
               message_from: @user&.id,
-              data_args: { col_labels: '', operation: 'import' },
-              autoDismiss: 5
+              autoDismiss: 5,
+              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
+            )
+          rescue => e
+            log_exception('receiving_zip', e, @user&.id)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
             )
             @success = false
-          ensure
-            att&.destroy!
           end
+          status 200
+          { message: "Job ID: #{att&.id}" }
+        end
+      end
+
+      desc <<~DESC
+        receive sample and reaction data from a remote eln and import them into a designated
+        collection according to JWT info. (authentication through JWT)
+      DESC
+      namespace :receiving_chunk do
+        before do
+          @user, @collection, @origin = prepare_for_receiving(request)
+        end
+        post do
+          save_chunk(@user.id, @collection.id, params)
           status(200)
+        rescue StandardError => e
+          log_exception('receiving_chunk', e, @user.id)
+          raise e
+        end
+      end
+
+      desc <<~DESC
+        receive sample and reaction data from a remote eln and import them into a designated
+        collection according to JWT info. (authentication through JWT)
+      DESC
+      namespace :received do
+        before do
+          @user, @collection, @origin = prepare_for_receiving(request)
+        end
+        post do
+          filepath = save_chunk(@user.id, @collection.id, params)
+          att = Attachment.new(
+            filename: File.basename(filepath),
+            key: File.basename(filepath),
+            file_path: filepath,
+            created_by: @user.id,
+            created_for: @user.id,
+            content_type: 'application/zip'
+          )
+          begin
+            att.save!
+          ensure
+            FileUtils.rm_f(filepath)
+          end
+          
+          begin
+            ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
+            )
+          rescue => e
+            log_exception('receiving_completed', e, @user.id)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
+            )
+            raise e
+          end
+          status 200
+          { message: "Job ID: #{att&.id}" }
         end
       end
 
@@ -344,7 +374,6 @@ module Chemotion
           redirect(URI.join(origin, "/api/v1/gate/register_repo?token=#{token}").to_s)
         end
       end
-
     end
   end
 end

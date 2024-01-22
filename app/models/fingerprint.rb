@@ -72,7 +72,7 @@ class Fingerprint < ApplicationRecord
     query_num_set_bits = count_bits_set(fp_vector)
 
     sim_query = sanitize_sql_for_conditions(
-      [sql_query_similar, query_num_set_bits] + fp_vector + [
+      [sql_query_similar, query_num_set_bits, query_num_set_bits] + fp_vector + [
         (threshold * query_num_set_bits).floor,
         (query_num_set_bits / threshold).ceil
       ]
@@ -101,7 +101,10 @@ class Fingerprint < ApplicationRecord
       <<~SQL
         INNER JOIN (
           SELECT id,
-            (common_set_bit::float8 / (? + num_set_bits - common_set_bit)::float8) AS tanimoto
+            CASE
+              WHEN (? + num_set_bits - common_set_bit) = 0 THEN 0.3 -- default value 0.3, reference: `if (tanimoto <= 0 || tanimoto > 1) { tanimoto = 0.3; }` of `Search.js`
+              ELSE (common_set_bit::float8 / (? + num_set_bits - common_set_bit)::float8)
+            END AS tanimoto
           FROM (
             SELECT id, num_set_bits,
               LENGTH(TRANSLATE(CONCAT(

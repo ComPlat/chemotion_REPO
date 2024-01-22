@@ -9,12 +9,12 @@
   .panel.panel-default
     .panel-heading
       %h4.panel-title
-        ORCID
+        ORCID iD
     .panel-body
       .form-horizontal
         = form_for current_user.profile, url: pages_update_orcid_path do |f|
           .form-group
-            = f.label 'my-orcid', 'My ORCID', class: 'control-label col-sm-2'
+            = f.label 'my-orcid', 'My ORCID iD', class: 'control-label col-sm-2'
             .col-sm-3
               = text_field_tag :data_orcid,
                                 current_user.providers && current_user.providers['orcid'],

@@ -393,9 +393,6 @@ const headerBtnGroup = (
         toggleNMRDisplayerModal={toggleNMRDisplayerModal}
         hasNMRium={hasNMRium}
         isReviewer={isReviewer}
-        confirmRegenerateEdited={confirmRegenerateEdited}
-        toggleNMRDisplayerModal={toggleNMRDisplayerModal}
-        hasNMRium={hasNMRium}
       />
       <span className="button-right">
         <MolViewerListBtn el={sample} container={container} isPublic={false} disabled={!enableMoleculeViewer} />
@@ -429,7 +426,7 @@ const HeaderNormal = ({
   const contentOneLine = {
     ops: content.ops.map((x) => {
       const c = Object.assign({}, x);
-      if (c.insert) c.insert = c.insert.replace(/\n/g, ' ');
+      if (c.insert && typeof c.insert === 'string') c.insert = c.insert.replace(/\n/g, ' ');
       return c;
     }),
   };

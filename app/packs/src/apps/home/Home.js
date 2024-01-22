@@ -18,6 +18,7 @@ import RepoReview from 'src/repoHome/RepoReview';
 import RepoAbout from 'src/repoHome/RepoAbout';
 import RepoContact from 'src/repoHome/RepoContact';
 import RepoDirective from 'src/repoHome/RepoDirective';
+import RepoPreservation from 'src/repoHome/RepoPreservation';
 import RepoNewsroom from 'src/repoHome/RepoNewsroom';
 import RepoNewsReader from 'src/repoHome/RepoNewsReader';
 import RepoNewsEditor from 'src/repoHome/RepoNewsEditor';
@@ -29,11 +30,10 @@ import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import RStore from 'src/stores/alt/repo/stores/RStore';
 import RepoElementDetails from 'src/repoHome/RepoElementDetails';
 import NavFooter from 'src/libHome/NavFooter';
-import LoadingModal from 'src/apps/chemscanner/components/LoadingModal';
+import LoadingModal from 'src/components/common/LoadingModal';
 
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from 'src/repoHome/RepoGenericHub';
-
 
 class Home extends Component {
   constructor(props) {
@@ -104,6 +104,8 @@ class Home extends Component {
         return <RepoHome />;
       case 'directive':
         return <RepoDirective />;
+      case 'preservation':
+        return <RepoPreservation />;
       default:
         return <RepoHome />;
     }

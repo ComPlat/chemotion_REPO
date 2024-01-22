@@ -121,7 +121,6 @@ class User < ApplicationRecord
   after_create :create_all_collection, :has_profile
   after_create :new_user_text_template
   after_create :update_matrix
-  after_create :send_welcome_email, if: proc { |user| %w[Person].include?(user.type) }
   before_destroy :delete_data
 
   scope :by_name, ->(query) {
@@ -555,6 +554,13 @@ class User < ApplicationRecord
     Matrice.extra_rules || {}
   end
 
+  def confirm(*args)
+    was_confirmed = confirmed_at.present?
+    super
+
+    send_welcome_email if %w[Person].include?(self.type) && !was_confirmed
+  end
+
   private
 
   # These user collections are locked, i.e., the user is not allowed to:
@@ -614,7 +620,11 @@ class User < ApplicationRecord
   def send_welcome_email
     file_path =  Rails.public_path.join('welcome-message.md')
     if File.exist?(file_path)
-      SendWelcomeEmailJob.perform_later(id)
+      if Rails.env.production?
+        SendWelcomeEmailJob.perform_later(id)
+      else
+        SendWelcomeEmailJob.perform_now(id)
+      end
     else
       #do nothing
     end

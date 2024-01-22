@@ -82,6 +82,13 @@ module Chemotion
               svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true)
             end
           end
+          if (svg_process && svg_process[:svg_file_path] && File.exist?(svg_process[:svg_file_path]))
+            svg = File.read(svg_process[:svg_file_path])
+            if svg.present?
+              molecule.attach_svg(svg)
+              molecule.update_columns(molecule_svg_file: molecule.molecule_svg_file) 
+            end
+          end
           molecule.attributes.merge(temp_svg: File.exist?(svg_process[:svg_file_path]) && svg_process[:svg_file_name], ob_log: babel_info[:ob_log])
 
           present molecule, with: Entities::MoleculeEntity

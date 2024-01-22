@@ -336,17 +336,16 @@ $bs-successcolor: #5cb85c;
   .partner-row {
     display: flex;
     justify-content: center;
-    overflow-x: auto;
-    padding-top: 30px;
   }
 
   .partners-info {
-    height: 250px;
+    height: 200px;
     position: relative;
-    display: table-cell;
+    display: flex;
     margin: 5px;
     border: 0px;
     background-color: #f5f5f5;
+    width: 100%;
 
     img {
       display: block;
@@ -376,7 +375,6 @@ $bs-successcolor: #5cb85c;
       position: absolute;
       padding: 5px;
       margin: 5px;
-      text-align: justify;
     }
   }
 }
@@ -461,6 +459,22 @@ $bs-successcolor: #5cb85c;
     background-color: unset;
     .form-group {
       margin-bottom: unset;
+    }
+  }
+}
+
+
+.home-embargo-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  .btns-grp {
+    background-color: $searchcolor;
+    border: thin $searchcolor;
+    button {
+      background-color: $searchcolor;
+      border-color: $searchcolor;
+      border-radius: unset;
     }
   }
 }
@@ -1099,6 +1113,8 @@ $bs-successcolor: #5cb85c;
   text-decoration-style: solid;
   text-decoration-thickness: 4px;
   text-underline-offset: 20%;
+  color: #2e6da4;
+  font-weight: bolder;
 }
 
 .hub-menu {

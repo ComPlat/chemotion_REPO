@@ -476,8 +476,11 @@ module Reporter
 
       def doi_delta
         dd = []
-        rdoi = obj.dig(:tag, :taggable_data, :publication, :doi)
-        pdois = (obj.dig(:products) || []).map {|p| p.dig(:tag, :taggable_data, :publication, :doi)}.compact
+        rdoi = obj.dig(:tag, :taggable_data, :publication, :doi) || obj.dig(:tag, :taggable_data, "publication", "doi")
+        pdois = (obj.dig(:products) || []).map do |p|
+          p.dig(:tag, :taggable_data, :publication, :doi) || p.dig(:tag, :taggable_data, "publication", "doi")
+        end.compact
+
         if rdoi.present?
           dd = [{
            "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://doi.org/#{rdoi}\n"

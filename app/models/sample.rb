@@ -493,7 +493,7 @@ class Sample < ApplicationRecord
       FileUtils.remove(src)
     end
     if svg.start_with?(/\s*\<\?xml/, /\s*\<svg/)
-      File.write(full_svg_path(svg_file_name), scrub(svg))
+      File.write(full_svg_path(svg_file_name), Chemotion::Sanitizer.scrub_svg(svg))
       self.sample_svg_file = svg_file_name
     end
     unless sample_svg_file =~ /\A[0-9a-f]{128}.svg\z/
@@ -542,6 +542,19 @@ class Sample < ApplicationRecord
       end.to_h
 
       set_elem_composition_data 'found', clone_data, 0.0
+    end
+  end
+
+  def reprocess_svg
+    return if sample_svg_file.present?
+
+    svg_digest = "#{molecule.inchikey}#{Time.now}"
+    svg = Molecule.svg_reprocess(svg, molfile || molecule.molfile)
+    svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true) if svg.present?
+    if svg.present? && svg_process.present? && svg_process[:svg_file_name].present? && File.exist?(svg_process[:svg_file_path])
+      sample_svg_file = svg_process[:svg_file_name]
+      attach_svg
+      update_columns(sample_svg_file: sample_svg_file) unless new_record?
     end
   end
 
@@ -729,16 +742,6 @@ private
 
   def has_density
     density.present? && density.positive? && (!molarity_value.present? || molarity_value.zero?)
-  end
-
-  def scrub(value)
-    Loofah::HTML5::SafeList::ALLOWED_ATTRIBUTES.add('overflow')
-    # NB: successiv gsub seems to be faster than a single gsub with a regexp with multiple matches
-    Loofah.scrub_fragment(value, :strip).to_s
-          .gsub('viewbox', 'viewBox')
-          .gsub('lineargradient', 'linearGradient')
-          .gsub('radialgradient', 'radialGradient')
-#   value
   end
 
   # build a full path of the sample svg, nil if not buildable

@@ -1,4 +1,13 @@
-%p
-  Welcome #{@email}!
-%p You can confirm your account email through the link below:
+%h3 Hello #{@email},
+
+%p Thank you for registering with Chemotion Repository!
+
+%p To activate your account, please click the link below:
 %p= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token)
+%p Once confirmed, you'll gain access to all the features of Chemotion Repository, allowing you to store, manage, analyze, and share your research data efficiently.
+%p
+  Should you have any questions or concerns, feel free to reach out to us at
+  %a{:href => "mailto:chemotion-repository@lists.kit.edu"}= 'chemotion-repository@lists.kit.edu'
+%h5
+  You’re receiving this email because you recently created a new Chemotion Repository account. If this wasn’t you, please ignore this email.
+= image_tag 'https://www.chemotion-repository.net/images/repo/Chemotion-V1.png', width: '200', height: '130'

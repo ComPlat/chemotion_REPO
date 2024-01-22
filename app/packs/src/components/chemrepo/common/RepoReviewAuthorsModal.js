@@ -313,12 +313,13 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   loadCollaborations() {
-    CollaboratorFetcher.fetchMyCollaborations()
-      .then((result) => {
+    CollaboratorFetcher.fetchMyCollaborations().then(result => {
+      if (result) {
         this.setState({
-          collaborations: result.authors
+          collaborations: result?.authors,
         });
-      });
+      }
+    });
   }
 
   handleDeleteAuthor(author) {
@@ -414,7 +415,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   render() {
-    const { modalShow, countries, organizations, departments, fields } = this.state;
+    const { modalShow, countries, organizations, departments, fields, title } = this.state;
     const { element, disabled } = this.props;
     const taggData = this.state.taggData || this.props.taggData;
     const creators = taggData?.creators || [];
@@ -446,12 +447,12 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     let btn = (<Button style={{ marginLeft: '5px' }} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-users" />&nbsp;Publication Authors</Button>);
     if (element?.element_type === 'Collection' || disabled === true) {
-      btn = (<Button disabled={disabled} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-plus" />&nbsp;Add Authors</Button>);
+      btn = (<Button disabled={disabled} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-plus" />{title}</Button>);
     }
 
     return (
       <span>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Authors</Tooltip>}>{btn}</OverlayTrigger>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Add Authors</Tooltip>}>{btn}</OverlayTrigger>
         <Modal
           show={modalShow}
           onHide={this.handleClose}
@@ -469,7 +470,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
                   <tr style={{ backgroundColor: '#ddd' }}>
                     <th width="5%">Action</th>
                     <th width="10%">Name</th>
-                    <th width="15%">ORCID</th>
+                    <th width="15%">ORCID iD</th>
                     <th width="70%">
                       <Table style={{ backgroundColor: 'unset', margin: 'unset' }}>
                         <tbody>
@@ -491,7 +492,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
               <Button
                 bsStyle="info"
                 onClick={() => this.loadOrcid()}
-              > get ORCID
+              > get ORCID iD
               </Button>
               <Button
                 bsStyle="success"
@@ -511,12 +512,14 @@ RepoReviewAuthorsModal.propTypes = {
   review_info: PropTypes.object,
   disabled: PropTypes.bool,
   schemeOnly: PropTypes.bool,
+  title: PropTypes.string,
   taggData: PropTypes.object.isRequired,
 };
 
 RepoReviewAuthorsModal.defaultProps = {
   review_info: {},
   schemeOnly: false,
+  title: 'Add Authors',
   disabled: false,
   taggData: {}
 };

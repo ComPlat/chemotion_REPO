@@ -1,5 +1,46 @@
-
 # Chemotion_Repository Changelog
+
+## [2.1.0]
+> 2024-08-05
+
+* Features and Enhancements:
+  * Use public domain icon to represent `No License`.
+  * Use `ORCID iD` to refer to the ORCID identifier.
+  * Group analysis attachments.
+  * Introduced spectra viewer on the publication page without login required.
+  * Introduced the embargo overview page, which enables scientists to review their submission status and providing an overview for the reviewers.
+  * Implemented the review comment function for the embargo collection.
+  * Enhanced the publication page performance by using cache mechanism.
+  * Implemented streaming data transfer from Chemotion ELN.
+  * Introduced a new confirmation and welcome email. [[Chemotion_Repository#74](https://github.com/ComPlat/chemotion_REPO/issues/74)].
+  * Introduced preservation strategy for the Chemotion Repository.
+  * LabIMotion 1.1.4.
+
+* Bug Fixes:
+  * Fixed svg scrubber.
+  * Fixed the missing confirmation dialog when canceling an account.
+  * Fixed the missing DOI information in the SI.
+  * Fixed the publication page shows no entries.
+  * Fixed downloading files via the pop-up modal fails on the publication page. [[Chemotion_Repository#96](https://github.com/ComPlat/chemotion_REPO/issues/96)].
+  * Disabled annotate button for the publication.
+  * Fixed initial load hang issue.
+  * Fixed the incorrect format of the sign-up terms and conditions content [[Chemotion_Repository#83](https://github.com/ComPlat/chemotion_REPO/issues/83)].
+  * Fixed a flaw in the similarity search function that caused the error. [[Chemotion_Repository#91](https://github.com/ComPlat/chemotion_REPO/issues/91)].
+  * Fixed the missing warning dialog before canceling an account. [[Chemotion_Repository#78](https://github.com/ComPlat/chemotion_REPO/issues/78)].
+
+* Chores:
+  * Updated API document.
+  * Reorganize partners section on homepage.
+  * Disabled DOI List.
+  * Upgraded Labimotion.
+  * chore: remove duplicate codes.
+  * Updated API document. [[Chemotion_Repository#67](https://github.com/ComPlat/chemotion_REPO/issues/67)].
+  * Upgraded lodash from 4.17.20 to 4.17.21.
+  * Upgraded puma from 5.6.7 to 5.6.8.
+  * Upgraded follow-redirects from 1.14.9 to 1.15.5.
+  * Upgraded ruby from 2.7.7 to 2.7.8.
+  * Upgraded node from 18.18.2 to 18.19.1.
+
 
 ## [2.0.0]
 > 2024-01-15

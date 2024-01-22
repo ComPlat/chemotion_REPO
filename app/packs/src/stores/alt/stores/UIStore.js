@@ -108,9 +108,6 @@ class UIStore {
       handleRerenderGenericWorkflow: UIActions.rerenderGenericWorkflow,
       handleShowGenericWorkflowModal: UIActions.showGenericWorkflowModal,
       handleSelectPublicCollection: PublicActions.selectPublicCollection,
-      handleRerenderGenericWorkflow: UIActions.rerenderGenericWorkflow,
-      handleShowGenericWorkflowModal: UIActions.showGenericWorkflowModal,
-
     });
   }
 

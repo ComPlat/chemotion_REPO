@@ -124,13 +124,13 @@ export default class Navigation extends React.Component {
             {
               true ?
                 <NavItem eventKey={4} onClick={() => Aviator.navigate('/home/newsroom')} className="white-nav-item">
-                  <i className="fa fa-bullhorn" aria-hidden="true" />&nbsp;Newsroom
+                  News
                 </NavItem> : null
             }
             {
               true ?
                 <NavItem eventKey={5} target="_blank" href="https://www.chemotion.net/docs/repo" className="white-nav-item">
-                  <i className="fa fa-question-circle" aria-hidden="true" />&nbsp;How-To
+                  How-To
                 </NavItem> : null
             }
             <NavItem eventKey={8} onClick={() => Aviator.navigate('/home/genericHub')} className="repo-generic-hub-btn">

@@ -1,3 +1,7 @@
+import Rails from '@rails/ujs';
+
+Rails.start();
+
 // see https://github.com/rackt/react-router/issues/1067
 
 var React = require('react');

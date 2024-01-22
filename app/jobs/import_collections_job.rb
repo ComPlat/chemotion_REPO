@@ -5,10 +5,11 @@ class ImportCollectionsJob < ApplicationJob
 
   after_perform do |job|
     begin
+      op = @gate === true ? "transfer, JobID: [#{@att_id}]" : 'import'
       Message.create_msg_notification(
         channel_subject: Channel::COLLECTION_ZIP,
         message_from: @user_id,
-        data_args: { col_labels: '', operation: 'import', expires_at: nil },
+        data_args: { col_labels: '', operation: op, expires_at: nil },
         autoDismiss: 5
       ) if @success
     rescue StandardError => e
@@ -16,19 +17,22 @@ class ImportCollectionsJob < ApplicationJob
     end
   end
 
-  def perform(att, current_user_id)
+  def perform(att, current_user_id, gate = false, col_id = nil, origin = nil)
+    @att_id = att.id
     @user_id = current_user_id
     @success = true
+    @gate = gate
     begin
-      import = Import::ImportCollections.new(att, current_user_id)
+      import = Import::ImportCollections.new(att, current_user_id, @gate, col_id, origin)
       import.extract
       import.import!
     rescue => e
+      op = @gate === true ? 'transfer' : 'import'
       Delayed::Worker.logger.error e
       Message.create_msg_notification(
         channel_subject: Channel::COLLECTION_ZIP_FAIL,
         message_from: @user_id,
-        data_args: { col_labels: '', operation: 'import' },
+        data_args: { col_labels: '', operation: op },
         autoDismiss: 5
       )
       @success = false

@@ -127,7 +127,7 @@ export default class HyperLinksSection extends Component {
 }
 
 HyperLinksSection.propTypes = {
-  data: PropTypes.arrayOf(PropTypes.string).isRequired,
+  data: PropTypes.arrayOf(PropTypes.string),
   onAddLink: PropTypes.func.isRequired,
   onRemoveLink: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
@@ -137,4 +137,5 @@ HyperLinksSection.propTypes = {
 HyperLinksSection.defaultProps = {
   disabled: false,
   readOnly: false,
+  data: undefined
 };

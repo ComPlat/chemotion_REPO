@@ -27,7 +27,8 @@ module RepositoryHelpers
     infos = {}
     ana_infos = {}
     pd_infos = {}
-    pub.descendants.each do |pp|
+
+    pub.state != Publication::STATE_COMPLETED && pub.descendants.each do |pp|
       review = pp.review || {}
       info = review['info'] || {}
       next if info.empty?
@@ -57,6 +58,7 @@ module RepositoryHelpers
       p[:xvialCom][:hasSample] = true
     end
     entities[:publication]['review']['history'] = []
+    entities[:publication]['review'] = nil if pub.state === Publication::STATE_COMPLETED
     entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
     entities[:schemes] = schemeList unless entities.nil? || schemeList.nil? || schemeList.length == 0
     entities[:isLogin] = current_user.present?
@@ -140,7 +142,7 @@ module RepositoryHelpers
       segments = Labimotion::SegmentEntity.represent(s.segments)
       tag.merge(container: container, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
         sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, labels: user_labels,
-        showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments)
+        showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments, published_at: pub.published_at)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?
@@ -285,4 +287,13 @@ module RepositoryHelpers
     schemeList
   end
 
+  def build_publication_element_state(publications)
+    publications.map do |c|
+      c.taggable_data['element_dois']&.map do |obj|
+        obj['state'] = Publication.find_by(id: obj['id'])&.state unless obj['state'].present?
+        obj
+      end
+      c
+    end
+  end
 end

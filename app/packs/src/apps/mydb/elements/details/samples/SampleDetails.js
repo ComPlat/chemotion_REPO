@@ -77,6 +77,7 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
+import { commentActivation } from 'src/utilities/CommentHelper';
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
 import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
@@ -197,7 +198,8 @@ export default class SampleDetails extends React.Component {
     UIStore.listen(this.onUIStoreChange);
     const { activeTab } = this.state;
     this.fetchQcWhenNeeded(activeTab);
-    if (!sample.isNew) {
+    const currentUser = UserStore.getState()?.currentUser || {};
+    if (!sample.isNew && MatrixCheck(currentUser.matrix, commentActivation)) {
       CommentActions.fetchComments(sample);
     }
   }

@@ -12,7 +12,7 @@ import DeleteConfirmBtn from 'src/components/common/DeleteConfirmBtn';
 const sortList = data => data?.sort((a, b) => a?.name?.localeCompare(b.name));
 const addUserTooltip = <Tooltip id="addUser_tooltip">Save to my collaboration</Tooltip>;
 const removeAffTooltip = <Tooltip id="rmAff_tooltip">Remove this affiliation</Tooltip>;
-const refreshOrcidTooltip = <Tooltip id="rmAff_tooltip">Refresh affiliations from ORCID</Tooltip>;
+const refreshOrcidTooltip = <Tooltip id="rmAff_tooltip">Refresh affiliations from ORCID iD</Tooltip>;
 const addAffTooltip = <Tooltip id="addAff_tooltip">Add new affiliation</Tooltip>;
 
 const refreshAffByOrcid = (g, onRefreshOrcidAff) => {
@@ -104,7 +104,7 @@ export default class AuthorModal extends Component {
       this.setState({ countries: affOption });
     });
     PublicFetcher.affiliations('organizations').then((result) => {
-      const affOption = result.affiliations?.map(a => ({ label: a, value: a }))
+      const affOption = result?.affiliations?.map(a => ({ label: a, value: a }))
         .filter(a => a.value && a.value.length > 1);
       this.setState({ organizations: affOption });
     });
@@ -234,7 +234,7 @@ export default class AuthorModal extends Component {
   findOrcid() {
     const { fields, departments, organizations } = this.state;
     if (!fields.orcid || fields.orcid.trim() === '') {
-      alert('Please input ORCID');
+      alert('Please input ORCID iD');
       return false;
     }
 
@@ -526,7 +526,7 @@ export default class AuthorModal extends Component {
       <Panel bsStyle="success">
         <Panel.Heading>
           <Panel.Title>
-            Add new collaborator (by ORCID or By Name)
+            Add new collaborator (by ORCID iD or By Name)
           </Panel.Title>
         </Panel.Heading>
         <Panel.Body>
@@ -534,7 +534,7 @@ export default class AuthorModal extends Component {
             <Col md={8}>
               <FormGroup controlId="formInlineLastName">
                 <InputGroup>
-                  <InputGroup.Addon>ORCID</InputGroup.Addon>
+                  <InputGroup.Addon>ORCID iD</InputGroup.Addon>
                   <FormControl
                     type="text"
                     placeholder="0000-0002-1234-5678"
@@ -542,7 +542,7 @@ export default class AuthorModal extends Component {
                     onChange={e => this.handleInputChange('orcid', e)}
                   />
                   <InputGroup.Button>
-                    <Button bsStyle="success" onClick={() => this.findOrcid()}><i className="fa fa-search" aria-hidden="true" />&nbsp;Find by ORCID</Button>
+                    <Button bsStyle="success" onClick={() => this.findOrcid()}><i className="fa fa-search" aria-hidden="true" />&nbsp;Find by ORCID iD</Button>
                   </InputGroup.Button>
                 </InputGroup>
               </FormGroup>
@@ -620,7 +620,7 @@ export default class AuthorModal extends Component {
                       <th width="10%">Action</th>
                       <th width="10%">Name</th>
                       <th width="10%">Email</th>
-                      <th width="10%">ORCID</th>
+                      <th width="10%">ORCID iD</th>
                       <th width="20%">Department</th>
                       <th width="15%">Organization</th>
                       <th width="15%">Country</th>
@@ -643,7 +643,7 @@ export default class AuthorModal extends Component {
                       <th width="5%">Action</th>
                       <th width="10%">Name</th>
                       <th width="10%">Email</th>
-                      <th width="15%">ORCID</th>
+                      <th width="15%">ORCID iD</th>
                       <th width="60%">
                         <Table style={{ backgroundColor: 'unset', margin: 'unset' }}>
                           <tbody>

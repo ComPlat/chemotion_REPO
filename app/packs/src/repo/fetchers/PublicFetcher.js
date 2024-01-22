@@ -60,6 +60,24 @@ export default class PublicFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+  static fetchFiles(ids) {
+    const promise = fetch('/api/v1/public/files', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids }),
+    })
+      .then(response => response.json())
+      .then(json => json)
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
+
   static searchPublicMolecules(params = {}) {
     const {
       collectionId,
@@ -270,6 +288,36 @@ export default class PublicFetcher {
     });
   }
 
+  static downloadDataset(id) {
+    let fileName = 'dataset.xlsx';
+    const api = `/api/v1/public/metadata/export?id=${id}`;
+    return fetch(api, { credentials: 'same-origin' })
+      .then(response => {
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          const matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) {
+            fileName = matches[1].replace(/['"]/g, '');
+          }
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const a = document.createElement('a');
+        a.style = 'display: none';
+        document.body.appendChild(a);
+        const url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
+  }
+
   static getLD(type, id) {
     const api = `/api/v1/public/metadata/jsonld?type=${type}&id=${id}`;
     return fetch(api, {
@@ -306,6 +354,19 @@ export default class PublicFetcher {
       headers: { 'cache-control': 'no-cache' }
     })
       .then(response => response.json()).then(json => json).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
+
+  static fetchThumbnail(attId) {
+    const promise = fetch(`/api/v1/public/download/thumbnail?id=${attId}`, {
+      credentials: 'same-origin',
+      method: 'GET',
+    })
+      .then(response => response.json())
+      .then(json => json)
+      .catch(errorMessage => {
         console.log(errorMessage);
       });
     return promise;

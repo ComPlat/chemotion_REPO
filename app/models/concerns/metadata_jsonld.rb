@@ -262,7 +262,7 @@ module MetadataJsonld
     json['publisher'] = json_ld_publisher
     json['license'] = pub.rights_data[:rightsURI]
     json['name'] = pub.element.extended_metadata['kind'] || '' if pub&.element&.extended_metadata.present?
-    measureInfo = json_ld_measurement_technique(pub) if pub&.element&.extended_metadata.present?
+    measureInfo = json_ld_measurement_technique(pub) if pub&.element&.extended_metadata.present? && ENV['OLS_SERVICE'].present?
     json['measurementTechnique'] = measureInfo if measureInfo.present?
     json['creator'] = json_ld_authors(pub.taggable_data)
     json['author'] = json['creator']
@@ -274,8 +274,8 @@ module MetadataJsonld
   def json_ld_measurement_technique(pub = self)
     json = {}
     term_id = pub.element.extended_metadata['kind']&.split('|')&.first&.strip
-    res = tib_load_term_info('CHMO', term_id)
-    data = (res.ok? && res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {}
+    res = ols_load_term_info('CHMO', term_id) if ENV['OLS_SERVICE'].present?
+    data = ((res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {}) if res.present?
     return {} if data.blank?
 
     json['@type'] = 'DefinedTerm'
@@ -390,15 +390,31 @@ module MetadataJsonld
     json
   end
 
-  def tib_load_term_info(schema, term_id)
-    http_s = "https://" # Rails.env.test? && "http://" || "https://"
-    options = { :timeout => 10, :headers => {'Content-Type' => 'text/json'}  }
-    api = 'service.tib.eu/ts4tib/api/'
+  def ols_load_term_info(schema, term_id)
+    data = ols_cache('read', "#{schema}_#{term_id}")
+    return data if data.present?
+
+    http_s = Rails.env.test? && "http://" || "https://"
+    options = { :timeout => 10, :headers => {'Content-Type' => 'text/json'} }
+    api = ENV['OLS_SERVICE']
     link = http_s + api + '/ontologies/' + schema + '/terms?obo_id=' + term_id
-    HTTParty.get(link, options)
+    response = HTTParty.get(link, options)
+    data = response.parsed_response if response.ok?
+    ols_cache('write', "#{schema}_#{term_id}", data) if data.present? && data.is_a?(Hash)
+    data.is_a?(Hash) ? data : nil
   rescue StandardError => e
     Rails.logger.error ["API call", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
     nil
   end
 
+  def ols_cache(method, identifier, data = nil, expires_in = 7.days)
+    if method == 'write'
+      Rails.cache.write("MetadataJsonld_#{identifier}", data, expires_in: expires_in) if data.present?
+    else
+      Rails.cache.send(method, "MetadataJsonld_#{identifier}")
+    end
+  rescue StandardError => e
+    Rails.logger.error ["Fetch cache error call", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
+  end
 end

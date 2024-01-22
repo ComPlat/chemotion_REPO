@@ -2,6 +2,7 @@ import base64 from 'base-64';
 import { FN } from '@complat/react-spectra-editor';
 
 import alt from 'src/stores/alt/alt';
+import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
 
 const defaultPred = {
@@ -23,7 +24,10 @@ class SpectraStore {
 
     this.bindListeners({
       handleToggleModal: SpectraActions.ToggleModal,
-      handleLoadSpectra: SpectraActions.LoadSpectra,
+      handleLoadSpectra: [
+        SpectraActions.LoadSpectra,
+        PublicActions.loadSpectra,
+      ],
       handleSaveToFile: SpectraActions.SaveToFile,
       handleRegenerate: SpectraActions.Regenerate,
       handleInferSpectrum: SpectraActions.InferSpectrum,
@@ -84,7 +88,13 @@ class SpectraStore {
   handleLoadSpectra({ fetchedFiles, spcInfos }) {
     const spcMetas = this.decodeSpectra(fetchedFiles);
     const sortedSpcInfo = [...spcInfos];
-    sortedSpcInfo.sort((a, b) => a.label.localeCompare(b.label));
+    sortedSpcInfo.sort((a, b) => b.idx - a.idx);
+    if (spcMetas.length > 0) {
+      const spc = spcMetas[0];
+      if (spc.jcamp.layout === FN.LIST_LAYOUT.CYCLIC_VOLTAMMETRY) {
+        sortedSpcInfo.sort((a, b) => a.label.localeCompare(b.label));
+      }
+    }
     const sortedSpcIdxs = sortedSpcInfo.map((info) => (info.idx));
     spcMetas.sort((a, b) => {
       return sortedSpcIdxs.indexOf(a.idx) - sortedSpcIdxs.indexOf(b.idx);

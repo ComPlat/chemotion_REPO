@@ -77,8 +77,8 @@ module Reporter
       def init_item
         item = []
         need_rxn_desc = @spl_settings[:reaction_description]
-        has_description = obj.reactions.first&.dig(:description, 'ops').present?
-        item += obj.reactions.first.dig(:description, 'ops').map(&:to_h) if need_rxn_desc && has_description
+        has_description = obj.reactions.first&.description && obj.reactions.first.description["ops"]&.present?
+        item += obj.reactions.first.description["ops"].map(&:to_h) if need_rxn_desc && has_description
         item
       end
     end

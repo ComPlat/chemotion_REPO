@@ -400,6 +400,7 @@ class EmbargoCom extends Component {
               onChange={e => this.handleLicenseChange(e)}
               options={licenses}
               className="select-assign-collection"
+              clearable={false}
             />
           </div>
           <div style={{ width: '40%', textAlign: 'right' }}>
@@ -414,6 +415,7 @@ class EmbargoCom extends Component {
               onChange={e => this.handleEmbargoChange(e)}
               options={bundles}
               className="select-assign-collection"
+              clearable={false}
             />
           </div>
         </Form>
@@ -695,7 +697,7 @@ const OrcidIcon = ({ orcid }) => {
 
   return (
     <a href={`https://orcid.org/${orcid}`} target="_blank" rel="noopener noreferrer" onClick={handleOnClick}>
-      <img src="/images/wild_card/ORCIDiD_iconvector.svg" className="orcid-logo" alt="ORCID" title="ORCID" />
+      <img src="/images/wild_card/ORCIDiD_iconvector.svg" className="orcid-logo" alt="ORCID iD" title="ORCID iD" />
     </a>
   );
 };
@@ -1689,6 +1691,7 @@ class RenderPublishAnalysesPanel extends Component {
           element={element}
           analysis={analysis}
           isLogin={isLogin}
+          isPublic={isPublic}
           previewImg={previewImg}
           title={kind}
         />
@@ -1736,7 +1739,7 @@ class RenderPublishAnalyses extends Component {
   }
 
   header() {
-    const { analysis, element } = this.props;
+    const { analysis, element, isPublic } = this.props;
     const content = analysis.extended_metadata['content'];
     const previewImg = previewContainerImage(analysis);
 
@@ -1764,6 +1767,7 @@ class RenderPublishAnalyses extends Component {
           element={element}
           analysis={analysis}
           isLogin={idyLogin}
+          isPublic={isPublic}
           previewImg={previewImg}
           title={kind}
         />

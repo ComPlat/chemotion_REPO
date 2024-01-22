@@ -114,12 +114,14 @@ export default class ReportContainer extends Component {
       rxnSettings, checkedAllRxnSettings, imgFormat, fileName,
       configs, checkedAllConfigs, selectedObjs, selMolSerials,
       siRxnSettings, checkedAllSiRxnSettings, fileDescription,
-      prdAtts, attThumbNails, previewObjs, templateOpts
+      prdAtts, attThumbNails, previewObjs, templateOpts: _templateOpts
     } = this.state;
 
     let { template } = this.state;
     let alertTemplateNotFound = false;
-
+    const templateOpts = _templateOpts.filter(
+      x => x.report_type !== 'doi_list_xlsx'
+    );
     if (templateOpts.length > 0 && template && typeof template != 'object') {
       let templateOpt = templateOpts.find(x => x.id == template || x.report_type == template);
       if (!templateOpt) {

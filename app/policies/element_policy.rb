@@ -68,7 +68,7 @@ class ElementPolicy
   end
 
   def user_collections
-    record.collections.where(user_id: user_ids)
+    record&.collections&.where(user_id: user_ids)
   end
 
   def user_scollections
