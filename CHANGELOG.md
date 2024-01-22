@@ -1,6 +1,21 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.1]
+> 2024-02-20?
+
+* Features and enhancements:
+  * Introduced spectra viewer on the publication page without login required
+  * Enhanced the publication page performance by using cache mechanism
+  * Configured/Enabled matomo for Chemotion Repository
+  * Configured/Enabled sentry for Chemotion Repository
+  * Upgraded lodash from 4.17.20 to 4.17.21
+  * Upgraded puma from 5.6.7 to 5.6.8
+  * Upgraded follow-redirects from 1.14.9 to 1.15.5
+
+* Bug fixes:
+
+
 ## [2.0.0]
 > 2024-01-15
 
