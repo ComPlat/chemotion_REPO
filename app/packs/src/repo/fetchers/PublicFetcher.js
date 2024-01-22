@@ -60,6 +60,24 @@ export default class PublicFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+  static fetchFiles(ids) {
+    const promise = fetch('/api/v1/public/files', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids }),
+    })
+      .then(response => response.json())
+      .then(json => json)
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
+
   static searchPublicMolecules(params = {}) {
     const {
       collectionId,

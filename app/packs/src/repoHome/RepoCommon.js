@@ -1689,6 +1689,7 @@ class RenderPublishAnalysesPanel extends Component {
           element={element}
           analysis={analysis}
           isLogin={isLogin}
+          isPublic={isPublic}
           previewImg={previewImg}
           title={kind}
         />
@@ -1736,7 +1737,7 @@ class RenderPublishAnalyses extends Component {
   }
 
   header() {
-    const { analysis, element } = this.props;
+    const { analysis, element, isPublic } = this.props;
     const content = analysis.extended_metadata['content'];
     const previewImg = previewContainerImage(analysis);
 
@@ -1764,6 +1765,7 @@ class RenderPublishAnalyses extends Component {
           element={element}
           analysis={analysis}
           isLogin={idyLogin}
+          isPublic={isPublic}
           previewImg={previewImg}
           title={kind}
         />

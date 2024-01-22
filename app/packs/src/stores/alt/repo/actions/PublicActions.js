@@ -114,6 +114,23 @@ class PublicActions {
     }
   }
 
+  loadSpectra(spcInfos) {
+    const idxs = spcInfos && spcInfos.map(si => si.idx);
+    if (idxs.length === 0) {
+      return null;
+    }
+
+    return dispatch => {
+      PublicFetcher.fetchFiles(idxs)
+        .then(fetchedFiles => {
+          dispatch({ fetchedFiles, spcInfos });
+        })
+        .catch(errorMessage => {
+          console.log(errorMessage);
+        });
+    };
+  }
+
   openRepositoryPage(page) {
     if (page) {
       return page
@@ -331,4 +348,4 @@ class PublicActions {
   }
 }
 
-export default alt.createActions(PublicActions)
+export default alt.createActions(PublicActions);
