@@ -43,6 +43,11 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import MatrixCheck from 'src/components/common/MatrixCheck';
 import { commentActivation } from 'src/utilities/CommentHelper';
 
+// For REPO
+import UserStore from 'src/stores/alt/stores/UserStore';
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import { commentActivation } from 'src/utilities/CommentHelper';
+
 export default class ResearchPlanDetails extends Component {
   constructor(props) {
     super(props);

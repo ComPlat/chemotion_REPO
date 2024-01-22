@@ -391,9 +391,6 @@ const headerBtnGroup = (
         toggleNMRDisplayerModal={toggleNMRDisplayerModal}
         hasNMRium={hasNMRium}
         isReviewer={isReviewer}
-        confirmRegenerateEdited={confirmRegenerateEdited}
-        toggleNMRDisplayerModal={toggleNMRDisplayerModal}
-        hasNMRium={hasNMRium}
       />
       <span className="button-right">
         <MolViewerListBtn el={sample} container={container} isPublic={false} disabled={!enableMoleculeViewer} />

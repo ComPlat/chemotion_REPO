@@ -95,6 +95,12 @@
   visibility: visible;
   transition-delay: 0s;
 }
+.attachment-row-image:hover {
+  transform: scale(6) translateX(20px);
+  z-index: 1000;
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 
 .attachment-row-text {
   flex: 0.7;

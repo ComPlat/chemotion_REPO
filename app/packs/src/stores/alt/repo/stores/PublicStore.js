@@ -206,7 +206,6 @@ class PublicStore {
       const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
         RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
       let cb = () => PublicActions.getReactions();
-
       if (this.reactions.length > 0) {
         cb = () => {};
         this.setState({ reactions: this.reactions });
