@@ -204,9 +204,7 @@ class API < Grape::API
   mount Labimotion::GenericDatasetAPI
   mount Labimotion::SegmentAPI
   mount Labimotion::LabimotionHubAPI
-  mount Labimotion::GenericElementAPI
-  mount Labimotion::GenericDatasetAPI
-  mount Labimotion::SegmentAPI
+  mount Chemotion::InventoryAPI
 
   ## For REPO
   mount Chemotion::RepositoryAPI

@@ -37,6 +37,7 @@
 class Collection < ApplicationRecord
   acts_as_paranoid
   belongs_to :user, optional: true
+  belongs_to :inventory, optional: true
   has_ancestry
   include Publishing
 
@@ -219,6 +220,33 @@ class Collection < ApplicationRecord
           SQL
         )
       end
+    end
+  end
+
+  def self.collections_for_user(user_id)
+    Collection.where(user_id: user_id, shared_by_id: nil)
+  end
+
+  def self.collections_group_by_inventory(collections, inventory)
+    {
+      collections: collections,
+      inventory: {
+        id: inventory&.id,
+        prefix: inventory&.prefix,
+        name: inventory&.name,
+        counter: inventory&.counter,
+      },
+    }
+  end
+
+  def self.inventory_collections(user_id)
+    collections = collections_for_user(user_id).reject { |c| c.label == 'All' }
+    grouped_collections = collections.group_by { |c| c.inventory&.id }
+    grouped_collections.values.map do |collections_group|
+      collections = collections_group.map { |c| { id: c.id, label: c.label } }
+      inventory = collections_group.first&.inventory
+      collections_group_by_inventory(collections, inventory)
+    end
   end
 end
 # rubocop:enable Metrics/AbcSize, Rails/HasManyOrHasOneDependent,Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity

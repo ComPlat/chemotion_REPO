@@ -21,6 +21,7 @@ var ConverterAdmin = require('src/apps/converter/ConverterAdmin');
 var GenericElementsAdmin = require('src/apps/generic/GenericElementsAdmin');
 var GenericSegmentsAdmin = require('src/apps/generic/GenericSegmentsAdmin');
 var GenericDatasetsAdmin = require('src/apps/generic/GenericDatasetsAdmin');
+var InventoryLabelSettings = require('src/apps/settings/InventoryLabelSettings');
 var mydb = require('src/apps/mydb');
 
 // Fro REPO
