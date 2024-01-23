@@ -1,9 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import {
-  Button, Checkbox, OverlayTrigger, Tooltip,
-  MenuItem, SplitButton, ButtonGroup
-} from 'react-bootstrap';
+import { Button, Checkbox, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import QuillViewer from 'src/components/QuillViewer';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
 import { stopBubble } from 'src/utilities/DomHelper';
@@ -21,6 +17,7 @@ import MolViewerListBtn from 'src/components/viewer/MolViewerListBtn';
 import MolViewerSet from 'src/components/viewer/MolViewerSet';
 import { isNmrPass, isDatasetPass } from 'src/repoHome/RepoCommon';
 import MatrixCheck from 'src/components/common/MatrixCheck';
+import SpectraEditorButton from 'src/components/common/SpectraEditorButton';
 
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
@@ -381,8 +378,8 @@ const headerBtnGroup = (
         analyses={[container]}
         ident={container.id}
       />
-      <SpectraEditorBtn
-        sample={sample}
+      <SpectraEditorButton
+        element={sample}
         hasJcamp={hasJcamp}
         spcInfos={spcInfos}
         hasChemSpectra={hasChemSpectra}
