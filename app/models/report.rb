@@ -191,6 +191,7 @@ class Report < ApplicationRecord
       observation: true,
       analysis: true,
       literature: true,
+      variations: true,
     }
   end
 
