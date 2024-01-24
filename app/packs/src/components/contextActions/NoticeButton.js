@@ -209,8 +209,10 @@ export default class NoticeButton extends React.Component {
 
   handleShow() {
     MessagesFetcher.fetchMessages(0).then((result) => {
-      result.messages.sort((a, b) => a.id - b.id);
-      this.setState({ showModal: true, dbNotices: result.messages });
+      if (result?.messages?.length > 0) {
+        result.messages.sort((a, b) => a.id - b.id);
+        this.setState({ showModal: true, dbNotices: result.messages });
+      }
     });
   }
 
@@ -305,7 +307,7 @@ export default class NoticeButton extends React.Component {
     );
     if (remainTime < idleTimeout) {
       MessagesFetcher.fetchMessages(0).then((result) => {
-        result.messages.sort((a, b) => a.id - b.id);
+        result?.messages?.sort((a, b) => a.id - b.id);
         this.setState({
           dbNotices: result.messages,
           serverVersion: result.version,

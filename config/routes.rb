@@ -136,18 +136,20 @@ Rails.application.routes.draw do
     end
     doi = Doi.find_by(suffix: suffix)
     url_base = "/home/publications/"
-    element = doi.doiable
+    element = doi&.doiable
 
-    element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))
-    case element.class.name
-    when 'Sample'
-      url =  "#{url}molecules/#{element.molecule_id}/#{suffix}"
-    when 'Reaction'
-      url = "#{url}reactions/#{element.id}"
-    when 'Container'
-      url =  "#{url}datasets/#{element.id}"
-    when 'Collection'
-      url = "#{url}collections/#{element.id}"
+    if element.present?
+      element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))
+      case element.class.name
+      when 'Sample'
+        url = "#{url}molecules/#{element.molecule_id}/#{suffix}"
+      when 'Reaction'
+        url = "#{url}reactions/#{element.id}"
+      when 'Container'
+        url = "#{url}datasets/#{element.id}"
+      when 'Collection'
+        url = "#{url}collections/#{element.id}"
+      end
     end
     url
   }

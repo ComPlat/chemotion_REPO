@@ -313,12 +313,13 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   loadCollaborations() {
-    CollaboratorFetcher.fetchMyCollaborations()
-      .then((result) => {
+    CollaboratorFetcher.fetchMyCollaborations().then(result => {
+      if (result) {
         this.setState({
-          collaborations: result.authors
+          collaborations: result?.authors,
         });
-      });
+      }
+    });
   }
 
   handleDeleteAuthor(author) {

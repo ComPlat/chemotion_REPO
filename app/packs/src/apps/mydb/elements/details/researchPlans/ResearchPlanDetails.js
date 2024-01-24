@@ -38,6 +38,11 @@ import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
+// For REPO
+import UserStore from 'src/stores/alt/stores/UserStore';
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import { commentActivation } from 'src/utilities/CommentHelper';
+
 export default class ResearchPlanDetails extends Component {
   constructor(props) {
     super(props);
@@ -60,7 +65,8 @@ export default class ResearchPlanDetails extends Component {
 
   componentDidMount() {
     const { researchPlan } = this.props;
-    if (!researchPlan.isNew) {
+    const currentUser = UserStore.getState()?.currentUser || {};
+    if (!researchPlan.isNew && MatrixCheck(currentUser.matrix, commentActivation)) {
       CommentActions.fetchComments(researchPlan);
     }
   }

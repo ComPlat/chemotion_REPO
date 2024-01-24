@@ -1,8 +1,29 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.2]
+> 2024-01-23
+
+* Features and enhancements:
+  * Group analysis attachments
+
+* Bug fixes:
+  * Sentry issue:
+    * REPO-RUBY-RAILS-1
+    * REPO-RUBY-RAILS-2
+    * REPO-RUBY-RAILS-6
+    * REPO-RUBY-RAILS-7
+    * REPO-RUBY-RAILS-C
+    * REPO-JAVASCRIPT-REACT-2
+    * REPO-JAVASCRIPT-REACT-3
+    * REPO-JAVASCRIPT-REACT-4
+    * REPO-JAVASCRIPT-REACT-5
+    * REPO-JAVASCRIPT-REACT-6
+    * REPO-JAVASCRIPT-REACT-B
+
+
 ## [2.0.1]
-> 2024-02-20?
+> 2024-01-22
 
 * Features and enhancements:
   * Introduced spectra viewer on the publication page without login required
