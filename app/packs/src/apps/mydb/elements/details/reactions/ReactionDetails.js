@@ -45,6 +45,8 @@ import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
 // For REPO
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import { commentActivation } from 'src/utilities/CommentHelper';
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublishReactionModal from 'src/components/chemrepo/PublishReactionModal';
 import {
@@ -115,7 +117,8 @@ export default class ReactionDetails extends Component {
   componentDidMount() {
     const { reaction } = this.props;
     UIStore.listen(this.onUIStoreChange);
-    if (!reaction.isNew) {
+    const currentUser = UserStore.getState()?.currentUser || {};
+    if (!reaction.isNew && MatrixCheck(currentUser.matrix, commentActivation)) {
       CommentActions.fetchComments(reaction);
     }
   }

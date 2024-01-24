@@ -97,18 +97,19 @@ export default class PublishSampleModal extends Component {
   }
 
   loadBundles() {
-    EmbargoFetcher.fetchEmbargoCollections(true).then((result) => {
+    EmbargoFetcher.fetchEmbargoCollections(true).then(result => {
       const cols = result.repository || [];
       this.setState({ bundles: cols });
     });
   }
 
   loadMyCollaborations() {
-    CollaboratorFetcher.fetchMyCollaborations()
-    .then((result) => {
-      this.setState({
-        collaborations: result.authors
-      });
+    CollaboratorFetcher.fetchMyCollaborations().then(result => {
+      if (result) {
+        this.setState({
+          collaborations: result.authors,
+        });
+      }
     });
   }
 

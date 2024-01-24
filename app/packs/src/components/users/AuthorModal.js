@@ -104,7 +104,7 @@ export default class AuthorModal extends Component {
       this.setState({ countries: affOption });
     });
     PublicFetcher.affiliations('organizations').then((result) => {
-      const affOption = result.affiliations?.map(a => ({ label: a, value: a }))
+      const affOption = result?.affiliations?.map(a => ({ label: a, value: a }))
         .filter(a => a.value && a.value.length > 1);
       this.setState({ organizations: affOption });
     });

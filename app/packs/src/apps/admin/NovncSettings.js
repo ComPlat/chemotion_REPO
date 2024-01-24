@@ -267,7 +267,7 @@ export default class NovncSettings extends Component {
     AdminFetcher.fetchDevices()
       .then((result) => {
         this.setState({
-          devices: result.devices,
+          devices: result?.devices,
         });
       });
   }

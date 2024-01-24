@@ -433,7 +433,9 @@ module Chemotion
             (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
           SQL
 
-          list = paginate(Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql))
+          mol_scope = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          reset_pagination_page(mol_scope)
+          list = paginate(mol_scope)
 
           entities = Entities::MoleculePublicationListEntity.represent(list, serializable: true)
           sids = entities.map { |e| e[:sid] }
@@ -502,11 +504,12 @@ module Chemotion
           SQL
 
           if params[:scheme_only]
-            list = paginate(Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
+            col_scope = Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           else
-            list = paginate(Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc'))
+            col_scope = Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           end
-
+          reset_pagination_page(col_scope)
+          list = paginate(col_scope)
           entities = Entities::ReactionPublicationListEntity.represent(list, serializable: true)
 
           ids = entities.map { |e| e[:id] }
@@ -546,7 +549,9 @@ module Chemotion
               GROUP BY samples.molecule_id
             ) s on s.molecule_id = molecules.id
           SQL
-          paginate(Molecule.joins(sample_join).order("s.max_updated_at desc"))
+          mol_scope = Molecule.joins(sample_join).order("s.max_updated_at desc")
+          reset_pagination_page(mol_scope)
+          paginate(mol_scope)
         end
       end
 

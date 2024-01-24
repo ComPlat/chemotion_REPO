@@ -157,7 +157,7 @@ CitationUserRow.defaultProps = {
 };
 
 const groupByCitation = literatures => (
-  literatures.keySeq().toArray().sort((i, j) => {
+  literatures?.keySeq()?.toArray()?.sort((i, j) => {
     // group by literature id then sort by user id
     const a = literatures.get(i);
     const b = literatures.get(j);

@@ -96,6 +96,9 @@ class Attachment < ApplicationRecord
 
   def read_thumbnail
     attachment(:thumbnail).read if attachment(:thumbnail)&.exists?
+  rescue StandardError => e
+    Rails.logger.error e.message
+    nil
   end
 
   def abs_path
@@ -185,6 +188,9 @@ class Attachment < ApplicationRecord
   def filesize
     # read_attribute(:filesize).presence || attachment['size']
     attachment && attachment['size']
+  rescue StandardError => e
+    Rails.logger.error e.message
+    nil
   end
 
   def add_content_type
@@ -201,6 +207,9 @@ class Attachment < ApplicationRecord
   def content_type
     # read_attribute(:content_type).presence || attachment['mime_type']
     attachment && attachment['mime_type']
+  rescue StandardError => e
+    Rails.logger.error e.message
+    nil
   end
 
   def reload
