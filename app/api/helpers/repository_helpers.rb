@@ -12,6 +12,7 @@ module RepositoryHelpers
       (select label from publication_collections where (elobj ->> 'element_type')::text = 'Reaction' and (elobj ->> 'element_id')::integer = reactions.id) as embargo,
       (select json_extract_path(taggable_data::json, 'publication') from publications where element_type = 'Reaction' and element_id = reactions.id) as publication,
       (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version,
+      (select taggable_data -> 'versions' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as versions,
       reactions.duration
       SQL
     )
@@ -64,6 +65,7 @@ module RepositoryHelpers
     entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     entities[:isPublisher] = (current_user.present? && current_user.id == pub.published_by)
     entities[:new_version] = reaction.new_version
+    entities[:new_version] = reaction.versions
     entities[:elementType] = 'reaction'
     entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
     entities
@@ -98,7 +100,8 @@ module RepositoryHelpers
         <<~SQL
         samples.*,
         (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at,
-        (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version
+        (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version,
+        (select taggable_data -> 'versions' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as versions
         SQL
       )
       .order('published_at desc')
@@ -144,7 +147,8 @@ module RepositoryHelpers
                 melting_point: s.melting_point, boiling_point: s.boiling_point,
                 sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial,
                 embargo: embargo, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos,
-                pub_info: pub_info, segments: segments, isPublisher: isPublisher, new_version: s.new_version)
+                pub_info: pub_info, segments: segments, isPublisher: isPublisher, new_version: s.new_version,
+                versions: s.versions)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?

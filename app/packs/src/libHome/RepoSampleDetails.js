@@ -79,7 +79,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer, isPublisher, xvialCom
+      molecule, isLogin, isReviewer, xvialCom
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -101,6 +101,11 @@ export default class RepoSampleDetails extends Component {
 
     tagData = (pubData?.taggable_data) || {};
     const details = (samples || []).map((s) => {
+      // only display the active version
+      if (!s.show) {
+        return null;
+      }
+
       if (isPublished) {
         pubData = {
           id: s.pub_id
@@ -135,9 +140,12 @@ export default class RepoSampleDetails extends Component {
         segments: s.segments || [],
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
-        new_version: s.new_version
+        new_version: s.new_version,
+        versions: (s.versions || []).map(v => ({
+          ...samples.find(e => (e.sample_id === v)),
+          molecule_id: molecule.id
+        }))
       };
-      const isPublisher = s.isPublisher
 
       return (
         <RepoSample
@@ -148,7 +156,7 @@ export default class RepoSampleDetails extends Component {
           handleCommentBtn={this.handleCommentBtn}
           isLogin={idyLogin}
           isReviewer={idyReview}
-          isPublisher={isPublisher}
+          isPublisher={s.isPublisher}
           {...this.props}
         />
       );

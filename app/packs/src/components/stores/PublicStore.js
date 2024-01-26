@@ -3,6 +3,7 @@ import alt from '../alt';
 import PublicActions from '../actions/PublicActions';
 import UIActions from '../actions/UIActions';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
+import { isEmpty } from 'lodash';
 
 class PublicStore {
   constructor() {
@@ -53,7 +54,7 @@ class PublicStore {
       handleGetElements: PublicActions.getElements,
       handleRefreshPubElements: PublicActions.refreshPubElements,
       handleDisplayCollection: PublicActions.displayCollection,
-
+      handleSelectVersion: PublicActions.selectVersion
     });
   }
 
@@ -167,6 +168,11 @@ class PublicStore {
       this.setState({ molecules: this.molecules });
     }
 
+    // initially, show only the last versions
+    moleculeList.moleculeData.published_samples.forEach((sample) => {
+      sample.show = (sample.new_version === null);
+    });
+
     this.setState({
       guestPage: 'publications',
       elementType: 'molecule',
@@ -277,6 +283,31 @@ class PublicStore {
 
   handleUnitsSystem(result) {
     this.setState({ unitsSystem: result });
+  }
+
+  handleSelectVersion({ type, version }) {
+    if (type === 'Reaction') {
+      console.log(version);
+    } else if (type === 'Sample') {
+      const currentElement = { ...this.currentElement };
+
+      // find the selected sample
+      const sample = currentElement.published_samples.find(ps => (
+        ps.sample_id === version.sample_id
+      ));
+
+      // find all versions of this sample
+      const versions = currentElement.published_samples.filter(ps => (
+        sample.versions.includes(ps.sample_id)
+      ));
+
+      // hide all but the selected version
+      versions.forEach((v) => {
+        v.show = v.sample_id === version.sample_id;
+      });
+
+      this.setState({ currentElement });
+    }
   }
 }
 

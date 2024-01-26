@@ -28,6 +28,7 @@ import RepoSegment from './RepoSegment';
 import Sample from '../components/models/Sample';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import NewVersionModal from '../components/chemrepo/NewVersionModal';
+import VersionDropdown from '../components/chemrepo/VersionDropdown';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -180,7 +181,7 @@ export default class RepoSample extends Component {
     }
 
     return (
-      <Jumbotron key={`sample-${sample.id}`}>
+      <Jumbotron key={`sample-${sample.id}`} >
         <PublicAnchor doi={sample.doi} isPublished={isPublished} />
         <span className="repo-pub-sample-header">
           <span className="repo-pub-title">
@@ -228,6 +229,11 @@ export default class RepoSample extends Component {
               element={sample}
               isPublisher={isPublisher}
               isLatestVersion={!sample.new_version}
+            />
+            &nbsp;
+            <VersionDropdown
+              type="Sample"
+              element={sample}
             />
           </span>
           {ElStateLabel(sample.embargo)}
