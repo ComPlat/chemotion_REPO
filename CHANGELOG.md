@@ -1,6 +1,13 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.2]
+> 2024-01-25
+
+* Bug fixes:
+  * Fix the publication page shows no entries
+
+
 ## [2.0.1]
 > 2024-01-24
 

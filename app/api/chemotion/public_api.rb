@@ -10,6 +10,7 @@ module Chemotion
     include Grape::Kaminari
     helpers CompoundHelpers
     helpers PublicHelpers
+    helpers ParamsHelpers
 
     namespace :public do
       get 'ping' do

@@ -9,6 +9,7 @@ module Chemotion
     # TODO implement search cache?
     helpers CollectionHelpers
     helpers CompoundHelpers
+    helpers ParamsHelpers
     helpers do
       params :search_params do
         optional :page, type: Integer
