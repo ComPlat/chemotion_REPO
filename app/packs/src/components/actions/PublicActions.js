@@ -322,8 +322,8 @@ class PublicActions {
     };
   }
 
-  selectVersion(type, version) {
-    return { type, version };
+  selectSampleVersion(version) {
+    return version;
   }
 }
 

@@ -230,14 +230,13 @@ export default class RepoSample extends Component {
               isPublisher={isPublisher}
               isLatestVersion={!sample.new_version}
             />
-            &nbsp;
-            <VersionDropdown
-              type="Sample"
-              element={sample}
-            />
           </span>
           {ElStateLabel(sample.embargo)}
         </span>
+        <VersionDropdown
+          type="Sample"
+          element={sample}
+        />
         <br />
         {iupacUserDefined}
         <ContributorInfo contributor={sample.contributors} />

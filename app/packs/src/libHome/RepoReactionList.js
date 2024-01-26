@@ -77,7 +77,11 @@ const RepoReactionList = (props) => {
     element, currentElement, isPubElement, schemeOnly
   } = props;
   const listClass = (currentElement !== null && currentElement && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
-  return (
+
+  // only display the latest versions
+  const display = element.new_version === null;
+
+  return display && (
     <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => PublicActions.displayReaction(element.id)}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${element.id}`}>

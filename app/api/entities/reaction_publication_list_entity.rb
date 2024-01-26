@@ -3,7 +3,7 @@
 # Entity module
 module Entities
   class ReactionPublicationListEntity < Grape::Entity
-    expose :id, :reaction_svg_file, :name
+    expose :id, :reaction_svg_file, :name, :new_version
 
     expose :embargo do |obj|
       obj[:embargo] || ''

@@ -478,7 +478,8 @@ module Chemotion
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
             (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
-            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
+            (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version
           SQL
 
           if params[:scheme_only]

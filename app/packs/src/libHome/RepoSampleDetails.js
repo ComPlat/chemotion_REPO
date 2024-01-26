@@ -141,10 +141,7 @@ export default class RepoSampleDetails extends Component {
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
         new_version: s.new_version,
-        versions: (s.versions || []).map(v => ({
-          ...samples.find(e => (e.sample_id === v)),
-          molecule_id: molecule.id
-        }))
+        versions: (s.versions || []).map(v => samples.find(e => (e.sample_id === v)))
       };
 
       return (

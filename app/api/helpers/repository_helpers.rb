@@ -65,7 +65,7 @@ module RepositoryHelpers
     entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     entities[:isPublisher] = (current_user.present? && current_user.id == pub.published_by)
     entities[:new_version] = reaction.new_version
-    entities[:new_version] = reaction.versions
+    entities[:versions] = reaction.versions
     entities[:elementType] = 'reaction'
     entities[:segments] = Entities::SegmentEntity.represent(reaction.segments)
     entities

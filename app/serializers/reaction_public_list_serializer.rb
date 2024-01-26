@@ -2,7 +2,7 @@
 
 # reaction list class for guest
 class ReactionPublicListSerializer < ActiveModel::Serializer
-  attributes :id, :name, :reaction_svg_file, :xvial_count, :xvial_com, :embargo, :publication
+  attributes :id, :name, :reaction_svg_file, :xvial_count, :xvial_com, :embargo, :publication, :new_version
 
   def xvial_count
     return 1

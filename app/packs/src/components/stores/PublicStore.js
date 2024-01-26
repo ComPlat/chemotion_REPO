@@ -54,7 +54,7 @@ class PublicStore {
       handleGetElements: PublicActions.getElements,
       handleRefreshPubElements: PublicActions.refreshPubElements,
       handleDisplayCollection: PublicActions.displayCollection,
-      handleSelectVersion: PublicActions.selectVersion
+      handleSelectSampleVersion: PublicActions.selectSampleVersion
     });
   }
 
@@ -94,8 +94,19 @@ class PublicStore {
       reactions, page, pages, perPage
     } = results;
     const listType = (reactions && reactions[0] && reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction') || 'reaction';
+
+    // update the currentElements versions if it was loaded before
+    const currentElement = { ...this.currentElement };
+    if (currentElement !== null) {
+      // eslint-disable-next-line no-param-reassign
+      currentElement.versions =
+        (currentElement.versions || []).map(versionId => (
+          reactions.find(r => (r.id === versionId))
+        ));
+    }
+
     this.setState({
-      reactions, page, pages, perPage, listType, guestPage: 'publications'
+      reactions, page, pages, perPage, listType, guestPage: 'publications', currentElement
     });
   }
 
@@ -170,6 +181,7 @@ class PublicStore {
 
     // initially, show only the last versions
     moleculeList.moleculeData.published_samples.forEach((sample) => {
+      // eslint-disable-next-line no-param-reassign
       sample.show = (sample.new_version === null);
     });
 
@@ -190,9 +202,16 @@ class PublicStore {
     let cb = () => PublicActions.getReactions();
 
     if (this.reactions.length > 0) {
+      // eslint-disable-next-line no-param-reassign
+      reactionList.reactionData.versions =
+        (reactionList.reactionData.versions || []).map(versionId => (
+          this.reactions.find(r => (r.id === versionId))
+        ));
+
       cb = () => {};
       this.setState({ reactions: this.reactions });
     }
+
     this.setState({
       guestPage: 'publications',
       elementType: 'reaction',
@@ -285,29 +304,26 @@ class PublicStore {
     this.setState({ unitsSystem: result });
   }
 
-  handleSelectVersion({ type, version }) {
-    if (type === 'Reaction') {
-      console.log(version);
-    } else if (type === 'Sample') {
-      const currentElement = { ...this.currentElement };
+  handleSelectSampleVersion(version) {
+    const currentElement = { ...this.currentElement };
 
-      // find the selected sample
-      const sample = currentElement.published_samples.find(ps => (
-        ps.sample_id === version.sample_id
-      ));
+    // find the selected sample
+    const sample = currentElement.published_samples.find(ps => (
+      ps.sample_id === version.sample_id
+    ));
 
-      // find all versions of this sample
-      const versions = currentElement.published_samples.filter(ps => (
-        sample.versions.includes(ps.sample_id)
-      ));
+    // find all versions of this sample
+    const versions = currentElement.published_samples.filter(ps => (
+      sample.versions.includes(ps.sample_id)
+    ));
 
-      // hide all but the selected version
-      versions.forEach((v) => {
-        v.show = v.sample_id === version.sample_id;
-      });
+    // hide all but the selected version
+    versions.forEach((v) => {
+      // eslint-disable-next-line no-param-reassign
+      v.show = v.sample_id === version.sample_id;
+    });
 
-      this.setState({ currentElement });
-    }
+    this.setState({ currentElement });
   }
 }
 

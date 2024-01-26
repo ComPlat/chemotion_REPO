@@ -10,25 +10,40 @@ const VersionDropdown = (props) => {
 
   const display = !isEmpty(element.versions);
 
+  const handleSelect = (version) => {
+    if (type === 'Reaction') {
+      PublicActions.displayReaction(version.id);
+    } else {
+      PublicActions.selectSampleVersion(version);
+    }
+  };
+
   if (display) {
     return (
-      <Dropdown pullRight>
+      <Dropdown style={{ marginTop: 10 }}>
         <Dropdown.Toggle bsSize="xsmall">
-          Versions
+          Select a different Version of this {type.toLowerCase()}
         </Dropdown.Toggle>
         <Dropdown.Menu>
           {
             element.versions.map((version) => {
-              const versionId = (type === 'Reaction') ? version.reaction_id : version.sample_id;
-              return (
-                <MenuItem
-                  key={versionId}
-                  onSelect={() => PublicActions.selectVersion(type, version)}
-                  active={(element.id === versionId)}
-                >
-                  {version.doi}
-                </MenuItem>
-              );
+              const versionId = (type === 'Reaction') ? version.id : version.sample_id;
+              const doi = version.taggable_data ? version.taggable_data.doi : version.doi;
+
+              if (doi) {
+                return (
+                  <MenuItem
+                    key={versionId}
+                    onSelect={() => handleSelect(version)}
+                    active={(element.id === versionId)}
+                    className="version-dropdown-item"
+                  >
+                    {doi}
+                  </MenuItem>
+                );
+              }
+
+              return null;
             })
           }
         </Dropdown.Menu>

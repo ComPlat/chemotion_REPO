@@ -34,6 +34,7 @@ import PublicAnchor from '../components/chemrepo/PublicAnchor';
 import PublicCommentModal from '../components/chemrepo/PublicCommentModal';
 import UserCommentModal from '../components/chemrepo/UserCommentModal';
 import NewVersionModal from '../components/chemrepo/NewVersionModal';
+import VersionDropdown from '../components/chemrepo/VersionDropdown';
 import QuillViewer from '../components/QuillViewer';
 import {
   Citation,
@@ -630,6 +631,7 @@ export default class RepoReactionDetails extends Component {
         </span>
       );
     }
+
     return (
       <div style={{ border: 'none' }}>
         <div>
@@ -700,6 +702,10 @@ export default class RepoReactionDetails extends Component {
                 schemeOnly={schemeOnly}
               />
             </h4>
+            <VersionDropdown
+              type="Reaction"
+              element={reaction}
+            />
             <br />
             <ContributorInfo
               contributor={taggData.contributors}
