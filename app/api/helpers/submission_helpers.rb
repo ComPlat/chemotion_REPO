@@ -72,11 +72,11 @@ module SubmissionHelpers
     end
     analysis.children.where(container_type: 'dataset').each do |ds|
       ds.attachments.each do |att|
-        if MimeMagic.by_path(att.filename)&.type&.start_with?('image') && att.store.file_exist?
+        if MimeMagic.by_path(att.filename)&.type&.start_with?('image')
           file_path = File.join('public/images/publications/', att.id.to_s, '/', att.filename)
           public_path = File.join('public/images/publications/', att.id.to_s)
           FileUtils.mkdir_p(public_path)
-          File.write(file_path, att.store.read_file.force_encoding("utf-8")) if att.store.file_exist?
+          File.write(file_path, att.read_file.force_encoding("utf-8"))
         end
       end
     end

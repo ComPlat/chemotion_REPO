@@ -60,7 +60,7 @@ module Chemotion
                   file_path = File.join('public/images/publications/', copied_att.id.to_s, '/', copied_att.filename)
                   public_path = File.join('public/images/publications/', copied_att.id.to_s)
                   FileUtils.mkdir_p(public_path)
-                  File.write(file_path, copied_att.store.read_file.force_encoding('utf-8')) if copied_att.store.file_exist?
+                  File.write(file_path, copied_att.read_file.force_encoding('utf-8'))
                 end
               end
 
