@@ -52,6 +52,8 @@ class LoadingStore {
           PublicActions.getSearchMolecules,
           PublicActions.getReactions,
           PublicActions.getMolecules,
+          PublicActions.displayMolecule,
+          PublicActions.displayReaction,
         ],
       handleStartLoadingWithProgress: LoadingActions.startLoadingWithProgress,
       handleStopLoadingWithProgress: LoadingActions.stopLoadingWithProgress,

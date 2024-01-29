@@ -3,6 +3,7 @@ import React from 'react';
 import uuid from 'uuid';
 import PropTypes from 'prop-types';
 import { OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import Formula from 'src/components/common/Formula';
 import PubchemLabels from 'src/components/pubchem/PubchemLabels';
@@ -61,7 +62,7 @@ const RepoMoleculeList = (props) => {
     : `/images/molecules/${molecule.molecule_svg_file}`;
   const pubchemInfo = pubchemTag(molecule);
   return (
-    <Col md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, '', advFlag, advType, advValue)}>
+    <Col md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => { LoadingActions.start(); PublicActions.displayMolecule(molecule.id, '', advFlag, advType, advValue); }}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${molecule.id}`}>
           <Col md={2}>

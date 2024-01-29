@@ -29,7 +29,7 @@ import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import RStore from 'src/stores/alt/repo/stores/RStore';
 import RepoElementDetails from 'src/repoHome/RepoElementDetails';
 import NavFooter from 'src/libHome/NavFooter';
-import LoadingModal from 'src/apps/chemscanner/components/LoadingModal';
+import LoadingModal from 'src/components/common/LoadingModal';
 
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from 'src/repoHome/RepoGenericHub';
