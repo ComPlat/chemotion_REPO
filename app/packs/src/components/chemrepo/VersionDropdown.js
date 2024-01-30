@@ -20,7 +20,7 @@ const VersionDropdown = (props) => {
 
   if (display) {
     return (
-      <Dropdown style={{ marginTop: 10 }}>
+      <Dropdown id={`version-dropdown-${type}-${element.id}`} style={{ marginTop: 10 }}>
         <Dropdown.Toggle bsSize="xsmall">
           Select a different Version of this {type.toLowerCase()}
         </Dropdown.Toggle>
