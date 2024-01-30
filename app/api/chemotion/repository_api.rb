@@ -455,6 +455,10 @@ module Chemotion
             )
           )
 
+          reaction.analyses.each do |analysis|
+            Publication.find_by(element: analysis).update(parent: publication)
+          end
+
           reaction.reactions_samples.each  do |reaction_sample|
             # check if this sample is a new version of a sample
             new_sample_version = current_user.versions_collection.samples.find_by(id: reaction_sample.sample_id)
