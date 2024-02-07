@@ -75,6 +75,7 @@ import CommentSection from 'src/components/comments/CommentSection';
 import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
+import { commentActivation } from 'src/utilities/CommentHelper';
 
 // For REPO
 import { commentActivation } from 'src/utilities/CommentHelper';
@@ -128,6 +129,9 @@ const rangeCheck = (field, sample) => {
 export default class SampleDetails extends React.Component {
   constructor(props) {
     super(props);
+
+    const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
+
     this.state = {
       sample: props.sample,
       reaction: null,
@@ -154,10 +158,9 @@ export default class SampleDetails extends React.Component {
       showPublishSampleModal: false,
       commentScreen: false,
       xvial: (props.sample && props.sample.tag && props.sample.tag.taggable_data && props.sample.tag.taggable_data.xvial && props.sample.tag.taggable_data.xvial.num) || '',
-      currentUser: UserStore.getState().currentUser || {}
+      currentUser,
     };
 
-    const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
     this.enableComputedProps = MatrixCheck(currentUser.matrix, 'computedProp');
     this.enableSampleDecoupled = MatrixCheck(currentUser.matrix, 'sampleDecoupled');
     this.enableNmrSim = MatrixCheck(currentUser.matrix, 'nmrSim');
@@ -195,11 +198,14 @@ export default class SampleDetails extends React.Component {
 
   componentDidMount() {
     const { sample } = this.props;
+    const { currentUser } = this.state;
+
     UIStore.listen(this.onUIStoreChange);
+
     const { activeTab } = this.state;
     this.fetchQcWhenNeeded(activeTab);
-    const currentUser = UserStore.getState()?.currentUser || {};
-    if (!sample.isNew && MatrixCheck(currentUser.matrix, commentActivation)) {
+
+    if (MatrixCheck(currentUser.matrix, commentActivation) && !sample.isNew) {
       CommentActions.fetchComments(sample);
     }
   }
