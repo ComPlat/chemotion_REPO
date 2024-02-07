@@ -112,6 +112,7 @@ module SubmissionHelpers
         next if pd.analyses&.length == 0
         pd.reserve_suffix
         pd.reserve_suffix_analyses(pd.analyses)
+        pd.reload
         prod_pub = Publication.find_by(element: pd)
         if prod_pub.nil?
           accept_new_sample(root, pd)
