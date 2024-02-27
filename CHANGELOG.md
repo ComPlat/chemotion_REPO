@@ -1,6 +1,15 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.3]
+> 2024-02-26
+
+* Bug fixes:
+  * Fix the missing DOI information in the SI.
+* Chores:
+  * Disable DOI List.
+
+
 ## [2.0.2]
 > 2024-01-25
 
