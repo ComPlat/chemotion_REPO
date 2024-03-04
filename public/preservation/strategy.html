@@ -1,0 +1,164 @@
+<h2>1. Preservation in Collaboration with NFDI4Chem</h2>
+
+<h3>1a. Collaboration and stakeholders</h3>
+The Chemotion repository team collaborates with other services within the
+National Research Data Infrastructure for Chemistry (NFDI4Chem) in terms of the
+management and conduction of the digital preservation system. This is
+particularly important, as the consortium NFDI4Chem maintains and supports
+certain software needed to read and reuse data in the Chemotion repository, and
+NFDI4Chem in direct contact to standardization organizations such as IUPAC.
+Also, collaborators within the NFDI4Chem offer services based on the data of the
+Chemotion repository and changes need to be well-negotiated.
+<h3>1b. Stakeholders: Meeting frequency</h3>
+The steering committee (including a representative of the Chemotion repository)
+meets on a weekly basis to discuss important aspects related to the services
+within NFDI4Chem, the working group “repositories” meets every two months.
+<h3>1c. Training support</h3>
+The repository admin team is supported by the NFDI4Chem repository team which
+provides support to train the repository team and advises them with respect to
+preservation standards and measures to be taken. The NFDI4Chem advisors are
+invited to the yearly assessment of the preservation measures (see point 5).
+
+<h2>2. General assessment of data relevant for preservation</h2>
+
+The data stored in
+<a href="https://chemotion.net/welcome/">Chemotion repository</a> needs to be
+preserved to allow future generations of chemists the easy access to data which
+cannot be reproduced easily. The data is needed for spectral comparisons or the
+reproduction of chemical reactions. The data and metadata are in most of the
+cases in a sense timelessly important as long as no fundamental changes in the
+way how to characterize chemical compounds happen and as long as there are no
+fundamental changes in the way how to synthesize new chemical structures. It is
+in the depositor's responsibility to ensure that the data is in the accepted
+formats and that the metadata follows the accepted schema. It is within the
+depositor's responsibility that metadata is accurate and complete. The
+depositor's responsibility ends when the data is accepted to be published in the
+repository. After the acceptance of the data, the repository operator needs to
+take care of the data. As a prerequisite for preservation, five topics are of
+high importance:
+<br /><br />
+(1) Already at the point of the data ingest, the data has to be added
+according to the provided metadata scheme, has to be well-structured and data
+files need to be available in the preferred standardized formats or have to be
+converted to those.
+<br /><br />
+
+(2) Easy access to the data and the required software has to be provided,
+allowing to read, understand and evaluate data online.
+<br /><br /> (3) The download of the data files and other stored data in the database in
+a readable and reusable form has to be supported
+<br /><br /> (4) The access to the metadata in updated metadata schemes is to be
+guaranteed, and
+<br /><br /> (5) A strategy for the versioning of data and metadata needs to be
+implemented.
+<br /><br />
+
+<h2>3. Measures to preserve data</h2>
+
+To reach the preservation goals, the following measures are taken:
+
+<br /><br />
+(1) The preservation of the data is supported by well-established, open, and
+widely used file formats and metadata schemas. Therefore, whenever possible,
+vendor specific/ proprietary formats are converted to open formats for long
+term preservation. The initial conversion happens (supported by automatic
+processing routines) during the ingest of the data by the provider.
+<br /><br />
+(2) Ensuring that data can be read, understood and evaluated online: Ensure
+that the supported data and data files standards are well chosen, enabling
+the readability by open source viewers that are maintained actively by the
+chemistry community in the long run. Data files need to be stored in an open
+file format that allows, in case that the standard is versioned, data can be
+reprocessed and migrated to the new version. Alternatively, if backwards
+compatibility is not possible, suitable data readers need to be additionally
+supported and maintained. It has to be ensured that the viewer for
+standardized data (currently e.g. jcamp-dx viewer) is enabled and supported
+by the repository.
+<br /><br />
+(3) Enable the download of the data files and other stored data in the
+database in a readable and reusable form: The data can be downloaded from
+the repository via the UI. The analytical data is available in one zip
+folder per analytical dataset. The re-use of the data is ensured by open
+source software (ChemSpectra and NMRium) which is community maintained to
+offer options to read the data independent of the infrastructure of the
+repository. Metadata can be downloaded from the UI of the repository as well
+(in DataCite xml and json-ld format). In 2024, the repository operators will
+include a repository downloader service to allow fast options to download
+customized data collections from the repository.
+<br /><br /> (4) Access to the metadata in updated metadata schemes: The Chemotion
+repository supports the DataCite Metadata scheme. Changes of the scheme at
+DataCite will require an adaptation of the supported scheme in the Chemotion
+repository as soon as possible but at least within the range of 1 year after
+the release of a new main version. The migration of old metadata to the new
+scheme will be supported and the timeline is to be defined by the repository
+admin team in close collaboration with NFDI4Chem to ensure the compatibility
+of the changes with services that re-use the data stored in the Chemotion
+repository.
+<br /><br /> (5) Versioning of data and metadata The deletion of data from the Chemotion
+repository is not a standard scenario and should happen only in a few cases
+(defined in the directive of the repository). The standard way to improve
+data in the repository is a versioning of the data. This ensures a
+transparent, user-driven adaptation of data with a full record of the
+changes. The versioning of data is currently implemented and will be enabled
+productively in 2024. The versioning includes the versioning of the DOI in
+cases where the metadata is changed.
+<br /><br />
+
+<h2>4. Financing</h2>
+
+Currently, all stakeholders finance the digital preservation system and the
+human resources responsible for it. If the financial resources are limited or
+not available any more, all stakeholders will be responsible to search
+alternatives. A basic budget is reserved in the budget of the host institution
+KIT, managed by the institute IBCS.
+
+<h2>5. Operation of the digital preservation system</h2>
+The administration team of Chemotion repository meets on a monthly basis to
+discuss important changes that may have impact on the preservation of data and
+metadata in the Chemotion repository. The results are shared -if applicable-
+with NFDI4Chem and persons in charge for different services. The team meets
+once a year for a detailed assessment of data and metadata to guarantee the
+aims described in (2). If needed, necessary action points are described,
+discussed within the NFDI4Chem community within 3 months latest and a timeline
+will be defined with all stakeholders, in particular services within
+NFDI4Chem. The outcome of the assessment and measures are stored by the admin
+team and can be made available on request. Measures are also announced and
+published in the documentation of the Chemotion repository. In addition, the
+data is checked for re-usability continuously upon community feedback.
+Feedback mechanisms are enabled via the UI of the repository (feedback options
+per dataset at different detail levels).
+
+<h2>6. Responsibility for preservation</h2>
+Responsible for the preservation of the data is the administration team of the
+Chemotion repository.
+
+<h2>7. Review of digital preservation process</h2>
+The measures shall comply with established best practice and standards in the
+area of digital preservation. Therefore, the measures shall be evaluated on a
+regular basis once a year after the yearly data assessment; the documentation
+of such evaluations is available at all times to all employees working with
+long-term archiving in NFDI4chem.
+
+<h2>8. Archival and exit strategy</h2>
+Archival of data: To date, the size of the data hosted by Chemotion repository
+is small enough to provide full and fast access to the data. In case of
+tremendous increase of the data, the Chemotion team will decide on a data
+archival process on tapes. This process is also planned in case that the
+repository has to run with limited resources or in other unforeseeable cases.
+KIT provides access to storage on tapes e.g. via the system bwDataArchive and
+exit scenarios including archiving in
+<a href="https://www.rda.kit.edu/102.php">bwDataArchive</a> are a feasible
+option which is available at KIT. The storage of the data on tapes due to
+storage limitation or due to an exit scenario will include the preservation of
+all data and metadata. In addition, data stored in Chemotion repository can be
+used as it is for a deposition in RADAR (Research Data Repository) as a backup
+service in case of an exit scenario.
+<a href="https://www.radar-service.eu/radar/en/home">RADAR</a> cannot replace
+the functionality of Chemotion repository but it can be used to preserve data
+and metadata. Example datasets were already stored in RADAR to ensure the
+suitability and feasibility of the planned process.
+
+<h2>9. Review of data preservation policy</h2>
+In order to ensure that this document is always up-to-date, it shall be
+revised annually and adapted and updated as and when required.
+</h5>

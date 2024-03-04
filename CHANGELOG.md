@@ -4,6 +4,9 @@
 ## [2.0.3]
 > 2024-02-26
 
+* Features and enhancements:
+  * Introduced preservation strategy for the Chemotion Repository.
+
 * Bug fixes:
   * Fix the missing DOI information in the SI.
 * Chores:

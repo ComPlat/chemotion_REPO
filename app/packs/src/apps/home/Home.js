@@ -18,6 +18,7 @@ import RepoReview from 'src/repoHome/RepoReview';
 import RepoAbout from 'src/repoHome/RepoAbout';
 import RepoContact from 'src/repoHome/RepoContact';
 import RepoDirective from 'src/repoHome/RepoDirective';
+import RepoPreservation from 'src/repoHome/RepoPreservation';
 import RepoNewsroom from 'src/repoHome/RepoNewsroom';
 import RepoNewsReader from 'src/repoHome/RepoNewsReader';
 import RepoNewsEditor from 'src/repoHome/RepoNewsEditor';
@@ -106,6 +107,8 @@ class Home extends Component {
         return <RepoHome />;
       case 'directive':
         return <RepoDirective />;
+      case 'preservation':
+        return <RepoPreservation />;
       default:
         return <RepoHome />;
     }

@@ -137,6 +137,15 @@ const routes = {
     '/': 'show'
   },
 
+  '/preservation': {
+    target: {
+      show: function(e) {
+        PublicActions.openRepositoryPage("preservation")
+      },
+    },
+    '/': 'show'
+  },
+
   '/datasets': {
     target: {
       show: function(e) {
