@@ -224,5 +224,5 @@ ImageModal.propTypes = {
 
 ImageModal.defaultProps = {
   imageStyle: {},
-  disableClick: false,
+  disableClick: false
 };
