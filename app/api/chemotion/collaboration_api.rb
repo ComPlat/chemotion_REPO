@@ -51,7 +51,7 @@ module Chemotion
             result = Chemotion::OrcidService.record_person(params[:orcid])
             ## byebug ### PAGGY
             if result.nil?
-              erro_msg = 'ORCID does not exist! Please check.'
+              erro_msg = 'ORCID iD does not exist! Please check.'
             elsif result.person&.family_name.nil?
               erro_msg = 'Last name can not be blank!'
             else
@@ -191,18 +191,18 @@ module Chemotion
       end
 
       namespace :refresh_orcid_aff do
-        desc 'refresh affilication from orcid'
+        desc 'refresh affilication from ORCID iD'
         params do
           requires :user_id, type: Integer
         end
         post do
           user = User.find_by(id: params[:user_id])
           if user.type != 'Collaborator' || user.orcid.nil?
-            { error: true, message: 'Unable to refresh the affilication from this ORCID!' }
+            { error: true, message: 'Unable to refresh the affilication from this ORCID iD!' }
           else
             emps = Chemotion::OrcidService.record_employments(user.orcid)
             if emps.nil?
-              { error: true, message: 'Unable to fetch the affilication from this ORCID!' }
+              { error: true, message: 'Unable to fetch the affilication from this ORCID iD!' }
             else
               uas = UserAffiliation.where(user_id: user.id)
               uas.each do |ua|
@@ -220,7 +220,7 @@ module Chemotion
       end
 
       namespace :load_orcid do
-        desc 'refresh affilication from orcid'
+        desc 'refresh affilication from ORCID iD'
         params do
           requires :ids, type: Array[Integer]
         end

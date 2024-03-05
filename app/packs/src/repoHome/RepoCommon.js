@@ -695,7 +695,7 @@ const OrcidIcon = ({ orcid }) => {
 
   return (
     <a href={`https://orcid.org/${orcid}`} target="_blank" rel="noopener noreferrer" onClick={handleOnClick}>
-      <img src="/images/wild_card/ORCIDiD_iconvector.svg" className="orcid-logo" alt="ORCID" title="ORCID" />
+      <img src="/images/wild_card/ORCIDiD_iconvector.svg" className="orcid-logo" alt="ORCID iD" title="ORCID iD" />
     </a>
   );
 };

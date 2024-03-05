@@ -6,6 +6,7 @@
 
 * Features and enhancements:
   * Introduced preservation strategy for the Chemotion Repository.
+  * Use `ORCID iD` to refer to the ORCID identifier.
 
 * Bug fixes:
   * Fix the missing confirmation dialog when canceling an account.

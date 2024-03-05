@@ -86,21 +86,21 @@ class PagesController < ApplicationController
     result = Chemotion::OrcidService.record_person(orcid)
 
     if result.nil?
-      flash.now['danger'] = 'ORCID does not exist! Please check.'
+      flash.now['danger'] = 'ORCID iD does not exist! Please check.'
       return render 'settings'
     elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
           result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
       data = @profile.data || {}
       data['ORCID'] = orcid
       if @profile.update(data: data)
-        flash['success'] = 'ORCID is successfully saved!'
+        flash['success'] = 'ORCID iD is successfully saved!'
         redirect_to root_path
       else
         flash.now['danger'] = 'Not saved! Please check input fields.'
         return render 'settings'
       end
     else
-      flash.now['danger'] = 'Name could not be matched to the name of this ORCID ' + orcid + ' (family_name: ' + result&.person&.family_name + ', given_name: ' + result&.person&.given_names + '). Please check.'
+      flash.now['danger'] = 'Name could not be matched to the name of this ORCID iD ' + orcid + ' (family_name: ' + result&.person&.family_name + ', given_name: ' + result&.person&.given_names + '). Please check.'
       return render 'settings'
     end
   end
@@ -147,21 +147,21 @@ class PagesController < ApplicationController
     result = Chemotion::OrcidService.record_person(orcid)
 
     if result.nil?
-      flash.now['danger'] = 'ORCID does not exist! Please check.'
+      flash.now['danger'] = 'ORCID iD does not exist! Please check.'
       return render 'settings'
     elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
           result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
       data = @profile.data || {}
       data['ORCID'] = orcid
       if @profile.update(data: data)
-        flash['success'] = 'ORCID is successfully saved!'
+        flash['success'] = 'ORCID iD is successfully saved!'
         redirect_to root_path
       else
         flash.now['danger'] = 'Not saved! Please check input fields.'
         return render 'settings'
       end
     else
-      flash.now['danger'] = 'Name could not be matched to the name of this ORCID ' + orcid + ' (family_name: ' + result.person.family_name + ', given_name: ' + result.person.given_names + '). Please check.'
+      flash.now['danger'] = 'Name could not be matched to the name of this ORCID iD ' + orcid + ' (family_name: ' + result.person.family_name + ', given_name: ' + result.person.given_names + '). Please check.'
       return render 'settings'
     end
   end

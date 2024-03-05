@@ -470,7 +470,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
                   <tr style={{ backgroundColor: '#ddd' }}>
                     <th width="5%">Action</th>
                     <th width="10%">Name</th>
-                    <th width="15%">ORCID</th>
+                    <th width="15%">ORCID iD</th>
                     <th width="70%">
                       <Table style={{ backgroundColor: 'unset', margin: 'unset' }}>
                         <tbody>
@@ -492,7 +492,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
               <Button
                 bsStyle="info"
                 onClick={() => this.loadOrcid()}
-              > get ORCID
+              > get ORCID iD
               </Button>
               <Button
                 bsStyle="success"
