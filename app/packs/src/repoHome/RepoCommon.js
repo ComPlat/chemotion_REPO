@@ -400,6 +400,7 @@ class EmbargoCom extends Component {
               onChange={e => this.handleLicenseChange(e)}
               options={licenses}
               className="select-assign-collection"
+              clearable={false}
             />
           </div>
           <div style={{ width: '40%', textAlign: 'right' }}>
@@ -414,6 +415,7 @@ class EmbargoCom extends Component {
               onChange={e => this.handleEmbargoChange(e)}
               options={bundles}
               className="select-assign-collection"
+              clearable={false}
             />
           </div>
         </Form>

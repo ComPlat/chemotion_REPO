@@ -1,25 +1,20 @@
 
 # Chemotion_Repository Changelog
 
-## [2.0.3]
+## [2.0.2]
 > 2024-02-26
 
 * Features and enhancements:
   * Introduced preservation strategy for the Chemotion Repository.
+  * Use public domain icon to represent `No License`.
   * Use `ORCID iD` to refer to the ORCID identifier.
 
 * Bug fixes:
   * Fix the missing confirmation dialog when canceling an account.
   * Fix the missing DOI information in the SI.
+  * Fix the publication page shows no entries
 * Chores:
   * Disable DOI List.
-
-
-## [2.0.2]
-> 2024-01-25
-
-* Bug fixes:
-  * Fix the publication page shows no entries
 
 
 ## [2.0.1]

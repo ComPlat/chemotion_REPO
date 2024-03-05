@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const LicenseIcon = (props) => {
+function LicenseIcon(props) {
   const { license, hasCoAuthors = false } = props;
   const presentStyle = { height: '26px' };
   let presentHref = 'http://creativecommons.org/licenses/by-sa/4.0/';
@@ -35,9 +35,9 @@ const LicenseIcon = (props) => {
       presentPath = '/images/creative_common/cc-zero.svg';
       break;
     case 'No License':
-      presentHref = '';
+      presentHref = 'http://creativecommons.org/publicdomain/zero/1.0/';
       presentAlt = 'No License';
-      presentPath = '';
+      presentPath = '/images/creative_common/cc-zero.svg';
       break;
     default:
       break;
@@ -57,7 +57,7 @@ const LicenseIcon = (props) => {
       />
     </a>
   );
-};
+}
 
 LicenseIcon.propTypes = {
   hasCoAuthors: PropTypes.bool,
