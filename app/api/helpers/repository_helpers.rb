@@ -27,7 +27,8 @@ module RepositoryHelpers
     infos = {}
     ana_infos = {}
     pd_infos = {}
-    pub.descendants.each do |pp|
+
+    pub.state != Publication::STATE_COMPLETED && pub.descendants.each do |pp|
       review = pp.review || {}
       info = review['info'] || {}
       next if info.empty?
