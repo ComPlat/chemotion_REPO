@@ -11,7 +11,7 @@
 // about supported directives.
 //
 //= require jquery
-//= require jquery_ujs
+//= require rails-ujs
 //= require autocomplete.min
 //= require bootstrap
 //= require pages

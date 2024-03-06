@@ -8,6 +8,7 @@
   * Introduced preservation strategy for the Chemotion Repository.
 
 * Bug fixes:
+  * Fix the missing confirmation dialog when canceling an account.
   * Fix the missing DOI information in the SI.
 * Chores:
   * Disable DOI List.
