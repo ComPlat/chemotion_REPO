@@ -27,7 +27,7 @@ function OmniauthCredential() {
     omniauthProviders = providers && Object.keys(providers).map((key) => (
       <Row key={uuid.v1()}>
         <Col key={uuid.v1()} md={2} />
-        <Col key={uuid.v1()} md={5}>{key}</Col>
+        <Col key={uuid.v1()} md={5}>{key === 'orcid' ? 'ORCID iD': key}</Col>
         <Col key={uuid.v1()} md={5}>{providers[key]}</Col>
       </Row>
     ));
