@@ -205,7 +205,7 @@ class Publication < ActiveRecord::Base
     pub_user = User.find(published_by)
     return false unless pub_user && element
 
-    group_reviewers = review['reviewers']
+    group_reviewers = review && review['reviewers']
     reviewers = User.where(id: group_reviewers) if group_reviewers.present?
     return false if reviewers&.empty?
 

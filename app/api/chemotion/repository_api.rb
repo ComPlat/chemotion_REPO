@@ -570,6 +570,8 @@ module Chemotion
           error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
 
           pub = Publication.find_by(element_type: 'Reaction', element_id: params[:id])
+          error!('404 No data found', 404) if pub.nil?
+
           error!('401 Unauthorized', 401) if (params[:is_public] == false && pub.state == 'completed')
         end
         get do

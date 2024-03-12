@@ -1,6 +1,20 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.4]
+> 2024-03-12
+
+* Features and enhancements:
+  * Introduced a new confirmation and welcome email.
+* Chores:
+  * Updated API document.
+
+## [2.0.3]
+> 2024-03-08
+
+* Bug fixes:
+  * Fixed the missing warning dialog before canceling an account.
+
 ## [2.0.2]
 > 2024-02-26
 
@@ -10,12 +24,12 @@
   * Use `ORCID iD` to refer to the ORCID identifier.
 
 * Bug fixes:
-  * Fix the missing confirmation dialog when canceling an account.
-  * Fix the missing DOI information in the SI.
-  * Fix the publication page shows no entries
+  * Fixed the missing confirmation dialog when canceling an account.
+  * Fixed the missing DOI information in the SI.
+  * Fixed the publication page shows no entries
 * Chores:
-  * Disable DOI List.
-
+  * Disabled DOI List.
+  * Upgraded Labimotion.
 
 ## [2.0.1]
 > 2024-01-24
