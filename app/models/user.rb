@@ -555,9 +555,10 @@ class User < ApplicationRecord
   end
 
   def confirm(*args)
+    was_confirmed = confirmed_at.present?
     super
 
-    send_welcome_email if %w[Person].include?(self.type)
+    send_welcome_email if %w[Person].include?(self.type) && !was_confirmed
   end
 
   private
