@@ -153,6 +153,9 @@ GEM
     activejob-status (0.2.2)
       activejob (>= 4.2)
       activesupport (>= 4.2)
+    activejob_dj_overrides (0.2.0)
+      delayed_job
+      rails (>= 4.2)
     activemodel (6.1.7.7)
       activesupport (= 6.1.7.7)
     activerecord (6.1.7.7)
@@ -476,6 +479,7 @@ GEM
     mini_magick (4.11.0)
     mini_mime (1.1.5)
     minitest (5.22.2)
+    moneta (1.4.2)
     msgpack (1.6.0)
     multi_json (1.15.0)
     multi_xml (0.6.0)
