@@ -3,13 +3,17 @@
 class FillNewPlainTextDescriptionFields < ActiveRecord::Migration[6.1]
   def up
     Reaction.where.not(description: nil).or(Reaction.where.not(observation: nil)).find_each do |reaction|
-      description = Chemotion::QuillToPlainText.convert(reaction.description)
-      observation = Chemotion::QuillToPlainText.convert(reaction.observation)
-      if description.present? || observation.present?
-        reaction.update_columns(plain_text_observation: observation, plain_text_description: description)
+      begin
+        description = Chemotion::QuillToPlainText.convert(reaction.description)
+        observation = Chemotion::QuillToPlainText.convert(reaction.observation)
+        if description.present? || observation.present?
+          reaction.update_columns(plain_text_observation: observation, plain_text_description: description)
+        end
+        # force gc of node processes
+        ObjectSpace.garbage_collect
+      rescue Exception => e
+        byebug
       end
-      # force gc of node processes
-      ObjectSpace.garbage_collect
     end
     Screen.where.not(description: nil).find_each do |screen|
       description = Chemotion::QuillToPlainText.convert(screen.description)

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button, Checkbox, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import PropTypes from 'prop-types';
+import { Button, Checkbox, OverlayTrigger, Tooltip, ButtonGroup, SplitButton, MenuItem } from 'react-bootstrap';
 import QuillViewer from 'src/components/QuillViewer';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
 import { stopBubble } from 'src/utilities/DomHelper';

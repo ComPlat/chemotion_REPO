@@ -285,8 +285,8 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.integer "researchplan_detail_level", default: 10
     t.integer "element_detail_level", default: 10
     t.jsonb "tabs_segment", default: {}
-    t.bigint "inventory_id"
     t.integer "celllinesample_detail_level", default: 10
+    t.bigint "inventory_id"
     t.index ["ancestry"], name: "index_collections_on_ancestry"
     t.index ["deleted_at"], name: "index_collections_on_deleted_at"
     t.index ["inventory_id"], name: "index_collections_on_inventory_id"
@@ -431,6 +431,7 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.integer "parent_id"
     t.text "plain_text_content"
     t.index ["containable_type", "containable_id"], name: "index_containers_on_containable"
+    t.index ["parent_id"], name: "index_containers_parent_id"
   end
 
   create_table "dataset_klasses", id: :serial, force: :cascade do |t|
@@ -710,6 +711,15 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.time "deleted_at"
+  end
+
+  create_table "hub_logs", id: :serial, force: :cascade do |t|
+    t.string "klass_type"
+    t.string "klass_id"
+    t.string "origin"
+    t.string "uuid"
+    t.string "version"
+    t.datetime "created_at"
   end
 
   create_table "inventories", force: :cascade do |t|
@@ -1030,6 +1040,7 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.text "oai_metadata_xml"
     t.index ["ancestry"], name: "index_publications_on_ancestry"
     t.index ["element_type", "element_id", "deleted_at"], name: "publications_element_idx"
+    t.index ["element_type", "state"], name: "index_publications_element_type_state"
   end
 
   create_table "reactions", id: :serial, force: :cascade do |t|
@@ -1572,15 +1583,16 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.datetime "updated_at", null: false
     t.string "additive"
     t.datetime "deleted_at"
-    t.jsonb "readouts", default: [{"unit"=>"", "value"=>""}]
     t.string "label", default: "Molecular structure", null: false
     t.string "color_code"
+    t.jsonb "readouts", default: [{"unit"=>"", "value"=>""}]
     t.index ["deleted_at"], name: "index_wells_on_deleted_at"
     t.index ["sample_id"], name: "index_wells_on_sample_id"
     t.index ["wellplate_id"], name: "index_wells_on_wellplate_id"
   end
 
   add_foreign_key "collections", "inventories"
+  add_foreign_key "dois", "molecules"
   add_foreign_key "literals", "literatures"
   add_foreign_key "report_templates", "attachments"
   add_foreign_key "sample_tasks", "samples"
@@ -1745,8 +1757,8 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
        RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
          and l.element_type = $1 and l.element_id = $2
        $function$
   SQL
@@ -1835,29 +1847,6 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
       end
       $function$
   SQL
-  create_function :pub_reactions_by_molecule, sql_definition: <<-'SQL'
-      CREATE OR REPLACE FUNCTION public.pub_reactions_by_molecule(collection_id integer, molecule_id integer)
-       RETURNS TABLE(reaction_ids integer)
-       LANGUAGE sql
-      AS $function$
-          (select r.id from collections c, collections_reactions cr, reactions r, reactions_samples rs, samples s,molecules m
-           where c.id=$1 and c.id = cr.collection_id and cr.reaction_id = r.id
-           and r.id = rs.reaction_id and rs.sample_id = s.id and rs.type in ('ReactionsProductSample')
-           and c.deleted_at is null and cr.deleted_at is null and r.deleted_at is null and rs.deleted_at is null and s.deleted_at is null and m.deleted_at is null
-           and s.molecule_id = m.id and m.id=$2)
-        $function$
-  SQL
-  create_function :set_segment_klasses_identifier, sql_definition: <<-'SQL'
-      CREATE OR REPLACE FUNCTION public.set_segment_klasses_identifier()
-       RETURNS trigger
-       LANGUAGE plpgsql
-      AS $function$
-      begin
-      	update segment_klasses set identifier = gen_random_uuid() where identifier is null;
-        return new;
-      end
-      $function$
-  SQL
   create_function :user_as_json, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.user_as_json(user_id integer)
        RETURNS json
@@ -1910,18 +1899,18 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
   SQL
 
   create_view "compound_open_data_locals", sql_definition: <<-SQL
-      SELECT c.x_id,
-      c.x_sample_id,
-      c.x_data,
-      c.x_created_at,
-      c.x_updated_at,
-      c.x_inchikey,
-      c.x_sum_formular,
-      c.x_cano_smiles,
-      c.x_external_label,
-      c.x_short_label,
-      c.x_name,
-      c.x_stereo
+      SELECT x_id,
+      x_sample_id,
+      x_data,
+      x_created_at,
+      x_updated_at,
+      x_inchikey,
+      x_sum_formular,
+      x_cano_smiles,
+      x_external_label,
+      x_short_label,
+      x_name,
+      x_stereo
      FROM ( SELECT NULL::integer AS x_id,
               NULL::integer AS x_sample_id,
               NULL::jsonb AS x_data,
@@ -1934,7 +1923,7 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
               NULL::character varying AS x_short_label,
               NULL::character varying AS x_name,
               NULL::jsonb AS x_stereo) c
-    WHERE (c.x_id IS NOT NULL);
+    WHERE (x_id IS NOT NULL);
   SQL
   create_view "literal_groups", sql_definition: <<-SQL
       SELECT lits.element_type,
@@ -1980,29 +1969,29 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     WHERE ((channels.id = messages.channel_id) AND (messages.id = notifications.message_id) AND (users.id = messages.created_by));
   SQL
   create_view "publication_authors", sql_definition: <<-SQL
-      SELECT DISTINCT (jsonb_array_elements((publications.taggable_data -> 'creators'::text)) ->> 'id'::text) AS author_id,
-      publications.element_id,
-      publications.element_type,
+      SELECT DISTINCT (jsonb_array_elements((taggable_data -> 'creators'::text)) ->> 'id'::text) AS author_id,
+      element_id,
+      element_type,
           CASE
-              WHEN ((publications.state)::text ~~ 'completed%'::text) THEN 'completed'::character varying
-              ELSE publications.state
+              WHEN ((state)::text ~~ 'completed%'::text) THEN 'completed'::character varying
+              ELSE state
           END AS state,
-      publications.doi_id,
-      publications.ancestry
+      doi_id,
+      ancestry
      FROM publications
-    WHERE (publications.deleted_at IS NULL);
+    WHERE (deleted_at IS NULL);
   SQL
   create_view "publication_collections", sql_definition: <<-SQL
-      SELECT p.id,
-      p.state,
-      p.element_id,
-      (p.taggable_data ->> 'label'::text) AS label,
-      (p.taggable_data ->> 'col_doi'::text) AS doi,
-      jsonb_array_elements((p.taggable_data -> 'element_dois'::text)) AS elobj,
-      p.doi_id,
-      p.published_by
+      SELECT id,
+      state,
+      element_id,
+      (taggable_data ->> 'label'::text) AS label,
+      (taggable_data ->> 'col_doi'::text) AS doi,
+      jsonb_array_elements((taggable_data -> 'element_dois'::text)) AS elobj,
+      doi_id,
+      published_by
      FROM publications p
-    WHERE ((p.deleted_at IS NULL) AND ((p.element_type)::text = 'Collection'::text));
+    WHERE ((deleted_at IS NULL) AND ((element_type)::text = 'Collection'::text));
   SQL
   create_view "publication_ontologies", sql_definition: <<-SQL
       SELECT root.element_type,

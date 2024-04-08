@@ -78,7 +78,6 @@ import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 import { commentActivation } from 'src/utilities/CommentHelper';
 
 // For REPO
-import { commentActivation } from 'src/utilities/CommentHelper';
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
 import MolViewerBtn from 'src/components/viewer/MolViewerBtn';

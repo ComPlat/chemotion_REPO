@@ -174,8 +174,7 @@ class Sample < ApplicationRecord
   before_save :attach_svg, :init_elemental_compositions,
               :set_loading_from_ea
   before_save :auto_set_short_label
-  before_save :check_doi
-  before_save :update_inventory_label, if: :new_record?
+    before_save :update_inventory_label, if: :new_record?
   before_create :check_molecule_name
   before_create :set_boiling_melting_points
   after_save :update_counter
@@ -226,8 +225,6 @@ class Sample < ApplicationRecord
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   belongs_to :molecule, optional: true
-
-  has_one :doi, as: :doiable
 
   accepts_nested_attributes_for :molecule_name
   accepts_nested_attributes_for :collections_samples

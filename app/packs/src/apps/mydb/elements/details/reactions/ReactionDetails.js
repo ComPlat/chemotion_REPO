@@ -7,6 +7,10 @@ import {
 } from 'react-bootstrap';
 import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import { findIndex, cloneDeep } from 'lodash';
+// For REPO
+import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
+import PublishReactionModal from 'src/components/chemrepo/PublishReactionModal';
+
 import ElementCollectionLabels from 'src/apps/mydb/elements/labels/ElementCollectionLabels';
 import ElementResearchPlanLabels from 'src/apps/mydb/elements/labels/ElementResearchPlanLabels';
 import ElementAnalysesLabels from 'src/apps/mydb/elements/labels/ElementAnalysesLabels';
@@ -25,7 +29,6 @@ import PrintCodeButton from 'src/components/common/PrintCodeButton';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import UIActions from 'src/stores/alt/actions/UIActions';
-import UserStore from 'src/stores/alt/stores/UserStore';
 import { setReactionByType } from 'src/apps/mydb/elements/details/reactions/ReactionDetailsShare';
 import { sampleShowOrNew } from 'src/utilities/routesUtils';
 import ReactionSvgFetcher from 'src/fetchers/ReactionSvgFetcher';
@@ -47,11 +50,6 @@ import CommentModal from 'src/components/common/CommentModal';
 import { commentActivation } from 'src/utilities/CommentHelper';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 
-// For REPO
-import MatrixCheck from 'src/components/common/MatrixCheck';
-import { commentActivation } from 'src/utilities/CommentHelper';
-import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
-import PublishReactionModal from 'src/components/chemrepo/PublishReactionModal';
 import {
   PublishedTag,
   OrigElnTag,

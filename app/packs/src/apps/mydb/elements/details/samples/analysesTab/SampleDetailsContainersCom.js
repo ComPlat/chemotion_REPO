@@ -193,7 +193,6 @@ function RndEdit({
           top: '0px',
           zIndex: 1000,
           backgroundColor: 'white',
-
       }}
       >
         {AnalysisModeBtn(mode, toggleMode, isDisabled)}
@@ -201,6 +200,7 @@ function RndEdit({
         {renderCommentButton(handleCommentButtonClick, false)}
         {commentBoxVisible ? renderCommentBox(sample, handleCommentTextChange) : null}
       </p>
+      }
       <PanelGroup
         id="editable-analysis-list"
         defaultActiveKey={0}

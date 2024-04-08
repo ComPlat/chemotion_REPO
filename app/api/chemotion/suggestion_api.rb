@@ -8,6 +8,7 @@ module Chemotion
     include Grape::Kaminari
 
     helpers CollectionHelpers
+    helpers RepoSearchHelpers
     helpers do
       def page_size
         7
@@ -176,29 +177,12 @@ module Chemotion
         when 'cell_lines'
           dl_cl.positive? ? search_for_celllines : []
         else
-          if qry =~ /\ACR(R|S|D)-(\d+)\Z/
-            typ = Regexp.last_match(1)
-            pid = Regexp.last_match(2)
-            element_type = case typ
-                           when 'R'
-                             'Reaction'
-                           when 'S'
-                             'Sample'
-                           when 'D'
-                             'Container'
-                           end
-            pids = Publication.where(
-              "state LIKE 'completed%' and element_type = ? and id = ?", element_type, pid
-            ).map do |pub|
-              "CR#{typ}-#{pub.id}"
-            end
-          end
-          chemotion_id = pids || []
-          element_short_label = dl_e&.positive? && search_by_element_short_label.call(Labimotion::Element, qry) || []
-          sample_name = dl_s.positive? && search_by_field.call(Sample, :name, qry) || []
-          sample_short_label = dl_s.positive? && search_by_field.call(Sample, :short_label, qry) || []
-          sample_external_label = dl_s > -1 && search_by_field.call(Sample, :external_label, qry) || []
-          polymer_type = dl_s.positive? && d_for.call(Sample)
+          chemotion_id = suggest_pid(qry)
+          element_short_label = (dl_e.positive? && search_by_element_short_label.call(Labimotion::Element, qry)) || []
+          sample_name = (dl_s.positive? && search_by_field.call(Sample, :name, qry)) || []
+          sample_short_label = (dl_s.positive? && search_by_field.call(Sample, :short_label, qry)) || []
+          sample_external_label = (dl_s > -1 && search_by_field.call(Sample, :external_label, qry)) || []
+          polymer_type = (dl_s.positive? && d_for.call(Sample)
                                                 .by_residues_custom_info('polymer_type', qry)
                                                 .pluck(Arel.sql("residues.custom_info->'polymer_type'")).uniq) || []
           sum_formula = (dl_s.positive? && search_by_field.call(Sample, :molecule_sum_formular, qry)) || []
@@ -260,9 +244,7 @@ module Chemotion
         get do
           params[:element_type]
           if params[:element_type] == 'embargo'
-            cols = Collection.all_embargos(current_user.id).where("label like '#{params[:query]}%'").order(:label)
-            suggestions = cols.map { |col| { name: col.label, search_by_method: 'embargo' } }
-            { suggestions: suggestions }
+            suggest_embargo(current_user, params[:query])
           else
             search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
             { suggestions: search_possibilities_to_suggestions(search_possibilities) }

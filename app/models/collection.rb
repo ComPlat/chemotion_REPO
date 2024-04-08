@@ -62,7 +62,6 @@ class Collection < ApplicationRecord
   has_many :shared_users, through: :sync_collections_users, source: :user
 
   has_one :metadata
-  has_one :doi, as: :doiable
 
   # A collection is locked if it is not allowed to rename or rearrange it
   scope :unlocked, -> { where(is_locked: false) }
@@ -212,16 +211,15 @@ class Collection < ApplicationRecord
             id in (select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements'))
           SQL
         )
-      else
-        Collection.where(
-          <<~SQL
-            id in (
-              select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements') union
-              select co.id from collections co where co.ancestry in (select c.id::text from collections c, sync_collections_users scu
-              where c.label = 'Embargoed Publications' and scu.collection_id = c.id and scu.user_id = #{user_id}))
-          SQL
-        )
-      end
+    else
+      Collection.where(
+        <<~SQL
+          id in (
+            select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements') union
+            select co.id from collections co where co.ancestry in (select c.id::text from collections c, sync_collections_users scu
+            where c.label = 'Embargoed Publications' and scu.collection_id = c.id and scu.user_id = #{user_id}))
+        SQL
+      )
     end
   end
 

@@ -16,12 +16,17 @@ module Publishing
 
     has_one :publication, as: :element
     has_one :publication_as_source, as: :original_element
+    has_one :doi, as: :doiable
+    before_save :check_doi
+
 
     def publication_tag
       self.tag.taggable_data['publication']
     end
 
     def reserve_suffix
+      return if self.is_a?(Container)
+
       return Doi.create_for_element!(self) unless (d = self.doi)
 
       if self.is_a?(Sample) && d.inchikey != self.molecule.inchikey
@@ -35,6 +40,8 @@ module Publishing
     end
 
     def reserve_suffix_analyses(as = Container.none)
+      return if self.is_a?(Container)
+
       ids = as.map(&:id)
       if self.is_a?(Sample)
         ik = self.molecule.inchikey
@@ -58,18 +65,37 @@ module Publishing
       end
     end
 
+    ### for all
     def full_doi
       return nil unless (d = Doi.find_by(doiable: self))
+
       d.full_doi
     end
 
+    ## for all
     def generate_doi(version)
-      version_str = version.to_i.zero? ? '' : '.' + version.to_s
-      inchikey_version = self.molecule.inchikey + version_str
-      "#{Datacite::Mds.new.doi_prefix}/#{inchikey_version}"
+      if self.is_a?(Container)
+        type = self.extended_metadata['kind'].delete(' ') if self.extended_metadata['kind']
+        version_str = version.to_i == 0 ? "" : "." + version.to_s
+        term_id = (type || '').split('|').first.sub!(':','')
+        if self.root.containable.respond_to? :molecule
+          ds_version = self.root.containable.molecule.inchikey + "/" + term_id + version_str
+        elsif self.root.containable.respond_to? :products_short_rinchikey_trimmed
+          ds_version = "reaction/" + self.root.containable.products_short_rinchikey_trimmed+ "/" + term_id + version_str
+        else
+          ds_version =  term_id + version_str
+        end
+        "#{Datacite::Mds.new.doi_prefix}/#{ds_version}"
+      else
+        version_str = version.to_i.zero? ? '' : '.' + version.to_s
+        inchikey_version = self.molecule.inchikey + version_str
+        "#{Datacite::Mds.new.doi_prefix}/#{inchikey_version}"
+      end
     end
 
     def create_publication_tag(contributor, author_ids, license)
+      return if self.is_a?(Container)
+
       authors = User.where(id: author_ids, type: %w(Person Collaborator))
                       .includes(:affiliations)
                       .order(Arel.sql("position(users.id::text in '#{author_ids}')"))
@@ -114,6 +140,8 @@ module Publishing
     # Update the tag['publication'] for a (being) published public sample
 
     def update_publication_tag(**args)
+      return if self.is_a?(Container)
+
       data = args.slice(
         :doi_reg_at, :pubchem_reg_at, :published_at, :sample_version, :doi, :chem_first
       )
@@ -144,6 +172,8 @@ module Publishing
     # Update the tag of the original sample (and of its analysis) used for publication
 
     def tag_as_published(pub_sample, ori_analyses)
+      return if self.is_a?(Container)
+
       et = self.tag
       if (pub_sample.is_a? Reaction)
         et.update!(
@@ -170,6 +200,8 @@ module Publishing
     end
 
     def tag_reserved_suffix(ori_analyses)
+      return if self.is_a?(Container)
+
       et = self.tag
       et.update!(
         taggable_data: (et.taggable_data || {}).merge(reserved_doi: self.doi.full_doi)
@@ -188,6 +220,8 @@ module Publishing
     end
 
     def untag_reserved_suffix()
+      return if self.is_a?(Container)
+
       et = self.tag
       taggable_data = et.taggable_data || {}
       taggable_data.delete('reserved_doi')
@@ -221,8 +255,23 @@ module Publishing
           sd.update!(doiable: nil) unless sd.nil?
           s.untag_reserved_suffix
         end
+      elsif self.is_a?(Container)
+        if self.container_type == 'analysis' && self.publication&.state != 'completed'
+          if self.extended_metadata['kind']&.delete(' ') != d.analysis_type
+            unassociate_doi(d)
+          end
+        end
       end
       true
+    end
+
+    ## for Container
+    def unassociate_doi(d = self.doi)
+      d.update(doiable: nil) unless d.nil?
+      self.extended_metadata.delete('reserved_doi')
+      at = self.tag
+      at.taggable_data.delete('reserved_doi')
+      at.save
     end
   end
 end

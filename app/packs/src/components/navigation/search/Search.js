@@ -80,6 +80,14 @@ export default class Search extends React.Component {
       </MenuItem>
     ));
 
+    // For REPO only
+    menu.push(<MenuItem key="divider" divider />);
+    menu.push(
+      <MenuItem key="embargo" onSelect={() => this.handleElementSelection('embargo')}>
+        Embargo Bundle#
+      </MenuItem>
+    );
+
     return menu;
   }
 

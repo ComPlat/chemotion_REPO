@@ -25,11 +25,10 @@ class Container < ApplicationRecord
   include ElementCodes
   include Labimotion::Datasetable
   include Taggable
+  include Publishing
 
   belongs_to :containable, polymorphic: true, optional: true
   has_many :attachments, as: :attachable
-  has_one :publication, as: :element
-  has_one :doi, as: :doiable
 
   around_save :content_to_plain_text,
               if: -> { extended_metadata_changed? && extended_metadata && extended_metadata['content'].present? }
@@ -57,7 +56,6 @@ class Container < ApplicationRecord
     )
   }
 
-  before_save :check_doi
 
   def analyses
     Container.analyses_for_root(id)
@@ -82,44 +80,6 @@ class Container < ApplicationRecord
       attachments.each(&:destroy!)
     end
   end
-
-  def generate_doi version
-    type = self.extended_metadata['kind'].delete(' ') if self.extended_metadata['kind']
-    version_str = version.to_i == 0 ? "" : "." + version.to_s
-    term_id = (type || '').split('|').first.sub!(':','')
-    if self.root.containable.respond_to? :molecule
-      ds_version = self.root.containable.molecule.inchikey + "/" + term_id + version_str
-    elsif self.root.containable.respond_to? :products_short_rinchikey_trimmed
-      ds_version = "reaction/" + self.root.containable.products_short_rinchikey_trimmed+ "/" + term_id + version_str
-    else
-      ds_version =  term_id + version_str
-    end
-    "#{Datacite::Mds.new.doi_prefix}/#{ds_version}"
-  end
-
-  def full_doi
-    return nil unless (d = Doi.find_by(doiable: self))
-    d.full_doi
-  end
-
-  def unassociate_doi(d = self.doi)
-    d.update(doiable: nil) unless d.nil?
-    self.extended_metadata.delete('reserved_doi')
-    at = self.tag
-    at.taggable_data.delete('reserved_doi')
-    at.save
-  end
-
-  def check_doi
-    # unassoicate doi if type has changed
-    if (d = self.doi) && self.container_type == 'analysis' && self.publication&.state != 'completed'
-      if self.extended_metadata['kind']&.delete(' ') != d.analysis_type
-        unassociate_doi(d)
-      end
-    end
-    true
-  end
-  # rubocop:disable Style/StringLiterals
 
   def content_to_plain_text
     yield

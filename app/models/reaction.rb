@@ -141,13 +141,9 @@ class Reaction < ApplicationRecord
 
   has_many :private_notes, as: :noteable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
-  has_one :doi, as: :doiable
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   validates :creator, presence: true
-
-  ## for REPO
-  before_save :check_doi
 
   before_save :update_svg_file!
   before_save :cleanup_array_fields
