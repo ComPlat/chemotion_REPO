@@ -286,4 +286,13 @@ module RepositoryHelpers
     schemeList
   end
 
+  def build_publication_element_state(publications)
+    publications.map do |c|
+      c.taggable_data['element_dois']&.map do |obj|
+        obj['state'] = Publication.find_by(id: obj['id'])&.state unless obj['state'].present?
+        obj
+      end
+      c
+    end
+  end
 end

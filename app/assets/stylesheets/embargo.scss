@@ -1,0 +1,42 @@
+.repo-ebg-line {
+  margin-bottom: 1em;
+  padding: 0 2em 1em !important;
+  &:nth-child(odd) {
+    background-color: #f2f2f2; // light gray for odd rows
+
+    &:hover {
+      background-color: #e0e0e0; // slightly darker gray when odd rows are hovered
+    }
+  }
+
+  &:nth-child(even) {
+    background-color: #e9e9e9; // slightly darker gray for even rows
+
+    &:hover {
+      background-color: #d9d9d9; // darker gray when even rows are hovered
+    }
+  }
+
+  & .line-title {
+    border-bottom: 1px solid lightgray;
+    padding: 10px;
+    > h3 {
+      font-weight: bolder;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.detail-button {
+  background-color: #6c757d !important;
+  color: white !important;
+  transition: 0.3s;
+}
+
+.detail-button:hover {
+  background-color: white !important;
+  color: gray !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}

@@ -275,7 +275,7 @@ module MetadataJsonld
     json = {}
     term_id = pub.element.extended_metadata['kind']&.split('|')&.first&.strip
     res = ols_load_term_info('CHMO', term_id) if ENV['OLS_SERVICE'].present?
-    data = (res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {} if res.present?
+    data = ((res.dig('_embedded', 'terms').length > 0 && res.dig('_embedded', 'terms').first) || {}) if res.present?
     return {} if data.blank?
 
     json['@type'] = 'DefinedTerm'
@@ -400,8 +400,8 @@ module MetadataJsonld
     link = http_s + api + '/ontologies/' + schema + '/terms?obo_id=' + term_id
     response = HTTParty.get(link, options)
     data = response.parsed_response if response.ok?
-    ols_cache('write', "#{schema}_#{term_id}", data) if data.present?
-    data
+    ols_cache('write', "#{schema}_#{term_id}", data) if data.present? && data.is_a?(Hash)
+    data.is_a?(Hash) ? data : nil
   rescue StandardError => e
     Rails.logger.error ["API call", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
     nil
@@ -409,7 +409,7 @@ module MetadataJsonld
 
   def ols_cache(method, identifier, data = nil, expires_in = 7.days)
     if method == 'write'
-      Rails.cache.write("MetadataJsonld_#{identifier}", data, expires_in: expires_in)
+      Rails.cache.write("MetadataJsonld_#{identifier}", data, expires_in: expires_in) if data.present?
     else
       Rails.cache.send(method, "MetadataJsonld_#{identifier}")
     end

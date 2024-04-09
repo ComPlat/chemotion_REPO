@@ -449,6 +449,7 @@ module Chemotion
                  end
           es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols.empty?
         end
+        # es = build_publication_element_state(es) unless es.empty?
 
         { repository: es, current_user: { id: current_user.id, type: current_user.type } }
       end
@@ -527,7 +528,7 @@ module Chemotion
         desc 'User comment'
         params do
           requires :id, type: Integer, desc: 'Element id'
-          optional :type, type: String, values: %w[Reaction Sample Container]
+          optional :type, type: String, values: %w[Reaction Sample Container Collection]
           requires :pageId, type: Integer, desc: 'Page Element id'
           optional :pageType, type: String, values: %w[reactions molecules]
           optional :comment, type: String
@@ -789,8 +790,7 @@ module Chemotion
           def save_comments(root, comment, checklist, reviewComments, action, his = true)
             review = root.review || {}
             review_history = review['history'] || []
-            current = review_history.last
-
+            current = review_history.last || {}
             current['state'] = %w[accepted declined].include?(action) ? action : root.state
             current['action'] = action unless action.nil?
             current['username'] = current_user.name
@@ -799,7 +799,11 @@ module Chemotion
             current['type'] = root.state == Publication::STATE_PENDING ? 'reviewed' : 'submit'
             current['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
 
-            review_history[review_history.length - 1] = current
+            if review_history.length == 0
+              review_history[0] = current
+            else
+              review_history[review_history.length - 1] = current
+            end
             if his ## add next_node
               next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if root.state == Publication::STATE_PENDING
               next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if root.state == Publication::STATE_REVIEWED
@@ -844,7 +848,7 @@ module Chemotion
         desc 'process reviewed publication'
         params do
           requires :id, type: Integer, desc: 'Id'
-          requires :type, type: String, desc: 'Type', values: %w[sample reaction]
+          requires :type, type: String, desc: 'Type', values: %w[sample reaction collection]
           optional :comments, type: Hash
           optional :comment, type: String
           optional :checklist, type: Hash
@@ -856,12 +860,16 @@ module Chemotion
             element_id: params['id']
           ).root
           error!('401 Unauthorized', 401) unless (User.reviewer_ids.include?(current_user.id) && @root_publication.state == Publication::STATE_PENDING) || (@root_publication.review.dig('reviewers')&.include?(current_user&.id)) || (@root_publication.published_by == current_user.id && @root_publication.state == Publication::STATE_REVIEWED)
+
+          embargo = find_embargo_collection(@root_publication) unless params['type'] == 'collection'
+          @embargo_pub = embargo.publication if embargo.present?
         end
 
         post :comments do
           save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], nil, false)
           element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
           element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
+          element = Entities::CollectionEntity.represent(@root_publication.element) if params[:type] == 'collection'
 
           review_info = repo_review_info(@root_publication, current_user&.id, false)
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
@@ -881,6 +889,7 @@ module Chemotion
           @root_publication.process_element(Publication::STATE_REVIEWED)
           @root_publication.inform_users(Publication::STATE_REVIEWED)
           # @root_publication.element
+          @embargo_pub&.refresh_embargo_metadata
           element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
           element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           review_info = repo_review_info(@root_publication, current_user&.id, false)
@@ -893,6 +902,7 @@ module Chemotion
           @root_publication.update_state(Publication::STATE_PENDING)
           @root_publication.process_element(Publication::STATE_PENDING)
           @root_publication.inform_users(Publication::STATE_PENDING)
+          @embargo_pub&.refresh_embargo_metadata
           element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
           element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
           his = @root_publication.review&.slice('history') unless User.reviewer_ids.include?(current_user.id) || @root_publication.review.dig('reviewers')&.include?(current_user.id)
@@ -914,10 +924,10 @@ module Chemotion
           element_submit(@root_publication)
           public_literature(@root_publication)
           # element_accepted(@root_publication)
-
           @root_publication.update_state(Publication::STATE_ACCEPTED)
           @root_publication.process_element(Publication::STATE_ACCEPTED)
           @root_publication.inform_users(Publication::STATE_ACCEPTED)
+          @embargo_pub&.refresh_embargo_metadata
 
           element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
           element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
@@ -928,6 +938,8 @@ module Chemotion
           save_comments(@root_publication, params[:comment], params[:checklist], params[:reviewComments], 'declined', false)
           @root_publication.update_state('declined')
           @root_publication.process_element('declined')
+
+          ## TO BE HANDLED - remove from embargo collection
           @root_publication.inform_users(Publication::STATE_DECLINED, current_user.id)
           element = Entities::ReactionEntity.represent(@root_publication.element) if params[:type] == 'reaction'
           element = Entities::SampleEntity.represent(@root_publication.element) if params[:type] == 'sample'
@@ -971,6 +983,9 @@ module Chemotion
           pub = prepare_sample_data
           pub.process_element
           update_tag_doi(pub.element)
+          if col_pub = @embargo_collection&.publication
+            col_pub.refresh_embargo_metadata
+          end
           pub.inform_users
 
           @sample.reload
@@ -1031,6 +1046,9 @@ module Chemotion
           pub = prepare_reaction_data
           pub.process_element
           update_tag_doi(pub.element)
+          if col_pub = @embargo_collection&.publication
+            col_pub.refresh_embargo_metadata
+          end
           pub.inform_users
 
           @reaction.reload
@@ -1276,7 +1294,7 @@ module Chemotion
               { error: "only the owner of embargo #{@embargo_collection.label} can perform the release."}
             else
               col_pub.update(accepted_at: Time.now.utc)
-              refresh_embargo_metadata(params[:collection_id])
+              col_pub.refresh_embargo_metadata
               pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
               pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
               pub_list = pub_samples + pub_reactions
@@ -1330,8 +1348,9 @@ module Chemotion
         end
 
         post :refresh do
-          @id = params[:id]
-          refresh_embargo_metadata(params[:collection_id])
+          col_pub = @embargo_collection.publication
+          col_pub&.refresh_embargo_metadata
+          col_pub
         end
 
         post :move do
@@ -1352,6 +1371,9 @@ module Chemotion
             when 'Reaction'
               CollectionsReaction
             end.create_in_collection(@element['id'], [@new_embargo_collection.id])
+
+            @embargo_collection&.publication&.refresh_embargo_metadata
+            @new_embargo_collection&.publication&.refresh_embargo_metadata
 
             { col_id: @embargo_collection.id,
               new_embargo: @new_embargo_collection.publication,

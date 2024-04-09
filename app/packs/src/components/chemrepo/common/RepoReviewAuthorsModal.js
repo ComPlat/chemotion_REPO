@@ -415,7 +415,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   render() {
-    const { modalShow, countries, organizations, departments, fields } = this.state;
+    const { modalShow, countries, organizations, departments, fields, title } = this.state;
     const { element, disabled } = this.props;
     const taggData = this.state.taggData || this.props.taggData;
     const creators = taggData?.creators || [];
@@ -447,12 +447,12 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     let btn = (<Button style={{ marginLeft: '5px' }} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-users" />&nbsp;Publication Authors</Button>);
     if (element?.element_type === 'Collection' || disabled === true) {
-      btn = (<Button disabled={disabled} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-plus" />&nbsp;Add Authors</Button>);
+      btn = (<Button disabled={disabled} onClick={() => this.setState({ modalShow: true })}><i className="fa fa-plus" />{title}</Button>);
     }
 
     return (
       <span>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Authors</Tooltip>}>{btn}</OverlayTrigger>
+        <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Add Authors</Tooltip>}>{btn}</OverlayTrigger>
         <Modal
           show={modalShow}
           onHide={this.handleClose}
@@ -512,12 +512,14 @@ RepoReviewAuthorsModal.propTypes = {
   review_info: PropTypes.object,
   disabled: PropTypes.bool,
   schemeOnly: PropTypes.bool,
+  title: PropTypes.string,
   taggData: PropTypes.object.isRequired,
 };
 
 RepoReviewAuthorsModal.defaultProps = {
   review_info: {},
   schemeOnly: false,
+  title: 'Add Authors',
   disabled: false,
   taggData: {}
 };

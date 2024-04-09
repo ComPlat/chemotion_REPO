@@ -306,12 +306,14 @@ export default class NoticeButton extends React.Component {
       (currentTime - clientLastActivityTime) / 1000
     );
     if (remainTime < idleTimeout) {
-      MessagesFetcher.fetchMessages(0).then((result) => {
-        result?.messages?.sort((a, b) => a.id - b.id);
-        this.setState({
-          dbNotices: result.messages,
-          serverVersion: result.version,
-        });
+      MessagesFetcher.fetchMessages(0).then(result => {
+        if (result) {
+          result?.messages?.sort((a, b) => a.id - b.id);
+          this.setState({
+            dbNotices: result.messages,
+            serverVersion: result.version,
+          });
+        }
       });
     }
   }
@@ -342,7 +344,7 @@ export default class NoticeButton extends React.Component {
       </Panel>
     );
 
-    if (Object.keys(dbNotices).length > 0) {
+    if (dbNotices?.length > 0) {
       bMessages = dbNotices.map((not, index) => {
         const infoTimeString = formatDate(not.created_at);
 
@@ -440,7 +442,7 @@ export default class NoticeButton extends React.Component {
   }
 
   render() {
-    const noticeNum = Object.keys(this.state.dbNotices).length;
+    const noticeNum = (this.state.dbNotices || []).length;
     let btnStyle = 'default';
     let btnClass = 'fa fa-bell-o fa-lg';
 

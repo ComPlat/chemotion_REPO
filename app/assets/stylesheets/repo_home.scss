@@ -465,6 +465,22 @@ $bs-successcolor: #5cb85c;
   }
 }
 
+
+.home-embargo-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  .btns-grp {
+    background-color: $searchcolor;
+    border: thin $searchcolor;
+    button {
+      background-color: $searchcolor;
+      border-color: $searchcolor;
+      border-radius: unset;
+    }
+  }
+}
+
 .home-adv-search {
   display: flex;
   align-items: center;

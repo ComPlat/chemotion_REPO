@@ -4,62 +4,6 @@
 module EmbargoHelpers
   extend Grape::API::Helpers
 
-  def refresh_embargo_metadata(col_id)
-    pub = Publication.find_by(element_type: 'Collection', element_id: col_id)
-    col = pub&.element
-    if col.present?
-      ps = Publication.where(element_type: 'Sample', ancestry: nil, element_id: col.samples&.pluck(:id))
-      pr = Publication.where(element_type: 'Reaction', ancestry: nil, element_id: col.reactions&.pluck(:id))
-
-      creators = []
-      author_ids = []
-      affiliation_ids = []
-      contributors = {}
-      affiliations = []
-      eids = []
-      dois = []
-
-      (ps + pr)&.each do |pu|
-        if pu.taggable_data['scheme_only'] == true
-        else
-          eids.push(pu.id)
-          dois.push({ id: pu.id, element_type: pu.element_type, element_id: pu.element_id, doi: pu.doi.full_doi }) if pu.doi.present?
-          ctag = pu.taggable_data || {}
-          creators << ctag["creators"]
-          author_ids << ctag["author_ids"]
-          affiliation_ids << ctag["affiliation_ids"]
-          contributors = ctag["contributors"]
-        end
-      end
-
-      et = ElementTag.find_or_create_by(taggable_id: col_id, taggable_type: 'Collection')
-      et_taggable_data = et.taggable_data || {}
-      if et_taggable_data['publication'].present?
-        creators << et_taggable_data['publication']["creators"] if et_taggable_data['publication']["creators"] .present?
-        author_ids << et_taggable_data['publication']["author_ids"] if et_taggable_data['publication']["author_ids"] .present?
-        affiliation_ids << et_taggable_data['publication']["affiliation_ids"] if et_taggable_data['publication']["affiliation_ids"] .present?
-      end
-
-      affiliations = Affiliation.where(id: affiliation_ids.flatten)
-      affiliations_output = {}
-      affiliations.each do |aff|
-        affiliations_output[aff.id] = aff.output_full
-      end
-
-      tag = pub.taggable_data || {}
-      tag["creators"] = creators.flatten.uniq
-      tag["author_ids"] = author_ids.flatten.uniq
-      tag["affiliation_ids"] = affiliation_ids.flatten.uniq
-      tag["contributors"] = contributors
-      tag["affiliations"] = affiliations_output
-      tag["eids"] = eids
-      tag["element_dois"] = dois
-      pub.update!(taggable_data: tag)
-      pub.persit_datacite_metadata_xml!
-      pub
-    end
-  end
-
   def fetch_embargo_collection(cid, current_user)
     if (cid == 0)
       chemotion_user = User.chemotion_user
