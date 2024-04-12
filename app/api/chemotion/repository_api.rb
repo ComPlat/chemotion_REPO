@@ -159,10 +159,8 @@ module Chemotion
           new_sample.collections << current_user.versions_collection
           new_sample.save!
           new_sample.copy_segments(segments: sample.segments, current_user_id: current_user.id) if sample.segments
-          unless @literals.nil?
-            lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
-            duplicate_literals(new_sample, lits)
-          end
+
+          duplicate_literals(new_sample, sample.literals)
 
           analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
           link_analyses(new_sample, analyses)
@@ -340,10 +338,8 @@ module Chemotion
           new_reaction.collections << current_user.versions_collection
           new_reaction.save!
           new_reaction.copy_segments(segments: reaction.segments, current_user_id: current_user.id)
-          unless @literals.nil?
-            lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == reaction.id }
-            duplicate_literals(new_reaction, lits)
-          end
+
+          duplicate_literals(new_reaction, reaction.literals)
 
           dir = File.join(Rails.root, 'public', 'images', 'reactions')
           rsf = reaction.reaction_svg_file
