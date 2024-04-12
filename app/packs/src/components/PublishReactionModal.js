@@ -82,7 +82,10 @@ export default class PublishReactionModal extends Component {
         options: Object.values(publishOptions),
         selected: publishOptions.f,
         disabled: false
-      }
+      },
+      meAsAuthor: false,
+      behalfAsAuthor: false,
+      newVersion: false
     };
 
     this.onUserChange = this.onUserChange.bind(this);
@@ -117,8 +120,13 @@ export default class PublishReactionModal extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    const { currentUser } = UserStore.getState();
+
+    const newVersion = !isUndefined(get(nextProps.reaction, 'tag.taggable_data.previous_version'));
+
     const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_version.license');
     const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_version.scheme_only');
+    const previousUsers = get(nextProps.reaction, 'tag.taggable_data.previous_version.users', []);
 
     const publishType = { ...this.state.publishType };
     if (previousSchemeOnly === true) {
@@ -129,13 +137,32 @@ export default class PublishReactionModal extends Component {
       publishType.disabled = true;
     }
 
+    let meAsAuthor = false
+    let behalfAsAuthor = false
+    const selectedUsers = []
+    previousUsers.forEach((user) => {
+      if (user.id == currentUser.id) {
+        meAsAuthor = true
+      } else {
+        behalfAsAuthor = true
+        selectedUsers.push({
+          label: user.name,
+          value: user.id
+        })
+      }
+    })
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
       selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
       disableLicense: !isUndefined(previousLicense),
-      publishType
+      publishType,
+      meAsAuthor,
+      behalfAsAuthor,
+      selectedUsers,
+      newVersion
     });
   }
 
@@ -270,10 +297,20 @@ export default class PublishReactionModal extends Component {
   }
 
   loadReferences() {
-    let { selectedRefs } = this.state;
+    let { selectedRefs, newVersion } = this.state;
     LiteraturesFetcher.fetchElementReferences(this.state.reaction, true).then((literatures) => {
       const sortedIds = groupByCitation(literatures);
       selectedRefs = selectedRefs.filter(item => sortedIds.includes(item));
+
+      // pre-select all refs when submitting a new version
+      if (newVersion) {
+        literatures.forEach(literature => {
+          if (!selectedRefs.includes(literature.literal_id)) {
+            selectedRefs.push(literature.literal_id)
+          }
+        });
+      }
+
       this.setState({ selectedRefs, literatures, sortedIds });
     });
   }
@@ -440,7 +477,7 @@ export default class PublishReactionModal extends Component {
   }
 
   selectUsers() {
-    const { selectedUsers, collaborations } = this.state;
+    const { selectedUsers, collaborations, meAsAuthor, behalfAsAuthor } = this.state;
     const options = collaborations.map(c => (
       { label: c.name, value: c.id }
     ));
@@ -457,8 +494,8 @@ export default class PublishReactionModal extends Component {
 
     return (
       <div >
-        <Checkbox inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
-        <Checkbox inputRef={(ref) => { this.refBehalfAsAuthor = ref; }}>
+        <Checkbox defaultChecked={meAsAuthor} inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
+        <Checkbox defaultChecked={behalfAsAuthor} inputRef={(ref) => { this.refBehalfAsAuthor = ref; }}>
           I am contributing on behalf of the author{authorCount > 0 ? 's' : '' }
         </Checkbox>
         <h5><b>Authors:</b></h5>
@@ -530,7 +567,7 @@ export default class PublishReactionModal extends Component {
     }
   }
 
-  citationTable(rows, sortedIds, selectedRefs) {
+  citationTable(rows, sortedIds, selectedRefs, newVersion) {
     const sids = sortedUniq(sortedIds);
     return (
       <Table>
@@ -581,12 +618,12 @@ export default class PublishReactionModal extends Component {
   }
 
   selectReferences() {
-    const { selectedRefs, literatures, sortedIds } = this.state;
+    const { selectedRefs, newVersion, literatures, sortedIds } = this.state;
     return (
       <div >
         <ListGroup fill="true">
           <ListGroupItem>
-            {this.citationTable(literatures, sortedIds, selectedRefs)}
+            {this.citationTable(literatures, sortedIds, selectedRefs, newVersion)}
           </ListGroupItem>
         </ListGroup>
       </div>
@@ -626,10 +663,12 @@ export default class PublishReactionModal extends Component {
   }
 
   validatePub(isFullyPublish = true) {
-    const { reaction, noEmbargo, selectedEmbargo } = this.state;
+    const { reaction, noEmbargo, selectedEmbargo, newVersion } = this.state;
     let validates = [];
     if (isFullyPublish) {
-      validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
+      if (!newVersion) {
+        validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
+      }
       validates.push({ name: 'reaction type', value: !!(reaction.rxno && reaction.rxno.length > 0), message: reaction.rxno ? '' : 'Reaction type is missing' });
       const hasDuration =
         !!(reaction.duration && reaction.duration !== '' && Number(reaction.duration.split(' ')[0]) > 0);
@@ -672,7 +711,7 @@ export default class PublishReactionModal extends Component {
   render() {
     const { show } = this.props;
     const {
-      reaction, selectedUsers, selectedReviewers, selectedRefs, publishType, bundles
+      reaction, selectedUsers, selectedReviewers, selectedRefs, publishType, bundles, newVersion
     } = this.state;
 
     const isFullyPublish = publishType.selected === publishOptions.f;
@@ -774,7 +813,7 @@ export default class PublishReactionModal extends Component {
         opts.push({ value: col.element_id, name: tag.label, label: tag.label });
       });
 
-      const awareEmbargo = selectedEmbargo === '-1' ? (
+      const awareEmbargo = (selectedEmbargo === '-1' && !newVersion) ? (
         <Checkbox
           onChange={() => { this.handleNoEmbargoCheck(); }}
           checked={noEmbargo}

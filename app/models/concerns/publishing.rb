@@ -171,6 +171,7 @@ module Publishing
 
     def tag_as_new_version(previous_element, scheme_only: false)
       previous_license = previous_element&.tag&.taggable_data['publication']['license']
+      previous_users = previous_element&.tag&.taggable_data['publication']['creators']
 
       element_tag = self.tag
       element_tag.update!(
@@ -181,7 +182,8 @@ module Publishing
               id: previous_element&.doi&.id
             },
             license: previous_license,
-            scheme_only: scheme_only
+            scheme_only: scheme_only,
+            users: previous_users
           }
         )
       )
