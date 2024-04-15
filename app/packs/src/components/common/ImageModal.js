@@ -23,7 +23,6 @@ export default class ImageModal extends Component {
       isPdf: false,
       pageIndex: 1,
       numOfPages: 0,
-      hover: false,
     };
 
     this.fetchImage = this.fetchImage.bind(this);
@@ -115,20 +114,18 @@ export default class ImageModal extends Component {
 
   render() {
     const {
-      hasPop, previewObject, popObject, imageStyle,
+      hasPop, previewObject, popObject, imageStyle, showPopImage
     } = this.props;
-    const { pageIndex, numOfPages, hover } = this.state;
+    const { pageIndex, numOfPages } = this.state;
 
     if (!hasPop || this.props.disableClick) {
       // For REPO
       return (
         <div className="preview-table">
           <img
-            src={hover ? popObject.src : previewObject.src}
+            src={previewObject.src}
             alt=""
-            {...imageStyle || defaultImageStyle}
-            onMouseEnter={() => this.setState({ hover: true })}
-            onMouseLeave={() => this.setState({ hover: false })}
+            style={{ cursor: 'default', ...imageStyle }}
           />
         </div>
       );
@@ -136,17 +133,19 @@ export default class ImageModal extends Component {
 
     return (
       <div>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="id_enlarge_image">click to enlarge image</Tooltip>}>
-          <div className="preview-table" onClick={this.handleModalShow}>
-            <img
-              src={hover ? popObject.src : previewObject.src}
-              alt=""
-              style={{ cursor: 'pointer', ...imageStyle }}
-              onMouseEnter={() => this.setState({ hover: true })}
-              onMouseLeave={() => this.setState({ hover: false })}
-            />
-          </div>
-        </OverlayTrigger>
+        <div
+          className="preview-table"
+          onClick={this.handleModalShow}
+          onKeyPress={this.handleModalShow}
+          role="button"
+          tabIndex={0}
+        >
+          <img
+            src={showPopImage ? popObject.src : previewObject.src}
+            alt=""
+            style={{ cursor: 'pointer', ...imageStyle }}
+          />
+        </div>
         <Modal show={this.state.showModal} onHide={this.handleModalClose} dialogClassName="noticeModal">
           <Modal.Header closeButton>
             <Modal.Title>{popObject.title}</Modal.Title>
@@ -220,9 +219,11 @@ ImageModal.propTypes = {
     fetchFilename: PropTypes.string,
   }).isRequired,
   disableClick: PropTypes.bool,
+  showPopImage: PropTypes.bool,
 };
 
 ImageModal.defaultProps = {
   imageStyle: {},
-  disableClick: false
+  disableClick: false,
+  showPopImage: false
 };

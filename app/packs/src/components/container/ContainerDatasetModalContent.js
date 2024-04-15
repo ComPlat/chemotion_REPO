@@ -195,6 +195,7 @@ export default class ContainerDatasetModalContent extends Component {
       }, this.timeout),
     });
     this.handleInputChange('instrument', event);
+    this.props.onInstrumentChange(value);
   }
 
   handleAddLink(link) {
@@ -279,7 +280,9 @@ export default class ContainerDatasetModalContent extends Component {
 
       if (attachment.aasm_state === 'queueing' && attachment.content_type === 'application/zip') {
         groups.BagitZip.push(attachment);
-      } else if (attachment.aasm_state === 'image' && (attachment.filename.includes('.combined') ||  attachment.filename.includes('.new_combined'))) {
+      } else if (attachment.aasm_state === 'image'
+          && (attachment.filename.includes('.combined')
+          || attachment.filename.includes('.new_combined'))) {
         groups.Combined.push(attachment);
       } else if (attachment.filename.includes('bagit')) {
         const baseName = attachment.filename.split('_bagit')[0].trim();
@@ -659,7 +662,7 @@ export default class ContainerDatasetModalContent extends Component {
                 style: {
                   position: 'absolute',
                   width: 300,
-                  marginTop: 144,
+                  marginTop: -144,
                   marginLeft: 17,
                 },
               }}
@@ -719,6 +722,7 @@ ContainerDatasetModalContent.propTypes = {
     })),
   }).isRequired,
   onChange: PropTypes.func.isRequired,
+  onInstrumentChange: PropTypes.func,
   onModalHide: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   disabled: PropTypes.bool,
@@ -743,10 +747,11 @@ ContainerDatasetModalContent.propTypes = {
 };
 
 ContainerDatasetModalContent.defaultProps = {
+  isPublic: false, // for REPO
   mode: 'attachments',
   disabled: false,
   readOnly: false,
   attachments: [],
   kind: null,
-  isPublic: false, // for REPO
+  onInstrumentChange: () => {},
 };
