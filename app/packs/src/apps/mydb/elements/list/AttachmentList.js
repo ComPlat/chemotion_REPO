@@ -9,7 +9,7 @@ import Dropzone from 'react-dropzone';
 import Utils from 'src/utilities/Functions';
 import ImageModal from 'src/components/common/ImageModal';
 
-export const attachmentThumbnail = (attachment) => (
+export const attachmentThumbnail = (attachment, pubSrc = '') => (
   <div className="attachment-row-image">
     <ImageModal
       imageStyle={{
@@ -27,14 +27,19 @@ export const attachmentThumbnail = (attachment) => (
         src: attachment.preview,
       }}
       popObject={
-        attachment.filename && attachment.filename.toLowerCase().match(/\.(png|jpg|bmp|tif|svg|jpeg|tiff)$/)
+        attachment.filename &&
+        attachment.filename
+          .toLowerCase()
+          .match(/\.(png|jpg|bmp|tif|svg|jpeg|tiff)$/)
           ? {
-            src: `/api/v1/attachments/${attachment.id}/annotated_image`,
-          }
+              src:
+                pubSrc ||
+                `/api/v1/attachments/${attachment.id}/annotated_image`,
+            }
           : {
-            src: attachment.preview,
-          }
-        }
+              src: attachment.preview,
+            }
+      }
       disableClick
     />
   </div>
@@ -55,35 +60,44 @@ export const formatFileSize = (sizeInB) => {
   return `${sizeInB} bytes`;
 };
 
-const handleDownloadAnnotated = (attachment) => {
+const handleDownloadAnnotated = (attachment, isPublic = false) => {
   const isImage = isImageFile(attachment.filename);
   if (isImage && !attachment.isNew) {
+    const contents = isPublic
+      ? `/api/v1/public/download/annotated_image?id=${attachment.id}`
+      : `/api/v1/attachments/${attachment.id}/annotated_image`;
     Utils.downloadFile({
-      contents: `/api/v1/attachments/${attachment.id}/annotated_image`,
-      name: attachment.filename
+      contents,
+      name: attachment.filename,
     });
   }
 };
 
-const handleDownloadOriginal = (attachment) => {
+const handleDownloadOriginal = (attachment, isPublic = false) => {
+  const contents = isPublic
+    ? `/api/v1/public/download/attachment?id=${attachment.id}`
+    : `/api/v1/attachments/${attachment.id}`;
   Utils.downloadFile({
-    contents: `/api/v1/attachments/${attachment.id}`,
+    contents,
     name: attachment.filename,
   });
 };
 
-export const downloadButton = (attachment) => (
+export const downloadButton = (attachment, isPublic = false) => (
   <Dropdown id={`dropdown-download-${attachment.id}`}>
     <Dropdown.Toggle style={{ height: '30px' }} bsSize="xs" bsStyle="primary">
       <i className="fa fa-download" aria-hidden="true" />
     </Dropdown.Toggle>
     <Dropdown.Menu>
-      <MenuItem eventKey="1" onClick={() => handleDownloadOriginal(attachment)}>
+      <MenuItem
+        eventKey="1"
+        onClick={() => handleDownloadOriginal(attachment, isPublic)}
+      >
         Download Original
       </MenuItem>
       <MenuItem
         eventKey="2"
-        onClick={() => handleDownloadAnnotated(attachment)}
+        onClick={() => handleDownloadAnnotated(attachment, isPublic)}
         disabled={!isImageFile(attachment.filename) || attachment.isNew}
       >
         Download Annotated

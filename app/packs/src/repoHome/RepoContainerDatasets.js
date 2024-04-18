@@ -80,6 +80,7 @@ export default class RepoContainerDatasets extends Component {
               onHide={() => this.handleModalHide()}
               readOnly
               show={modal.show}
+              isPublic={isPublic} // for REPO
             />
           )}
         </div>

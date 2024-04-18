@@ -55,7 +55,7 @@ export default class ContainerDatasetModal extends Component {
 
   render() {
     const {
-      show, onHide, onChange, readOnly, disabled, kind, datasetContainer
+      show, onHide, onChange, readOnly, disabled, kind, datasetContainer, isPublic
     } = this.props;
 
     const { mode } = this.state;
@@ -170,6 +170,7 @@ export default class ContainerDatasetModal extends Component {
               onModalHide={() => onHide()}
               onChange={onChange}
               mode={mode}
+              isPublic={isPublic}
             />
           </Modal.Body>
           <Modal.Footer style={{
@@ -214,10 +215,12 @@ ContainerDatasetModal.propTypes = {
   readOnly: PropTypes.bool,
   disabled: PropTypes.bool,
   kind: PropTypes.string,
+  isPublic: PropTypes.bool, // for REPO
 };
 
 ContainerDatasetModal.defaultProps = {
   readOnly: false,
   disabled: false,
   kind: null,
+  isPublic: false, // for REPO
 };

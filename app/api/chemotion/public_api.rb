@@ -802,6 +802,55 @@ module Chemotion
             zip_f.read
           end
         end
+
+        resource :annotated_image do
+          desc 'download publication annotated image'
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            content_type 'application/octet-stream'
+
+            env['api.format'] = :binary
+            store = @attachment.attachment.storage.directory
+            file_location = store.join(
+              @attachment.attachment_data['derivatives']['annotation']['annotated_file_location'] || 'not available',
+            )
+
+            uploaded_file = if file_location.present? && File.file?(file_location)
+                              extension_of_annotation = File.extname(@attachment.filename)
+                              extension_of_annotation = '.png' if @attachment.attachment.mime_type == 'image/tiff'
+                              filename_of_annotated_image = @attachment.filename.gsub(
+                                File.extname(@attachment.filename),
+                                "_annotated#{extension_of_annotation}",
+                              )
+                              header['Content-Disposition'] = "attachment; filename=\"#{filename_of_annotated_image}\""
+                              File.open(file_location)
+                            else
+                              header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
+                              @attachment.attachment_attacher.file
+                            end
+            data = uploaded_file.read
+            uploaded_file.close
+
+            data
+          end
+        end
+
+        resource :thumbnail do
+          after_validation do
+            @attachment = Attachment.find_by(id: params[:id])
+            error!('404 Attachment not found', 404) unless @attachment
+            @publication = @attachment&.container&.parent&.publication
+            error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
+          end
+          get do
+            Base64.encode64(@attachment.read_thumbnail) if @attachment.thumb
+          end
+        end
       end
 
       resource :metadata do

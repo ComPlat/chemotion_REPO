@@ -328,4 +328,17 @@ export default class PublicFetcher {
       });
     return promise;
   }
+
+  static fetchThumbnail(attId) {
+    const promise = fetch(`/api/v1/public/download/thumbnail?id=${attId}`, {
+      credentials: 'same-origin',
+      method: 'GET',
+    })
+      .then(response => response.json())
+      .then(json => json)
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
 }

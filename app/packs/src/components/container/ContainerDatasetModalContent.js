@@ -35,6 +35,8 @@ import {
   attachmentThumbnail
 } from 'src/apps/mydb/elements/list/AttachmentList';
 import { formatDate } from 'src/utilities/timezoneHelper';
+// For REPO
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 
 export default class ContainerDatasetModalContent extends Component {
   constructor(props) {
@@ -370,17 +372,26 @@ export default class ContainerDatasetModalContent extends Component {
   }
 
   createAttachmentPreviews() {
-    const { datasetContainer } = this.props;
+    const { datasetContainer, isPublic } = this.props;
     datasetContainer.attachments.map((attachment) => {
       if (attachment.thumb) {
-        AttachmentFetcher.fetchThumbnail({ id: attachment.id }).then(
-          (result) => {
+        if (isPublic) {
+          PublicFetcher.fetchThumbnail(attachment.id).then(result => {
             if (result != null) {
               attachment.preview = `data:image/png;base64,${result}`;
               this.forceUpdate();
             }
-          }
-        );
+          });
+        } else {
+          AttachmentFetcher.fetchThumbnail({ id: attachment.id }).then(
+            (result) => {
+              if (result != null) {
+                attachment.preview = `data:image/png;base64,${result}`;
+                this.forceUpdate();
+              }
+            }
+          );
+        }
       } else {
         attachment.preview = '/images/wild_card/not_available.svg';
         this.forceUpdate();
@@ -468,11 +479,13 @@ export default class ContainerDatasetModalContent extends Component {
 
   renderAttachmentRow(attachment) {
     const { extension, attachmentEditor } = this.state;
-    const { readOnly } = this.props;
-
+    const { readOnly, isPublic } = this.props;
+    const pubSrc = isPublic
+      ? `/api/v1/public/download/annotated_image?id=${attachment.id}`
+      : '';
     return (
       <div className="attachment-row" key={attachment.id}>
-        {attachmentThumbnail(attachment)}
+        {attachmentThumbnail(attachment, pubSrc)}
         <div className="attachment-row-text" title={attachment.filename}>
           {attachment.is_deleted ? (
             <strike>{attachment.filename}</strike>
@@ -505,7 +518,7 @@ export default class ContainerDatasetModalContent extends Component {
             </Button>
           ) : (
             <>
-              {downloadButton(attachment)}
+              {downloadButton(attachment, isPublic)}
               {editButton(
                 attachment,
                 extension,
@@ -726,6 +739,7 @@ ContainerDatasetModalContent.propTypes = {
     ]).isRequired,
     thumb: PropTypes.bool.isRequired
   })),
+  isPublic: PropTypes.bool, // for REPO
 };
 
 ContainerDatasetModalContent.defaultProps = {
@@ -733,5 +747,6 @@ ContainerDatasetModalContent.defaultProps = {
   disabled: false,
   readOnly: false,
   attachments: [],
-  kind: null
+  kind: null,
+  isPublic: false, // for REPO
 };
