@@ -121,12 +121,12 @@ export const moveBackButton = (attachment, onBack, readOnly) => (
 
 );
 
-export const annotateButton = (attachment, parent) => (
+export const annotateButton = (attachment, parent, disabled = false) => (
   <ImageAnnotationEditButton
     parent={parent}
     attachment={attachment}
     className={`attachment-button-size ${!isImageFile(attachment.filename) ? 'attachment-gray-button' : ''}`}
-    disabled={!isImageFile(attachment.filename)}
+    disabled={!isImageFile(attachment.filename) || disabled}
   />
 );
 

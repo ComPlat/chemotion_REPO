@@ -50,7 +50,7 @@ export default class ImageAnnotationEditButton extends Component {
       ? 'Annotate image'
       : 'Cannot annotate - invalid file type or the image is new';
 
-    return this.renderButton(isActive, tooltipText);
+    return this.renderButton(isActive && !this.props.disabled, tooltipText);
   }
 }
 
@@ -58,11 +58,13 @@ ImageAnnotationEditButton.propTypes = {
   attachment: PropTypes.instanceOf(Attachment),
   parent: PropTypes.object.isRequired,
   style: PropTypes.object,
-  className: PropTypes.string
+  className: PropTypes.string,
+  disabled: PropTypes.bool,
 };
 
 ImageAnnotationEditButton.defaultProps = {
   attachment: null,
   style: {},
-  className: ''
+  className: '',
+  disabled: false,
 };
