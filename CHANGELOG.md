@@ -7,32 +7,49 @@
   * Included the [Chemotion ELN version 1.9.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.1/CHANGELOG.md).
   * Included the [Chemotion ELN version 1.9.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.0/CHANGELOG.md).
 
+## [2.0.7]
+> 2024-04-xx
+
+* Features and enhancements:
+  * LabIMotion 1.3.0
+
 ## [2.0.6]
 > 2024-04-18
+
+* Features and enhancements:
+  * Implemented streaming data transfer from Chemotion ELN 
+
+* Bug fixes:  
+  * fixed downloading files via the pop-up modal fails on the publication page  (ComPlat/chemotion_REPO#96)
+  * Disabled annotate button for the publication
+  * Fixed initial load hang issue
+* Chores:
+  * chore: remove duplicate codes
+
+## [2.0.5]
+> 2024-04-09
 
 * Features and enhancements:
   * Introduced the embargo overview page, which enables scientists to review their submission status and providing an overview for the reviewers
   * Implemented the review comment function for the embargo collection 
 
-## [2.0.5]
-> 2024-04-09
-
 * Bug fixes:
-  * Fixed the incorrect format of the sign-up terms and conditions content
+  * Fixed the incorrect format of the sign-up terms and conditions content (ComPlat/chemotion_REPO#83)
+  * Fixed a flaw in the similarity search function that caused the error (ComPlat/chemotion_REPO#91)
 
 ## [2.0.4]
 > 2024-03-12
 
 * Features and enhancements:
-  * Introduced a new confirmation and welcome email.
+  * Introduced a new confirmation and welcome email. (ComPlat/chemotion_REPO#74)
 * Chores:
-  * Updated API document.
+  * Updated API document. (ComPlat/chemotion_REPO#67)
 
 ## [2.0.3]
 > 2024-03-08
 
 * Bug fixes:
-  * Fixed the missing warning dialog before canceling an account.
+  * Fixed the missing warning dialog before canceling an account. (ComPlat/chemotion_REPO#78)
 
 ## [2.0.2]
 > 2024-02-26
@@ -40,7 +57,7 @@
 * Features and enhancements:
   * Introduced preservation strategy for the Chemotion Repository.
   * Use public domain icon to represent `No License`.
-  * Use `ORCID iD` to refer to the ORCID identifier.
+  * Use `ORCID iD` to refer to the ORCID identifier.  (ComPlat/chemotion_REPO#76)
 
 * Bug fixes:
   * Fixed the missing confirmation dialog when canceling an account.
