@@ -1,6 +1,25 @@
 
 # Chemotion_Repository Changelog
 
+## [2.0.x]
+> 2024-04-xx
+* Chores:
+  * Included the [Chemotion ELN version 1.9.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.1/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.9.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.0/CHANGELOG.md).
+
+## [2.0.6]
+> 2024-04-18
+
+* Features and enhancements:
+  * Introduced the embargo overview page, which enables scientists to review their submission status and providing an overview for the reviewers
+  * Implemented the review comment function for the embargo collection 
+
+## [2.0.5]
+> 2024-04-09
+
+* Bug fixes:
+  * Fixed the incorrect format of the sign-up terms and conditions content
+
 ## [2.0.4]
 > 2024-03-12
 
