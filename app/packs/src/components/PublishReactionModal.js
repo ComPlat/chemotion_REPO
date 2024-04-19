@@ -567,7 +567,7 @@ export default class PublishReactionModal extends Component {
     }
   }
 
-  citationTable(rows, sortedIds, selectedRefs, newVersion) {
+  citationTable(rows, sortedIds, selectedRefs) {
     const sids = sortedUniq(sortedIds);
     return (
       <Table>
@@ -618,12 +618,12 @@ export default class PublishReactionModal extends Component {
   }
 
   selectReferences() {
-    const { selectedRefs, newVersion, literatures, sortedIds } = this.state;
+    const { selectedRefs, literatures, sortedIds } = this.state;
     return (
       <div >
         <ListGroup fill="true">
           <ListGroupItem>
-            {this.citationTable(literatures, sortedIds, selectedRefs, newVersion)}
+            {this.citationTable(literatures, sortedIds, selectedRefs)}
           </ListGroupItem>
         </ListGroup>
       </div>
