@@ -1230,9 +1230,7 @@ export default class SampleDetails extends React.Component {
               : <OpenCalendarButton isPanelHeader eventableId={sample.id} eventableType="Sample" />}
             {inventorySample}
             {decoupleCb}
-            <div style={{ display: 'inline-block', marginLeft: '10px' }}>
-              <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
-              <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
+            <div style={{ display: 'inline-block', marginLeft: '10px', marginRight: '10px' }}>
               <OrigElnTag element={sample} />
               <PublishedTag element={sample} fnUnseal={this.unseal} />
               <LabelPublication element={sample} />
