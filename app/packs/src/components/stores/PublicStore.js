@@ -3,7 +3,7 @@ import alt from '../alt';
 import PublicActions from '../actions/PublicActions';
 import UIActions from '../actions/UIActions';
 import RepoNavListTypes from '../../libHome/RepoNavListTypes';
-import { isEmpty } from 'lodash';
+import { isEmpty, isNil } from 'lodash';
 
 class PublicStore {
   constructor() {
@@ -104,6 +104,12 @@ class PublicStore {
           reactions.find(r => (r.id === versionId))
         ));
     }
+
+    // check which elements to display
+    reactions.forEach((reaction) => {
+      // only display reactions with no new_version, or with the new_version not in the list (those are not published yet)
+      reaction.show = isNil(reaction.new_version) || isNil(reactions.find((r) => r.id == reaction.new_version))
+    })
 
     this.setState({
       reactions, page, pages, perPage, listType, guestPage: 'publications', currentElement
