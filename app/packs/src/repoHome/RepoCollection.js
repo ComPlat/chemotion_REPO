@@ -89,6 +89,10 @@ export default class RepoCollection extends Component {
 
   componentDidMount() {
     PublicStore.listen(this.onChange);
+    if (!this.state.selectEmbargo) {
+      const id = window.location.pathname.split('/').pop();
+      this.fetchEmbargoElements(id);
+    }
   }
 
   componentWillUnmount() {

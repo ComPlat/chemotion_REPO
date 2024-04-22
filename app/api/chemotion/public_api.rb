@@ -636,6 +636,7 @@ module Chemotion
         end
         get do
           pub = Publication.find_by(element_type: 'Collection', element_id: params[:id], state: 'completed')
+          pub.review = nil
           { col: pub }
         end
       end
