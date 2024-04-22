@@ -34,13 +34,13 @@ function CardIcons() {
   return (
     <div className="card-icons">
       <Col md={4}>
-        <img src="/images/repo/KIT.png" alt="Karlsruhe Institute of Technology" />
+        <img src="/images/repo/KIT.svg" alt="Karlsruhe Institute of Technology" />
       </Col>
       <Col md={4}>
         <img src="/images/repo/Chemotion-V1.png" alt="" />
       </Col>
       <Col md={4}>
-        <img src="/images/repo/dfg_logo.png" alt="" />
+        <img src="/images/repo/dfg_logo_schriftzug_blau.jpg" alt="" />
       </Col>
     </div>
   );
