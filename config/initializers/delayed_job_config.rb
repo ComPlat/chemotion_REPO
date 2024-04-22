@@ -39,11 +39,11 @@ ActiveSupport.on_load(:active_record) do
     Delayed::Job.where("handler like ?", "%PubchemCidJob%").destroy_all
     cron_config = ENV['CRON_CONFIG_PC_CID'].presence
     cron_config ||= "#{rand(0..59)} #{rand(0..23)} * * #{rand(6..7)}"
-    PubchemCidJob.set(cron: cron_config ).perform_later
+    PubchemCidJob.set(cron: cron_config ).perform_later if Rails.env.production?
     Delayed::Job.where("handler like ?", "%PubchemLcssJob%").destroy_all
     cron_config = ENV['CRON_CONFIG_PC_LCSS'].presence
     cron_config ||= "#{rand(0..59)} #{rand(0..23)} * * #{rand(6..7)}"
-    PubchemLcssJob.set(cron: cron_config).perform_later
+    PubchemLcssJob.set(cron: cron_config).perform_later if Rails.env.production?
     Delayed::Job.where("handler like ?", "%RefreshElementTagJob%").destroy_all
     cron_config = ENV['CRON_CONFIG_ELEMENT_TAG'].presence
     cron_config ||= "#{rand(0..59)} #{rand(20..23)} * * #{rand(6..7)}"
@@ -56,7 +56,7 @@ ActiveSupport.on_load(:active_record) do
     Delayed::Job.where("handler like ?", "%PubchemSidJob%").destroy_all
     cron_config = ENV['CRON_CONFIG_PC_SID'].presence
     cron_config ||= "#{rand(0..59)} #{rand(0..23)} * * #{rand(6..7)}"
-    PubchemSidJob.set(cron: cron_config ).perform_later
+    PubchemSidJob.set(cron: cron_config ).perform_later if Rails.env.production?
   end
 rescue PG::ConnectionBad, ActiveRecord::NoDatabaseError => e
   puts e.message

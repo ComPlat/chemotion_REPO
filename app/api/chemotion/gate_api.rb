@@ -175,19 +175,26 @@ module Chemotion
 
           begin
             ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
-          rescue => e
-            Delayed::Worker.logger.error e
             Message.create_msg_notification(
-              channel_subject: Channel::COLLECTION_ZIP_FAIL,
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
               message_from: @user&.id,
-              data_args: { col_labels: '', operation: 'import' },
-              autoDismiss: 5
+              autoDismiss: 5,
+              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
+            )
+          rescue => e
+            log_exception('receiving_zip', e, @user&.id)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
             )
             @success = false
           ensure
             att&.destroy!
           end
-          status(200)
+          status 200
+          { message: "Job ID: #{att&.id}" }
         end
       end
 
@@ -234,13 +241,24 @@ module Chemotion
           
           begin
             ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
+            )
           rescue => e
             log_exception('receiving_completed', e, @user.id)
+            Message.create_msg_notification(
+              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
+              message_from: @user&.id,
+              autoDismiss: 5,
+              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
+            )
             raise e
-          ensure
-            # att&.destroy!
           end
-          status(200)
+          status 200
+          { message: "Job ID: #{att&.id}" }
         end
       end
 

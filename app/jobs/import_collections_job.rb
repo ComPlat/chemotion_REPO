@@ -5,7 +5,7 @@ class ImportCollectionsJob < ApplicationJob
 
   after_perform do |job|
     begin
-      op = @gate === true ? 'transfer' : 'import'
+      op = @gate === true ? "transfer, JobID: [#{@att_id}]" : 'import'
       Message.create_msg_notification(
         channel_subject: Channel::COLLECTION_ZIP,
         message_from: @user_id,
@@ -18,6 +18,7 @@ class ImportCollectionsJob < ApplicationJob
   end
 
   def perform(att, current_user_id, gate = false, col_id = nil, origin = nil)
+    @att_id = att.id
     @user_id = current_user_id
     @success = true
     @gate = gate

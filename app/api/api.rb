@@ -62,11 +62,14 @@ class API < Grape::API
     def is_public_request?
       request.path.start_with?(
         '/api/v1/public/',
-        '/api/v1/labimotion_hub/',            ### TODO: Paggy
+        '/api/v1/labimotion_hub/',
         '/api/v1/public_chemscanner/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
+        '/api/v1/gate/receiving_chunk',
+        '/api/v1/gate/receiving_zip',
+        '/api/v1/gate/received',
         '/api/v1/gate/ping',
         '/api/v1/search/',
         '/api/v1/suggestion'
