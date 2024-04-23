@@ -15,27 +15,30 @@ module KetcherService
         http.request(request)
       end
       finish = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      Rails.logger.info("Render service response: #{res.code} in #{finish - start} seconds")
+      ketcher_logger.info("Render service response: #{res.code} in #{finish - start} seconds")
       raise Net::HTTPError.new("Server replied #{res.code}.", res) if res.code != '200'
 
       svg = JSON.parse(res.body)['svg']
-      Rails.logger.info('Render service replied with SVG.')
+      ketcher_logger.info('Render service replied with SVG.')
       svg
     rescue Errno::ECONNREFUSED
-      Rails.logger.error('Errno::ECONNREFUSED: ketcher_service unreachable')
+      self.log_exception('call_render_service.ECONNREFUSED(ketcher_service unreachable):', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
       raise
     rescue Errno::ENOENT
-      Rails.logger.error('IOError')
+      self.log_exception('call_render_service.ENOENT(IOError):', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
       raise
     rescue Net::ReadTimeout
-      Rails.logger.error('Timeout.')
+      self.log_exception('call_render_service.ReadTimeout:', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
       raise
     rescue Net::HTTPError
-      Rails.logger.error('HTTP error')
+      self.log_exception('call_render_service.HTTPError:', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
       raise
     rescue JSON::ParserError => e
-      Rails.logger.error("Can't parse reply: #{e.message}")
+      self.log_exception('call_render_service.ParserError, Can nott parse reply:', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
       raise
+    rescue StandardError  => e
+      self.log_exception('call_render_service.StandardError:', e, "url: #{url&.host}:#{url&.port}, res.code: #{res&.code}")
+      nil
     end
 
     def self.svg(molfile)
@@ -44,8 +47,18 @@ module KetcherService
       request.body = { molfile: molfile.force_encoding('utf-8') }.to_json
       svg = RenderSvg.call_render_service(url, request)
       svg.force_encoding('utf-8')
-    rescue StandardError
+    rescue StandardError  => e
+      self.log_exception('svg.StandardError:', e, molfile)
       nil
+    end
+      
+    def self.log_exception(name, exception, info = nil)
+      self.ketcher_logger.error("[#{DateTime.now}] [#{name}] info: [#{info}] \n Exception: #{exception&.message}")   
+      self.ketcher_logger.error(exception&.backtrace&.join("\n"))
+    end
+
+    def self.ketcher_logger
+      @@ketcher_logger ||= Logger.new(File.join(Rails.root, 'log', 'ketcher.log'))
     end
   end
 end

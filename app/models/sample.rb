@@ -544,6 +544,19 @@ class Sample < ApplicationRecord
     end
   end
 
+  def reprocess_svg
+    return if sample_svg_file.present?
+
+    svg_digest = "#{molecule.inchikey}#{Time.now}"
+    svg = Molecule.svg_reprocess(svg, molfile || molecule.molfile)
+    svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true) if svg.present?
+    if svg.present? && svg_process.present? && svg_process[:svg_file_name].present? && File.exist?(svg_process[:svg_file_path])
+      sample_svg_file = svg_process[:svg_file_name]
+      attach_svg
+      update_columns(sample_svg_file: sample_svg_file) unless new_record?
+    end
+  end
+
   def contains_residues
     self.residues.any?
   end

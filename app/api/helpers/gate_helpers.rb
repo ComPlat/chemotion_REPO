@@ -44,7 +44,7 @@ module GateHelpers
 
   
   def log_exception(func_name, exception, user_id = nil)
-    transfer_logger.error("[#{func_name}] user: [#{user_id}] \n Exception: #{exception.message}")   
+    transfer_logger.error("[#{DateTime.now}] [#{func_name}] user: [#{user_id}] \n Exception: #{exception.message}")   
     transfer_logger.error(exception.backtrace.join("\n"))
   end
 

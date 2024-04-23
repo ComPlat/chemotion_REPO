@@ -95,6 +95,7 @@ module Chemotion
         # Create(clone) publication sample/analyses with dois
         def duplicate_sample(sample = @sample, analyses = @analyses, parent_publication_id = nil)
           new_sample = sample.dup
+          new_sample.reprocess_svg if new_sample.sample_svg_file.blank?
           new_sample.collections << current_user.pending_collection
           new_sample.collections << Collection.element_to_review_collection
           new_sample.collections << @embargo_collection unless @embargo_collection.nil?
