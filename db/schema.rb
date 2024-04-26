@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_03_28_150631) do
+ActiveRecord::Schema.define(version: 2024_04_24_120634) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -635,6 +635,7 @@ ActiveRecord::Schema.define(version: 2024_03_28_150631) do
     t.string "uuid"
     t.string "klass_uuid"
     t.jsonb "properties_release"
+    t.string "ancestry"
   end
 
   create_table "elements_elements", force: :cascade do |t|

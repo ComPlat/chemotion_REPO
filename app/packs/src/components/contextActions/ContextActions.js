@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { ButtonGroup } from 'react-bootstrap';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import CreateButton from 'src/components/contextActions/CreateButton';
+import SplitElementBtn from 'src/components/contextActions/SplitElementBtn';
 import ReportUtilButton from 'src/components/contextActions/ReportUtilButton';
 import ExportImportButton from 'src/components/contextActions/ExportImportButton';
 import ScanCodeButton from 'src/components/contextActions/ScanCodeButton';

@@ -1,17 +1,24 @@
 
 # Chemotion_Repository Changelog
 
-## [2.0.x]
-> 2024-04-xx
+## [2.0.8]
+> 2024-04-29
+* Features and enhancements:
+  * LabIMotion 1.3.0
 * Chores:
+  * Included the [Chemotion ELN version 1.9.2](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
   * Included the [Chemotion ELN version 1.9.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.1/CHANGELOG.md).
   * Included the [Chemotion ELN version 1.9.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.0/CHANGELOG.md).
 
 ## [2.0.7]
-> 2024-04-xx
+> 2024-04-22
 
-* Features and enhancements:
-  * LabIMotion 1.3.0
+* Chores:
+  * Reorganize partners section on homepage
+
+* Bug fixes:  
+  * Fixed svg scrubber
+
 
 ## [2.0.6]
 > 2024-04-18
