@@ -75,6 +75,7 @@ export default class ReactionDetails extends Component {
       reaction,
       literatures: reaction.literatures,
       activeTab: UIStore.getState().reaction.activeTab,
+      activeAnalysisTab: UIStore.getState().reaction.activeAnalysisTab,
       visible: Immutable.List(),
       sfn: UIStore.getState().hasSfn,
       showPublishReactionModal: false,
@@ -148,21 +149,22 @@ export default class ReactionDetails extends Component {
   shouldComponentUpdate(nextProps, nextState) {
     const nextReaction = nextProps.reaction;
     const nextActiveTab = nextState.activeTab;
+    const nextActiveAnalysisTab = nextState.activeAnalysisTab;
     const nextVisible = nextState.visible;
-    const { reaction, activeTab, visible } = this.state;
+    const {
+      reaction, activeTab, visible, activeAnalysisTab
+    } = this.state;
     return (
       nextState.sealed !== reaction.sealed ||
       nextReaction.can_publish !== reaction.can_publish ||
       nextReaction.can_update !== reaction.can_update ||
+      nextState.showPublishReactionModal !== this.state.showPublishReactionModal ||
       nextReaction.id !== reaction.id ||
       nextReaction.updated_at !== reaction.updated_at ||
       nextReaction.reaction_svg_file !== reaction.reaction_svg_file ||
       !!nextReaction.changed || !!nextReaction.editedSample ||
       nextActiveTab !== activeTab || nextVisible !== visible ||
-      nextState.commentScreen !== this.state.commentScreen ||
-      nextProps.fullScreen !== this.props.fullScreen ||
-      ((nextState.reaction.validates || false)) ||
-      nextState.showPublishReactionModal !== this.state.showPublishReactionModal
+      nextActiveAnalysisTab !== activeAnalysisTab
     );
   }
 
@@ -274,9 +276,11 @@ export default class ReactionDetails extends Component {
   }
 
   onUIStoreChange(state) {
-    if (state.reaction.activeTab != this.state.activeTab) {
+    if (state.reaction.activeTab != this.state.activeTab ||
+      state.reaction.activeAnalysisTab !== this.state.activeAnalysisTab) {
       this.setState({
-        activeTab: state.reaction.activeTab
+        activeTab: state.reaction.activeTab,
+        activeAnalysisTab: state.reaction.activeAnalysisTab
       });
     }
   }
@@ -316,8 +320,7 @@ export default class ReactionDetails extends Component {
     if (type === 'temperatureUnit' || type === 'temperatureData'
       || type === 'description' || type === 'role'
       || type === 'observation' || type === 'durationUnit'
-      || type === 'duration' || type === 'rxno'
-      || type === 'variations') {
+      || type === 'duration' || type === 'rxno') {
       value = event;
     } else if (type === 'rfValue') {
       value = rfValueFormat(event.target.value) || '';
@@ -364,6 +367,7 @@ export default class ReactionDetails extends Component {
 
   productData(reaction) {
     const { products } = this.state.reaction;
+    const { activeAnalysisTab } = this.state;
 
     const tabs = products.map((product, key) => {
       const title = this.productLink(product);
@@ -392,6 +396,8 @@ export default class ReactionDetails extends Component {
         id="data-detail-tab"
         style={{ marginTop: '10px' }}
         unmountOnExit
+        activeKey={activeAnalysisTab}
+        onSelect={this.handleSelectActiveAnalysisTab.bind(this)}
       >
         {tabs}
         <Tab eventKey={4.1} title={reactionTab}>
@@ -558,6 +564,13 @@ export default class ReactionDetails extends Component {
     });
   }
 
+  handleSelectActiveAnalysisTab(key) {
+    UIActions.selectActiveAnalysisTab(key);
+    this.setState({
+      activeAnalysisTab: key
+    });
+  }
+
   onTabPositionChanged(visible) {
     this.setState({ visible });
   }
@@ -660,7 +673,7 @@ export default class ReactionDetails extends Component {
         <Tab eventKey="variations" title="Variations" key={`variations_${reaction.id}`} unmountOnExit={false}>
           <ReactionVariations
             reaction={reaction}
-            onEditVariations={(event) => this.handleInputChange('variations', event)}
+            onReactionChange={this.handleReactionChange}
           />
         </Tab>
       )
