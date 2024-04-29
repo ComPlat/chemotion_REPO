@@ -439,8 +439,8 @@ module Chemotion
         params do
           optional :is_submit, type: Boolean, default: false, desc: 'Publication submission'
         end
-
-        if User.reviewer_ids.include?(current_user.id) && params[:is_submit] == false
+        is_reviewer = User.reviewer_ids.include?(current_user.id)
+        if is_reviewer && params[:is_submit] == false
           es = Publication.where(element_type: 'Collection', state: 'pending').order(Arel.sql("taggable_data->>'label' ASC"))
         else
           cols = if current_user.type == 'Anonymous'
@@ -452,7 +452,7 @@ module Chemotion
         end
         # es = build_publication_element_state(es) unless es.empty?
 
-        { repository: es, current_user: { id: current_user.id, type: current_user.type } }
+        { repository: es, current_user: { id: current_user.id, type: current_user.type, is_reviewer: is_reviewer } }
       end
 
       namespace :assign_embargo do

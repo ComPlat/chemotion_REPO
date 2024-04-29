@@ -203,23 +203,23 @@ class PublicStore {
   }
 
   handleDisplayReaction(reactionList) {
-    const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
-      RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
-    let cb = () => PublicActions.getReactions();
-
-    if (this.reactions.length > 0) {
-      cb = () => {};
-      this.setState({ reactions: this.reactions });
+      const listType = reactionList.reactionData.publication.taggable_data.scheme_only ?
+        RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
+      let cb = () => PublicActions.getReactions();
+  
+      if (this.reactions.length > 0) {
+        cb = () => {};
+        this.setState({ reactions: this.reactions });
+      }
+      this.setState({
+        guestPage: 'publications',
+        elementType: 'reaction',
+        queryId: reactionList.id,
+        currentElement: reactionList.reactionData,
+        listType
+      }, cb());
+      Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
     }
-    this.setState({
-      guestPage: 'publications',
-      elementType: 'reaction',
-      queryId: reactionList.id,
-      currentElement: reactionList.reactionData,
-      listType
-    }, cb());
-    Aviator.navigate(`/publications/reactions/${reactionList.id}`, { silent: true });
-  }
 
   handleReceiveSearchresult(result) {
     this.setState({ ...result.publicMolecules });

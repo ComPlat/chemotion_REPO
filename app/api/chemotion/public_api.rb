@@ -676,7 +676,8 @@ module Chemotion
               published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
-          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type } }
+          is_reviewer = User.reviewer_ids.include?(current_user&.id)
+          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type, is_reviewer: is_reviewer } }
         end
       end
 
@@ -691,7 +692,7 @@ module Chemotion
           pub = @embargo_collection.publication
           error!('401 Unauthorized', 401) if pub.nil?
 
-          if pub.state != 'completed'
+          if pub.state != Publication::STATE_COMPLETED
             error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || pub.published_by == current_user.id)
           end
 
@@ -705,12 +706,19 @@ module Chemotion
           end
         end
       end
-
+      
       resource :reaction do
         helpers RepositoryHelpers
         desc "Return PUBLISHED serialized reaction"
         params do
           requires :id, type: Integer, desc: "Reaction id"
+        end
+        after_validation do
+          reaction = Reaction.find_by(id: params[:id])
+          pub = reaction&.publication
+          error!('404 Reaction not found', 404) unless reaction && pub
+          
+          error!('404 Is not published yet', 404) unless pub&.state === Publication::STATE_COMPLETED
         end
         get do
           r = CollectionsReaction.where(reaction_id: params[:id], collection_id: [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id])

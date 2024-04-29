@@ -217,7 +217,7 @@ export default class RepoEmbargo extends Component {
       const { selectEmbargo, current_user } = this.state;
       if (selectEmbargo === null) {
         alert('Please select an embargo first!');
-      } else if (current_user.id !== selectEmbargo.published_by) {
+      } else if (current_user?.is_reviewer === false && current_user.id !== selectEmbargo.published_by) {
         alert('only the submitter can delete the release!');
       } else {
         EmbargoActions.deleteEmbargo(selectEmbargo.element_id);
@@ -235,34 +235,36 @@ export default class RepoEmbargo extends Component {
   rendeActionBtn(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
-    const actionButtons = (!selectEmbargo || !current_user || (current_user.id !== selectEmbargo.published_by)) ? <span /> :
+    const actionButtons = (!selectEmbargo || !current_user || (current_user?.is_reviewer == false && current_user.id !== selectEmbargo.published_by)) ? <span /> :
       (
         <span>
           <ButtonToolbar>
-            <Button
-              bsStyle="primary"
-              id="all-inner-button"
-              disabled={selectEmbargo === null || elements.length === 0}
-              onClick={() => this.handleEmbargoAccount()}
-            >
-              <i className="fa fa-envelope-o" aria-hidden="true" />&nbsp;Anonymous
-            </Button>
-            <Button
-              bsStyle="warning"
-              id="all-inner-button"
-              disabled={selectEmbargo === null || acceptedEl.length === 0 || acceptedEl.length !== elements.length}
-              onClick={() => this.handleEmbargoRelease()}
-            >
-              <i className="fa fa-telegram" aria-hidden="true" />&nbsp;Release
-            </Button>
-            <Button
-              bsStyle="danger"
-              id="all-inner-button"
-              disabled={selectEmbargo === null || elements.length !== 0}
-              onClick={() => this.onClickDelete()}
-            >
-              <i className="fa fa-trash-o" aria-hidden="true" />&nbsp;Delete
-            </Button>
+            <ButtonGroup>
+              <Button
+                bsStyle="primary"
+                id="all-inner-button"
+                disabled={selectEmbargo === null || elements.length === 0}
+                onClick={() => this.handleEmbargoAccount()}
+              >
+                <i className="fa fa-envelope-o" aria-hidden="true" />&nbsp;Anonymous
+              </Button>
+              <Button
+                bsStyle="warning"
+                id="all-inner-button"
+                disabled={selectEmbargo === null || acceptedEl.length === 0 || acceptedEl.length !== elements.length}
+                onClick={() => this.handleEmbargoRelease()}
+              >
+                <i className="fa fa-telegram" aria-hidden="true" />&nbsp;Release
+              </Button>
+              <Button
+                bsStyle="danger"
+                id="all-inner-button"
+                disabled={selectEmbargo === null || elements.length !== 0}
+                onClick={() => this.onClickDelete()}
+              >
+                <i className="fa fa-trash-o" aria-hidden="true" />&nbsp;Delete
+              </Button>
+            </ButtonGroup>
           </ButtonToolbar>
         </span>
       );
@@ -410,7 +412,7 @@ export default class RepoEmbargo extends Component {
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
     const owner = (selectEmbargo && selectEmbargo.published_by) || 0;
 
-    if (elements?.length === 0 && bundles?.length > 0) {
+    if (selectEmbargo === null && bundles?.length > 0) {
       return (
         <Col sm={12} md={12}>
           <Navbar fluid className="navbar-custom" style={{ marginBottom: '5px' }}>

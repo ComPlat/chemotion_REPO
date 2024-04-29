@@ -5,6 +5,7 @@ import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import SearchFetcher from 'src/fetchers/SearchFetcher';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 class PublicActions {
   initialize() {
@@ -162,7 +163,11 @@ class PublicActions {
   displayReaction(id) {
     return (dispatch) => { PublicFetcher.fetchReaction(id)
       .then((result) => {
-        dispatch({reactionData: result, id: id})
+        if (result.error) {
+          LoadingActions.stop();
+        } else {
+          dispatch({reactionData: result, id: id})
+        }
       }).catch((errorMessage) => {
         console.log(errorMessage)
       })

@@ -58,6 +58,7 @@ module RepositoryHelpers
       p[:xvialCom][:hasSample] = true
     end
     entities[:publication]['review']['history'] = []
+    entities[:publication]['review'] = nil if pub.state === Publication::STATE_COMPLETED
     entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
     entities[:schemes] = schemeList unless entities.nil? || schemeList.nil? || schemeList.length == 0
     entities[:isLogin] = current_user.present?

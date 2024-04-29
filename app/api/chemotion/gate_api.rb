@@ -190,8 +190,6 @@ module Chemotion
               message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
             )
             @success = false
-          ensure
-            att&.destroy!
           end
           status 200
           { message: "Job ID: #{att&.id}" }
