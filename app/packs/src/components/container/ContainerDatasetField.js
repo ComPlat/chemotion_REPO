@@ -39,6 +39,9 @@ class ContainerDatasetField extends Component {
     } = this.props;
 
     const downloadClick = isPublic ? () => PublicFetcher.downloadZip(datasetContainer.id) : () => AttachmentFetcher.downloadZip(datasetContainer.id);
+    const gdsClick = isPublic
+      ? () => PublicFetcher.downloadDataset(datasetContainer.id)
+      : () => AttachmentFetcher.downloadDataset(datasetContainer.id);
 
     if (datasetContainer.is_deleted) {
       return (
@@ -64,7 +67,7 @@ class ContainerDatasetField extends Component {
           <Button
             bsSize="xsmall"
             bsStyle="success"
-            onClick={() => AttachmentFetcher.downloadDataset(datasetContainer.id)}
+            onClick={gdsClick}
           >
             <i className="fa fa-download" />
           </Button>

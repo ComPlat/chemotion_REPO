@@ -706,7 +706,7 @@ module Chemotion
           end
         end
       end
-      
+
       resource :reaction do
         helpers RepositoryHelpers
         desc "Return PUBLISHED serialized reaction"
@@ -717,7 +717,7 @@ module Chemotion
           reaction = Reaction.find_by(id: params[:id])
           pub = reaction&.publication
           error!('404 Reaction not found', 404) unless reaction && pub
-          
+
           error!('404 Is not published yet', 404) unless pub&.state === Publication::STATE_COMPLETED
         end
         get do
@@ -786,14 +786,37 @@ module Chemotion
           end
           get do
             content_type 'application/zip, application/octet-stream'
-            filename = URI.escape("#{@container.parent&.name.gsub(/\s+/, '_')}-#{@container.name.gsub(/\s+/, '_')}.zip")
+            parent_name = @container.parent&.name.to_s.gsub(/\s+/, '_')
+            container_name = @container.name.gsub(/\s+/, '_')
+            filename = "#{parent_name}-#{container_name}.zip"
+            filename = URI.encode_www_form_component(filename)
             header['Content-Disposition'] = "attachment; filename=#{filename}"
             env['api.format'] = :binary
             zip_f = Zip::OutputStream.write_buffer do |zip|
+              file_text = ''
               @container.attachments.each do |att|
-                zip.put_next_entry att.filename
-                zip.write att.read_file
+                file_text += add_to_zip_and_update_file_text(zip, att.filename, att.read_file)
+
+                next unless att.annotated?
+
+                begin
+                  annotated_file_name = "#{File.basename(att.filename, '.*')}_annotated#{File.extname(att.filename)}"
+                  File.open(att.annotated_file_location) do |annotated_file|
+                    annotated_file_content = annotated_file.read
+                    file_text += add_to_zip_and_update_file_text(zip, annotated_file_name, annotated_file_content)
+                  end
+                rescue => e
+                  Rails.logger.error "Failed to add annotated file for attachment #{att.id}: #{e.message}"
+                end
               end
+
+              file_text += export_and_add_to_zip(params[:id], zip, file_text)
+
+              hyperlinks_text = ''
+              JSON.parse(@container.extended_metadata.fetch('hyperlinks', '[]')).each do |link|
+                hyperlinks_text += "#{link} \n"
+              end
+
               zip.put_next_entry 'dataset_description.txt'
               zip.write <<~DESC
                 dataset name: #{@container.name}
@@ -802,10 +825,11 @@ module Chemotion
                 #{@container.description}
 
                 Files:
+                #{file_text}
+
+                Hyperlinks:
+                #{hyperlinks_text}
               DESC
-              @container.attachments.each do |att|
-                zip.write "#{att.filename} #{att.checksum}\n"
-              end
             end
             zip_f.rewind
             zip_f.read
@@ -891,6 +915,22 @@ module Chemotion
           result
         end
 
+
+        desc 'Get dataset metadata of publication'
+        params do
+          requires :id, type: Integer, desc: "Dataset Id"
+        end
+        before do
+          @dataset_id = params[:id]
+          @container = Container.find_by(id: @dataset_id)
+          element = @container.root.containable
+          @publication = Publication.find_by(element: element, state: 'completed') if element.present?
+          error!('404 Publication not found', 404) unless @publication.present?
+        end
+        get :export do
+          export = prepare_and_export_dataset(@container.id)
+        end
+
         desc "metadata of publication"
         params do
           optional :id, type: Integer, desc: "Id"
@@ -911,7 +951,7 @@ module Chemotion
         end
         desc "Download metadata_xml"
         get :download do
-          filename = URI.escape("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+          filename = URI.encode_www_form_component("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
           content_type('application/octet-stream')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
@@ -920,7 +960,7 @@ module Chemotion
 
         desc "Download JSON-Link Data"
         get :download_json do
-          filename = URI.escape("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+          filename = URI.encode_www_form_component("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
           content_type('application/json')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
