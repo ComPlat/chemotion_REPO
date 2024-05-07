@@ -1,35 +1,28 @@
-const EditorAttrs =
-{
-  ketcher:
-  {
+const EditorAttrs = {
+  ketcher: {
     label: 'ketcher-rails',
     src: '/ketcher',
-    structure:
-    {
+    structure: {
       path: 'ketcher',
       setMolfileInFrame: false,
       setMfFuncName: 'setMolecule',
       getMfFuncName: 'getMolfile',
       getMfWithCallback: false,
       getSVGFuncName: 'getSVG',
-      getSVGWithCallback: false
-    }
+      getSVGWithCallback: false,
+    },
   },
-  ketcher2:
-  {
-    structure:
-    {
+  ketcher2: {
+    structure: {
       path: 'ketcher',
       setMolfileInFrame: false,
       setMfFuncName: 'setMolecule',
       getMfFuncName: 'getMolfile',
       getMfWithCallback: false,
-    }
+    },
   },
-  chemdraw:
-  {
-    structure:
-    {
+  chemdraw: {
+    structure: {
       getMfFuncName: 'getMOL',
       setMfFuncName: 'loadMOL',
       getSVGFuncName: 'getSVG',
@@ -37,17 +30,15 @@ const EditorAttrs =
       setMolfileInFrame: false,
       getMolfileFunction: 'getMOL',
       getSVGWithCallback: true,
-    }
+    },
   },
-  marvinjs:
-  {
-    structure:
-    {
+  marvinjs: {
+    structure: {
       getMfWithCallback: true,
       getSVGFuncName: 'render',
-      getSVGWithCallback: true
-    }
-  }
+      getSVGWithCallback: true,
+    },
+  },
 };
 
 export default EditorAttrs;

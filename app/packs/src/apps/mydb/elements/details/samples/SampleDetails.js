@@ -1879,12 +1879,16 @@ export default class SampleDetails extends React.Component {
             <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">
               {tabContents}
             </Tabs>
-          <PublishSampleModal
-            show={showPublishSampleModal}
-            sample={sample}
-            onHide={() => this.showPublishSampleModal(false)}
-            onPublishRefreshClose={this.forcePublishRefreshClose}
-          />
+            {
+              showPublishSampleModal && (
+                <PublishSampleModal
+                show={showPublishSampleModal}
+                sample={sample}
+                onHide={() => this.showPublishSampleModal(false)}
+                onPublishRefreshClose={this.forcePublishRefreshClose}
+              />
+              )
+            }
           </ListGroup>
           {this.sampleFooter()}
           {this.structureEditorModal(sample)}
