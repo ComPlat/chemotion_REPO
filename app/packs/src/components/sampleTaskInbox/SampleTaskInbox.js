@@ -55,7 +55,7 @@ const SampleTaskInbox = ({}) => {
 
   const openSampleTaskCount = () => {
     let count = sampleTasksStore.openSampleTaskCount;
-    if (count == 0) { return 'no'; }
+    if (count === 0) { return 'no'; }
     return count;
   }
 

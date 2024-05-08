@@ -42,7 +42,7 @@ const addSegmentTabs = (element, onChange, contentMap) => {
       (o) => o.segment_klass_id === klass.id
     );
     if (idx < 0 && !klass.is_active) return;
-    let segment = {};
+    let segment;
     if (idx > -1) {
       segment = element.segments[idx];
     } else {
@@ -71,11 +71,11 @@ const addSegmentTabs = (element, onChange, contentMap) => {
   });
 };
 
-const SegmentTabs = (element, onChange, init = 0) => {
-  const result = [];
+const SegmentTabs = (element, onChange) => {
+  const result = {};
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
   const uiCtrl = MatrixCheck(currentUser.matrix, 'segment');
-  if (!uiCtrl) return [];
+  if (!uiCtrl) return {};
   let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
   segmentKlasses = segmentKlasses.filter(
     (s) => s.element_klass && s.element_klass.name === element.type
@@ -97,8 +97,10 @@ const SegmentTabs = (element, onChange, init = 0) => {
         <div>{klass.label}</div>
       </OverlayTrigger>
     );
-    result.push(() => (
-      <Tab eventKey={init + klass.id} key={init + klass.id} title={title}>
+
+    const tabKey = klass.label;
+    result[tabKey] = () => (
+      <Tab eventKey={tabKey} key={tabKey} title={title}>
         <GenericSGDetails
           uiCtrl={uiCtrl}
           segment={segment}
@@ -107,7 +109,7 @@ const SegmentTabs = (element, onChange, init = 0) => {
           fnNavi={onNaviClick}
         />
       </Tab>
-    ));
+    );
   });
   return result;
 };
