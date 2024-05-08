@@ -50,29 +50,12 @@ module Chemotion
             # duplicate datasets and copy attachments
             ana.children.where(container_type: 'dataset').each do |ds|
               new_dataset = new_ana.children.create(container_type: 'dataset')
-              ds.attachments.each do |att|
-                copied_att = att.copy(attachable_type: 'Container', attachable_id: new_dataset.id, transferred: true)
-                copied_att.save!
-                new_dataset.attachments << copied_att
-
-                # copy publication image file to public/images/publications/{attachment.id}/{attachment.filename}
-                if MimeMagic.by_path(copied_att.filename)&.type&.start_with?('image')
-                  file_path = File.join('public/images/publications/', copied_att.id.to_s, '/', copied_att.filename)
-                  public_path = File.join('public/images/publications/', copied_att.id.to_s)
-                  FileUtils.mkdir_p(public_path)
-                  File.write(file_path, copied_att.read_file.force_encoding('utf-8'))
-                end
-              end
 
               new_dataset.name = ds.name
               new_dataset.extended_metadata = ds.extended_metadata
               new_dataset.save!
-
-              if ds.dataset.present?
-                new_dataset.dataset = ds.dataset.dup
-                new_dataset.dataset.uuid = SecureRandom.uuid
-                new_dataset.dataset.save!
-              end
+              clone_attachs = ds.attachments
+              Usecases::Attachments::Copy.execute!(clone_attachs, new_dataset, current_user.id) if clone_attachs.present?
             end
           end
         end

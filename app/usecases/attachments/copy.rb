@@ -21,7 +21,7 @@ module Usecases
           copy_attach.file_path = copy_io.path
           copy_attach.save
 
-          update_annotation(original_attach.id, copy_attach.id)
+          update_annotation(original_attach.id, copy_attach.id) if (original_attach.attachment_data && original_attach.attachment_data['derivatives'])
 
           if element.instance_of?(::ResearchPlan)
             element.update_body_attachments(original_attach.identifier, copy_attach.identifier)
@@ -33,8 +33,10 @@ module Usecases
         loader = Usecases::Attachments::Annotation::AnnotationLoader.new
         svg = loader.get_annotation_of_attachment(original_attach_id)
 
-        updater = Usecases::Attachments::Annotation::AnnotationUpdater.new
-        updater.updated_annotated_string(svg, copy_attach_id)
+        if svg.present?
+          updater = Usecases::Attachments::Annotation::AnnotationUpdater.new
+          updater.updated_annotated_string(svg, copy_attach_id)
+        end
       end
     end
   end
