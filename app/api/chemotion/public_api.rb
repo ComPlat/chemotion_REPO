@@ -810,7 +810,7 @@ module Chemotion
                 end
               end
 
-              file_text += export_and_add_to_zip(params[:id], zip, file_text)
+              file_text += export_and_add_to_zip(params[:id], zip)
 
               hyperlinks_text = ''
               JSON.parse(@container.extended_metadata.fetch('hyperlinks', '[]')).each do |link|

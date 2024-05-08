@@ -63,19 +63,17 @@ module PublicHelpers
     "#{filename} #{Digest::MD5.hexdigest(file_content)}\n"
   end
 
-  def export_and_add_to_zip(container_id, zip, file_text)
-    if Labimotion::Dataset.find_by(element_id: container_id, element_type: 'Container').present?
-      export = Labimotion::ExportDataset.new
-      export.export(container_id)
-      export.spectra(container_id)
-      export_file_name = export.res_name(container_id)
-      zip.put_next_entry export_file_name
-      export_file_content = export.read
-      export_file_checksum = Digest::MD5.hexdigest(export_file_content)
-      zip.write export_file_content
-      file_text += "#{export_file_name} #{export_file_checksum}\n"
-    end
-    file_text
+  def export_and_add_to_zip(container_id, zip)
+    return '' if Labimotion::Dataset.find_by(element_id: container_id, element_type: 'Container').blank?
+    export = Labimotion::ExportDataset.new
+    export.export(container_id)
+    export.spectra(container_id)
+    export_file_name = export.res_name(container_id)
+    zip.put_next_entry export_file_name
+    export_file_content = export.read
+    export_file_checksum = Digest::MD5.hexdigest(export_file_content)
+    zip.write export_file_content
+    "#{export_file_name} #{export_file_checksum}\n"
   end
 
   def prepare_and_export_dataset(container_id)
