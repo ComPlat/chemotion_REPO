@@ -72,13 +72,12 @@ const renderOverview = ({ states, state }) => {
   );
 };
 
-const renderRecord = (rec, index) => {
+const renderRecord = (rec, index, currentUser) => {
   const history = rec?.review?.history || [];
   const comment = history.length > 1 ? history[history.length - 2].comment : '';
   const { element_id: recId, taggable_data: taggableData } = rec;
   const { element_dois: dois = [] } = taggableData;
   const affiliationMap = AffiliationMap(taggableData.affiliation_ids);
-
   const states = { reviewed: {}, accepted: {}, pending: {} };
 
   dois.forEach(item => {
@@ -106,20 +105,35 @@ const renderRecord = (rec, index) => {
     states[state][elementType] += 1;
   });
 
+  const viewDetailBtn =
+    currentUser.is_reviewer || currentUser.is_submitter ? (
+      <Button
+        className="detail-button"
+        onClick={() => EmbargoActions.getEmbargoElements(recId)}
+      >
+        View details
+      </Button>
+    ) : null;
+
+  const viewComment = comment ? (
+    <span
+      role="alert"
+      className="alert alert-info"
+      style={{ fontSize: 'small' }}
+    >
+      {comment}
+    </span>
+  ) : null;
+
   return (
     <Col sm={12} md={12} className="repo-ebg-line" key={index}>
       <Col sm={12} md={12} className="line-title">
         <h3>
           <i className="fa fa-database" aria-hidden="true" />
           {` ${taggableData.label} `}
-          <Button
-            className="detail-button"
-            onClick={() => EmbargoActions.getEmbargoElements(recId)}
-          >
-            View details
-          </Button>
+          {viewDetailBtn}
           &nbsp;
-          <span style={{ fontSize: 'small' }}>{comment}</span>
+          {viewComment}
         </h3>
       </Col>
       <Col sm={12} md={12}>
@@ -168,17 +182,20 @@ const renderRecord = (rec, index) => {
 };
 
 function RepoEmbargoOverview(props) {
-  const { collections } = props;
+  const { collections, currentUser } = props;
 
   if (collections?.length === 0) return null;
 
-  const overview = collections.map((m, index) => renderRecord(m, index));
+  const overview = collections.map((m, index) =>
+    renderRecord(m, index, currentUser)
+  );
 
   return overview;
 }
 
 RepoEmbargoOverview.propTypes = {
   collections: PropTypes.arrayOf(PropTypes.object).isRequired,
+  currentUser: PropTypes.object.isRequired,
 };
 
 export default RepoEmbargoOverview;

@@ -351,21 +351,28 @@ class User < ApplicationRecord
     self.find_by(email: ENV['SYS_EMAIL'])
   end
 
-  # TODO: mv to initializers
+  def self.embargo_viewer_ids
+    (ENV['EMBARGO_VIEWER'] || '').split(',').map(&:to_i)
+  end
+
+  def is_embargo_viewer
+    (ENV['EMBARGO_VIEWER'] || '').split(",").include?(self.id.to_s)
+  end
+
   def self.reviewer_ids
     (ENV['REVIEWERS'] || '').split(',').map(&:to_i)
   end
 
   def is_reviewer
-    (ENV['REVIEWERS'] || "").split(",").include?(self.id.to_s)
+    (ENV['REVIEWERS'] || '').split(",").include?(self.id.to_s)
   end
 
   def is_article_editor
-    (ENV['NEWSROOM_EDITOR'] || "").split(",").include?(self.id.to_s)
+    (ENV['NEWSROOM_EDITOR'] || '').split(",").include?(self.id.to_s)
   end
 
   def is_howto_editor
-    (ENV['HOWTO_EDITOR'] || "").split(",").include?(self.id.to_s)
+    (ENV['HOWTO_EDITOR'] || '').split(",").include?(self.id.to_s)
   end
 
   def pending_collection

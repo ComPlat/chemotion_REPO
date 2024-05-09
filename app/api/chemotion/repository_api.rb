@@ -423,19 +423,22 @@ module Chemotion
           optional :is_submit, type: Boolean, default: false, desc: 'Publication submission'
         end
         is_reviewer = User.reviewer_ids.include?(current_user.id)
-        if is_reviewer && params[:is_submit] == false
+        is_embargo_viewer = User.embargo_viewer_ids.include?(current_user.id)
+        is_submitter = false
+        if (is_reviewer || is_embargo_viewer) && params[:is_submit] == false
           es = Publication.where(element_type: 'Collection', state: 'pending').order(Arel.sql("taggable_data->>'label' ASC"))
         else
           cols = if current_user.type == 'Anonymous'
                    Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
                  else
                    Collection.where(ancestry: current_user.publication_embargo_collection.id)
+                   is_submitter = true
                  end
           es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols.empty?
         end
         # es = build_publication_element_state(es) unless es.empty?
 
-        { repository: es, current_user: { id: current_user.id, type: current_user.type, is_reviewer: is_reviewer } }
+        { repository: es, current_user: { id: current_user.id, type: current_user.type, is_reviewer: is_reviewer, is_submitter: is_submitter } }
       end
 
       namespace :assign_embargo do

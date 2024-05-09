@@ -27,7 +27,14 @@ import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import RepoEmbargoOverview from 'src/repoHome/RepoEmbargoOverview';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 
-const btnMessage = (_msg, _btn) => <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()}>{_msg}</Tooltip>}>{_btn}</OverlayTrigger>
+const btnMessage = (_msg, _btn) => (
+  <OverlayTrigger
+    placement="top"
+    overlay={<Tooltip id={uuid.v4()}>{_msg}</Tooltip>}
+  >
+    {_btn}
+  </OverlayTrigger>
+);
 
 export default class RepoEmbargo extends Component {
   constructor(props) {
@@ -405,7 +412,7 @@ export default class RepoEmbargo extends Component {
 
   render() {
     const {
-      elements, bundles, currentElement, currentUser, showConfirmModal, showInfoModal, showCommentsModal, selectEmbargo, showMetadataModal
+      elements, bundles, currentElement, current_user, showConfirmModal, showInfoModal, showCommentsModal, selectEmbargo, showMetadataModal
     } = this.state;
     const id = (selectEmbargo && selectEmbargo.element_id) || 0;
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
@@ -419,7 +426,7 @@ export default class RepoEmbargo extends Component {
             {this.renderSearch(bundles)}
             <div style={{ clear: 'both' }} />
           </Navbar>
-          <RepoEmbargoOverview collections={bundles} />
+          <RepoEmbargoOverview collections={bundles} currentUser={current_user} />
         </Col>
       );
     }
@@ -435,7 +442,7 @@ export default class RepoEmbargo extends Component {
             <div className="embargo-list" style={{ backgroundColor: '#f5f5f5' }} >
               <Table striped className="review-entries">
                 <tbody striped="true" bordered="true" hover="true">
-                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, EmbargoActions.displayReviewEmbargo, currentUser, owner, currentElement, this.handleMoveShow)) }
+                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, EmbargoActions.displayReviewEmbargo, current_user, owner, currentElement, this.handleMoveShow)) }
                 </tbody>
               </Table>
             </div>
