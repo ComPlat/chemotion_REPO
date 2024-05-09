@@ -477,7 +477,7 @@ const getElementSegments = (elementName, tabs) => {
 
 // the requirements for file types as given
 const isFileTypePass = (analysisType, attachments) => {
-  const baseType = ['jpg', 'jpeg', 'png', 'tiff'];
+  const baseType = ['jpg', 'jpeg', 'png', 'tiff', 'svg'];
   const nmrType = ['jcamp', 'dx', 'jdx'];
   let files = [];
   switch (analysisType) {
