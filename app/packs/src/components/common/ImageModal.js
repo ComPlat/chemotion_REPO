@@ -154,6 +154,9 @@ export default class ImageModal extends Component {
             {this.state.isPdf ? (
               <div>
                 <Document
+                  options={{
+                    isEvalSupported: false,
+                  }}
                   file={{ url: this.state.fetchSrc }}
                   onLoadSuccess={(pdf) => this.onDocumentLoadSuccess(pdf.numPages)}
                 >
