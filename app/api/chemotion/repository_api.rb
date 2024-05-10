@@ -428,13 +428,13 @@ module Chemotion
         if (is_reviewer || is_embargo_viewer) && params[:is_submit] == false
           es = Publication.where(element_type: 'Collection', state: 'pending').order(Arel.sql("taggable_data->>'label' ASC"))
         else
+          is_submitter = current_user.type == 'Anonymous' ? false : true
           cols = if current_user.type == 'Anonymous'
                    Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
                  else
-                   Collection.where(ancestry: current_user.publication_embargo_collection.id)
-                   is_submitter = true
+                  Collection.where(ancestry: current_user.publication_embargo_collection.id)
                  end
-          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols.empty?
+          es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols&.empty?
         end
         # es = build_publication_element_state(es) unless es.empty?
 
