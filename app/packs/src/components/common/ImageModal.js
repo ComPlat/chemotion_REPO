@@ -7,7 +7,7 @@ import { stopEvent } from 'src/utilities/DomHelper';
 import { Document, Page, pdfjs } from 'react-pdf';
 import UserStore from 'src/stores/alt/stores/UserStore';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 const defaultImageStyle = {
   style: {
     cursor: 'default'
@@ -41,7 +41,7 @@ export default class ImageModal extends Component {
     }
   }
 
-  shouldComponentUpdate(nextState) {
+  shouldComponentUpdate(nextProps, nextState) {
     if (
       this.state.numOfPages === nextState.numOfPages
       && this.state.numOfPages !== 0
