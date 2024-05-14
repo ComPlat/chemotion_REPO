@@ -109,14 +109,6 @@ export default class ReactionDetails extends Component {
     }
   }
 
-  onUIStoreChange(state) {
-    if (state.reaction.activeTab != this.state.activeTab){
-      this.setState({
-        activeTab: state.reaction.activeTab
-      })
-    }
-  }
-
   componentDidMount() {
     const { reaction } = this.props;
     const { currentUser } = this.state;

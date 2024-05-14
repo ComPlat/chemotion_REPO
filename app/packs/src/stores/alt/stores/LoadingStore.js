@@ -57,6 +57,8 @@ class LoadingStore {
           PublicActions.displayReaction,
           EmbargoActions.fetchEmbargoBundle,
           PublicActions.openRepositoryPage,
+          RepositoryActions.publishSample,
+          RepositoryActions.publishReaction,
         ],
       handleStartLoadingWithProgress: LoadingActions.startLoadingWithProgress,
       handleStopLoadingWithProgress: LoadingActions.stopLoadingWithProgress,

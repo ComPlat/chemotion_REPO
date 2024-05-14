@@ -405,17 +405,8 @@ export default class PublishReactionModal extends Component {
       license: this.state.selectedLicense,
       schemeDesc: this.state.schemeDesc,
       addMe: this.refMeAsAuthor.checked
-    });
+    }, true);
     this.props.onHide(false);
-    ReactionsFetcher.fetchById(this.state.reaction.id)
-      .then((reReaction) => {
-        this.props.onPublishRefreshClose(reReaction, false);
-        LoadingActions.stop();
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
-        LoadingActions.stop();
-      });
-    return true;
   }
 
   handleReserveDois() {

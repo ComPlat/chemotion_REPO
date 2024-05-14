@@ -241,17 +241,8 @@ export default class PublishSampleModal extends Component {
       embargo: this.state.selectedEmbargo,
       license: this.state.selectedLicense,
       addMe: this.refMeAsAuthor.checked
-    });
+    }, true);
     this.props.onHide();
-    SamplesFetcher.fetchById(this.state.sample.id)
-      .then((reSample) => {
-        this.props.onPublishRefreshClose(reSample, false);
-        LoadingActions.stop();
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
-        LoadingActions.stop();
-      });
-    return true;
   }
 
   handleReserveDois() {
