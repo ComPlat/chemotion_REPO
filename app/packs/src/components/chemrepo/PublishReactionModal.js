@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import SVG from 'react-inlinesvg';
 import {
   Panel,
   PanelGroup,
@@ -15,6 +16,7 @@ import {
 import { head, filter, findIndex, flatten, sortedUniq } from 'lodash';
 import Select from 'react-select';
 import Immutable from 'immutable';
+import uuid from 'uuid';
 import { validateYield } from 'src/components/chemrepo/PublishCommon';
 import Reaction from 'src/models/Reaction';
 import UserStore from 'src/stores/alt/stores/UserStore';
@@ -24,7 +26,6 @@ import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import {
   ReactionInfo,
   ReactionSchemeOnlyInfo,
-  AnalysisHeaderSample,
   PublishAnalysesTag,
   EmbargoCom,
   isNmrPass,
@@ -43,6 +44,27 @@ import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
 );
+
+function AnalysisHeaderSample({ sampleSvgFile }) {
+  const svgPath = `/images/samples/${sampleSvgFile}`;
+  return (
+    <div className="svg-container">
+      <Row>
+        <Col sm={8} md={8} lg={8}>
+          <SVG key={svgPath} src={svgPath} className="sample-details" />
+        </Col>
+        <Col sm={4} md={4} lg={4}>
+          <h5>
+            <i className="icon-sample" style={{ fontSize: '1.5em' }} />{' '}
+            <b>Product</b>
+          </h5>
+        </Col>
+      </Row>
+    </div>
+  );
+}
+
+AnalysisHeaderSample.propTypes = { sampleSvgFile: PropTypes.string.isRequired };
 
 const skimAnalysis = (sample) => {
   const analyses = sample.analysisArray();
@@ -283,7 +305,7 @@ export default class PublishReactionModal extends Component {
     const { currentUser } = this.state;
     const orcid = currentUser.orcid == null ? '' : <OrcidIcon orcid={currentUser.orcid} />;
     const aff = currentUser && currentUser.current_affiliations && Object.keys(currentUser.current_affiliations).map(k => (
-      <div>  -{currentUser.current_affiliations[k]}</div>
+      <div key={uuid.v4()}>  -{currentUser.current_affiliations[k]}</div>
     ));
     return (<div><h5><b>Contributor:</b></h5>{orcid}{currentUser.name} <br /> {aff} </div>);
   }
@@ -705,7 +727,12 @@ export default class PublishReactionModal extends Component {
       analysesReactionProducts.forEach((product) => {
         const arrP = [];
         arrP.push(product);
-        const tmpProduct = arrP.map(p => <AnalysisHeaderSample sample={p} key={`reaction_analysis_${p.id}`} sampleType="Product" />);
+        const tmpProduct = arrP.map(p => (
+          <AnalysisHeaderSample
+            sampleSvgFile={p.sample_svg_file}
+            key={`reaction_analysis_${p.id}`}
+          />
+        ));
         analysesView.push(tmpProduct);
 
         const tmp = head(filter(product.container.children, o => o.container_type === 'analyses')).children;

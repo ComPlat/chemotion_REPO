@@ -1604,40 +1604,6 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
   );
 };
 
-const AnalysisHeaderSample = ({ sample, sampleType }) => {
-  const svgPath = `/images/samples/${sample.sample_svg_file}`;
-  const doiLink = sample.pubchem_tag.chemotion ? sample.pubchem_tag.chemotion.doi : '';
-  const rinchiStyle = { borderStyle: 'none', boxShadow: 'none', textAlign: 'left' };
-  return (
-    <div className="svg-container">
-      <Row style={rinchiStyle}>
-        <Col sm={4} md={4} lg={4}>
-          <SVG key={svgPath} src={svgPath} className="sample-details" />
-        </Col>
-        <Col sm={8} md={8} lg={8}>
-          <h5><i className="icon-sample" style={{ fontSize: '1.5em' }} /> <b>{sampleType} </b></h5>
-          <b> Sample DOI: </b>
-          <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${doiLink}`; }}>
-            {doiLink}
-          </Button>
-          <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
-          <DownloadMetadataBtn type="sample" id={sample.id} />
-          <DownloadJsonBtn type="sample" id={sample.id} />
-        </Col>
-      </Row>
-    </div>
-  );
-};
-AnalysisHeaderSample.propTypes = {
-  sample: PropTypes.instanceOf(Sample).isRequired,
-  sampleType: PropTypes.string,
-};
-
-AnalysisHeaderSample.defaultProps = {
-  sample: {},
-  sampleType: '',
-};
-
 class RenderPublishAnalysesPanel extends Component {
   header() {
     const {
@@ -2236,7 +2202,6 @@ Doi.propTypes = {
 };
 
 export {
-  AnalysisHeaderSample,
   AnalysesTypeJoinLabel,
   AffiliationList,
   AuthorList,
