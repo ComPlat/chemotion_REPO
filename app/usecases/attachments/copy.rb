@@ -3,12 +3,25 @@
 module Usecases
   module Attachments
     class Copy
+      ## For REPO
+      def self.gen_file(att)
+        copy_io = att.attachment_attacher.get.to_io
+        new_file = File.new(copy_io.path)
+
+        attacher = att.attachment_attacher
+        attacher.attach new_file
+
+        att.file_path = new_file.path
+        att.save
+      end
+
       def self.execute!(attachments, element, current_user_id)
         attachments.each do |attach|
           original_attach = Attachment.find attach[:id]
           copy_attach = Attachment.new(
             attachable_id: element.id,
             attachable_type: element.class.name,
+            aasm_state: attach.aasm_state,
             created_by: current_user_id,
             created_for: current_user_id,
             filename: original_attach.filename,
