@@ -483,7 +483,6 @@ class Sample < ApplicationRecord
     return unless svg.present?
 
     svg_file_name = "#{SecureRandom.hex(64)}.svg"
-
     if svg =~ /\ATMPFILE[0-9a-f]{64}.svg\z/
       src = full_svg_path(svg.to_s)
       return unless File.file?(src)
@@ -544,16 +543,31 @@ class Sample < ApplicationRecord
     end
   end
 
+  def regenerate_svg
+    molecule&.regenerate_svg
+
+    if sample_svg_file.present? && File.exist?(full_svg_path)
+      svg = File.read(full_svg_path)
+      fetch_svg if svg&.include?('Open Babel')
+    else
+      fetch_svg
+    end
+  end
+
   def reprocess_svg
     return if sample_svg_file.present?
 
+    fetch_svg
+  end
+
+  def fetch_svg
     svg_digest = "#{molecule.inchikey}#{Time.now}"
     svg = Molecule.svg_reprocess(svg, molfile || molecule.molfile)
     svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true) if svg.present?
     if svg.present? && svg_process.present? && svg_process[:svg_file_name].present? && File.exist?(svg_process[:svg_file_path])
-      sample_svg_file = svg_process[:svg_file_name]
-      attach_svg
-      update_columns(sample_svg_file: sample_svg_file) unless new_record?
+      _svg = svg_process[:svg_file_name]
+      attach_svg(_svg)
+      update_columns(sample_svg_file: self.sample_svg_file) unless new_record?
     end
   end
 

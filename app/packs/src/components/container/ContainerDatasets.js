@@ -136,11 +136,14 @@ export default class ContainerDatasets extends Component {
                   />
                 </ListGroupItem>
               ))}
-              <ListGroupItem key="attachmentdropzone" disabled >
-                <AttachmentDropzone
-                  handleAddWithAttachments={(attachments) => this.handleAddWithAttachments(attachments)}
+              <ListGroupItem key="attachmentdropzone" disabled>
+                {!readOnly && !disabled ? (
+                  <AttachmentDropzone
+                    handleAddWithAttachments={attachments =>
+                      this.handleAddWithAttachments(attachments)
+                    }
                   />
-                : null}
+                ) : null}
               </ListGroupItem>
             </ListGroup>
             {this.addButton()}

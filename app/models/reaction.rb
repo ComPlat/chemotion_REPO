@@ -204,6 +204,15 @@ class Reaction < ApplicationRecord
     observation['ops'].map { |s| s['insert'] }.join
   end
 
+
+  def regenerate_svg!
+    samples&.each do |sample|
+      sample.regenerate_svg
+    end
+    svg = update_svg_file!
+    update_columns(reaction_svg_file: svg) if svg.present?
+  end
+
   def update_svg_file!
     svg = reaction_svg_file
     if svg.present? && svg.end_with?('</svg>')

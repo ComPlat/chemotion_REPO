@@ -252,6 +252,29 @@ class Molecule < ApplicationRecord
     mns.exclude?(new_name)
   end
 
+  def regenerate_svg
+    return unless Rails.configuration.try(:ketcher_service).try(:url).present?
+
+    if molecule_svg_file.present? && File.exist?(full_svg_path)
+      svg = File.read(full_svg_path)
+      if svg&.include?('Open Babel')
+        regenerate_svg_process
+      end
+    else
+      regenerate_svg_process
+    end
+  end
+
+  def regenerate_svg_process
+    svg_digest = "#{inchikey}#{Time.now}"
+    svg = Molecule.svg_reprocess(nil, molfile)
+    svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true)
+    if svg.present?
+      attach_svg(svg)
+      update_columns(molecule_svg_file: self.molecule_svg_file)
+    end
+  end
+
   def self.svg_reprocess(svg, molfile)
     return svg unless Rails.configuration.try(:ketcher_service).try(:url).present?
     return svg if svg.present? && !svg&.include?('Open Babel')
