@@ -4,6 +4,17 @@
 module Chemotion
   # UiAPI class
   class UiAPI < Grape::API
+    helpers do
+      def load_x_config
+        x = Rails.configuration.x
+        return {} if x.blank?
+
+        rules = Rails.root.join('config/rules.json')
+        x.rules = rules.exist? ? JSON.parse(File.read(rules)) : {}
+        x
+      end
+    end
+
     resource :ui do
       desc 'Initialize UI'
       get 'initialize' do
@@ -30,6 +41,7 @@ module Chemotion
           has_radar: radar_config.present?,
           molecule_viewer: Matrice.molecule_viewer,
           collector_address: collector_address.presence,
+          x: load_x_config,
         }
       end
     end

@@ -31,7 +31,7 @@ import {
   isNmrPass,
   isDatasetPass,
   PublishTypeAs,
-  OrcidIcon
+  OrcidIcon,
 } from 'src/repoHome/RepoCommon';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import { groupByCitation, Citation } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
@@ -40,6 +40,7 @@ import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
 import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
+import { doStValidation } from 'src/components/chemrepo/publication-utils';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
@@ -109,7 +110,7 @@ export default class PublishReactionModal extends Component {
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
-      publishType: { options: Object.values(publishOptions), selected: publishOptions.f }
+      publishType: { options: Object.values(publishOptions), selected: publishOptions.f },
     };
 
     props.reaction.convertDurationDisplay();
@@ -640,7 +641,7 @@ export default class PublishReactionModal extends Component {
     if (isFullyPublish) {
       validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
       validates.push({ name: 'reaction type', value: !!(reaction.rxno && reaction.rxno.length > 0), message: reaction.rxno ? '' : 'Reaction type is missing' });
-      const hasSt = reaction.starting_materials && reaction.starting_materials.length > 0;
+      const hasSt = reaction.starting_materials?.length > 0;
       validates.push({ name: 'start_material', value: !!hasSt, message: hasSt ? '' : 'Start material is missing' });
       const hasSv =
         this.state.noSolvent === true || (reaction.solvents && reaction.solvents.length > 0);
@@ -648,11 +649,14 @@ export default class PublishReactionModal extends Component {
       const hasProduct = reaction.products && reaction.products.length > 0;
       validates.push({ name: 'product', value: !!hasProduct, message: hasProduct ? '' : 'Product is missing' });
 
-      (reaction.starting_materials || []).forEach((st) => {
-        if (!st.amount || !st.amount.value) {
-          validates.push({ name: 'starting_materials-amount', value: false, message: `[Starting material] ${st.molecule_iupac_name}: amount is 0` });
-        }
-      });
+      const stValidation = doStValidation(reaction);
+      if (stValidation) {
+        (reaction.starting_materials || []).forEach((st) => {
+          if (!st.amount || !st.amount.value) {
+            validates.push({ name: 'starting_materials-amount', value: false, message: `[Starting material] ${st.molecule_iupac_name}: amount is 0` });
+          }
+        });
+      }
       if (!this.state.noAmountYield) {
         (reaction.products || []).forEach((prod) => {
           if (!prod.amount || !prod.amount.value) {

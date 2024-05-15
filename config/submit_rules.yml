@@ -1,0 +1,11 @@
+development:
+  reaction:
+    - segment: (Sur)MOF Reaction
+      rule: 1
+    - segment: Non-SurMOF Reaction
+      rule: 1
+
+production:
+  reaction:
+    segment:
+    rule:

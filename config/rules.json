@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1,
+    "properties": {
+      "required": {
+        "layers": [
+          {
+            "key": "zero",
+            "fields": ["type"]
+          }
+        ]
+      }
+    }
+  }
+]
