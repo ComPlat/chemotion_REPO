@@ -21,7 +21,7 @@ module Usecases
           copy_attach = Attachment.new(
             attachable_id: element.id,
             attachable_type: element.class.name,
-            aasm_state: attach.aasm_state,
+            aasm_state: original_attach.aasm_state,
             created_by: current_user_id,
             created_for: current_user_id,
             filename: original_attach.filename,
