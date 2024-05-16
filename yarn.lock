@@ -1497,7 +1497,7 @@
     reselect "^4.0.0"
     typescript "^5.0.4"
 
-"@complat/react-svg-file-zoom-pan@1.1.3":
+"@complat/react-svg-file-zoom-pan@1.1.3", "react-svg-file-zoom-pan-latest@npm:@complat/react-svg-file-zoom-pan@1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@complat/react-svg-file-zoom-pan/-/react-svg-file-zoom-pan-1.1.3.tgz#a3da916005b6d6ee18be2b1bce62745becf082be"
   integrity sha512-gtb41KBr/hQjKR9v6HOvwnyGEM61lSNsyMHTCk1rMX4SYJjx8iXw0J7z30Ff9tw2oK6sgEiejlPtM7tkdQi3GQ==
@@ -4833,10 +4833,10 @@ cheerio@^1.0.0-rc.3:
     parse5-htmlparser2-tree-adapter "^6.0.1"
     tslib "^2.2.0"
 
-chem-generic-ui-viewer@^1.3.0-rc1:
-  version "1.3.0-rc1"
-  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-1.3.0-rc1.tgz#71138b71107a6aaef5d6a0b660b26b2badd9d352"
-  integrity sha512-iHymVQqWzv5CLPQNgmlkNkxW7BFU5GG27aOYCyNeKgDjoCdSL7emq78JNMK9ZtEDCVJfUS5xdfspJQTE3Wdn3Q==
+chem-generic-ui-viewer@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-1.3.0.tgz#27cac2f0b6c58435b0980535c1c403b6783ce973"
+  integrity sha512-voVAFGZXNZX/AGSpLqVluCrKdZvDK0q71NCzoxHQoD6p54bK5Jpt+X7Vzl5cn7ldBqb+m3lO8/JGA+3mYGO4LQ==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"
@@ -12826,15 +12826,6 @@ react-stickydiv@^3.4.19:
   integrity sha512-OpvOVuu3gXBYPP30q5EQfn5oApgeON1SAU73OweKHPuwlAUytz2shhqv7gqxlBUQq7onKlGE6ImLM9ELbRLbcw==
   dependencies:
     dom-find "^0.3.1"
-
-"react-svg-file-zoom-pan-latest@npm:@complat/react-svg-file-zoom-pan@1.1.3":
-  version "1.1.3"
-  resolved "https://registry.yarnpkg.com/@complat/react-svg-file-zoom-pan/-/react-svg-file-zoom-pan-1.1.3.tgz#a3da916005b6d6ee18be2b1bce62745becf082be"
-  integrity sha512-gtb41KBr/hQjKR9v6HOvwnyGEM61lSNsyMHTCk1rMX4SYJjx8iXw0J7z30Ff9tw2oK6sgEiejlPtM7tkdQi3GQ==
-  dependencies:
-    babel-plugin-transform-object-rest-spread "^6.26.0"
-    d3 "6.7.0"
-    regenerator-transform "^0.13.3"
 
 react-svg-file-zoom-pan@0.1.5:
   version "0.1.5"

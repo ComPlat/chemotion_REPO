@@ -5,13 +5,14 @@ import { GenInterface, GenButtonReload, absOlsTermLabel } from 'chem-generic-ui'
 import { LayerPlain } from 'chem-generic-ui-viewer';
 import { Panel, ButtonToolbar } from 'react-bootstrap';
 
-const elementalPropertiesItem = (genericDS, onChange, readOnly = false) => {
+const elementalPropertiesItem = (genericDS, onChange, readOnly = false, isPublic = false) => {
   const { properties } = genericDS;
   const layersLayout = readOnly ?
     (<LayerPlain
       layers={properties.layers}
       options={properties.select_options || {}}
       id={properties.uuid}
+      isPublic={isPublic}
     />) : (
       <GenInterface
         generic={genericDS}
@@ -43,13 +44,13 @@ class GenericDSDetails extends Component {
 
   render() {
     const {
-      genericDS, kind, klass, onChange, readOnly
+      genericDS, kind, klass, onChange, readOnly, isPublic
     } = this.props;
     if (Object.keys(genericDS).length !== 0) {
       return (
         <Panel className="panel-detail generic-ds-panel">
           <Panel.Body>
-            {elementalPropertiesItem(genericDS, onChange, readOnly)}
+            {elementalPropertiesItem(genericDS, onChange, readOnly, isPublic)}
             <span className="g-ds-note label">
               <span className="g-ds-title">Note</span><br />
               {readOnly ? null : (<>Selected analysis type: {absOlsTermLabel(kind)}<br /></>)}
@@ -79,7 +80,13 @@ GenericDSDetails.propTypes = {
   klass: PropTypes.object,
   onChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool.isRequired,
+  isPublic: PropTypes.bool,
 };
-GenericDSDetails.defaultProps = { kind: '', genericDS: {}, klass: {} };
+GenericDSDetails.defaultProps = {
+  kind: '',
+  genericDS: {},
+  klass: {},
+  isPublic: false,
+};
 
 export default GenericDSDetails;

@@ -766,7 +766,12 @@ module Chemotion
           after_validation do
             @attachment = Attachment.find_by(id: params[:id])
             error!('404 Attachment not found', 404) unless @attachment
-            @publication = @attachment&.container&.parent&.publication
+            if @attachment.attachable_type == 'SegmentProps'
+              segment = Labimotion::Segment.find_by(id: @attachment.attachable_id)
+              @publication = segment&.element&.publication
+            else
+              @publication = @attachment&.container&.parent&.publication
+            end
             error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
           end
           get do
@@ -915,20 +920,21 @@ module Chemotion
           result
         end
 
-
-        desc 'Get dataset metadata of publication'
-        params do
-          requires :id, type: Integer, desc: "Dataset Id"
-        end
-        before do
-          @dataset_id = params[:id]
-          @container = Container.find_by(id: @dataset_id)
-          element = @container.root.containable
-          @publication = Publication.find_by(element: element, state: 'completed') if element.present?
-          error!('404 Publication not found', 404) unless @publication.present?
-        end
-        get :export do
-          export = prepare_and_export_dataset(@container.id)
+        resource :export do
+          desc 'Get dataset metadata of publication'
+          params do
+            requires :id, type: Integer, desc: "Dataset Id"
+          end
+          before do
+            @dataset_id = params[:id]
+            @container = Container.find_by(id: @dataset_id)
+            element = @container.root.containable
+            @publication = Publication.find_by(element: element, state: 'completed') if element.present?
+            error!('404 Publication not found', 404) unless @publication.present?
+          end
+          get do
+            prepare_and_export_dataset(@container.id)
+          end
         end
 
         desc "metadata of publication"

@@ -693,7 +693,7 @@ export default class RepoReactionDetails extends Component {
             </h5>
             <br />
             <h5>{this.reactionInfo(reaction)}</h5>
-            <RepoSegment segments={reaction.segments} />
+            <RepoSegment segments={reaction.segments} isPublic={isPublished} />
             {schemeOnly
               ? ''
               : this.renderAnalysisView(

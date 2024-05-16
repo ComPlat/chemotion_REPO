@@ -173,7 +173,6 @@ export default class RepoSample extends Component {
         </span>
       );
     }
-
     return (
       <Jumbotron key={`sample-${sample.id}`}>
         <PublicAnchor doi={sample.doi} isPublished={isPublished} />
@@ -258,7 +257,7 @@ export default class RepoSample extends Component {
           />
           &nbsp;
         </div>
-        <RepoSegment segments={sample.segments} />
+        <RepoSegment segments={sample.segments} isPublic={isPublished} />
         <span className="repo-pub-sample-header">
           <div ref={this.panelRef}>
             <ToggleIndicator

@@ -617,7 +617,7 @@ export default class ContainerDatasetModalContent extends Component {
 
   renderMetadata() {
     const { datasetContainer, showInstruments } = this.state;
-    const { readOnly, disabled, kind } = this.props;
+    const { readOnly, disabled, kind, isPublic } = this.props;
     const termId = absOlsTermId(kind);
     const klasses = (UserStore.getState() && UserStore.getState().dsKlasses) || [];
     let klass = {};
@@ -681,6 +681,7 @@ export default class ContainerDatasetModalContent extends Component {
           kind={kind}
           onChange={this.handleDSChange}
           readOnly={readOnly || disabled}
+          isPublic={isPublic}
         />
       </>
     );

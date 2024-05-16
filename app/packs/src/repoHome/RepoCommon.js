@@ -1027,7 +1027,7 @@ const RenderAnalysisHeader = (props) => {
         <Col sm={12} md={12} lg={12}>
           <h5><b>Reference{references.length > 1 ? 's' : null} in the Literature: </b></h5>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
-          <RepoSegment segments={element.segments} />
+          <RepoSegment segments={element.segments} isPublic={isPublic} />
         </Col>
       </Row>
       {
