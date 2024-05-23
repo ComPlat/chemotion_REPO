@@ -7,6 +7,7 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import GenericSGDetails from 'src/components/generic/GenericSGDetails';
 import Segment from 'src/models/Segment';
 import MatrixCheck from 'src/components/common/MatrixCheck';
+import ElementActions from 'src/stores/alt/actions/ElementActions';
 
 const onNaviClick = (type, id) => {
   const { currentCollection, isSync } = UIStore.getState();
@@ -14,8 +15,16 @@ const onNaviClick = (type, id) => {
     ? `${currentCollection.id}/${type}/${id}`
     : `${currentCollection.id}/${type}`;
   Aviator.navigate(
-    isSync ? `/scollection/${collectionUrl}` : `/collection/${collectionUrl}`
+    isSync ? `/scollection/${collectionUrl}` : `/collection/${collectionUrl}`,
+    { silent: true }
   );
+  if (type === 'reaction') {
+    ElementActions.fetchReactionById(id);
+  } else if (type === 'sample') {
+    ElementActions.fetchSampleById(id);
+  } else {
+    ElementActions.fetchGenericElById(id);
+  }
 };
 
 const addSegmentTabs = (element, onChange, contentMap) => {

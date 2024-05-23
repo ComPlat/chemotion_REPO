@@ -1,5 +1,6 @@
 import alt from 'src/stores/alt/alt';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 class ReviewActions {
   handleReviewModal(show, action) {

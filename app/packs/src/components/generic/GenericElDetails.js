@@ -42,8 +42,16 @@ const onNaviClick = (type, id) => {
     ? `${currentCollection.id}/${type}/${id}`
     : `${currentCollection.id}/${type}`;
   Aviator.navigate(
-    isSync ? `/scollection/${collectionUrl}` : `/collection/${collectionUrl}`
+    isSync ? `/scollection/${collectionUrl}` : `/collection/${collectionUrl}`,
+    { silent: true }
   );
+  if (type === 'reaction') {
+    ElementActions.fetchReactionById(id);
+  } else if (type === 'sample') {
+    ElementActions.fetchSampleById(id);
+  } else {
+    ElementActions.fetchGenericElById(id);
+  }
 };
 
 export default class GenericElDetails extends Component {
