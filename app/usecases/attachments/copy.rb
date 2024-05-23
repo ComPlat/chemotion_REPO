@@ -50,6 +50,15 @@ module Usecases
           updater = Usecases::Attachments::Annotation::AnnotationUpdater.new
           updater.updated_annotated_string(svg, copy_attach_id)
         end
+      rescue StandardError => e
+        Attachment.logger.error <<~TXT
+        ---------  #{self.class.name} update_annotation ------------
+           original_attach_id: #{original_attach_id}
+           copy_attach_id: #{copy_attach_id}
+
+          Error Message:  #{e.backtrace.join("\n")}
+        --------------------------------------------------------------------
+        TXT
       end
     end
   end

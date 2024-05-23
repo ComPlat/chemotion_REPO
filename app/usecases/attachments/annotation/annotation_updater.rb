@@ -54,6 +54,15 @@ module Usecases
 
           FileUtils.move(thumbnail, location_of_thumbnail)
           FileUtils.rm_f(tmp_thumbnail_location)
+        rescue StandardError => e
+          Attachment.logger.error <<~TXT
+          ---------  #{self.class.name} - update_thumbnail ------------
+            AttachmentID: #{attachment&.id}
+            svg_string: #{svg_string}
+
+            Error Message:  #{e.backtrace.join("\n")}
+          --------------------------------------------------------------------
+          TXT
         end
 
         def create_annotated_flat_image(attachment, svg_string) # rubocop:disable Metrics/AbcSize

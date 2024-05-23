@@ -243,6 +243,10 @@ class Attachment < ApplicationRecord
     )
   end
 
+  def self.logger
+    @@attachment_logger ||= Logger.new(Rails.root.join('log/attachment.log')) # rubocop:disable Style/ClassVars
+  end
+
   private
 
   def generate_key
