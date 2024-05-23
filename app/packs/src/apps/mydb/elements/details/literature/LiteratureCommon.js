@@ -7,7 +7,7 @@ import uuid from 'uuid';
 import Literature from 'src/models/Literature';
 import Cite from 'citation-js';
 import { CitationType, CitationTypeMap } from 'src/apps/mydb/elements/details/literature/CitationType';
-import { getKeysOfMap } from 'src/apps/mydb/elements/details/literature/CitationTools';
+import { getKeysOfMap,createCitationTypeMap } from 'src/apps/mydb/elements/details/literature/CitationTools';
 
 function RefByUserInfo({ info, litype }) {
   if (typeof (info) === 'undefined' || !info || info.length === 0) {
@@ -39,7 +39,7 @@ function LiteralType({
   val,
   handleInputChange,
   disabled = false,
-  citationMap
+  citationMap = createCitationTypeMap('')
 }) {
   return (
     <FormControl
