@@ -38,6 +38,11 @@ export const doStValidation = element => {
     return true;
   }
 
+  if (!Array.isArray(elementExceptions)) {
+    // console.log('elementExceptions is not array, do the validation');
+    return true;
+  }
+
   const exceptions = elementExceptions.some(exception => {
     const rule = submitException.rules.find(
       r => r.id === exception.rule // && r.segment === exception.segment

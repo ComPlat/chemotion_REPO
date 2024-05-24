@@ -7,5 +7,5 @@ development:
 
 production:
   reaction:
-    segment:
-    rule:
+    - segment: (Sur)MOF Reaction
+      rule: 1
