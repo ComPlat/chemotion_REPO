@@ -275,8 +275,7 @@ module Import
           melting_point: fetch_bound(fields.fetch('melting_point')),
           boiling_point: fetch_bound(fields.fetch('boiling_point')),
           molecule_id: molecule&.id,
-        ))        
-        sample.reprocess_svg if sample.sample_svg_file.blank?
+        ))
 
         solvent_value = fields.slice('solvent')['solvent']
         if solvent_value.is_a? String
@@ -287,13 +286,17 @@ module Import
           end
         end
 
-        # for same sample_svg_file case
-        s_svg_file = @svg_files.find { |s| s[:sample_svg_file] == fields.fetch('sample_svg_file') }
-        if s_svg_file.nil?
-          @svg_files.push(sample_svg_file: fields.fetch('sample_svg_file'), svg_file: sample.sample_svg_file)
+        if sample.sample_svg_file.present?
+          # for same sample_svg_file case
+          s_svg_file = @svg_files.find { |s| s[:sample_svg_file] == fields.fetch('sample_svg_file') }
+          if s_svg_file.nil?
+            @svg_files.push(sample_svg_file: fields.fetch('sample_svg_file'), svg_file: sample.sample_svg_file)
+          end
+
+          sample.sample_svg_file = s_svg_file[:svg_file] unless s_svg_file.nil?
         end
 
-        sample.sample_svg_file = s_svg_file[:svg_file] unless s_svg_file.nil?
+        sample.reprocess_svg if sample.sample_svg_file.blank?
 
         # keep orig eln info
         if @gt == true
