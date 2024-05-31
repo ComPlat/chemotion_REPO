@@ -153,7 +153,7 @@ module Chemotion
           new_sample
         end
 
-        def create_new_sample_version(sample = @sample)
+        def create_new_sample_version(sample = @sample, reaction = @reaction)
           new_sample = sample.dup
           new_sample.previous_version = sample
           new_sample.collections << current_user.versions_collection
@@ -168,8 +168,15 @@ module Chemotion
           new_sample.update_tag!(analyses_tag: true)
 
           sample.tag_as_previous_version(new_sample)
-          new_sample.tag_as_new_version(sample)
+          new_sample.tag_as_new_version(sample, parent: reaction)
           new_sample.update_versions_tag
+
+          # replace previous sample in reaction, if it is a new version
+          unless current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
+            reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
+            reaction_sample.sample_id = new_sample.id
+            reaction_sample.save!
+          end
 
           new_sample
         end
@@ -1249,13 +1256,24 @@ module Chemotion
         desc 'Create a new version of a published Sample'
         params do
           requires :sampleId, type: Integer, desc: 'Sample Id'
+          optional :reactionId, type: Integer, desc: 'Reaction Id'
         end
 
         after_validation do
           # look for the sample in all public samples created by the current user
           @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @sample
-          error!('400 Belongs to reaction', 400) unless @sample.tag['taggable_data']['reaction_id'].nil?
+
+          # look for an optional reaction in the public collection or the versions_collection of the current user
+          unless params[:reactionId].nil?
+            @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId])
+            unless @reaction
+              @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            end
+
+            error!('400 reaction not found', 404) unless @reaction
+            error!('400 sample not part of reaction', 404) unless @reaction.samples.find_by(id: @sample.id)
+          end
         end
 
         post do

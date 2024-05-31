@@ -13,6 +13,7 @@ import Reaction from './models/Reaction';
 import Sample from './models/Sample';
 import { permitCls, permitOn } from './common/uis';
 import UserStore from './stores/UserStore';
+import NewVersionModal from './chemrepo/NewVersionModal';
 
 const matSource = {
   beginDrag(props) {
@@ -545,6 +546,17 @@ class Material extends Component {
         <td>
           {this.equivalentOrYield(material)}
         </td>
+        {
+          permitOn(reaction) && reaction.previousVersion && <td>
+            <NewVersionModal
+              type="Sample"
+              element={material}
+              parent={reaction}
+              isPublisher={material.sealed}
+              bsSize="small"
+            />
+          </td>
+        }
         <td>
           <Button
             disabled={!permitOn(reaction)}

@@ -601,6 +601,8 @@ export default class SampleDetails extends React.Component {
       ) : null;
 
     const isPub = !!((sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.publication && sample.tag.taggable_data.publication.published_at));
+    const reactionId = sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.reaction_id
+
     return (
       <div>
         <OverlayTrigger placement="bottom" overlay={<Tooltip id="sampleDates">{titleTooltip}</Tooltip>}>
@@ -658,6 +660,7 @@ export default class SampleDetails extends React.Component {
         <NewVersionModal
           type="Sample"
           element={sample}
+          parentId={reactionId}
           className="button-right"
         />
         <ReviewPublishBtn element={sample} showComment={this.handleCommentScreen} validation={this.handleValidation} />

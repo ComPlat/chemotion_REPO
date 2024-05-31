@@ -22,8 +22,8 @@ const NewVersionModal = (props) => {
   // app/packs/src/components/ReactionDetails.js
   //   create new reaction version
   //
-  // app/packs/src/components/ReactionDetailsScheme.js
-  //   create new samples for a new reaction version
+  // app/packs/src/components/Material.js
+  //   create new sample for a new reaction version
   //
   // app/packs/src/components/SampleDetailsContainersAux.js
   //   create new analysis version for a new sample version
@@ -42,7 +42,7 @@ const NewVersionModal = (props) => {
   // displayed, disabled, or which tooltip is displayed.
 
   const {
-    type, element, parent, className, bsSize, isPublisher, isLatestVersion, schemeOnly
+    type, element, parent, parentId, className, bsSize, isPublisher, isLatestVersion, schemeOnly
   } = props;
   const [modalShow, setModalShow] = useState(false);
 
@@ -57,9 +57,6 @@ const NewVersionModal = (props) => {
   // if a publication is present in the element, we check if the review process is completed,
   // otherwise we assume the publication is complete (the button is on the publication interface)
   const isComplete = isNil(element.publication) || get(element.publication, 'state') === 'completed';
-
-  // chek if the element (a sample) belongs to a reaction or not
-  const belongsToReaction = !isNil(get(element, 'tag.taggable_data.reaction_id')) || !isEmpty(element.reaction_ids);
 
   // init variables for the render function
   let display = false;
@@ -87,11 +84,9 @@ const NewVersionModal = (props) => {
       break;
     case 'Sample':
       display = (isPublisher || isElementPublisher) && isComplete;
-      disable = !(isLatestVersion || isElementLatestVersion) || belongsToReaction || element.changed;
+      disable = !(isLatestVersion || isElementLatestVersion) || element.changed;
       if (disable) {
-        if (belongsToReaction) {
-          tooltip = <Tooltip>This sample belongs to a reaction. Please create a new version of the reaction.</Tooltip>;
-        } else if (element.changed) {
+        if (element.changed) {
           tooltip = <Tooltip>A new version cannot be created from an unsaved sample.</Tooltip>;
         } else {
           tooltip = <Tooltip>A new version of this sample has already been created.</Tooltip>;
@@ -138,43 +133,45 @@ const NewVersionModal = (props) => {
           promise = RepositoryFetcher.createNewReactionVersion({ reactionId: element.id })
         }
         promise.then((reaction) => {
-            setModalShow(false);
+          setModalShow(false);
 
-            const collection = getNewVersionCollection(reaction);
+          const collection = getNewVersionCollection(reaction);
 
-            if (window.location.pathname.startsWith('/mydb/')) {
-              UIActions.selectSyncCollection(collection);
-              DetailActions.close(element);
-              ElementActions.fetchReactionById(reaction.id);
-            } else {
-              window.location = `/mydb/scollection/${collection.id}/reaction/${reaction.id}`;
-            }
-          });
-        break;
-      case 'ReactionSamples':
-        RepositoryFetcher.createNewReactionSamplesVersion({ reactionId: element.id })
-          .then((reaction) => {
-            setModalShow(false);
-
+          if (window.location.pathname.startsWith('/mydb/')) {
+            UIActions.selectSyncCollection(collection);
             DetailActions.close(element);
             ElementActions.fetchReactionById(reaction.id);
-          });
+          } else {
+            window.location = `/mydb/scollection/${collection.id}/reaction/${reaction.id}`;
+          }
+        });
         break;
       case 'Sample':
-        RepositoryFetcher.createNewSampleVersion({ sampleId: element.id })
-          .then((sample) => {
-            setModalShow(false);
+        if (parent) {
+          promise = RepositoryFetcher.createNewSampleVersion({ sampleId: element.id, reactionId: parent.id })
+        } else if (parentId) {
+          promise = RepositoryFetcher.createNewSampleVersion({ sampleId: element.id, reactionId: parentId })
+        } else {
+          promise = RepositoryFetcher.createNewSampleVersion({ sampleId: element.id })
+        }
+        promise.then((sample) => {
+          setModalShow(false);
 
-            const collection = getNewVersionCollection(sample);
+          const collection = getNewVersionCollection(sample);
 
-            if (window.location.pathname.startsWith('/mydb/')) {
-              UIActions.selectSyncCollection(collection);
+          if (window.location.pathname.startsWith('/mydb/')) {
+            UIActions.selectSyncCollection(collection);
+            if (parent) {
+              DetailActions.close(parent);
+              ElementActions.fetchReactionById(parent.id);
+            } else {
               DetailActions.close(element);
               ElementActions.fetchSampleById(sample.id);
-            } else {
-              window.location = `/mydb/scollection/${collection.id}/sample/${sample.id}`;
             }
-          });
+          } else {
+            window.location = `/mydb/scollection/${collection.id}/sample/${sample.id}`;
+          }
+        });
         break;
       case 'Analysis':
         RepositoryFetcher.createNewAnalysisVersion({
@@ -245,6 +242,7 @@ NewVersionModal.propTypes = {
   type: PropTypes.string.isRequired,
   element: PropTypes.oneOf(['sample', 'reaction']).isRequired,
   parent: PropTypes.oneOf(['reaction']),
+  parentId: PropTypes.number,
   className: PropTypes.string,
   bsSize: PropTypes.string,
   isPublisher: PropTypes.bool,
@@ -254,7 +252,8 @@ NewVersionModal.propTypes = {
 
 
 NewVersionModal.defaultProps = {
-  parent: {},
+  parent: null,
+  parentId: null,
   className: '',
   bsSize: 'xsmall',
   isPublisher: false,
