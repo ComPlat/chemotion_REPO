@@ -7,9 +7,12 @@ import PropTypes from 'prop-types';
 import uuid from 'uuid';
 import Select from 'react-select';
 
+
 const SelectionField = (props) => {
   const label = props.label && props.label !== '' ?
     <ControlLabel>{props.label}</ControlLabel> : '';
+
+
   if (props.isCreatable) {
     return (
       <FormGroup>
@@ -23,6 +26,8 @@ const SelectionField = (props) => {
           value={props.value}
           onChange={event => props.onChange(props.field, event)}
           promptTextCreator={p => `Create new ${p} ${props.label}`}
+          menuPortalTarget={document.body} // Render menu in a portal to avoid clipping
+          className="selection-field-container"
         />
       </FormGroup>
     );
@@ -38,6 +43,8 @@ const SelectionField = (props) => {
         isClearable
         value={props.value}
         onChange={event => props.onChange(props.field, event)}
+        menuPortalTarget={document.body} // Render menu in a portal to avoid clipping
+        className="selection-field-container"
       />
     </FormGroup>
   );
@@ -50,13 +57,13 @@ SelectionField.propTypes = {
   onChange: PropTypes.func.isRequired,
   label: PropTypes.string,
   placeholder: PropTypes.string,
-  isCreatable: PropTypes.bool
+  isCreatable: PropTypes.bool,
 };
 
 SelectionField.defaultProps = {
   label: '',
   placeholder: 'Please select...',
-  isCreatable: false
+  isCreatable: false,
 };
 
 export default SelectionField;

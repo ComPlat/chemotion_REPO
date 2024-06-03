@@ -106,6 +106,8 @@ class User < ApplicationRecord
   has_many :element_text_templates, dependent: :destroy
   has_many :calendar_entries, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
   has_many :comments, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
+  has_many :users_collaborators, foreign_key: :user_id
+  has_many :collaborators, through: :users_collaborators, source: :user
 
   accepts_nested_attributes_for :affiliations, :profile
 
@@ -234,6 +236,12 @@ class User < ApplicationRecord
     errors.add(:name_abbreviation, "has to be #{min_val} to #{max_val} characters long")
   end
 
+
+  def group_leads
+    User.joins("INNER JOIN users_collaborators ON users_collaborators.collaborator_id = users.id")
+    .where(users_collaborators: { user_id: id, is_group_lead: true }).distinct
+  end
+
   def orcid_checker
     return if orcid.nil?
 
@@ -243,7 +251,7 @@ class User < ApplicationRecord
 
     if result.nil?
       errors.add(:orcid, ' does not exist! Please check.')
-    elsif oc_given_names&.casecmp(first_name) != 0 || oc_family_name&.casecmp(last_name) != 0
+    elsif oc_given_names&.casecmp(first_name.strip) != 0 || oc_family_name&.casecmp(last_name.strip) != 0
       errors.add(:orcid, " #{orcid} belongs to #{oc_given_names} #{oc_family_name} (first name: #{oc_given_names}, last_name: #{oc_family_name})! Please check.")
     end
   end
@@ -553,7 +561,7 @@ class User < ApplicationRecord
         name = group.split(':')
         if name.size == 3
           group = Group.find_by(first_name: name[2], last_name: name[1])
-          user.groups << group if group.present?
+          user.groups << group if group.present? && user.groups.exclude?(group)
         end
       end
     end

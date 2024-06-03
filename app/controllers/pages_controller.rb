@@ -80,26 +80,38 @@ class PagesController < ApplicationController
   end
 
   def update_orcid
-    @profile = current_user.profile
-    orcid = params['data_orcid']
-    result = Chemotion::OrcidService.record_person(orcid)
+    orcid = params[:data_orcid]
+    flash.clear
 
-    if result.nil?
-      flash.now['danger'] = 'ORCID iD does not exist! Please check.'
+    # Validate ORCID format first
+    unless Chemotion::OrcidService.valid_format?(orcid)
+      flash[:danger] = 'Invalid ORCID format. Please use the format: 0000-0000-0000-0000'
       return render 'settings'
-    elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
-          result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
-      data = @profile.data || {}
-      data['ORCID'] = orcid
-      if @profile.update(data: data)
-        flash['success'] = 'ORCID iD is successfully saved!'
-        redirect_to root_path
+    end
+    
+    # Fetch ORCID data from API
+    orcid_data = Chemotion::OrcidService.record_person(orcid)
+    
+    if orcid_data.nil?
+      flash[:danger] = 'Could not retrieve information for this ORCID iD. Please check the ID and try again.'
+      return render 'settings'
+    end
+    
+    # Check if names match
+    if Chemotion::OrcidService.names_match?(current_user, orcid_data)
+      # Update the user's providers hash with the ORCID
+      providers = current_user.providers || {}
+      providers['orcid'] = orcid
+      
+      if current_user.update(providers: providers)
+        flash[:success] = 'ORCID iD successfully validated and saved!'
+        return render 'settings'
       else
-        flash.now['danger'] = 'Not saved! Please check input fields.'
+        flash[:danger] = 'Failed to save ORCID iD. Please try again.'
         return render 'settings'
       end
     else
-      flash.now['danger'] = 'Name could not be matched to the name of this ORCID iD ' + orcid + ' (family_name: ' + result&.person&.family_name + ', given_name: ' + result&.person&.given_names + '). Please check.'
+      flash[:danger] = "Name mismatch! The ORCID record shows: #{orcid_data.person.given_names} #{orcid_data.person.family_name}. Your account has: #{current_user.first_name} #{current_user.last_name}."
       return render 'settings'
     end
   end

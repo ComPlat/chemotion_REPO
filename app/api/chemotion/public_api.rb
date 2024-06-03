@@ -117,7 +117,7 @@ module Chemotion
             result = User.where(type: %w(Person Group Collaborator)).where(
               <<~SQL
                 users.id in (
-                  select distinct(pa.author_id)::integer from publication_authors pa
+                  select distinct(pa.author_id)::integer from publication_authors pa where state = 'completed'
                 )
               SQL
             )

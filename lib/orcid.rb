@@ -1,31 +1,28 @@
 # frozen_string_literal: true
 
-# ORCID APIs
-module Orcid
-  include HTTParty
+# Class for interacting with the ORCID API
+class Orcid
+  require 'httparty'
 
-  ORCID_API_VERSION = ENV['ORCID_API_VERSION'] || '3.0'
-
-  def self.orcid_token
-    ENV['ORCID_P_TOKEN']
-  end
-
-  def self.orcid_host
-    'https://pub.orcid.org'
-  end
-
-  def self.record_seg(orcid, seg)
-    url = "[HOST]/[VER]/[ORCID]/#{seg}"
-    url = url.sub('[HOST]', orcid_host).sub('[VER]', ORCID_API_VERSION).sub('[ORCID]', orcid)
-    auth = 'Bearer ' + orcid_token
-    options = { headers: { 'Authorization' => auth } }
+  # Fetch a specific segment of an ORCID record
+  # @param orcid [String] The ORCID ID
+  # @param segment [String] The record segment to fetch (e.g., 'person', 'employments')
+  # @return [String, nil] The XML response or nil if request failed
+  def self.record_seg(orcid, segment)
     begin
-      res = HTTParty.get(url, options)
-      return nil unless res.code == 200
-
-      res.body.presence&.strip
+      response = HTTParty.get(
+        "https://pub.orcid.org/v3.0/#{orcid}/#{segment}",
+        headers: { 'Accept' => 'application/xml' }
+      )
+      
+      if response.code == 200
+        return response.body
+      else
+        Rails.logger.error("Error fetching ORCID segment: #{response.code} - #{response.message}")
+        return nil
+      end
     rescue StandardError => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [record_seg] with orcid [#{orcid}], seg [#{seg}], exception [#{e.inspect}]"
+      Rails.logger.error("ORCID API Error: #{e.message}")
       return nil
     end
   end

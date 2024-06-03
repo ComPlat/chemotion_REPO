@@ -69,6 +69,7 @@ module PublicHelpers
     entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
     entities[:schemes] = schemeList unless entities.nil? || schemeList.nil? || schemeList.length == 0
     entities[:isLogin] = current_user.present?
+    entities[:isCI] = current_user.present? && current_user.id == User.chemotion_user.id
     entities[:embargo] = reaction.embargo
     entities[:labels] = labels
     entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
@@ -110,8 +111,10 @@ module PublicHelpers
       )
       .order('published_at desc')
     published_samples = pub_samples.map do |s|
+      pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
       container = Entities::ContainerEntity.represent(s.container)
-      tag = s.tag.taggable_data['publication']
+      #tag = s.tag.taggable_data['publication']
+      tag = pub.taggable_data
       #u = User.find(s.tag.taggable_data['publication']['published_by'].to_i)
       #time = DateTime.parse(s.tag.taggable_data['publication']['published_at'])
       #published_time = time.strftime("%A, %B #{time.day.ordinalize} %Y %H:%M")
@@ -127,7 +130,6 @@ module PublicHelpers
           SQL
         ).group('literatures.id').as_json
       reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
-      pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
       sid = pub.taggable_data["sid"] unless pub.nil? || pub.taggable_data.nil?
       label_ids = s.tag.taggable_data['user_labels'] || [] unless s.tag.taggable_data.nil?
       user_labels = UserLabel.public_labels(label_ids, current_user, pub.state == Publication::STATE_COMPLETED) unless label_ids.nil?
@@ -160,6 +162,7 @@ module PublicHelpers
       molecule: MoleculeGuestSerializer.new(molecule).serializable_hash.deep_symbolize_keys,
       published_samples: published_samples,
       isLogin: current_user.nil? ? false : true,
+      isCI: current_user.present? && current_user.id == User.chemotion_user.id,
       isReviewer: (current_user.present? && User.reviewer_ids.include?(current_user.id)) ? true : false,
       xvialCom: xvial_com,
       elementType: 'molecule'
@@ -230,10 +233,10 @@ module PublicHelpers
 
   def export_and_add_to_zip(container_id, zip)
     return '' if Labimotion::Dataset.find_by(element_id: container_id, element_type: 'Container').blank?
-    export = Labimotion::ExportDataset.new
-    export.export(container_id)
-    export.spectra(container_id)
-    export_file_name = export.res_name(container_id)
+    export = Labimotion::ExportDataset.new(container_id)
+    export.export
+    # export.spectra
+    export_file_name = export.res_name
     zip.put_next_entry export_file_name
     export_file_content = export.read
     export_file_checksum = Digest::MD5.hexdigest(export_file_content)
@@ -243,12 +246,12 @@ module PublicHelpers
 
   def prepare_and_export_dataset(container_id)
     env['api.format'] = :binary
-    export = Labimotion::ExportDataset.new
-    export.export(container_id)
-    export.spectra(container_id)
+    export = Labimotion::ExportDataset.new(container_id)
+    export.export
+    # export.spectra
 
     content_type('application/vnd.ms-excel')
-    ds_filename = export.res_name(container_id)
+    ds_filename = export.res_name
     filename = URI.encode_www_form_component(ds_filename)
     header('Content-Disposition', "attachment; filename=\"#{filename}\"")
 

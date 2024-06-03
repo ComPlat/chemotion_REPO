@@ -21,7 +21,7 @@ import RepoReactionList from 'src/repoHome/RepoReactionList';
 import RepoMoleculeList from 'src/repoHome/RepoMoleculeList';
 import RepoMoleculeArchive from 'src/repoHome/RepoMoleculeArchive';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
-import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import { capitalizeFirstLetter } from 'src/components/chemrepo/format-utils';
 import { SearchUserLabels } from 'src/components/UserLabels';
 
 const renderMoleculeArchive =

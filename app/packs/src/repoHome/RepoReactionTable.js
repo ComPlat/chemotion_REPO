@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { Table, Panel, Button, ButtonGroup } from 'react-bootstrap';
 import Sample from 'src/models/Sample';
 import { ToggleIndicator } from 'src/repoHome/RepoCommon';
+import { formatPercentage } from 'src/components/chemrepo/format-utils';
 
 function ReactionTable({
   reaction,
@@ -76,7 +77,7 @@ function ReactionTable({
             val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
           }
         } else {
-          val = `${materialCalc(s.conversion_rate, 1, 4).toString()}%`;
+          val = `${formatPercentage(s.conversion_rate).toString()}`;
         }
         break;
       case 'solvents':
@@ -122,7 +123,11 @@ function ReactionTable({
           ) : (
             useName
           );
-          if (sample.mat_group === 'solvents') label = sample.external_label;
+          if (sample.mat_group === 'solvents')
+            label =
+              sample.external_label ||
+              sample.molecule_iupac_name ||
+              sample.name;
           let title = null;
           if (currentType !== sample.mat_group) {
             currentType = sample.mat_group;

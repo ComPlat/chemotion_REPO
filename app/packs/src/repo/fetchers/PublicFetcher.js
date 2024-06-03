@@ -334,6 +334,21 @@ export default class PublicFetcher {
       });
   }
 
+  static fetchAllAffiliationData() {
+    const api = '/api/v1/public/affiliations/all_data';
+    return fetch(api, {
+      credentials: 'same-origin',
+    })
+      .then(response => response.json())
+      .catch(errorMessage => {
+        console.log('Error fetching affiliation data:', errorMessage);
+        return {
+          countries: [],
+          organizations: {}
+        };
+      });
+  }
+
   static downloadZip(id) {
     let fileName = 'dataset.zip';
     return fetch(`/api/v1/public/download/dataset?id=${id}`, {

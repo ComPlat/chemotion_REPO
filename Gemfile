@@ -60,11 +60,12 @@ gem 'kaminari-grape'
 # gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', branch: 'upgrade-to-rails-6'
 gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', ref: 'd4ae864a0e2d9e853eac8e4fc4ce7e3ab8174f80'
 
-gem 'labimotion', '1.4.1'
+gem 'labimotion', '2.0.0.rc8'
 
 gem 'mimemagic', '0.3.10'
 gem 'mime-types'
 
+gem 'net-ftp'
 # locked to enforce latest version of net-scp. without lock net-ssh would be updated first which locks
 # out newer net-scp versions
 gem 'net-scp', '3.0.0'

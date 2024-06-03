@@ -299,7 +299,7 @@ class UIStore {
 
   handleSelectCollection(collection, hasChanged = false) {
     const { state } = this;
-    const isSync = !!collection.is_sync_to_me;
+    const isSync = !!collection?.is_sync_to_me;
     const {
       filterCreatedAt, fromDate, toDate, userLabel, productOnly
     } = state;
@@ -312,7 +312,7 @@ class UIStore {
       hasChanged = hasChanged || state.currentSearchByID != null;
     }
 
-    if (collection.clearSearch) {
+    if (collection?.clearSearch) {
       this.handleClearSearchSelection();
       hasChanged = true;
       collection.clearSearch = undefined;

@@ -4,7 +4,7 @@ import { GenGridBase } from 'chem-generic-ui-viewer';
 import GenericBaseFetcher from 'src/fetchers/GenericBaseFetcher';
 import Utils from 'src/utilities/Functions';
 import RepoGenericHubDesc from 'src/repoHome/RepoGenericHubDesc';
-import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import { capitalizeFirstLetter } from 'src/components/chemrepo/format-utils';
 
 const getCurrentDateTimeString = () => {
   const now = new Date();
