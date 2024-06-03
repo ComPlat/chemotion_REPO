@@ -79,6 +79,9 @@ const handleNotification = (nots, act, needCallback = true) => {
         case 'Repository_Published':
           // CollectionActions.fetchSyncInCollectionRoots();
           break;
+        case 'Submission':
+          CollectionActions.fetchSyncInCollectionRoots();
+          break;
         case 'InboxActions.fetchInbox':
           InboxActions.fetchInbox({ currentPage, itemsPerPage });
           break;

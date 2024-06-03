@@ -175,10 +175,10 @@ module Chemotion
             requirements: requirements,
           }
         when 'cell_lines'
-          dl_cl.positive? ? search_for_celllines : []
+          dl_cl&.positive? ? search_for_celllines : []
         else
           chemotion_id = suggest_pid(qry)
-          element_short_label = (dl_e.positive? && search_by_element_short_label.call(Labimotion::Element, qry)) || []
+          element_short_label = (dl_e&.positive? && search_by_element_short_label.call(Labimotion::Element, qry)) || []
           sample_name = (dl_s.positive? && search_by_field.call(Sample, :name, qry)) || []
           sample_short_label = (dl_s.positive? && search_by_field.call(Sample, :short_label, qry)) || []
           sample_external_label = (dl_s > -1 && search_by_field.call(Sample, :external_label, qry)) || []
@@ -200,7 +200,7 @@ module Chemotion
           screen_name = (dl_sc > -1 && search_by_field.call(Screen, :name, qry)) || []
           conditions = (dl_sc > -1 && search_by_field.call(Screen, :conditions, qry)) || []
           requirements = (dl_sc > -1 && search_by_field.call(Screen, :requirements, qry)) || []
-          cell_line_infos = dl_cl.positive? ? search_for_celllines : []
+          cell_line_infos = dl_cl&.positive? ? search_for_celllines : {}
 
           {
             element_short_label: element_short_label,

@@ -19,6 +19,8 @@ const labelStyle = {
 const handleClick = (e, id, clickType) => {
   e.preventDefault();
   e.stopPropagation();
+  if (typeof id === 'undefined' || id === null) return;
+
   const uri = Aviator.getCurrentURI();
   const uriArray = uri.split(/\//);
   switch (clickType) {
@@ -216,23 +218,27 @@ const PublishedTag = ({ element, fnUnseal }) => {
     ? `${tagType} is being reviewed`
     : `${tagType} has been published`;
   const publishedId = getPublicationId(element);
-  return publishedId ? (
-    <ButtonGroup bsSize="xsmall">
-      <OverlayTrigger
-        placement="bottom"
-        overlay={<Tooltip id="data public">{tip}</Tooltip>}
-      >
-        <Button
-          bsSize="xsmall"
-          bsStyle={isPending ? 'warning' : 'danger'}
-          onClick={(event) => handleClick(event, publishedId, tagType)}
+
+  const pubIdIcon =
+    isPending || publishedId ? (
+      <ButtonGroup bsSize="xsmall">
+        <OverlayTrigger
+          placement="bottom"
+          overlay={<Tooltip id="data public">{tip}</Tooltip>}
         >
-          <i className="fa fa-newspaper-o" aria-hidden="true" />
-        </Button>
-      </OverlayTrigger>
-      {fnUnseal ? <UnsealBtn element={element} fnUnseal={fnUnseal} /> : null}
-    </ButtonGroup>
-  ) : null;
+          <Button
+            bsSize="xsmall"
+            bsStyle={isPending ? 'warning' : 'danger'}
+            onClick={event => handleClick(event, publishedId, tagType)}
+          >
+            <i className="fa fa-newspaper-o" aria-hidden="true" />
+          </Button>
+        </OverlayTrigger>
+        {fnUnseal ? <UnsealBtn element={element} fnUnseal={fnUnseal} /> : null}
+      </ButtonGroup>
+    ) : null;
+
+  return pubIdIcon;
 };
 
 PublishedTag.propTypes = {

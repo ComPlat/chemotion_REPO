@@ -146,7 +146,15 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
 
   def send_email
     if ENV['PUBLISH_MODE'] == 'production'
-      PublicationMailer.mail_publish_embargo_release(@embargo_collection.id).deliver_now
+      begin
+        PublicationMailer.mail_publish_embargo_release(@embargo_collection.id).deliver_now
+      rescue StandardError => e
+        Delayed::Worker.logger.error <<~TXT
+          --------- ChemotionEmbargoPubchemJob send_email error --------------
+          Error Message:  #{e.message}
+          --------------------------------------------------------------------
+        TXT
+      end
     end
     Message.create_msg_notification(
       channel_subject: Channel::PUBLICATION_REVIEW,

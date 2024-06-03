@@ -53,9 +53,8 @@ export default class PublishSampleModal extends Component {
     this.handleReserveDois = this.handleReserveDois.bind(this);
     this.handleSelectUser = this.handleSelectUser.bind(this);
     this.handleSelectReviewer = this.handleSelectReviewer.bind(this);
-    this.promptTextCreator = this.promptTextCreator.bind(this);
-    this.loadUserByName = this.loadUserByName.bind(this);
     this.loadReferences = this.loadReferences.bind(this);
+    this.loadMyCollaborations = this.loadMyCollaborations.bind(this);
     this.loadBundles = this.loadBundles.bind(this);
     this.selectReferences = this.selectReferences.bind(this);
     this.handleRefCheck = this.handleRefCheck.bind(this);
@@ -66,16 +65,16 @@ export default class PublishSampleModal extends Component {
 
   componentDidMount() {
     UserStore.listen(this.onUserChange);
+    this.loadReferences();
     this.loadBundles();
+    this.loadMyCollaborations();
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.loadReferences();
-    this.loadMyCollaborations();
-    this.setState({
-      sample: nextProps.sample,
-    });
-  }
+  // UNSAFE_componentWillReceiveProps(nextProps) {
+  //   this.setState({
+  //     sample: nextProps.sample,
+  //   });
+  // }
 
   componentWillUnmount() {
     UserStore.unlisten(this.onUserChange);
@@ -115,7 +114,8 @@ export default class PublishSampleModal extends Component {
 
   loadReferences() {
     let { selectedRefs } = this.state;
-    LiteraturesFetcher.fetchElementReferences(this.state.sample).then((literatures) => {
+    const { sample } = this.state;
+    LiteraturesFetcher.fetchElementReferences(sample).then(literatures => {
       const sortedIds = groupByCitation(literatures);
       selectedRefs = selectedRefs.filter(item => sortedIds.includes(item));
       this.setState({ selectedRefs, literatures, sortedIds });
@@ -128,29 +128,6 @@ export default class PublishSampleModal extends Component {
 
   handleSelectReviewer(val) {
     if (val) { this.setState({ selectedReviewers: val }); }
-  }
-
-  loadUserByName(input) {
-    if (!input) {
-      return Promise.resolve({ options: [] });
-    }
-
-    return UsersFetcher.fetchUsersByName(input)
-      .then((res) => {
-        const usersEntries = res.users.filter(u => u.id !== this.state.currentUser.id)
-          .map(u => ({
-            value: u.id,
-            name: u.name,
-            label: `${u.name} (${u.abb})`
-          }));
-        return { options: usersEntries };
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
-      });
-  }
-
-  promptTextCreator(label) {
-    return ("Share with \"" + label + "\"");
   }
 
   handleSampleChanged(sample) {
@@ -496,13 +473,23 @@ export default class PublishSampleModal extends Component {
       });
       return (
         <div>
-          <Modal dialogClassName="publishReactionModal" animation show={show} bsSize="large" onHide={() => onHide()}>
+          <Modal
+            dialogClassName="publishReactionModal"
+            animation
+            show={show}
+            bsSize="large"
+            onHide={() => onHide()}
+          >
             <Modal.Header closeButton>
-              <Modal.Title>
-                Publish Sample
-              </Modal.Title>
+              <Modal.Title>Publish Sample</Modal.Title>
             </Modal.Header>
-            <Modal.Body style={{ paddingBottom: 'unset', maxHeight: 'calc(100vh - 210px)', overflowY: 'auto' }}>
+            <Modal.Body
+              style={{
+                paddingBottom: 'unset',
+                maxHeight: 'calc(100vh - 210px)',
+                overflowY: 'auto',
+              }}
+            >
               <EmbargoCom
                 opts={opts}
                 selectedValue={selectedEmbargo}
@@ -519,9 +506,7 @@ export default class PublishSampleModal extends Component {
               </Panel>
               {awareEmbargo}
               <PanelGroup accordion id="publish-sample-config">
-                <Panel
-                  eventKey="2"
-                >
+                <Panel eventKey="2">
                   <Panel.Heading>
                     <Panel.Title toggle>
                       <h4> Select Analyses ({selectedAnalysesCount})</h4>
@@ -553,26 +538,29 @@ export default class PublishSampleModal extends Component {
                       <h4> Select References ({selectedRefs.length})</h4>
                     </Panel.Title>
                   </Panel.Heading>
-                  <Panel.Body collapsible>
-                    {this.selectReferences()}
-                  </Panel.Body>
+                  <Panel.Body collapsible>{this.selectReferences()}</Panel.Body>
                 </Panel>
                 <Panel eventKey="6">
                   <Panel.Heading>
                     <Panel.Title toggle>
-                      <h4> Additional Reviewers ({selectedReviewers.length})</h4>
+                      <h4>
+                        {' '}
+                        Additional Reviewers ({selectedReviewers.length})
+                      </h4>
                     </Panel.Title>
                   </Panel.Heading>
-                  <Panel.Body collapsible>
-                    {this.addReviewers()}
-                  </Panel.Body>
+                  <Panel.Body collapsible>{this.addReviewers()}</Panel.Body>
                 </Panel>
               </PanelGroup>
               {showPreview ? null : null}
             </Modal.Body>
             <Modal.Footer>
               <Button onClick={() => onHide()}>Close</Button>
-              <Button bsStyle="primary" disabled={!canPublish} onClick={this.handlePublishSample}>
+              <Button
+                bsStyle="primary"
+                disabled={!canPublish}
+                onClick={this.handlePublishSample}
+              >
                 Publish Sample
               </Button>
             </Modal.Footer>

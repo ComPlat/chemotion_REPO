@@ -147,10 +147,8 @@ module Import
       # collection = Collection.find(@col_id)
       collection = Collection.find_or_create_by(user_id: @current_user_id, label: 'Imported Data', is_locked: true, position: 3)
 
-      @uuid = nil
-
       @data.fetch('Collection', {}).each do |uuid, fields|
-        @uuid = uuid
+        update_instances!(uuid, collection)
       end
 
       # @data.fetch('Collection', {}).each do |uuid, fields|
@@ -171,16 +169,13 @@ module Import
         # add collection to @instances map
       # update_instances!(uuid, collection)
       # end
-      update_instances!(@uuid, collection)
     end
 
     def gate_collection
       collection = Collection.find(@col_id)
-      @uuid = nil
       @data.fetch('Collection', {}).each do |uuid, _fields|
-        @uuid = uuid
+        update_instances!(uuid, collection)
       end
-      update_instances!(@uuid, collection)
     end
 
     def fetch_bound(value)
@@ -656,7 +651,8 @@ module Import
         literal = Literal.create!(
           fields.slice(
             'element_type',
-            'category'
+            'category',
+            'litype',
           ).merge(
             user_id: @current_user_id,
             element: element,

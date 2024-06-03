@@ -666,11 +666,6 @@ export default class UserAuth extends Component {
       </MenuItem>
     );
 
-    let userLabel = <span />;
-    if (MatrixCheck(this.state.currentUser.matrix, 'userLabel')) {
-      userLabel = <MenuItem onClick={this.handleLabelShow}>My Labels</MenuItem>;
-    }
-
     return (
       <div>
         <Nav navbar pullRight>
@@ -691,7 +686,7 @@ export default class UserAuth extends Component {
               My Affiliations
             </MenuItem>
             <MenuItem onClick={this.handleShow}>My Groups & Devices</MenuItem>
-            {userLabel}
+            <MenuItem onClick={this.handleLabelShow}>My Labels</MenuItem>
             {
               this.state.currentUser ?
                 <MenuItem eventKey="10" onClick={this.handleAuthorsShow}>My Collaboration</MenuItem> : null

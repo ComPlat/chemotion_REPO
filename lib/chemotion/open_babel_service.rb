@@ -412,6 +412,8 @@ M  END
   end
 
   def self.svg_from_molfile molfile, options={}
+    return nil if molfile.blank?
+
     c = OpenBabel::OBConversion.new
     c.set_in_format 'mol'
     c.set_out_format 'svg'
@@ -428,6 +430,9 @@ M  END
     #m.do_transformations c.get_options(OpenBabel::OBConversion::GENOPTIONS), c
 
     c.write_string(m, false)
+  rescue StandardError => e
+    Rails.logger.error e
+    nil
   end
 
   # Return an array of 32

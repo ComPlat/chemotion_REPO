@@ -1,0 +1,27 @@
+development:
+  dataset:
+    - ols_term: CHMO:0000593
+      desc: 1H nuclear magnetic resonance spectroscopy (1H NMR)
+      layers:
+        - identifier: set
+          fields:
+          - identifier: PULPROG
+          - identifier: temperature
+          - identifier: ph
+          - identifier: ns
+          - identifier: nucone
+        - identifier: general
+          fields:
+          - identifier: title
+          - identifier: creator
+    - ols_term: CHMO:0000595
+      desc: 13C nuclear magnetic resonance spectroscopy (13C NMR)
+      layers:
+        - identifier: layerAAA
+          fields:
+          - identifier: bbbb
+          - identifier: cccc
+        - identifier: layerBBB
+          fields:
+          - identifier: bbbb
+          - identifier: cccc

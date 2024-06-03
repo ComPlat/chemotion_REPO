@@ -3,6 +3,8 @@ import { Button } from 'react-bootstrap';
 import { Citation, literatureContent, RefByUserInfo } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
 import { ChemotionId, CommentBtn, Doi } from 'src/repoHome/RepoCommon';
 import { formatPhysicalProps } from 'src/components/chemrepo/publication-utils';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
+import DecoupleInfo from 'src/repoHome/DecoupleInfo';
 
 const PublicSample = (_props) => {
   const {
@@ -18,9 +20,9 @@ const PublicSample = (_props) => {
   )) : [];
 
   let sampleTypeDescription = 'Consists of molecule with defined structure';
-  if (sample.decoupled && element.molecule.inchikey === 'DUMMY') {
+  if (sample.decoupled && element.molecule.inchikey === RepoConst.INCHIKEY_DUMMY) {
     sampleTypeDescription = 'Includes only undefined structural components';
-  } else if (sample.decoupled && element.molecule.inchikey !== 'DUMMY') {
+  } else if (sample.decoupled && element.molecule.inchikey !== RepoConst.INCHIKEY_DUMMY) {
     sampleTypeDescription = 'Includes a fragment with defined structure';
   }
 
@@ -65,6 +67,8 @@ const PublicSample = (_props) => {
   return (
     <div className="repo-public-sample-info">
       <b>Sample type: </b>{sampleTypeDescription}
+      <DecoupleInfo sample={sample} molecule={element.molecule} />
+      <br />
       <Doi type="sample" id={sample.id} doi={sample.doi} isPublished={isPublished} />
       <ChemotionId id={pubData.id} type="sample" />
       {embargo}

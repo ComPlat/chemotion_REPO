@@ -11,6 +11,7 @@ import { elementNames } from 'src/apps/generic/Utils';
 const collectionShow = (e) => {
   UIActions.showElements.defer();
   UserActions.fetchCurrentUser();
+  UserActions.fetchUserLabels();
   const { profile } = UserStore.getState();
   if (!profile) {
     UserActions.fetchProfile();
@@ -60,6 +61,7 @@ const collectionShowCollectionManagement = () => {
 const scollectionShow = (e) => {
   UIActions.showElements();
   UserActions.fetchCurrentUser();
+  UserActions.fetchUserLabels();
   const { profile } = UserStore.getState();
   if (!profile) {
     UserActions.fetchProfile();
@@ -123,7 +125,7 @@ const sampleShowOrNew = (e) => {
   // UIActions.selectTab(1);
 };
 
-const cellLineShowOrNew = (e) => { 
+const cellLineShowOrNew = (e) => {
   if(e.params.new_cellLine||(e.params.new_cellLine===undefined&&e.params.cell_lineID==="new")){
      ElementActions.generateEmptyCellLine(e.params.collectionID,e.params.cell_line_template);
   }else{
@@ -258,7 +260,7 @@ const genericElShowOrNew = (e, type) => {
   } else if (genericElID === 'copy') {
     //
   } else {
-    
+
     ElementActions.fetchGenericElById(genericElID, itype);
   }
 };

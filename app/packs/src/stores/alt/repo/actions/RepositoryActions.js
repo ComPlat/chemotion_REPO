@@ -1,13 +1,16 @@
 /* eslint-disable class-methods-use-this */
 import alt from 'src/stores/alt/alt';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 
 class RepositoryActions {
   publishSample(params, closeView = false) {
     return (dispatch) => { RepositoryFetcher.publishSample(params)
       .then((result) => {
         if (result != null) {
-          dispatch({ element: result, closeView })
+          dispatch(result)
+        } else {
+          LoadingActions.stop();
         }
       }).catch((errorMessage) => {
         console.log(errorMessage);
@@ -20,6 +23,7 @@ class RepositoryActions {
         dispatch({ element: result })
       }).catch((errorMessage) => {
         console.log(errorMessage);
+        dispatch({ element: element })
       });};
   }
 
@@ -40,6 +44,8 @@ class RepositoryActions {
       .then((result) => {
         if (result != null) {
           dispatch({ element: result, closeView })
+        } else {
+          LoadingActions.stop();
         }
       }).catch((errorMessage) => {
         console.log(errorMessage);

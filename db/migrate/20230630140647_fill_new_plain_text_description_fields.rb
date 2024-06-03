@@ -12,7 +12,7 @@ class FillNewPlainTextDescriptionFields < ActiveRecord::Migration[6.1]
         # force gc of node processes
         ObjectSpace.garbage_collect
       rescue Exception => e
-        byebug
+        # byebug
       end
     end
     Screen.where.not(description: nil).find_each do |screen|

@@ -21,7 +21,8 @@ module Usecases
           ---------  #{self.class.name} get_annotation_of_attachment ------------
             attachment_id: #{attachment_id}
 
-            Error Message:  #{e.backtrace.join("\n")}
+            Error Message:  #{e.message}
+            Error:  #{e.backtrace.join("\n")}
           --------------------------------------------------------------------
           TXT
         end

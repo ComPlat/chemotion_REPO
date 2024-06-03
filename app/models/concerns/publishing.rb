@@ -68,7 +68,6 @@ module Publishing
     ### for all
     def full_doi
       return nil unless (d = Doi.find_by(doiable: self))
-
       d.full_doi
     end
 

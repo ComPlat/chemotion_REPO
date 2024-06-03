@@ -1,87 +1,64 @@
 /* eslint-disable react/forbid-prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Modal, ProgressBar } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import { MolViewer } from 'react-molviewer';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
+import UIStore from 'src/stores/alt/stores/UIStore';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
-import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
 
-const MolViewerModal = (props) => {
-  const {
-    fileContent, title, handleModalOpen, viewType, show
-  } = props;
+function MolViewerModal(props) {
+  const { fileContent, handleModalOpen, viewType, show, isPublic } = props;
+  const [newContent] = useState(fileContent);
+  const config =
+    UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
+  if (!config?.featureEnabled || !fileContent) return <span />;
 
-  const [newContent, setNewContent] = useState(fileContent);
-  const [progress, setProgress] = useState(0);
-
-  const updateNewContent = (data) => {
-    setNewContent(new Blob([data], { type: 'text/plain' }));
-  };
-
-  const convertMolfile = () => {
-    const intervalId = setInterval(() => {
-      setProgress((preProgress) => {
-        if (preProgress >= 90) {
-          clearInterval(intervalId);
-          return 100;
-        }
-        return preProgress + 10;
-      });
-    }, 1000);
-    const params = {
-      data: { mol: fileContent },
-    };
-    PublicFetcher.convertMolfile(params).then((result) => {
-      updateNewContent(result);
-    }).catch(() => {
-      updateNewContent(fileContent);
-    }).finally(() => {
-      setProgress(100);
-      clearInterval(intervalId);
-    });
-  };
-
-  useEffect(() => {
-    convertMolfile();
-    setProgress(0);
-  }, []);
+  const src = isPublic
+    ? '/api/v1/public/represent/structure'
+    : '/api/v1/converter/structure';
 
   if (show) {
-    const viewer = (<MolViewer
-      molContent={newContent}
-      viewType={viewType}
-      fnInit={() => LoadingActions.start()}
-      fnCb={() => LoadingActions.stop()}
-    />);
+    const viewer = (
+      <MolViewer
+        molContent={newContent}
+        viewType={viewType}
+        fnInit={() => LoadingActions.start()}
+        fnCb={() => LoadingActions.stop()}
+        src={src}
+      />
+    );
     return (
-      <Modal animation dialogClassName="structure-viewer-modal" show={show} onHide={handleModalOpen}>
+      <Modal
+        animation
+        dialogClassName="structure-viewer-modal"
+        show={show}
+        onHide={handleModalOpen}
+      >
         <Modal.Header closeButton>
-          <Modal.Title>
-            {title}
+          <Modal.Title style={{ fontSize: '12pt' }}>
+            {MolViewerSet.INFO}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {
-            progress >= 100 ?
-              <div style={{ width: '100%', height: 'calc(100vh - 260px)' }}>{viewer}</div>
-              :
-              <ProgressBar active now={progress} label="processing" />
-          }
+          <div style={{ width: '100%', height: 'calc(100vh - 260px)' }}>
+            {viewer}
+          </div>
         </Modal.Body>
       </Modal>
     );
   }
   return <span />;
-};
+}
 
 MolViewerModal.propTypes = {
-  fileContent: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
+  fileContent: PropTypes.oneOfType([PropTypes.string, PropTypes.object])
+    .isRequired,
   handleModalOpen: PropTypes.func.isRequired,
   show: PropTypes.bool.isRequired,
-  title: PropTypes.string,
   viewType: PropTypes.string.isRequired,
+  isPublic: PropTypes.bool.isRequired, // for REPO
 };
-
-MolViewerModal.defaultProps = { title: 'Structure Viewer' };
 
 export default MolViewerModal;

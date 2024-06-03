@@ -60,7 +60,8 @@ module Usecases
             AttachmentID: #{attachment&.id}
             svg_string: #{svg_string}
 
-            Error Message:  #{e.backtrace.join("\n")}
+            Error Message:  #{e.message}
+            Error:  #{e.backtrace.join("\n")}
           --------------------------------------------------------------------
           TXT
         end

@@ -8,7 +8,7 @@ import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import UIActions from 'src/stores/alt/actions/UIActions';
 import MatrixCheck from 'src/components/common/MatrixCheck';
-import elklasses from 'klasses.json';
+// import elklasses from 'klasses.json';
 
 export const ALL_TYPES = [
   Constants.GENERIC_TYPES.ELEMENT,
@@ -86,7 +86,7 @@ export const elementNames = (all = true, generics = null) => {
       return elnElements.concat(generics?.map(el => el.name));
     // const { klasses } = UIStore.getState();
     // if (typeof klasses !== 'undefined' && klasses?.length > 0) return elnElements.concat(klasses);
-    if (elklasses?.length > 0) return elnElements.concat(elklasses);
+    // if (elklasses?.length > 0) return elnElements.concat(elklasses);
     return elnElements;
   } catch (error) {
     console.error('Can not get Element Names:', error);

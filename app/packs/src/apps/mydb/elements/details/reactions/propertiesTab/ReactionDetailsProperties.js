@@ -14,6 +14,7 @@ import { solventsTL } from 'src/utilities/reactionPredefined';
 import OlsTreeSelect from 'src/components/OlsComponent';
 import { permitOn } from 'src/components/common/uis';
 import HelpInfo from 'src/components/common/HelpInfo';
+import { EditUserLabels } from 'src/components/UserLabels';
 
 export default class ReactionDetailsProperties extends Component {
   constructor(props) {
@@ -164,6 +165,11 @@ export default class ReactionDetailsProperties extends Component {
                     onChange={event => this.props.onInputChange('tlcDescription', event)}
                   />
                 </FormGroup>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12}>
+                <EditUserLabels element={reaction} fnCb={this.handleOnReactionChange} />
               </Col>
             </Row>
           </ListGroupItem>

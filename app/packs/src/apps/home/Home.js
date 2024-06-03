@@ -2,12 +2,9 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Grid, Row } from 'react-bootstrap';
 import Aviator from 'aviator';
-
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
 import initPublicRoutes from 'src/libHome/homeRoutes';
-
 import Navigation from 'src/libHome/Navigation';
 import Notifications from 'src/components/Notifications';
 import RepoEmbargo from 'src/repoHome/RepoEmbargo';
@@ -35,19 +32,18 @@ import LoadingModal from 'src/components/common/LoadingModal';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from 'src/repoHome/RepoGenericHub';
 
-import embedMatomo from 'src/components/chemrepo/matomo';
+import SysInfo from 'src/components/chemrepo/SysInfo';
 
 class Home extends Component {
   constructor(props) {
     super();
     this.state = {
-      guestPage: null
+      guestPage: null,
     };
     this.onChange = this.onChange.bind(this);
   }
 
   componentDidMount() {
-    embedMatomo();
     PublicStore.listen(this.onChange);
     RStore.listen(this.onChange);
     PublicActions.initialize();
@@ -69,7 +65,8 @@ class Home extends Component {
   }
 
   renderGuestPage() {
-    switch (this.state.guestPage) {
+    const { guestPage, listType } = this.state;
+    switch (guestPage) {
       case 'genericHub':
         return <RepoGenericHub />;
       case 'moleculeArchive':
@@ -91,7 +88,7 @@ class Home extends Component {
       case 'contact':
         return <RepoContact />;
       case 'publications':
-        return <RepoPubl listType={this.state.listType || ''} />;
+        return <RepoPubl listType={listType || ''} />;
       case 'review':
         return <RepoReview />;
       case 'collection':
@@ -115,7 +112,8 @@ class Home extends Component {
   }
 
   renderNavFooter() {
-    switch (this.state.guestPage) {
+    const { guestPage } = this.state;
+    switch (guestPage) {
       case 'publications':
       case 'review':
       case 'embargo':
@@ -134,15 +132,14 @@ class Home extends Component {
   render() {
     return (
       <div>
+        <SysInfo />
         <div>
           <Grid fluid>
             <Row className="card-navigation">
               <Navigation />
               <Notifications />
             </Row>
-            <Row style={{ margin: '10px' }}>
-              {this.renderGuestPage()}
-            </Row>
+            <Row style={{ margin: '10px' }}>{this.renderGuestPage()}</Row>
           </Grid>
           {this.renderNavFooter()}
         </div>

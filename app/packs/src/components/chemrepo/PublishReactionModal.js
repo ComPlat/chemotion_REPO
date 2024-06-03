@@ -462,7 +462,7 @@ export default class PublishReactionModal extends Component {
       const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
         <div>  -{af.department}, {af.organization}, {af.country}</div>
       ));
-      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>);
+      return (<div key={uuid.v4()}>{orcid}{a.label}<br/>{aff}<br/></div>);
     });
 
     return (
@@ -709,7 +709,7 @@ export default class PublishReactionModal extends Component {
 
     if (show) {
       const analysesView = [];
-      const analysesReaction = head(filter(reaction.container.children, o => o.container_type === 'analyses')).children;
+      const analysesReaction = head(filter(reaction?.container?.children, o => o.container_type === 'analyses')).children;
 
       selectedAnalysesCount = (analysesReaction || []).filter(a =>
         (a.extended_metadata && (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')) && a.extended_metadata.kind)).length;

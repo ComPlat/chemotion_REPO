@@ -138,13 +138,18 @@ const literatureContent = (literature, onlyText) => {
       indexData = indexData.substr(0, indexData.lastIndexOf(','));
       litBibtex = litBibtex.replace(indexData, indexData.replace(/[^a-zA-Z0-9\-_]/g, ''));
     }
-    const citation = new Cite(litBibtex);
+    let citation;
+    try {
+      citation = new Cite(litBibtex);
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
     if (onlyText) {
-      content = citation.format('bibliography', { format: 'text', template: 'apa' });
+      content = citation?.format('bibliography', { format: 'text', template: 'apa' });
     } else {
       content = (
         <div>
-          {citation.format('bibliography', { format: 'text', template: 'apa' })}
+          {citation?.format('bibliography', { format: 'text', template: 'apa' })}
         </div>
       );
     }

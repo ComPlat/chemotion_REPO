@@ -62,19 +62,14 @@ export default class ScreenDetails extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { screen } = nextProps;
     this.setState({ screen });
   }
 
   componentWillUnmount() {
     UIStore.unlisten(this.onUIStoreChange);
-  }
-
-  // eslint-disable-next-line camelcase
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    const { screen } = nextProps;
-    this.setState({ screen });
   }
 
   onUIStoreChange(state) {

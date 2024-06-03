@@ -4,39 +4,59 @@ import Reaction from 'src/models/Reaction';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
 const AnalysisIdstoPublish = element => (
-  element.analysisArray()
-    .filter(a => (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')))
+  element
+    .analysisArray()
+    .filter(
+      a =>
+        a.extended_metadata.publish &&
+        (a.extended_metadata.publish === true ||
+          a.extended_metadata.publish === 'true')
+    )
     .map(x => x.id)
 );
 
 export default class RepositoryFetcher {
-
   static reviewPublish(element) {
     const { id, type } = element;
     return fetch('/api/v1/repository/reviewing/submit', {
       credentials: 'same-origin',
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id, type })
-    }).then(response => response.json())
-      .then((json) => {
+      body: JSON.stringify({ id, type }),
+    })
+      .then(response => response.json())
+      .then(json => {
+        if (json.error) {
+          const notification = {
+            title: 'Failed to Submit for Review',
+            message: `Error: ${json.error}`,
+            level: 'error',
+            dismissible: 'button',
+            autoDismiss: 6,
+            position: 'tr',
+            uid: 'publish_error',
+          };
+          NotificationActions.add(notification);
+          return null;
+        }
         if (typeof json.reaction !== 'undefined') {
           json.reaction.can_publish = false;
           json.reaction.can_update = false;
           return new Reaction(json.reaction);
-        } else if (type === 'sample') {
+        }
+        if (type === 'sample') {
           json.sample.can_publish = false;
           json.sample.can_update = false;
           return new Sample(json.sample);
         }
         return null;
-    })
-    .catch((errorMessage) => {
-      console.log(errorMessage);
-    });
+      })
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
   }
 
   static publishSample(params, option = null) {
@@ -46,57 +66,63 @@ export default class RepositoryFetcher {
       credentials: 'same-origin',
       method: option ? 'PUT' : 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        sampleId: sample.id,
+        id: sample.id,
         analysesIds,
         coauthors,
         reviewers,
         refs,
         embargo,
         license,
-        addMe
+        addMe,
+      }),
+    })
+      .then(response => {
+        return response.json();
       })
-    }).then((response) => {
-      return response.json()
-    }).then((json) => {
-      if (json.error) {
-        const notification = {
-          title: 'Publish sample fail',
-          message: `Error: ${json.error}`,
-          level: 'error',
-          dismissible: 'button',
-          autoDismiss: 6,
-          position: 'tr',
-          uid: 'publish_sample_error'};
-        NotificationActions.add(notification);
-        return null;
-      }
-      if (option=='dois') {
-        json.sample.can_publish = true;
-        json.sample.can_update = true;
-      }
-      return new Sample(json.sample);
-    }).catch((errorMessage) => {
-      console.log(errorMessage);
-    });
+      .then(json => {
+        if (json.error) {
+          const notification = {
+            title: 'Failed to Publish Sample',
+            message: `Error: ${json.error}`,
+            level: 'error',
+            dismissible: 'button',
+            autoDismiss: 6,
+            position: 'tr',
+            uid: 'publish_sample_error',
+          };
+          NotificationActions.add(notification);
+          return null;
+        }
+        return { element: sample, closeView: true };
+      })
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
   }
 
   static publishReactionScheme(params) {
     const {
-      reaction, coauthors, reviewers, embargo, license, addMe, schemeDesc
+      reaction,
+      coauthors,
+      reviewers,
+      embargo,
+      license,
+      addMe,
+      schemeDesc,
     } = params;
     return fetch('/api/v1/repository/publishReactionScheme', {
       credentials: 'same-origin',
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reactionId: reaction.id,
+        id: reaction.id,
         temperature: reaction.temperature,
         duration: reaction.durationDisplay,
         products: reaction.products,
@@ -105,112 +131,176 @@ export default class RepositoryFetcher {
         reviewers,
         embargo,
         license,
-        addMe
-      })
+        addMe,
+      }),
     })
-      .then(response => (response.json()))
-      .then((json) => {
+      .then(response => {
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          return response.json();
+        } else {
+          throw new Error(response.statusText);
+        }
+      })
+      .then(json => {
         if (json.error) {
           const notification = {
-            title: 'Publish reaction scheme fail',
+            title: 'Failed to Publish Reaction Scheme',
             message: `Error: ${json.error}`,
             level: 'error',
             dismissible: 'button',
             autoDismiss: 6,
             position: 'tr',
-            uid: 'publish_reaction_error'
+            uid: 'publish_reaction_error',
           };
           NotificationActions.add(notification);
           return null;
         }
-        return new Reaction(json.reaction);
-      }).catch((errorMessage) => {
-        console.log(errorMessage);
+        return reaction;
+      })
+      .catch(errorMessage => {
+        console.log('errorMessage', errorMessage);
+        const notification = {
+          title: 'Failed to Publish Scheme Only Reaction',
+          message: `Error: ${errorMessage}`,
+          level: 'error',
+          dismissible: 'button',
+          autoDismiss: 6,
+          position: 'tr',
+          uid: 'publish_reaction_error',
+        };
+        NotificationActions.add(notification);
+        return null;
       });
   }
 
   static publishReaction(params, option = null) {
-    const { reaction, coauthors, reviewers, refs, embargo, license, isFullyPublish, addMe } = params;
+    const {
+      reaction,
+      coauthors,
+      reviewers,
+      refs,
+      embargo,
+      license,
+      isFullyPublish,
+      addMe,
+    } = params;
     if (!isFullyPublish) return this.publishReactionScheme(params);
-    const analysesIds = reaction.samples.reduce((acc, s) => acc.concat(AnalysisIdstoPublish(s)),
+    const analysesIds = reaction.samples.reduce(
+      (acc, s) => acc.concat(AnalysisIdstoPublish(s)),
       AnalysisIdstoPublish(reaction)
-    )
+    );
     return fetch(`/api/v1/repository/publishReaction/${option ? 'dois' : ''}`, {
       credentials: 'same-origin',
       method: option ? 'PUT' : 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reactionId: reaction.id,
+        id: reaction.id,
         analysesIds,
         coauthors,
         reviewers,
         refs,
         embargo,
         license,
-        addMe
+        addMe,
       })
-    }).then((response) => {
-      return response.json()
-    }).then((json) => {
-      if (json.error) {
+    })
+      .then(response => {
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          return response.json();
+        } else {
+          throw new Error(response.statusText);
+        }
+      })
+      .then(json => {
+        if (json.error) {
+          const notification = {
+            title: 'Failed to Publish Reaction',
+            message: `Error: ${json.error}`,
+            level: 'error',
+            dismissible: 'button',
+            autoDismiss: 6,
+            position: 'tr',
+            uid: 'publish_reaction_error',
+          };
+          NotificationActions.add(notification);
+          return null;
+        }
+        if (option === 'dois') {
+          json.reaction.can_publish = true;
+          json.reaction.can_update = true;
+        }
+        return reaction;
+      })
+      .catch(errorMessage => {
+        console.log('errorMessage', errorMessage);
         const notification = {
-          title: 'Publish reaction fail',
-          message: `Error: ${json.error}`,
+          title: 'Failed to Publish Reaction',
+          message: `Error: ${errorMessage}`,
           level: 'error',
           dismissible: 'button',
           autoDismiss: 6,
           position: 'tr',
-          uid: 'publish_reaction_error'
+          uid: 'publish_reaction_error',
         };
         NotificationActions.add(notification);
         return null;
-      }
-      if (option=='dois') {
-        json.reaction.can_publish = true;
-        json.reaction.can_update = true;
-      }
-      return new Reaction(json.reaction);
-    }).catch((errorMessage) => {
-      console.log(errorMessage);
-    });
+      });
   }
 
-
-
-  static fetchReviewElements(type, state, searchType, searchValue, page, perPage) {
-    const paramSearchType = (searchType && searchType !== '') ? `&search_type=${searchType}` : '';
-    const paramSearchValue = (searchValue && searchValue !== '') ? `&search_value=${searchValue}` : '';
-    const api = `/api/v1/repository/list.json?type=${type}&state=${state}${paramSearchType}${paramSearchValue}&page=${page}&per_page=${perPage}`;
+  static fetchReviewElements(
+    type,
+    state,
+    label,
+    searchType,
+    searchValue,
+    page,
+    perPage
+  ) {
+    const strApi = '/api/v1/repository/review_list.json?';
+    const paramSearchType =
+      searchType && searchType !== '' ? `&search_type=${searchType}` : '';
+    const paramSearchValue =
+      searchValue && searchValue !== '' ? `&search_value=${searchValue}` : '';
+    const searchLabel = label === null ? '' : `&label=${label}`;
+    const paramPage = `&page=${page}&per_page=${perPage}`;
+    const api = `${strApi}type=${type}&state=${state}${searchLabel}${paramSearchType}${paramSearchValue}${paramPage}`;
     return fetch(api, { credentials: 'same-origin' })
-      .then(response => response.json().then(json => ({
-        elements: json.elements,
-        page: parseInt(response.headers.get('X-Page'), 10),
-        pages: parseInt(response.headers.get('X-Total-Pages'), 10),
-        perPage: parseInt(response.headers.get('X-Per-Page'), 10),
-        selectType: type,
-        selectState: state,
-        searchType,
-        searchValue
-      })))
-      .catch((errorMessage) => { console.log(errorMessage); });
+      .then(response =>
+        response.json().then(json => ({
+          elements: json.elements,
+          page: parseInt(response.headers.get('X-Page'), 10),
+          pages: parseInt(response.headers.get('X-Total-Pages'), 10),
+          perPage: parseInt(response.headers.get('X-Per-Page'), 10),
+          selectType: type,
+          selectState: state,
+          searchType,
+          searchValue,
+        }))
+      )
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
   }
 
-
-  static fetchReaction(id, isPublic) {
-    const api = `/api/v1/repository/reaction.json?id=${id}&is_public=${isPublic}`;
+  static fetchReaction(id) {
+    const api = `/api/v1/repository/reaction.json?id=${id}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
   }
 
-  static fetchSample(id, isPublic) {
-    const api = `/api/v1/repository/sample.json?id=${id}&is_public=${isPublic}`
+  static fetchSample(id) {
+    const api = `/api/v1/repository/sample.json?id=${id}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json())
-      .catch((errorMessage) => { console.log(errorMessage); });
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      });
   }
 
   static saveComments(id, type, comments) {
@@ -369,6 +459,20 @@ export default class RepositoryFetcher {
     }).catch((errorMessage) => {
       console.log(errorMessage);
     });
+  }
+
+  static saveReviewLabel(params = {}) {
+    return fetch('/api/v1/repository/save_repo_labels', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json())
+      .then(json => json)
+      .catch((errorMessage) => { console.log(errorMessage); });
   }
 
   static compound(id, data, action = 'request') {

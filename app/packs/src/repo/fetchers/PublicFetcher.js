@@ -21,7 +21,16 @@ export default class PublicFetcher {
     const perPage = params.perPage || 10;
     const advFlag = params.advFlag || false;
     const paramAdvType = params.advType ? `&adv_type=${params.advType}` : '';
-    const paramAdvValue = params.advValue ? params.advValue.map(x => `&adv_val[]=${x.value}`).join('') : '';
+
+    let paramAdvValue = '';
+    if (typeof params.advValue === 'number') {
+      paramAdvValue = `&label_val=${params.advValue}`;
+    } else if (Array.isArray(params.advValue)) {
+      paramAdvValue = params.advValue.map(x => `&adv_val[]=${x.value}`).join('');
+    } else {
+      paramAdvValue = '';
+    }
+//     const paramAdvValue = params.advValue ? params.advValue.map(x => `&adv_val[]=${x.value}`).join('') : '';
     const listType = params.listType || RepoNavListTypes.SAMPLE;
     const api = `/api/v1/public/molecules.json?page=${page}&per_page=${perPage}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}&req_xvial=${listType === RepoNavListTypes.MOLECULE_ARCHIVE}`;
     return fetch(api, { credentials: 'same-origin' })
@@ -39,7 +48,16 @@ export default class PublicFetcher {
     const perPage = params.perPage || 10;
     const advFlag = params.advFlag || false;
     const paramAdvType = params.advType ? `&adv_type=${params.advType}` : '';
-    const paramAdvValue = params.advValue ? params.advValue.map(x => `&adv_val[]=${x.value}`).join('') : '';
+
+    let paramAdvValue = '';
+    if (typeof params.advValue === 'number') {
+      paramAdvValue = `&label_val=${params.advValue}`;
+    } else if (Array.isArray(params.advValue)) {
+      paramAdvValue = params.advValue.map(x => `&adv_val[]=${x.value}`).join('');
+    } else {
+      paramAdvValue = '';
+    }
+
     const schemeOnly = params.schemeOnly || false;
     const api = `/api/v1/public/reactions.json?page=${page}&per_page=${perPage}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}&scheme_only=${schemeOnly}`;
 
@@ -172,7 +190,17 @@ export default class PublicFetcher {
 
   static fetchMolecule(id, advFlag = false, advType = '', advValues = null) {
     const paramAdvType = (advType && advType !== '') ? `&adv_type=${advType}` : '';
-    const paramAdvValue = advValues ? advValues.map(x => `&adv_val[]=${x.value}`).join('') : '';
+
+    let paramAdvValue = '';
+    if (typeof advValues === 'number') {
+      paramAdvValue = `&label_val=${advValues}`;
+    } else if (Array.isArray(advValues)) {
+      paramAdvValue = advValues.map(x => `&adv_val[]=${x.value}`).join('');
+    } else {
+      paramAdvValue = '';
+    }
+
+    // const paramAdvValue = advValues ? advValues.map(x => `&adv_val[]=${x.value}`).join('') : '';
     const api = `/api/v1/public/molecule.json?id=${id}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json())
@@ -290,7 +318,7 @@ export default class PublicFetcher {
 
   static downloadDataset(id) {
     let fileName = 'dataset.xlsx';
-    const api = `/api/v1/public/metadata/export?id=${id}`;
+    const api = `/api/v1/public/export_metadata?id=${id}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => {
         const disposition = response.headers.get('Content-Disposition');

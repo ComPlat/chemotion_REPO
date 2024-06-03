@@ -83,12 +83,12 @@ module Chemotion
           elements = @collection.send(element + 's').by_ui_state(params[element])
 
           elements.each do |el|
-            pub = el.publication
+            pub = el.publication if el.respond_to?(:publication)
 
             next if pub.nil?
             pub.update_state(Publication::STATE_DECLINED)
             pub.process_element(Publication::STATE_DECLINED)
-            pub.inform_users(Publication::STATE_DECLINED, current_user.id)
+            pub.process_new_state_job(Publication::STATE_DECLINED, current_user.id)
           end
           deleted[element] = elements.destroy_all.map(&:id)
 

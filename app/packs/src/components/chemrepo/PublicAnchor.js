@@ -1,15 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const PublicAnchor = (props) => {
+function PublicAnchor(props) {
   const { doi, isPublished } = props;
   if (!isPublished || typeof doi !== 'string') return null;
   const anchorId = doi?.split('/').pop() || '';
-  return <span id={anchorId}></span>;
-};
+  return <span id={anchorId} />;
+}
 
 PublicAnchor.propTypes = {
-  doi: PropTypes.string.isRequired,
+  doi: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
   isPublished: PropTypes.bool.isRequired,
 };
 

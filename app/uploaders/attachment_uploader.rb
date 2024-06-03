@@ -43,7 +43,7 @@ class AttachmentUploader < Shrine
   Attacher.derivatives do |original|
     file_extension = ".#{record.attachment.mime_type.split('/').last}" unless record.attachment.mime_type.nil?
 
-    #  
+    #
     file_extension = '.svg' if file_extension == '.svg+xml'
 
     file_extension = '.jpg' if file_extension == '.jpeg'
@@ -81,7 +81,21 @@ class AttachmentUploader < Shrine
         file_path.to_s, original, attachment_id, result, record
       )
     end
+    result
+  rescue StandardError => e
+    Rails.logger.error <<~TXT
+    ---------  #{self.class.name} create_derivatives ------------
+       file_extension: #{file_extension}
+       file_path: #{file_path&.to_s}
+       original: #{original&.path}
+       attachment_id: #{attachment_id}
+       filename: #{record&.filename}
+       attachable_id: #{record&.attachable_id}
 
+      Error Message:  #{e.message}
+      Error:  #{e.backtrace.join("\n")}
+    --------------------------------------------------------------------
+    TXT
     result
   end
 

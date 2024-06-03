@@ -76,7 +76,7 @@ class Publication < ActiveRecord::Base
   STATE_RETRACTED = 'retracted'
 
   def embargoed?(root_publication = root)
-    cid = User.find(root_publication.published_by).publication_embargo_collection.id
+    cid = User.with_deleted.find(root_publication.published_by).publication_embargo_collection.id
     embargo_col = root_publication.element.collections.select { |c| c['ancestry'].to_i == cid }
     embargo_col.present? ? true : false
   end
@@ -103,6 +103,7 @@ class Publication < ActiveRecord::Base
     when Publication::STATE_ACCEPTED
       move_to_accepted_collection
       group_review_collection
+      publish_user_labels
     when Publication::STATE_DECLINED
       declined_reverse_original_element
       declined_move_collections
@@ -112,7 +113,7 @@ class Publication < ActiveRecord::Base
 
   # WARNING: for STATE_ACCEPTED the method does more than just notify users (see ChemotionRepoPublishingJob)
   # TODO: separate publishing responsability
-  def inform_users(new_state = state, current_user_id = 0)
+  def process_new_state_job(new_state = state, current_user_id = 0)
     method = if ENV['PUBLISH_MODE'] == 'production' && Rails.env.production?
                :perform_later
              elsif ENV['PUBLISH_MODE'] == 'staging'
@@ -130,9 +131,32 @@ class Publication < ActiveRecord::Base
     klass.set(queue: "#{queue_name} #{id}").send(method, id, new_state, current_user_id)
   end
 
+  def publish_user_labels
+    tag = element&.tag
+    return if tag.nil?
+
+    data = tag.taggable_data || {}
+    return if data['user_labels'].blank?
+
+    public_labels = UserLabel.where(id: data['user_labels'], access_level: 2).pluck(:id)
+    data['user_labels'] = public_labels
+    tag.save!
+
+    pub_data = taggable_data || {}
+    pub_data['user_labels'] = public_labels
+    update_columns(taggable_data: pub_data)
+  end
+
+  def update_user_labels(user_labels, current_user_id)
+    data = taggable_data || {}
+    private_labels = UserLabel.where(id: data['user_labels'], access_level: [0, 1]).where.not(user_id: current_user_id).pluck(:id)
+    data['user_labels'] = ((user_labels || []) + private_labels)&.uniq
+    update_columns(taggable_data: data)
+  end
+
   # remove publication element from editable collections
   def move_to_accepted_collection
-    pub_user = User.find(published_by)
+    pub_user = User.with_deleted.find(published_by)
     return false unless pub_user && element
     return true unless embargoed?
 
@@ -157,7 +181,7 @@ class Publication < ActiveRecord::Base
   # move publication element from reviewer editable collection to submitter editable collection
   # move publication element from submitter readable collection to reviewer readable collection
   def move_to_review_collection
-    pub_user = User.find(published_by)
+    pub_user = User.with_deleted.find(published_by)
     return false unless pub_user && element
 
     case element_type
@@ -173,7 +197,7 @@ class Publication < ActiveRecord::Base
   end
 
   def move_to_pending_collection
-    pub_user = User.find(published_by)
+    pub_user = User.with_deleted.find(published_by)
     return false unless pub_user && element
 
     case element_type
@@ -203,11 +227,11 @@ class Publication < ActiveRecord::Base
   end
 
   def group_review_collection
-    pub_user = User.find(published_by)
+    pub_user = User.with_deleted.find(published_by)
     return false unless pub_user && element
 
     group_reviewers = review && review['reviewers']
-    reviewers = User.where(id: group_reviewers) if group_reviewers.present?
+    reviewers = User.where(id: group_reviewers, type: 'Person') if group_reviewers.present?
     return false if reviewers&.empty?
 
     reviewers&.each do |user|
@@ -237,7 +261,7 @@ class Publication < ActiveRecord::Base
   end
 
   def declined_move_collections
-    all_col_id = User.find(published_by).all_collection&.id
+    all_col_id = User.with_deleted.find(published_by).all_collection&.id
     return unless element && all_col_id
 
     col_ids = element&.collections&.pluck(:id)
@@ -283,6 +307,11 @@ class Publication < ActiveRecord::Base
 
   def publication_logger
     @@publication_logger ||= Logger.new(File.join(Rails.root, 'log', 'publication.log'))
+  end
+
+
+  def self.repository_logger
+    @@repository_logger ||= Logger.new(Rails.root.join('log/repository.log'))
   end
 
   def doi_bag
@@ -714,6 +743,21 @@ class Publication < ActiveRecord::Base
 
   def log_invalid_transition(to_state)
     logger("CANNOT TRANSITION from #{state} to #{to_state}")
+  end
+
+  def self.repo_log_exception(exception, options = {})
+    Publication.repository_logger.error(self.class.name);
+    Publication.repository_logger.error("options [#{options}] \n ")
+    Publication.repository_logger.error("exception: #{exception.message} \n")
+    Publication.repository_logger.error(exception.backtrace.join("\n"))
+
+    # send message to admin
+    Message.create_msg_notification(
+      channel_id: Channel.find_by(subject: Channel::SUBMITTING)&.id,
+      message_from: User.find_by(name_abbreviation: 'CHI')&.id,
+      autoDismiss: 5,
+      message_content: { 'data': "Repository Error Log: #{exception.message}" },
+    )
   end
 
   def logger(message_arr)

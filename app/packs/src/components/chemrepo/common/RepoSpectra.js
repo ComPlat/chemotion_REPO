@@ -1,19 +1,15 @@
-/* eslint-disable react/require-default-props */
 /* eslint-disable react/forbid-prop-types */
+/* eslint-disable react/require-default-props */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip, Button, OverlayTrigger } from 'react-bootstrap';
-import { BuildSpcInfos } from 'src/utilities/SpectraHelper';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
 import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
 function RepoSpectraBtn(props) {
-  const { element, analysis, isLogin, isPublic } = props;
-  if (element == null || analysis == null) return null;
-  const spcInfos = BuildSpcInfos(element, analysis);
-  if (spcInfos.length < 1) return null;
+  const { element, spc, isLogin, isPublic } = props;
   const toggleSpectraModal = e => {
     e.stopPropagation();
     if (!isLogin) {
@@ -26,9 +22,9 @@ function RepoSpectraBtn(props) {
     } else {
       SpectraActions.ToggleModal();
       if (isPublic) {
-        PublicActions.loadSpectra.defer(spcInfos);
+        PublicActions.loadSpectra.defer(spc);
       } else {
-        SpectraActions.LoadSpectra.defer(spcInfos);
+        SpectraActions.LoadSpectra.defer(spc);
       }
     }
   };
@@ -48,7 +44,7 @@ function RepoSpectraBtn(props) {
             }
           }}
           onClick={toggleSpectraModal}
-          disabled={!(spcInfos.length > 0)}
+          disabled={!(spc.length > 0)}
         >
           <i className="fa fa-area-chart" aria-hidden="true" />
         </Button>
@@ -65,7 +61,7 @@ function RepoSpectraBtn(props) {
 
 RepoSpectraBtn.propTypes = {
   element: PropTypes.object,
-  analysis: PropTypes.object,
+  spc: PropTypes.array,
   isLogin: PropTypes.bool,
   isPublic: PropTypes.bool,
 };

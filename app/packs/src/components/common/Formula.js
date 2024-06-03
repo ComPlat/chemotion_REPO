@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { compact } from 'lodash';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
 
 const Formula = ({ formula, customText }) => {
   let content = '';
@@ -8,9 +9,9 @@ const Formula = ({ formula, customText }) => {
     const keys = formula.split(/([A-Za-z]{1}[a-z]{0,2})(\+?)(-?)(\d*)/);
     content = compact(keys).map((item, i) => {
       const key = `${item}-${i}`;
-      if ((/\d+/).test(item)) {
+      if (/\d+/.test(item)) {
         return <sub key={key}>{item}</sub>;
-      } else if ((/[+-]/).test(item)) {
+      } else if (/[+-]/.test(item)) {
         return <sup key={key}>{item}</sup>;
       }
       return item;
@@ -35,4 +36,13 @@ Formula.defaultProps = {
   customText: '',
 };
 
+const ExactFormula = ({ sample, molecule }) => {
+  const { decoupled = false, sum_formula: sFormula } = sample ?? {};
+  const { inchikey = '', sum_formular: mFormula } = molecule ?? {};
+  const formula =
+    decoupled && inchikey !== RepoConst.INCHIKEY_DUMMY ? sFormula : mFormula;
+  return <Formula formula={formula} />;
+};
+
 export default Formula;
+export { ExactFormula };

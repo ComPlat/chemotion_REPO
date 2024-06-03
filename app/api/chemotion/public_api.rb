@@ -31,13 +31,11 @@ module Chemotion
         end
       end
 
-
       desc 'Public initialization'
-      params do
-      end
       get 'initialize' do
         {
-          molecule_viewer: Matrice.molecule_viewer
+          molecule_viewer: Matrice.molecule_viewer,
+          u: Rails.configuration.u || {},
         }
       end
 
@@ -377,8 +375,9 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
+          optional :label_val, type: Integer, desc: 'label_val'
           optional :req_xvial, type: Boolean, default: false, desc: 'xvial is required or not'
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
@@ -407,13 +406,18 @@ module Chemotion
               SQL
             end
           end
+          if params[:adv_type] == 'Label' && params[:label_val].present?
+            label_search = <<~SQL
+              and pub.taggable_data->'user_labels' @> '#{params[:label_val]}'
+            SQL
+          end
           sample_join = <<~SQL
             INNER JOIN (
               SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
               FROM (
               SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
               FROM samples, publications pub
-              WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL
+              WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL #{label_search}
                 and samples.id IN (
                 SELECT samples.id FROM samples
                 INNER JOIN collections_samples cs on cs.collection_id = #{public_collection_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
@@ -465,8 +469,9 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'is it advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
+          optional :label_val, type: Integer, desc: 'label_val'
           optional :scheme_only, type: Boolean, desc: 'is it a scheme-only reaction?', default: false
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
@@ -517,6 +522,9 @@ module Chemotion
             col_scope = Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
           else
             col_scope = Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
+          end
+          if params[:adv_type] == 'Label' && params[:label_val].present?
+            col_scope = col_scope.where("publications.taggable_data->'user_labels' @> '?'", params[:label_val])
           end
           reset_pagination_page(col_scope)
           list = paginate(col_scope)
@@ -574,8 +582,8 @@ module Chemotion
           r_pub = Publication.where(element_type: 'Reaction', state: 'completed').order(:published_at).last
           reaction = r_pub.element
 
-          { last_published: { sample: { id: sample.id, sample_svg_file: sample.sample_svg_file, molecule: sample.molecule, tag: s_pub.taggable_data, contributor: User.find(s_pub.published_by).name  },
-          reaction: { id: reaction.id, reaction_svg_file: reaction.reaction_svg_file, tag: r_pub.taggable_data, contributor: User.find(r_pub.published_by).name } } }
+          { last_published: { sample: { id: sample.id, sample_svg_file: sample.sample_svg_file, molecule: sample.molecule, tag: s_pub.taggable_data, contributor: User.with_deleted.find(s_pub.published_by).name  },
+          reaction: { id: reaction.id, reaction_svg_file: reaction.reaction_svg_file, tag: r_pub.taggable_data, contributor: User.with_deleted.find(r_pub.published_by).name } } }
         end
       end
 
@@ -638,7 +646,6 @@ module Chemotion
       end
 
       resource :embargo do
-        helpers RepositoryHelpers
         desc "Return PUBLISHED serialized collection"
         params do
           requires :id, type: Integer, desc: "collection id"
@@ -652,15 +659,18 @@ module Chemotion
 
 
       resource :col_list do
-        helpers RepositoryHelpers
         after_validation do
           @embargo_collection = Collection.find(params[:collection_id])
           @pub = @embargo_collection.publication
           error!('401 Unauthorized', 401) if @pub.nil?
 
           if @pub.state != 'completed'
-            error!('401 Unauthorized', 401) unless current_user.present? && (User.reviewer_ids.include?(current_user.id) || @pub.published_by == current_user.id || current_user.type == 'Anonymous')
+            is_reviewer = User.reviewer_ids.include?(current_user&.id)
+            is_submitter = (@pub.published_by == current_user&.id || @pub.review&.dig('submitters')&.include?(current_user&.id)) && SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: @embargo_collection.id).present?
+            is_anonymous = current_user&.type == 'Anonymous' && SyncCollectionsUser.find_by(user_id: current_user.id, collection_id: @embargo_collection.id).present?
+            error!('401 Unauthorized', 401) unless current_user.present? && (is_reviewer || is_submitter || is_anonymous)
           end
+          @is_reviewer = User.reviewer_ids.include?(current_user&.id)
         end
         get do
           anasql = <<~SQL
@@ -672,7 +682,7 @@ module Chemotion
           elements = []
           list.each do |e|
             element_type = e.element&.class&.name
-            u = User.find(e.published_by) unless e.published_by.nil?
+            u = User.with_deleted.find(e.published_by) unless e.published_by.nil?
             svg_file = e.element.sample_svg_file if element_type == 'Sample'
             title = e.element.short_label if element_type == 'Sample'
 
@@ -685,13 +695,12 @@ module Chemotion
               published_by: u&.name, submit_at: e.created_at, state: e.state, scheme_only: scheme_only, ana_cnt: e.ana_cnt
             )
           end
-          is_reviewer = User.reviewer_ids.include?(current_user&.id)
-          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type, is_reviewer: is_reviewer } }
+
+          { elements: elements, embargo: @pub, embargo_id: params[:collection_id], current_user: { id: current_user&.id, type: current_user&.type, is_reviewer: @is_reviewer } }
         end
       end
 
       resource :col_element do
-        helpers RepositoryHelpers
         params do
           requires :collection_id, type: Integer, desc: "collection id"
           requires :el_id, type: Integer, desc: "element id"
@@ -717,7 +726,6 @@ module Chemotion
       end
 
       resource :reaction do
-        helpers RepositoryHelpers
         desc "Return PUBLISHED serialized reaction"
         params do
           requires :id, type: Integer, desc: "Reaction id"
@@ -738,16 +746,16 @@ module Chemotion
       end
 
       resource :molecule do
-        helpers RepositoryHelpers
         desc 'Return serialized molecule with list of PUBLISHED dataset'
         params do
           requires :id, type: Integer, desc: 'Molecule id'
           optional :adv_flag, type: Boolean, desc: 'advanced search flag'
-          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo]
+          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
+          optional :label_val, type: Integer, desc: 'label_val'
         end
         get do
-          get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val])
+          get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
         end
       end
 
@@ -895,8 +903,30 @@ module Chemotion
             error!('404 Is not published yet', 404) unless @publication&.state&.include?('completed')
           end
           get do
-            Base64.encode64(@attachment.read_thumbnail) if @attachment.thumb
+            if @attachment.thumb
+              thumbnail = @attachment.read_thumbnail
+              thumbnail ? Base64.encode64(thumbnail) : nil
+            else
+              nil
+            end
           end
+        end
+      end
+
+      resource :export_metadata do
+        desc 'Get dataset metadata of publication'
+        params do
+          requires :id, type: Integer, desc: "Dataset Id"
+        end
+        before do
+          @dataset_id = params[:id]
+          @container = Container.find_by(id: @dataset_id)
+          element = @container.root.containable
+          @publication = Publication.find_by(element: element, state: 'completed') if element.present?
+          error!('404 Publication not found', 404) unless @publication.present?
+        end
+        get do
+          prepare_and_export_dataset(@container.id)
         end
       end
 
@@ -916,34 +946,17 @@ module Chemotion
           result = declared(params, include_missing: false)
           list = []
           limit = params[:limit] - params[:offset] > 1000 ? params[:offset] + 1000 : params[:limit]
-          scope = Publication.where(element_type: params[:type], state: 'completed')
+          scope = Publication.includes(:doi).where(element_type: params[:type], state: 'completed')
           scope = scope.where('published_at >= ?', params[:date_from]) if params[:date_from].present?
           scope = scope.where('published_at <= ?', params[:date_to]) if params[:date_to].present?
           publications = scope.order(:published_at).offset(params[:offset]).limit(limit)
-          publications.map do |publication|
+          publications.each do |publication|
             inchikey = publication&.doi&.suffix
             list.push("#{service_url}#{api_url}#{inchikey}") if inchikey.present?
           end
           result[:publications] = list
           result[:limit] = limit
           result
-        end
-
-        resource :export do
-          desc 'Get dataset metadata of publication'
-          params do
-            requires :id, type: Integer, desc: "Dataset Id"
-          end
-          before do
-            @dataset_id = params[:id]
-            @container = Container.find_by(id: @dataset_id)
-            element = @container.root.containable
-            @publication = Publication.find_by(element: element, state: 'completed') if element.present?
-            error!('404 Publication not found', 404) unless @publication.present?
-          end
-          get do
-            prepare_and_export_dataset(@container.id)
-          end
         end
 
         desc "metadata of publication"
@@ -1001,15 +1014,15 @@ module Chemotion
         end
       end
 
-      resource :service do
-        desc 'convert molfile to 3d'
+      resource :represent do
+        desc 'represent molfile structure'
         params do
-          requires :molfile, type: String, desc: 'Molecule molfile'
+          requires :mol, type: String, desc: 'Molecule molfile'
         end
-        post :convert do
-          convert_to_3d(params[:molfile])
+        post :structure do
+          represent_structure(params[:mol])
         rescue StandardError => e
-          return { msg: { level: 'error', message: e } }
+          return { molfile: params[:mol], msg: { level: 'error', message: e } }
         end
       end
     end

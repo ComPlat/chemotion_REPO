@@ -38,7 +38,10 @@ class SpectraStore {
       handleAddOthers: SpectraActions.AddOthers,
       handleRegenerateEdited: SpectraActions.RegenerateEdited,
       handleToggleModalNMRDisplayer: SpectraActions.ToggleModalNMRDisplayer,
-      handleLoadSpectraForNMRDisplayer: SpectraActions.LoadSpectraForNMRDisplayer,
+      handleLoadSpectraForNMRDisplayer: [
+        SpectraActions.LoadSpectraForNMRDisplayer,
+        PublicActions.loadSpectraForNMRDisplayer,
+      ],
     });
   }
 

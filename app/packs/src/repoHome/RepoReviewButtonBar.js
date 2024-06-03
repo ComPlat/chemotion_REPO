@@ -3,11 +3,12 @@ import {
   Button,
   ButtonToolbar,
   OverlayTrigger,
-  Tooltip
+  Tooltip,
 } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import RepoMetadataModal from 'src/components/chemrepo/common/RepoMetadataModal';
 import RepoReviewAuthorsModal from 'src/components/chemrepo/common/RepoReviewAuthorsModal';
+import RepoUserLabelModal from 'src/components/chemrepo/common/RepoUserLabelModal';
 
 const showButton = (btn, func, pubState, review_info) => {
   let title = btn;
@@ -87,9 +88,22 @@ const showCommentButton = (btn, func, currComment) => {
   );
 };
 
-const RepoReviewButtonBar = props =>
-  (
-    <ButtonToolbar>
+function RepoReviewButtonBar(props) {
+  let authorModel = '';
+
+  if (props?.review_info?.groupleader !== true) {
+    authorModel = (
+      <RepoReviewAuthorsModal
+        element={props.element}
+        isEmbargo={false}
+        leaders={props.review_info?.leaders || []}
+        schemeOnly={props.schemeOnly}
+        taggData={props.taggData}
+      />
+    );
+  }
+
+  return (<ButtonToolbar style={{ marginBottom: '10px' }}>
       {
         props.showComment === true && props.buttons.filter(b => b === 'Comments').map(b =>
           showCommentButton(b, props.buttonFunc, (props.currComment)))
@@ -102,14 +116,16 @@ const RepoReviewButtonBar = props =>
         elementId={props.element.id}
         elementType={props.element.elementType.toLowerCase()}
       />
-      <RepoReviewAuthorsModal element={props.element} review_info={props.review_info} schemeOnly={props.schemeOnly} taggData={props.taggData} />
-    </ButtonToolbar>
-  );
+      {authorModel}
+      <RepoUserLabelModal element={props.element} />
+    </ButtonToolbar>)
+};
 
 RepoReviewButtonBar.propTypes = {
   element: PropTypes.shape({
     id: PropTypes.number,
-    elementType: PropTypes.string
+    elementType: PropTypes.string,
+    user_labels: PropTypes.arrayOf(PropTypes.number)
   }).isRequired,
   buttons: PropTypes.arrayOf(PropTypes.string),
   buttonFunc: PropTypes.func,
@@ -128,7 +144,7 @@ RepoReviewButtonBar.defaultProps = {
   showComment: true,
   schemeOnly: false,
   currComment: {},
-  taggData: {}
+  taggData: {},
 };
 
 export default RepoReviewButtonBar;

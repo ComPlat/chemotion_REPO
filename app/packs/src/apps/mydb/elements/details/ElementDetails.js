@@ -174,10 +174,17 @@ export default class ElementDetails extends Component {
 
   content(_el) {
     const el = _el;
-    el.sealed = getPublicationId(el) ? true : false;
+    const isPending = el?.tag?.taggable_data?.publish_pending;
+
+    el.sealed = isPending || !!getPublicationId(el);
 
     if (el && el.klassType === 'GenericEl' && el.type != null) {
-      return <GenericElDetails genericEl={el} toggleFullScreen={this.toggleFullScreen} />;
+      return (
+        <GenericElDetails
+          genericEl={el}
+          toggleFullScreen={this.toggleFullScreen}
+        />
+      );
     }
 
     switch (el.type) {

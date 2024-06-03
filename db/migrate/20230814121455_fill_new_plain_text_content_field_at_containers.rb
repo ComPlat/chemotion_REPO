@@ -24,12 +24,12 @@ class FillNewPlainTextContentFieldAtContainers < ActiveRecord::Migration[6.1]
 
         container.update_columns(plain_text_content: content)
       rescue Exception => e
-        byebug
+        ## byebug
       end
 
     end
   rescue Exception => e
-    byebug
+    ## byebug
   end
 
   def down

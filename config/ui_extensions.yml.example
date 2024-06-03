@@ -1,0 +1,18 @@
+development:
+  collection_icons:
+    - label: COLLECTION_LABEL_1
+      icons:
+        - filename: image1.png
+          title: image1_title
+          info: additional information
+        - filename: image2.png
+          title: image2_title
+          info: additional information
+    - label: COLLECTION_LABEL_2
+      icons:
+        - filename: image3.png
+          title: image3_title
+          info: additional information
+        - filename: image4.png
+          title: image4_title
+          info: additional information

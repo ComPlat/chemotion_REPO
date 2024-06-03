@@ -6,7 +6,7 @@ module Collectable
     scope :for_user_n_groups, ->(user_ids) { joins(:collections).where('collections.user_id IN (?)', user_ids).references(:collections) }
     scope :by_collection_id, ->(id) { joins(:collections).where('collections.id = ?', id) }
     scope :search_by, ->(search_by_method, arg) { public_send("search_by_#{search_by_method}", arg) }
-
+    scope :by_user_label, ->(id) { joins(:tag).where("element_tags.taggable_data->'user_labels' @> '?'", id) }
     # TODO: Filters are not working properly
     # the following scopes are not working as I would expect
     # in the ui the selection is a date but in the api we are getting a timestamp,

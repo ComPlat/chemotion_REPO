@@ -28,24 +28,25 @@ import Select from 'react-select';
 import uuid from 'uuid';
 import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import { RepoCommentBtn } from 'repo-review-ui';
-import ContainerComponent from 'src/libHome/ContainerComponent';
-import Formula from 'src/components/common/Formula';
+import ContainerComponent from 'src/components/chemrepo/reaction/ContainerComponent';
+import ExactMass from 'src/components/chemrepo/ExactMass';
+import Formula, { ExactFormula } from 'src/components/common/Formula';
 import HelpInfo from 'src/components/common/HelpInfo';
 import PubchemLabels from 'src/components/pubchem/PubchemLabels';
-import QuillViewer from 'src/components/QuillViewer';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 import { ChemotionTag } from 'src/components/chemrepo/PublishCommon'; // TODO: Paggy
 import Sample from 'src/models/Sample';
 import Reaction from 'src/models/Reaction';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
 import { stopBubble } from 'src/utilities/DomHelper';
 import RepoContainerDatasets from 'src/repoHome/RepoContainerDatasets';
-import ImageModal from 'src/components/common/ImageModal';
 import Utils from 'src/utilities/Functions';
 import { hNmrCheckMsg, cNmrCheckMsg, instrumentText } from 'src/utilities/ElementUtils';
 import { contentToText } from 'src/utilities/quillFormat';
 import { chmoConversions } from 'src/components/OlsComponent';
 import DropdownButtonSelection from 'src/components/common/DropdownButtonSelection';
 import InputButtonField from 'src/components/common/InputButtonField';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
 import RepoReactionSchemeInfo from 'src/repoHome/RepoReactionSchemeInfo';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoUserComment from 'src/components/chemrepo/common/RepoUserComment';
@@ -64,8 +65,10 @@ import LdData from 'src/components/chemrepo/LdData';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import PublicReactionTlc from 'src/components/chemrepo/PublicReactionTlc';
 import PublicReactionProperties from 'src/components/chemrepo/PublicReactionProperties';
+import StateLabel from 'src/components/chemrepo/common/StateLabel';
+import SVGView from 'src/components/chemrepo/SVGViewPan';
 
-const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
+const hideInfo = _molecule => ((_molecule?.inchikey === RepoConst.INCHIKEY_DUMMY) ? { display: 'none' } : {});
 
 const CollectionDesc = (props) => {
   let { label } = props;
@@ -119,11 +122,6 @@ ChemotionId.propTypes = {
 };
 
 const SchemeWord = () => <span className="reaction-scheme-word">(scheme)</span>;
-
-
-const NewsroomTemplate = {
-  title: '', content: {}, article: []
-};
 
 const HomeFeature = props => (
   <div className="feature-block" style={props.extraStyle}>
@@ -470,26 +468,6 @@ PublishTypeAs.defaultProps = {
   selected: 'full',
 };
 
-
-const ElStateLabel = (state) => {
-  let stateStyle;
-  switch (state) {
-    case 'reviewed':
-      stateStyle = 'info';
-      break;
-    case 'pending':
-      stateStyle = 'warning';
-      break;
-    case 'accepted':
-      stateStyle = 'success';
-      break;
-    default:
-      stateStyle = 'default';
-  }
-  return <Label bsStyle={stateStyle}>{state}</Label>;
-};
-
-
 const MoveEmbargoedBundle = (element, onMoveClick) => {
   return (
     <OverlayTrigger placement="bottom" overlay={<Tooltip id="moveEmbargo">Move to another embargoed bundle</Tooltip>}>
@@ -498,17 +476,7 @@ const MoveEmbargoedBundle = (element, onMoveClick) => {
   );
 };
 
-const SvgPath = (svg, type) => {
-  if (svg && svg !== '***') {
-    if (type === 'Reaction') {
-      return `/images/reactions/${svg}`;
-    }
-    return `/images/samples/${svg}`;
-  }
-  return 'images/wild_card/no_image_180.svg';
-};
-
-const ElAspect = (e, onClick, user = null, owner, currentElement = null, onMoveClick) => {
+const ElAspect = (e, onClick, user = null, isOwner, currentElement = null, onMoveClick) => {
   if (!e) {
     return '';
   }
@@ -530,10 +498,10 @@ const ElAspect = (e, onClick, user = null, owner, currentElement = null, onMoveC
           <i className={`icon-${e.type.toLowerCase()}`} />{schemeOnly ? <SchemeWord /> : ''}&nbsp;{e.title}
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-        {getFormattedISODateTime(e.submit_at)}&nbsp;{user !== null && user.type === 'Anonymous' ? '' : ElStateLabel(e.state)}
-        &nbsp;{user !== null && user.id != owner ? '' : MoveEmbargoedBundle(e, onMoveClick)}
+        {getFormattedISODateTime(e.submit_at)}&nbsp;{user?.type === RepoConst.U_TYPE.ANONYMOUS ? '' : StateLabel(e.state)}
+        &nbsp;{user !== null && !isOwner ? '' : MoveEmbargoedBundle(e, onMoveClick)}
         <div>
-          <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
+          <SVGView svg={e.svg} type={e.type} className="molecule-mid" />
         </div>
       </td>
     </tr>
@@ -627,7 +595,9 @@ const ChecklistPanel = ({
 
 
   if (isReviewer === true || review_info?.groupleader == true) {
-    const leaders = review_info?.leaders?.length > 0 ? `additional reviewer(s): ${review_info?.leaders?.join(', ')}` : '';
+
+    const leader_names = review_info?.leaders?.length > 0 ? review_info.leaders.map(u => u.name) : [];
+    const leaders = leader_names.length > 0 ? `additional reviewer(s): ${leader_names.join(', ')}` : '';
     const isGL = review_info?.leaders?.length > 0 ? (<OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">group leader review</Tooltip>}>{dglr}</OverlayTrigger>) : '';
     return (
       <div>
@@ -884,7 +854,7 @@ class ClipboardCopyBtn extends Component {
   }
 }
 
-const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
+const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false, children }) => {
   let svgPath = `/images/molecules/${molecule.molecule_svg_file}`;
   if (sample_svg_file && sample_svg_file != '') {
     svgPath = `/images/samples/${sample_svg_file}`;
@@ -910,6 +880,11 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
         {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
+      <div>
+        {children}
+        <div className="repo-registed-compound-desc">
+          This information is based on the molecular structure shown on the left side. For a decoupled sample, please refer to its individual details.
+        </div>
         {nameOrFormula}
         <br />
         <span style={hideInfo(molecule)}>
@@ -934,6 +909,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
           <PubchemLabels element={pubchemInfo} />
           <ChemotionTag tagData={tagData} />
         </h5>
+      </div>
       </Col>
     </Row>
   );
@@ -952,8 +928,8 @@ const RenderAnalysisHeader = (props) => {
     doiLink = (element.doi && element.doi.full_doi) || '';
   }
   const nameOrFormula = molecule.iupac_name && molecule.iupac_name !== ''
-    ? <span><b>IUPAC Name: </b> {molecule.iupac_name} (<Formula formula={molecule.sum_formular} />)</span>
-    : <span><b>Formula: </b> <Formula formula={molecule.sum_formular} /></span>;
+    ? <span><b>IUPAC Name: </b> {molecule.iupac_name} (<ExactFormula sample={element} molecule={molecule} />)</span>
+    : <span><b>Formula: </b> <ExactFormula sample={element} molecule={molecule} /></span>;
 
   const iupacUserDefined = element.showed_name == (molecule.iupac_name)
     ? <span />
@@ -992,7 +968,7 @@ const RenderAnalysisHeader = (props) => {
             <h6><b>Canonical SMILES: </b> <ClipboardCopyLink text={molecule.cano_smiles} /></h6>
             <h6><b>InChI: </b> <ClipboardCopyLink text={molecule.inchistring} /></h6>
             <h6><b>InChIKey: </b> <ClipboardCopyLink text={molecule.inchikey} /></h6>
-            <h6><b>Exact Mass: </b> {SampleExactMW(molecule.exact_molecular_weight)}</h6>
+            <h6><b>Exact Mass: </b> {ExactMass(element, molecule)}</h6>
           </div>
           <h6><b>Sample DOI: </b>
             {
@@ -1513,9 +1489,9 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
   const additionlength = (additionInfo && additionInfo.ops && additionInfo.ops.length > 0 && additionInfo.ops[0].insert) ? additionInfo.ops[0].insert.trim().length : 0;
 
   const descQV = contentlength > 0 ?
-  (<span><b>Description:</b><QuillViewer value={content}  /></span>) : null;
+  (<span className="expand-p"><b>Description:</b><Quill2Viewer value={content}  /></span>) : null;
   const addQV = additionlength > 0 ?
-  (<span><b>Additional information for publication and purification details:</b> <QuillViewer value={additionInfo}  /></span>) : null;
+  (<span className="expand-p"><b>Additional information for publication and purification details:</b> <Quill2Viewer value={additionInfo}  /></span>) : null;
 
 
   const bodyAttrs = {
@@ -1674,7 +1650,7 @@ class RenderPublishAnalysesPanel extends Component {
           <div className="desc small-p expand-p">
             <OverlayTrigger placement="bottom" overlay={<Tooltip id="_tip_dataset_quill_viewer">copy to clipboard</Tooltip>}>
               <div className="repo-quill-viewer" tabIndex={0} role="button" onClick={() => { navigator.clipboard.writeText(contentToText(content)); }}>
-                <QuillViewer value={content} />
+                <Quill2Viewer value={content} />
               </div>
             </OverlayTrigger>
           </div>
@@ -1755,10 +1731,10 @@ class RenderPublishAnalyses extends Component {
               </Button>
               <ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${analysis.pub_id}`} />
             </div>
-            <div className="desc small-p">
+            <div className="desc small-p expand-p">
               <b>Content: </b> &nbsp;&nbsp;
               <ClipboardCopyLink text={contentToText(content)}>
-              <QuillViewer value={content}  />
+              <Quill2Viewer value={content}  />
             </ClipboardCopyLink>
             </div>
           </div>
@@ -1980,11 +1956,11 @@ class PublishAnalysesTag extends Component {
                 :
                 <div className="sub-title"><span>Status:</span> {status} {statusMsg}</div>
             }
-            <div className="desc sub-title">
+            <div className="desc sub-title expand-p">
               <span style={{ float: 'left', marginRight: '5px' }}>
                 Content:
               </span>
-              <QuillViewer value={content} />
+              <Quill2Viewer value={content} />
             </div>
           </div>
         </div>
@@ -2221,7 +2197,6 @@ export {
   DownloadJsonBtn,
   EditorTips,
   ElementIcon,
-  ElStateLabel,
   ElAspect,
   EmbargoCom,
   IconToMyDB,
@@ -2230,7 +2205,6 @@ export {
   isDatasetPass,
   HomeFeature,
   MoleculeInfo,
-  NewsroomTemplate,
   PublishAnalysesTag,
   PublishTypeAs,
   ReactionSchemeOnlyInfo,
@@ -2244,7 +2218,6 @@ export {
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
-  SvgPath,
   ToggleIndicator,
   CollectionDesc
 };

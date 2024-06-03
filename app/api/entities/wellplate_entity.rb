@@ -55,7 +55,7 @@ module Entities
     end
 
     def comment_count
-      object.comments.count
+      0 # object.comments.count
     end
   end
 end

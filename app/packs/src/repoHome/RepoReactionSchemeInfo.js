@@ -12,14 +12,14 @@ import {
   ReactionRinChiKey,
   resizableSvg
 } from 'src/repoHome/RepoCommon';
-import QuillViewer from 'src/components/QuillViewer';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 
 const RepoReactionSchemeInfo = (props) => {
   const content = props.reaction.description;
   const contentlength = (content && content.ops && content.ops.length > 0
     && content.ops[0].insert) ? content.ops[0].insert.trim().length : 0;
   const descQV = contentlength > 0 ?
-    (<span><b>Description:</b><QuillViewer value={content} /></span>) : null;
+    (<span className="expand-p"><b>Description:</b><Quill2Viewer value={content} /></span>) : null;
   return (
     <Panel style={{ marginBottom: '4px' }}>
       <Panel.Body style={{ paddingBottom: '1px' }}>

@@ -41,6 +41,7 @@ module Chemotion
           has_radar: radar_config.present?,
           molecule_viewer: Matrice.molecule_viewer,
           collector_address: collector_address.presence,
+          u: Rails.configuration.u || {},
           x: load_x_config,
         }
       end

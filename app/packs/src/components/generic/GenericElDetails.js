@@ -40,6 +40,7 @@ import ElementDetailSortTab from 'src/apps/mydb/elements/details/ElementDetailSo
 import UserStore from 'src/stores/alt/stores/UserStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import CollectionActions from 'src/stores/alt/actions/CollectionActions';
+import { EditUserLabels, ShowUserLabels } from 'src/components/UserLabels';
 
 const onNaviClick = (type, id) => {
   const { currentCollection, isSync } = UIStore.getState();
@@ -354,6 +355,10 @@ export default class GenericElDetails extends Component {
       <div>
         <div>{this.elementalToolbar(genericEl)}</div>
         {layersLayout}
+        <EditUserLabels
+          element={genericEl}
+          fnCb={this.handleGenericElChanged}
+        />
       </div>
     );
   }
@@ -436,6 +441,7 @@ export default class GenericElDetails extends Component {
             &nbsp;<span>{genericEl.short_label}</span> &nbsp;
           </span>
         </OverlayTrigger>
+        <ShowUserLabels element={genericEl} />
         <ConfirmClose el={genericEl} />
         {copyBtn}
         <OverlayTrigger

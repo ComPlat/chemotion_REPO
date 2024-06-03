@@ -3,8 +3,9 @@ module EmbargoCol
   def refresh_embargo_metadata
     return if element_type != 'Collection' || element.nil?
 
-    ps = Publication.where(element_type: 'Sample', ancestry: nil, element_id: element.samples&.pluck(:id))
-    pr = Publication.where(element_type: 'Reaction', ancestry: nil, element_id: element.reactions&.pluck(:id))
+    # Fetch publications for samples and reactions with preloaded doi
+    ps = Publication.where(element_type: 'Sample', ancestry: nil, element_id: element.samples&.pluck(:id)).includes(:doi)
+    pr = Publication.where(element_type: 'Reaction', ancestry: nil, element_id: element.reactions&.pluck(:id)).includes(:doi)
 
     creators = []
     author_ids = []
@@ -14,16 +15,15 @@ module EmbargoCol
     dois = []
 
     (ps + pr)&.each do |pu|
-      if pu.taggable_data['scheme_only'] == true
-      else
-        eids.push(pu.id)
-        dois.push({ id: pu.id, element_type: pu.element_type, element_id: pu.element_id, doi: pu.doi.full_doi, state: pu.state }) if pu.doi.present?
-        ctag = pu.taggable_data || {}
-        creators << ctag["creators"]
-        author_ids << ctag["author_ids"]
-        affiliation_ids << ctag["affiliation_ids"]
-        contributors = ctag["contributors"]
-      end
+      next if pu.taggable_data['scheme_only'] == true
+
+      eids.push(pu.id)
+      dois.push({ id: pu.id, element_type: pu.element_type, element_id: pu.element_id, doi: pu.doi.full_doi, state: pu.state }) if pu.doi.present?
+      ctag = pu.taggable_data || {}
+      creators << ctag["creators"]
+      author_ids << ctag["author_ids"]
+      affiliation_ids << ctag["affiliation_ids"]
+      contributors = ctag["contributors"]
     end
 
     et = ElementTag.find_or_create_by(taggable_id: element_id, taggable_type: element_type)

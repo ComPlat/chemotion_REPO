@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-prop-types */
 import React, { Component } from 'react';
 import { Panel, Row, Col, Button, Jumbotron } from 'react-bootstrap';
 import PropTypes from 'prop-types';
@@ -139,7 +140,17 @@ export default class RepoReactionDetails extends Component {
 
   reactionInfo(reaction) {
     const { showScheme, showRinchi, showProp, showTlc } = this.state;
-    const { canComment, review_info, review, isPublished } = this.props;
+    const {
+      canComment: propsCanComment,
+      review_info,
+      review,
+      isPublished,
+    } = this.props;
+    const { currentUser } = UserStore.getState();
+    const canComment =
+      currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
+        ? false
+        : propsCanComment;
 
     const svgPath = `/images/reactions/${reaction.reaction_svg_file}`;
     const content = reaction.description;
@@ -150,9 +161,9 @@ export default class RepoReactionDetails extends Component {
         ? content.ops[0].insert.trim()
         : '';
     let descQV = (
-      <span>
+      <span className="expand-p">
         <b>Description:</b>
-        <QuillViewer value={content} preview />
+        <Quill2Viewer value={content} preview />
       </span>
     );
     if (descContent === '') {
@@ -168,9 +179,9 @@ export default class RepoReactionDetails extends Component {
         ? additionInfo.ops[0].insert.trim()
         : '';
     let addQV = (
-      <span>
+      <span className="expand-p">
         <b>Additional information for publication and purification details:</b>
-        <QuillViewer value={additionInfo} preview />
+        <Quill2Viewer value={additionInfo} preview />
       </span>
     );
     if (addinfoContent === '') {
@@ -487,7 +498,7 @@ export default class RepoReactionDetails extends Component {
     const {
       reaction,
       isPublished,
-      canComment,
+      canComment: propsCanComment,
       review_info,
       showComment,
       review,
@@ -497,6 +508,11 @@ export default class RepoReactionDetails extends Component {
     if (typeof reaction === 'undefined' || !reaction) {
       return <div />;
     }
+    const { currentUser } = UserStore.getState();
+    const canComment =
+      currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
+        ? false
+        : propsCanComment;
 
     const taggData =
       (reaction &&
@@ -601,6 +617,7 @@ export default class RepoReactionDetails extends Component {
         </span>
       );
     }
+    const userLabels = (reaction.labels || []).map(label => label.id);
     return (
       <div style={{ border: 'none' }}>
         <div>
@@ -608,7 +625,7 @@ export default class RepoReactionDetails extends Component {
             <PublicAnchor doi={isPublished ? taggData.doi : doi?.full_doi} isPublished={isPublished} />
             {canComment ? (
               <RepoReviewButtonBar
-                element={{ id: reaction.id, elementType: 'Reaction' }}
+                element={{ id: reaction.id, elementType: 'Reaction', user_labels: userLabels}}
                 buttons={buttons}
                 buttonFunc={this.handleReviewBtn}
                 review_info={review_info}
@@ -647,21 +664,24 @@ export default class RepoReactionDetails extends Component {
                   taggData.author_ids && taggData.author_ids.length > 1
                 }
               />
-              <PublicCommentModal
-                isReviewer={idyReview}
-                id={reaction.id}
-                type="Reaction"
-                title={`Reaction, CRR-${pubData.id}`}
-                userInfo={userInfo}
-              />
-              &nbsp;
-              <UserCommentModal
-                isPublished={isPublished}
-                isLogin={idyLogin}
-                id={reaction.id}
-                type="Reaction"
-                title={`Reaction, CRR-${pubData.id}`}
-              />
+              <span className="repo-public-user-comment">
+              {PublicLabels(reaction.labels)}
+                <PublicCommentModal
+                  isReviewer={idyReview}
+                  id={reaction.id}
+                  type="Reaction"
+                  title={`Reaction, CRR-${pubData.id}`}
+                  userInfo={userInfo}
+                />
+                &nbsp;
+                <UserCommentModal
+                  isPublished={isPublished}
+                  isLogin={idyLogin}
+                  id={reaction.id}
+                  type="Reaction"
+                  title={`Reaction, CRR-${pubData.id}`}
+                />
+              </span>
             </h4>
             <br />
             <ContributorInfo

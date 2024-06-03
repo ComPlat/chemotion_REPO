@@ -209,22 +209,29 @@ export default class RepoEmbargo extends Component {
 
   handleEmbargoRelease() {
     const { selectEmbargo, current_user } = this.state;
+    const isSubmitter =
+      current_user?.id === selectEmbargo?.published_by ||
+      (selectEmbargo?.review?.submitters || []).includes(current_user?.id);
     if (selectEmbargo === null) {
       alert('Please select an embargo first!');
-    } else if (current_user.id !== selectEmbargo.published_by) {
+    } else if (!isSubmitter) {
       alert('only the submitter can perform the release!');
     } else {
       EmbargoActions.releaseEmbargo(selectEmbargo.element_id);
-      alert(`The embargo on [${selectEmbargo.taggable_data && selectEmbargo.taggable_data.label}] has been released!`);
+      alert(`The submission for the release of the embargo [${selectEmbargo.taggable_data && selectEmbargo.taggable_data.label}] has been completed!`);
     }
   }
 
   handleEmbargoDelete(shouldPerform) {
     if (shouldPerform) {
       const { selectEmbargo, current_user } = this.state;
+      const isSubmitter =
+      current_user?.id === selectEmbargo?.published_by ||
+      (selectEmbargo?.review?.submitters || []).includes(current_user?.id);
+
       if (selectEmbargo === null) {
         alert('Please select an embargo first!');
-      } else if (current_user?.is_reviewer === false && current_user.id !== selectEmbargo.published_by) {
+      } else if (!isSubmitter) {
         alert('only the submitter can delete the release!');
       } else {
         EmbargoActions.deleteEmbargo(selectEmbargo.element_id);
@@ -242,7 +249,8 @@ export default class RepoEmbargo extends Component {
   rendeActionBtn(bundles) {
     const { selectEmbargo, elements, current_user } = this.state;
     const acceptedEl = ((typeof (elements) !== 'undefined' && elements) || []).filter(e => e.state === 'accepted');
-    const actionButtons = (!selectEmbargo || !current_user || (current_user?.is_reviewer == false && current_user.id !== selectEmbargo.published_by)) ? <span /> :
+    const is_submitter = current_user?.id === selectEmbargo?.published_by || (selectEmbargo?.review?.submitters || []).includes(current_user?.id);
+    const actionButtons = (!selectEmbargo || !current_user || (current_user?.is_reviewer == false && !is_submitter)) ? <span /> :
       (
         <span>
           <ButtonToolbar>
@@ -294,8 +302,11 @@ export default class RepoEmbargo extends Component {
     const options = [];
     const hasComment = selectEmbargo?.review?.history?.length > 0;
     bundles?.forEach((col) => {
-      const tag = col.taggable_data || {};
-      options.push({ value: col.element_id, name: tag.label, label: tag.label });
+      if (current_user.is_reviewer || current_user.is_submitter || col.published_by === current_user.id ||
+        (col.review?.submitters || []).includes(current_user.id) || current_user.type === 'anonymous') {
+        const tag = col.taggable_data || {};
+        options.push({ value: col.element_id, name: tag.label, label: tag.label });
+      }
     });
 
     const filterDropdown = (
@@ -343,6 +354,7 @@ export default class RepoEmbargo extends Component {
           )}
           <RepoReviewAuthorsModal
             element={selectEmbargo}
+            isEmbargo
             disabled={selectEmbargo === null || elements?.length === 0}
             schemeOnly={false}
             title=''
@@ -417,7 +429,10 @@ export default class RepoEmbargo extends Component {
     const id = (selectEmbargo && selectEmbargo.element_id) || 0;
     const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
     const metadata = (selectEmbargo && selectEmbargo.metadata_xml) || '';
-    const owner = (selectEmbargo && selectEmbargo.published_by) || 0;
+    const isOwner =
+      selectEmbargo?.published_by === current_user.id ||
+      (selectEmbargo?.review?.submitters || []).includes(current_user?.id) ||
+      false;
 
     if (selectEmbargo === null && bundles?.length > 0) {
       return (
@@ -442,7 +457,7 @@ export default class RepoEmbargo extends Component {
             <div className="embargo-list" style={{ backgroundColor: '#f5f5f5' }} >
               <Table striped className="review-entries">
                 <tbody striped="true" bordered="true" hover="true">
-                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, EmbargoActions.displayReviewEmbargo, current_user, owner, currentElement, this.handleMoveShow)) }
+                  {((typeof (elements) !== 'undefined' && elements) || []).map(r => ElAspect(r, EmbargoActions.displayReviewEmbargo, current_user, isOwner, currentElement, this.handleMoveShow)) }
                 </tbody>
               </Table>
             </div>
@@ -457,7 +472,7 @@ export default class RepoEmbargo extends Component {
         </Col>
         <Col className="review-element" md={currentElement ? 8 : 0}>
           <RepoEmbargoDetails currentElement={currentElement} />
-          { this.renderMoveModal() }
+          {this.renderMoveModal()}
 
           <InfoModal
             showModal={showInfoModal}

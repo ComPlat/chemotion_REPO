@@ -17,6 +17,7 @@ export default class ReactionsFetcher {
         credentials: 'same-origin'
       }).then((response) => response.json())
         .then((json) => {
+          const userLabels = json?.reaction?.tag?.taggable_data?.user_labels || null;
           if (json.hasOwnProperty('reaction')) {
             const reaction = new Reaction(json.reaction);
             if (json.literatures && json.literatures.length > 0) {
@@ -29,10 +30,12 @@ export default class ReactionsFetcher {
             }
             reaction.updateMaxAmountOfProducts();
             reaction.publication = json.publication || {};
+            if (userLabels != null) reaction.user_labels = userLabels;
             return new Reaction(defaultAnalysisPublish(reaction));
           }
           const rReaction = new Reaction(json.reaction);
           rReaction.publication = json.publication || {};
+          if (userLabels != null) rReaction.setUserLabels(userLabels);
           if (json.error) {
             rReaction.id = `${id}:error:Reaction ${id} is not accessible!`;
           }

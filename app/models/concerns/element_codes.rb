@@ -13,6 +13,9 @@ module ElementCodes
       return [] if source_class == 'container' && containable_type == 'Labimotion::Element'
 
       CodeLog.where(source: source_class).where(source_id: id).order(created_at: 'DESC')
+    rescue StandardError => e
+      Rails.logger.error e.message
+      []
     end
 
     def code_log() code_logs.first end

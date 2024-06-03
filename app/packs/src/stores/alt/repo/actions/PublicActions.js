@@ -298,8 +298,8 @@ class PublicActions {
     }
   }
 
-  getElements(type='All', state='pending', searchType='All', searchValue='', page=1, perPage=10) {
-    return (dispatch) => { RepositoryFetcher.fetchReviewElements(type, state, searchType, searchValue, page, perPage)
+  getElements(type='All', state='pending', label, searchType='All', searchValue='', page=1, perPage=10) {
+    return (dispatch) => { RepositoryFetcher.fetchReviewElements(type, state, label, searchType, searchValue, page, perPage)
       .then((result) => {
         dispatch(result)
       }).catch((errorMessage) => {
@@ -350,6 +350,22 @@ class PublicActions {
 
   setSearchParams(params) {
     return params;
+  }
+
+  loadSpectraForNMRDisplayer(spcInfos) {
+    const idxs = spcInfos && spcInfos.map(si => si.idx);
+    if (idxs.length === 0) {
+      return null;
+    }
+
+    return (dispatch) => {
+      PublicFetcher.fetchFiles(idxs)
+        .then((fetchedFiles) => {
+          dispatch({ fetchedFiles, spcInfos });
+        }).catch((errorMessage) => {
+          console.log(errorMessage); // eslint-disable-line
+        });
+    };
   }
 }
 

@@ -15,7 +15,6 @@ const PublicReactionTlc = ({
   } = reaction;
   tlcDescription = tlcDescription || '';
   tlcSolvents = tlcSolvents || '';
-  rfValue = rfValue && rfValue !== '0' ? rfValue : '';
   if (isPublished && !tlcDescription && !tlcSolvents && !rfValue) return null;
   return (
     <span>

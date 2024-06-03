@@ -42,6 +42,7 @@ const RepoMoleculeArchive = (props) => {
   const {
     molecule, currentElement, isPubElement, advFlag, advType, advValue
   } = props;
+  if (!molecule.xvial_count) return null;
   const listClass = (currentElement && currentElement.molecule && currentElement.molecule.id === molecule.id) ? 'list_focus_on' : 'list_focus_off';
   const svgPathSample = molecule.sample_svg_file
     ? `/images/samples/${molecule.sample_svg_file}`

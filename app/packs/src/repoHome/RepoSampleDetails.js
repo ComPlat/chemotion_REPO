@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
 import { Panel } from 'react-bootstrap';
 import PropTypes from 'prop-types';
-import {
-  ClosePanel,
-  MoleculeInfo,
-} from 'src/repoHome/RepoCommon';
+import { ClosePanel, MoleculeInfo } from 'src/repoHome/RepoCommon';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import RepoReviewButtonBar from 'src/repoHome/RepoReviewButtonBar';
 import RepoSample from 'src/repoHome/RepoSample';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
 
 export default class RepoSampleDetails extends Component {
   constructor(props) {
@@ -44,12 +43,17 @@ export default class RepoSampleDetails extends Component {
     const {
       element,
       isPublished,
-      canComment,
+      canComment: propsCanComment,
       review_info,
       showComment,
       review,
       canClose,
     } = this.props;
+    const { currentUser } = UserStore.getState();
+    const canComment =
+      currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
+        ? false
+        : propsCanComment;
 
     let { buttons } = this.props;
 
@@ -93,6 +97,12 @@ export default class RepoSampleDetails extends Component {
           doi_reg_at: s.doi_reg_at
         };
       }
+
+      if (typeof s === 'undefined' || !s) {
+        console.log('Sample is undefined');
+        return null;
+      }
+
       const el = {
         id: s.id || s.sample_id,
         decoupled: s.decoupled,
@@ -120,6 +130,8 @@ export default class RepoSampleDetails extends Component {
         boiling_point: s.boiling_point || '',
         melting_point: s.melting_point || '',
         labels: (isPublished ? s.labels : labels) || [],
+        molecular_mass: s.molecular_mass || '',
+        sum_formula: s.sum_formula || '',
       };
 
       return (
@@ -142,17 +154,18 @@ export default class RepoSampleDetails extends Component {
           {
             canComment ?
               <RepoReviewButtonBar
-                element={{ id: sample.id, elementType: 'Sample' }}
+                element={{ id: sample.id, elementType: 'Sample', user_labels: sample.user_labels }}
                 buttonFunc={this.handleReviewBtn}
                 review_info={review_info}
                 showComment={showComment}
                 currComment={(history && history.slice(-1).pop()) || {}}
                 buttons={buttons}
                 taggData={tagData}
-              /> : ''
+              /> : null
           }
-          {canClose ? <ClosePanel element={sample} /> : ''}
-          <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} hasXvial={hasXvial} xvialCom={xvialCom} />
+          <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} hasXvial={hasXvial} xvialCom={xvialCom}>
+            {canClose ? <ClosePanel element={sample} /> : null}
+          </MoleculeInfo>
           <div>
             {details}
           </div>

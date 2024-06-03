@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_06_07_000000) do
+ActiveRecord::Schema.define(version: 2024_09_17_085816) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -1095,6 +1095,7 @@ ActiveRecord::Schema.define(version: 2024_06_07_000000) do
     t.float "coefficient", default: 1.0
     t.float "scheme_yield"
     t.boolean "show_label", default: false, null: false
+    t.float "conversion_rate"
     t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
     t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
   end
@@ -1759,8 +1760,8 @@ ActiveRecord::Schema.define(version: 2024_06_07_000000) do
        RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
          and l.element_type = $1 and l.element_id = $2
        $function$
   SQL

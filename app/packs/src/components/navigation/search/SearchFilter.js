@@ -210,11 +210,11 @@ export default class SearchFilter extends React.Component {
       this.listAdvOptions = [
         {
           value: 'Authors',
-          label: 'by authors'
+          label: 'by authors',
         },
         {
           value: 'Contributors',
-          label: 'by contributors'
+          label: 'by contributors',
         }
       ];
       return (

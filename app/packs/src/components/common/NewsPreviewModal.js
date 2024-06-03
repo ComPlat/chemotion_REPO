@@ -1,6 +1,6 @@
 import React from 'react';
 import { Panel, Modal } from 'react-bootstrap';
-import QuillViewer from 'src/components/QuillViewer';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 
 const NewsPreviewModal = ({ showModal, article, onClick }) => {
   return (
@@ -20,7 +20,7 @@ const NewsPreviewModal = ({ showModal, article, onClick }) => {
               <div className="heading_separator" />
             </Panel.Heading>
             <Panel.Body>
-              <QuillViewer value={article.content} />
+              <Quill2Viewer value={article.content} />
             </Panel.Body>
           </Panel>
           <div className="ribbon ribbon-bottom-left"><span>Preview</span></div>

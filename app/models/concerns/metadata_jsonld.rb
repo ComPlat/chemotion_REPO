@@ -12,21 +12,21 @@ module MetadataJsonld
     if element_type == 'Sample'
       json_ld_sample_root
     elsif element_type == 'Reaction'
-      json_ld_reaction(ext)
+      json_ld_reaction(self, ext)
     elsif element_type == 'Container'
       json_ld_container
     end
   end
 
-  def json_ld_sample_root(pub = self)
-    json = json_ld_study
-    json['about'] = [json_ld_sample]
+  def json_ld_sample_root(pub = self, is_root = true)
+    json = json_ld_study(pub, is_root)
+    json['about'] = [json_ld_sample(pub, nil, is_root)]
     json
   end
 
-  def json_ld_study(pub = self)
+  def json_ld_study(pub = self, is_root = true)
     json = {}
-    json['@context'] = 'https://schema.org'
+    json['@context'] = 'https://schema.org' if is_root == true
     json['@type'] = 'Study'
     json['@id'] = "https://doi.org/#{doi.full_doi}"
     json['dct:conformsTo'] = {
@@ -39,13 +39,13 @@ module MetadataJsonld
     json['author'] = json_ld_authors(pub.taggable_data)
     json['contributor'] = json_ld_contributor(pub.taggable_data["contributors"])
     json['citation'] = json_ld_citations(pub.element.literatures, pub.element.id)
-    json['includedInDataCatalog'] = json_ld_data_catalog(pub)
+    json['includedInDataCatalog'] = json_ld_data_catalog(pub) if is_root == true
     json
   end
 
   def json_ld_data_catalog(pub = self)
     json = {}
-    json['@context'] = 'https://schema.org'
+    ## json['@context'] = 'https://schema.org'
     json['@type'] = 'DataCatalog'
     json['@id'] = 'https://www.chemotion-repository.net'
     json['description'] = 'Repository for samples, reactions and related research data.'
@@ -137,12 +137,12 @@ module MetadataJsonld
     }
   end
 
-  def json_ld_sample(pub = self, ext = nil)
+  def json_ld_sample(pub = self, ext = nil, is_root = true)
     # metadata_xml
     json = {}
-    json['@context'] = 'https://schema.org'
+    json['@context'] = 'https://schema.org' if is_root == true
     json['@type'] = 'ChemicalSubstance'
-    json['@id'] = "https://doi.org/#{pub.doi.full_doi}"
+    json['@id'] = pub.doi.full_doi
     json['identifier'] = "CRS-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
     json['name'] = pub.element.molecule_name&.name
@@ -152,7 +152,8 @@ module MetadataJsonld
     json['description'] = json_ld_description(pub.element.description)
     #json['author'] = json_ld_authors(pub.taggable_data)
     json['hasBioChemEntityPart'] = json_ld_moelcule_entity(pub.element)
-    json['subjectOf'] = json_ld_subjectOf(pub)
+    json['subjectOf'] = json_ld_subjectOf(pub) if is_root == true
+    json['isPartOf'] = is_part_of(pub) if pub.parent.present?
     #json_object = JSON.parse(json)
     #JSON.pretty_generate(json_object)
 
@@ -166,27 +167,27 @@ module MetadataJsonld
     # formatted_json
   end
 
-  def json_ld_reaction(ext = nil)
+  def json_ld_reaction(pub= self, ext = nil, is_root = true)
     json = {}
-    json['@context'] = 'https://schema.org'
+    json['@context'] = 'https://schema.org' if is_root == true
     json['@type'] = 'Study'
-    json['@id'] = "https://doi.org/#{doi.full_doi}"
-    json['identifier'] = "CRR-#{id}"
-    json['url'] = "https://www.chemotion-repository.net/inchikey/#{doi.suffix}"
+    json['@id'] = pub.doi.full_doi
+    json['identifier'] = "CRR-#{pub.id}"
+    json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
     json['additionalType'] = 'Reaction'
-    json['name'] = element.rinchi_short_key
-    json['creator'] = json_ld_authors(taggable_data)
+    json['name'] = pub.element.rinchi_short_key
+    json['creator'] = json_ld_authors(pub.taggable_data)
     json['author'] = json['creator']
 
-    json['description'] = json_ld_description(element.description)
-    json['license'] = rights_data[:rightsURI]
-    json['datePublished'] = published_at&.strftime('%Y-%m-%d')
-    json['dateCreated'] = created_at&.strftime('%Y-%m-%d')
+    json['description'] = json_ld_description(pub.element.description)
+    json['license'] = pub.rights_data[:rightsURI]
+    json['datePublished'] = pub.published_at&.strftime('%Y-%m-%d')
+    json['dateCreated'] = pub.created_at&.strftime('%Y-%m-%d')
     json['publisher'] = json_ld_publisher
     json['provider'] = json_ld_publisher
     json['keywords'] = 'chemical reaction: structures conditions'
-    json['citation'] = json_ld_citations(element.literatures, element.id)
-    json['subjectOf'] = json_ld_reaction_has_part(ext)
+    json['citation'] = json_ld_citations(pub.element.literatures, pub.element.id)
+    json['subjectOf'] = json_ld_reaction_has_part(pub, ext, is_root) if is_root == true
 
     if ext == 'LLM'
       json = Metadata::Jsonldllm.reaction_ext(json, element)
@@ -210,17 +211,17 @@ module MetadataJsonld
     json
   end
 
-  def json_ld_reaction_has_part(ext = nil)
+  def json_ld_reaction_has_part(root, ext = nil, is_root = true)
     json = []
-    children&.each do |pub|
+    root.children&.each do |pub|
       json.push(json_ld_sample(pub, ext)) if pub.element_type == 'Sample'
       json.push(json_ld_analysis(pub, false)) if pub.element_type == 'Container'
     end
-    if ext == 'LLM' && element&.samples.present?
-      element&.samples&.each do |sample|
+    if ext == 'LLM' && root.element&.samples.present?
+      root.element&.samples&.each do |sample|
         next if sample.publication.present? || !sample.collections&.pluck(:id).include?(Collection.public_collection&.id)
 
-        json.push(Metadata::Jsonldllm.all_samples(element, sample))
+        json.push(Metadata::Jsonldllm.all_samples(root.element, sample))
       end
     end
 
@@ -236,12 +237,14 @@ module MetadataJsonld
     #xml_data = Nokogiri::XML(metadata_xml)
     #desc = xml_data.search('description')&.text&.strip
     #desc
+  rescue StandardError => e
+    Rails.logger.error ["API call - json_ld_description:", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    ''
   end
 
   def json_ld_container
     json_ld_analysis(self, true)
   end
-
 
   def json_ld_subjectOf(pub = self)
     arr = []
@@ -254,21 +257,101 @@ module MetadataJsonld
 
   def json_ld_analysis(pub = self, root = true)
     json = {}
-    json['@context'] = 'https://schema.org'
+    json['@context'] = 'https://schema.org' if root == true
     json['@type'] = 'Dataset'
-    json['@id'] = "https://doi.org/#{pub.doi.full_doi}"
+    json['@id'] = pub.doi.full_doi
     json['identifier'] = "CRD-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
+    json['dct:conformsTo'] = {
+      "@id": 'https://schema.org/Dataset',
+      "@type": 'CreativeWork'
+    }
     json['publisher'] = json_ld_publisher
     json['license'] = pub.rights_data[:rightsURI]
-    json['name'] = pub.element.extended_metadata['kind'] || '' if pub&.element&.extended_metadata.present?
+    json['name'] = (pub.element.extended_metadata['kind'] || '').split(' | ')&.last if pub&.element&.extended_metadata.present?
     measureInfo = json_ld_measurement_technique(pub) if pub&.element&.extended_metadata.present? && ENV['OLS_SERVICE'].present?
+    variable_measured = json_ld_variable_measured(pub)
     json['measurementTechnique'] = measureInfo if measureInfo.present?
+    json['variableMeasured'] = variable_measured if variable_measured.present?
     json['creator'] = json_ld_authors(pub.taggable_data)
     json['author'] = json['creator']
     json['description'] = json_ld_analysis_description(pub)
-    json['includedInDataCatalog'] = json_ld_data_catalog(pub) if root == true
+    if root == true
+      json['includedInDataCatalog'] = json_ld_data_catalog(pub)
+      json['isPartOf'] = is_part_of(pub)
+    end
     json
+  end
+
+  def is_part_of(pub = self)
+
+    json = {}
+    if pub.parent.present?
+      json = json_ld_reaction(pub.parent, nil, false) if pub.parent.element_type == 'Reaction'
+      json = json_ld_sample_root(pub.parent, false) if pub.parent.element_type == 'Sample'
+    end
+    json
+  end
+
+  def get_val(field)
+    return '' if field.blank?
+    case field['type']
+    when Labimotion::FieldType::SYSTEM_DEFINED
+      unit = Labimotion::Units::FIELDS.find { |o| o[:field] == field['option_layers'] }&.fetch(:units, []).find { |u| u[:key] == field['value_system'] }&.fetch(:label, '')
+      "#{field['value']} #{unit}"
+    when Labimotion::FieldType::TEXT, Labimotion::FieldType::INTEGER, Labimotion::FieldType::SELECT, Labimotion::FieldType::INTEGER
+      field['value']
+    else
+      ''
+    end
+  end
+
+  def get_ols_short_form(field, klass, key)
+    short_form = field.fetch('ontology', {}).fetch('short_form', '')
+    return short_form if short_form.present?
+
+    klass_prop = klass['properties_release']
+    klass_layer = klass_prop['layers'][key]
+    klass_field = klass_layer && klass_layer['fields']&.find { |f| f['field'] == field['field'] }
+    return klass_field && klass_field['ontology']&.fetch('short_form', '')
+  end
+
+  def json_ld_variable_measured(pub = self)
+    arr = []
+    analysis = pub.element
+    containers = Container.where(parent_id: analysis.id, container_type: 'dataset')
+    containers.each do |container|
+      ds = container.dataset
+      ols_id = ds&.dataset_klass&.ols_term_id
+      next if ds.nil? || ols_id.nil?
+      # mcon = Rails.configuration.try(:m)&.dataset&.find { |ss| ss[:ols_term] == ols_id }
+      # con_layers = mcon[:layers].pluck(:identifier) if mcon.present?
+      # next if mcon.nil? || con_layers.nil?
+
+      klass = Labimotion::DatasetKlass.find_by(ols_term_id: ols_id)
+
+      ds&.properties.fetch('layers', nil)&.keys.each do |key|
+        # next unless con_layers&.include?(key)
+        # mcon_fields = mcon[:layers].find { |ss| ss[:identifier] == key }&.fetch(:fields, [])&.map { |field| field[:identifier] }
+        # next if mcon_fields.nil?
+
+        ds&.properties['layers'][key].fetch('fields', []).each do |field|
+          # next unless mcon_fields&.include?(field['field'])
+          # short_form = field.fetch('ontology', {}).fetch('short_form', '')
+          short_form = get_ols_short_form(field, klass, key)
+          val = get_val(field)
+          next if field['value'].blank? || short_form.blank? || val.blank?
+
+          json = {}
+          json['@type'] = 'PropertyValue'
+          json['name'] = field["label"]
+          json['propertyID'] = short_form if short_form.present?
+          json['value'] = val
+          arr.push(json) unless json.empty?
+        end
+      end
+    end
+    arr
   end
 
   def json_ld_measurement_technique(pub = self)
@@ -296,10 +379,11 @@ module MetadataJsonld
     kind = 'dataset for ' + (element.extended_metadata['kind'] || '')&.split('|').pop + '\n'
     desc = element.extended_metadata['description'] || '' + '\n'
     content = element.extended_metadata['content'].nil? ? '' : REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.extended_metadata['content'])).text, false, nil, false).to_s
-
     kind + desc + content
+  rescue StandardError => e
+    Rails.logger.error ["API call - json_ld_analysis_description:", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    kind + desc
   end
-
 
   def json_ld_citations(literatures, id)
     json = []

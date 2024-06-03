@@ -14,35 +14,52 @@ export default class MolViewerBtn extends Component {
   }
 
   handleModalOpen(e) {
-    if (e) { e.stopPropagation(); }
-    this.setState({ show: !this.state.show });
+    if (e) {
+      e.stopPropagation();
+    }
+    const { show } = this.state;
+    this.setState({ show: !show });
   }
 
   render() {
-    const {
-      disabled, fileContent, isPublic, viewType
-    } = this.props;
-    const config = UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
+    const { disabled, fileContent, isPublic, viewType, className } = this.props;
+    const config =
+      UIStore.getState().moleculeViewer ||
+      PublicStore.getState().moleculeViewer;
+
     const { show } = this.state;
     if (isPublic && !config?.featureEnabled) return null;
+    if (!fileContent) return null;
 
     return (
       <>
-        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip_molviewer" style={{ pointerEvents: 'none' }}>Click to see structure in Viewer</Tooltip>}>
-          <Button className="button-right" bsSize="xsmall" bsStyle="info" disabled={disabled} onClick={e => this.handleModalOpen(e)}>
-            <i className="fa fa-cube" aria-hidden="true" />{' '}Viewer
+        <OverlayTrigger
+          placement="top"
+          overlay={
+            <Tooltip id="tooltip_molviewer" style={{ pointerEvents: 'none' }}>
+              Click to see structure in Viewer
+            </Tooltip>
+          }
+        >
+          <Button
+            className={className}
+            bsSize="xsmall"
+            bsStyle="info"
+            disabled={disabled}
+            onClick={e => this.handleModalOpen(e)}
+          >
+            <i className="fa fa-cube" aria-hidden="true" /> View in 3D
           </Button>
         </OverlayTrigger>
-        {
-          show ?
-            <MolViewerModal
-              fileContent={fileContent}
-              handleModalOpen={e => this.handleModalOpen(e)}
-              isPublic={isPublic}
-              show={show}
-              viewType={viewType}
-            /> : null
-        }
+        {show ? (
+          <MolViewerModal
+            fileContent={fileContent}
+            handleModalOpen={e => this.handleModalOpen(e)}
+            isPublic={isPublic}
+            show={show}
+            viewType={viewType}
+          />
+        ) : null}
       </>
     );
   }
@@ -53,4 +70,7 @@ MolViewerBtn.propTypes = {
   fileContent: PropTypes.string.isRequired,
   isPublic: PropTypes.bool.isRequired,
   viewType: PropTypes.string.isRequired,
+  className: PropTypes.string,
 };
+
+MolViewerBtn.defaultProps = { className: 'button-right' };

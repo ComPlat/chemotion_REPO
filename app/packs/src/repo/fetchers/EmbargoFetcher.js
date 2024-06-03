@@ -83,7 +83,15 @@ export default class EmbargoFetcher {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection_id: id })
-    }).then(response => response.json())
+    })
+      .then(response => response.json())
+      .then(json => {
+        if (json.error) {
+          console.log('json', json);
+          alert('Error releasing embargo. Please contact system administrator (chemotion-repository@lists.kit.edu).');
+        }
+        return json;
+      })
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
@@ -113,15 +121,8 @@ export default class EmbargoFetcher {
   }
 
   static fetchEmbargoCollections(isSubmit = false) {
-    const api = '/api/v1/repository/embargo_list.json';
-    return fetch(api, {
-      method: 'post',
-      credentials: 'same-origin',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        is_submit: isSubmit
-      })
-    })
+    const api = `/api/v1/repository/embargo_list.json?is_submit=${isSubmit}`;
+    return fetch(api, { credentials: 'same-origin'})
       .then(response => response.json())
       .catch((errorMessage) => { console.log(errorMessage); });
   }

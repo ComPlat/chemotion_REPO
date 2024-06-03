@@ -1,22 +1,12 @@
 import React, { Component } from 'react';
 import { Table, Col, Row, Navbar, ButtonGroup, Button, ButtonToolbar, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import SVG from 'react-inlinesvg';
 import uuid from 'uuid';
 import RepoCollectionDetails from 'src/repoHome/RepoCollectionDetails';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import { MetadataModal, InfoModal } from 'src/repoHome/RepoEmbargoModal';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
-
-const SvgPath = (svg, type) => {
-  if (svg && svg !== '***') {
-    if (type === 'Reaction') {
-      return `/images/reactions/${svg}`;
-    }
-    return `/images/samples/${svg}`;
-  }
-  return 'images/wild_card/no_image_180.svg';
-};
+import SVGView from 'src/components/chemrepo/SVGViewPan';
 
 const infoTag = (el, la) => {
   let authorInfo = '';
@@ -59,7 +49,7 @@ const Elist = (cid, la, el, selectEmbargo = null, user = null, element = null, f
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${el.id}`}>
           <Col md={12}>
-            <SVG src={SvgPath(el.svg, el.type)} className="layout_svg_reaction" key={el.svg} height={300} />
+            <SVGView svg={el.svg} type={el.type} className="layout_svg_reaction" />
           </Col>
         </Row>
         {infoTag(el, la)}

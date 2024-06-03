@@ -39,6 +39,7 @@ export default class GenericEl extends Element {
       container: this.container,
       attachments: this.attachments,
       files: this.files,
+      user_labels: this.user_labels || [],
       segments: this.segments.map(s => s.serialize()),
     });
   }
@@ -216,6 +217,14 @@ export default class GenericEl extends Element {
 
   title() {
     return `${this.short_label}     ${this.name}`;
+  }
+
+  userLabels() {
+    return this.user_labels;
+  }
+
+  setUserLabels(userLabels) {
+    this.user_labels = userLabels;
   }
 
   get isPendingToSave() {

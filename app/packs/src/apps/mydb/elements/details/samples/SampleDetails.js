@@ -78,7 +78,6 @@ import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 import { commentActivation } from 'src/utilities/CommentHelper';
 
 // For REPO
-import { commentActivation } from 'src/utilities/CommentHelper';
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
 import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
@@ -517,27 +516,6 @@ export default class SampleDetails extends React.Component {
   showPublishSampleModal(show) {
     this.setState({showPublishSampleModal: show});
     this.forceUpdate();
-  }
-
-  svgOrLoading(sample) {
-    let svgPath = '';
-    if (this.state.loadingMolecule) {
-      svgPath = '/images/wild_card/loading-bubbles.svg';
-    } else {
-      svgPath = sample.svgPath;
-    }
-    let className = svgPath ? 'svg-container' : 'svg-container-empty'
-    return (
-      sample.can_update
-        ? <div className={className}
-               onClick={this.showStructureEditor.bind(this)}>
-            <Glyphicon className="pull-right" glyph='pencil'/>
-            <SVG key={svgPath} src={svgPath} className="molecule-mid"/>
-          </div>
-        : <div className={className}>
-            <SVG key={svgPath} src={svgPath} className="molecule-mid"/>
-          </div>
-    );
   }
 
   handleChemIdentSectionToggle() {
@@ -981,7 +959,7 @@ export default class SampleDetails extends React.Component {
             decoupleMolecule={this.decoupleMolecule}
           />
         </ListGroupItem>
-        <EditUserLabels element={sample} />
+        <EditUserLabels element={sample} fnCb={this.handleSampleChanged} />
         {this.elementalPropertiesItem(sample)}
         {this.chemicalIdentifiersItem(sample)}
       </Tab>
@@ -1556,32 +1534,45 @@ export default class SampleDetails extends React.Component {
 
   svgOrLoading(sample) {
     let svgPath = '';
+    const { svgPath: sampleSvgPath } = sample;
     if (this.state.loadingMolecule) {
       svgPath = '/images/wild_card/loading-bubbles.svg';
     } else {
-      svgPath = sample.svgPath;
+      svgPath = sampleSvgPath;
     }
     const className = svgPath ? 'svg-container' : 'svg-container-empty';
-    return (
-      sample.can_update
-        ? (
-          <div
-            className={className}
-            onClick={this.showStructureEditor.bind(this)}
-            onKeyPress
-            role="button"
-            tabIndex="0"
-
-          >
-            <Glyphicon className="pull-right" glyph="pencil" />
-            <SVG key={svgPath} src={svgPath} className="molecule-mid" />
-          </div>
-        )
-        : (
-          <div className={className}>
-            <SVG key={svgPath} src={svgPath} className="molecule-mid" />
-          </div>
-        )
+    return sample.can_update ? (
+      <>
+        <div
+          className={className}
+          style={{ position: 'relative' }}
+          onClick={this.showStructureEditor.bind(this)}
+          onKeyPress={this.showStructureEditor.bind(this)}
+          role="button"
+          tabIndex="0"
+        >
+          <Glyphicon className="pull-right" glyph="pencil" />
+          <SVG key={svgPath} src={svgPath} className="molecule-mid" />
+        </div>
+        <MolViewerBtn
+          className="structure-editor-container"
+          disabled={sample.isNew || !this.enableMoleculeViewer}
+          fileContent={sample.molfile}
+          isPublic={false}
+          viewType={`mol_${sample.id}`}
+        />
+      </>
+    ) : (
+      <div className={className} style={{ position: 'relative' }}>
+        <SVG key={svgPath} src={svgPath} className="molecule-mid" />
+        <MolViewerBtn
+          className="structure-editor-container"
+          disabled={sample.isNew || !this.enableMoleculeViewer}
+          fileContent={sample.molfile}
+          isPublic={false}
+          viewType={`mol_${sample.id}`}
+        />
+      </div>
     );
   }
 
@@ -1869,12 +1860,6 @@ export default class SampleDetails extends React.Component {
               availableTabs={Object.keys(tabContentsMap)}
               tabTitles={tabTitlesMap}
               onTabPositionChanged={this.onTabPositionChanged}
-            />
-            <MolViewerBtn
-              disabled={sample.isNew || !this.enableMoleculeViewer}
-              fileContent={sample.molfile}
-              isPublic={false}
-              viewType={`mol_${sample.id}`}
             />
             {this.state.sfn ? <ScifinderSearch el={sample} /> : null}
             <Tabs activeKey={activeTab} onSelect={this.handleSelect} id="SampleDetailsXTab">

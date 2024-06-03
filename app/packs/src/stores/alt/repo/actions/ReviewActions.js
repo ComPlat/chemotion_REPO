@@ -14,7 +14,7 @@ class ReviewActions {
   }
 
   fetchSample(id) {
-    return (dispatch) => { RepositoryFetcher.fetchSample(id, false)
+    return (dispatch) => { RepositoryFetcher.fetchSample(id)
       .then((result) => {
         dispatch(result)
       }).catch((errorMessage) => {
@@ -25,7 +25,7 @@ class ReviewActions {
   }
 
   displayReviewReaction(id) {
-    return (dispatch) => { RepositoryFetcher.fetchReaction(id, false)
+    return (dispatch) => { RepositoryFetcher.fetchReaction(id)
       .then((result) => {
         dispatch({id, element: result})
       }).catch((errorMessage) => {
@@ -35,7 +35,7 @@ class ReviewActions {
   }
 
   displayReviewSample(id) {
-    return (dispatch) => { RepositoryFetcher.fetchSample(id, false)
+    return (dispatch) => { RepositoryFetcher.fetchSample(id)
       .then((result) => {
         dispatch({id, element: result})
       }).catch((errorMessage) => {
@@ -54,8 +54,8 @@ class ReviewActions {
   }
 
 
-  getElements(type='All', state='pending', searchType='All', searchValue='', page=1, perPage=10) {
-    return (dispatch) => { RepositoryFetcher.fetchReviewElements(type, state, searchType, searchValue, page, perPage)
+  getElements(type='All', state='pending', label=null, searchType='All', searchValue='', page=1, perPage=10) {
+    return (dispatch) => { RepositoryFetcher.fetchReviewElements(type, state, label, searchType, searchValue, page, perPage)
       .then((result) => {
         dispatch(result)
       }).catch((errorMessage) => {
@@ -63,7 +63,6 @@ class ReviewActions {
       })
     }
   }
-
 
   updateComment(id, type, comments) {
     return (dispatch) => {
@@ -74,6 +73,26 @@ class ReviewActions {
           console.log(errorMessage);
         });
     };
+  }
+
+  saveReviewLabel(element, ids) {
+    return dispatch => {
+      RepositoryFetcher.saveReviewLabel({
+        elementId: element.id,
+        elementType: element.elementType,
+        user_labels: ids,
+      })
+        .then(() => {
+          dispatch(element);
+        })
+        .catch(errorMessage => {
+          console.log(errorMessage);
+        });
+    };
+  }
+
+  setUserLabel(label) {
+    return label;
   }
 }
 

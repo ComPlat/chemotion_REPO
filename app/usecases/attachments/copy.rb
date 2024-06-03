@@ -22,6 +22,7 @@ module Usecases
             attachable_id: element.id,
             attachable_type: element.class.name,
             aasm_state: original_attach.aasm_state,
+            con_state: original_attach.con_state,
             created_by: current_user_id,
             created_for: current_user_id,
             filename: original_attach.filename,
@@ -56,7 +57,8 @@ module Usecases
            original_attach_id: #{original_attach_id}
            copy_attach_id: #{copy_attach_id}
 
-          Error Message:  #{e.backtrace.join("\n")}
+          Error Message:  #{e.message}
+          Error:  #{e.backtrace.join("\n")}
         --------------------------------------------------------------------
         TXT
       end

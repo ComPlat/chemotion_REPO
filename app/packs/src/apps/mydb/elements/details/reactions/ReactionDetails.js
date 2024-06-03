@@ -49,6 +49,7 @@ import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { commentActivation } from 'src/utilities/CommentHelper';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
+import { ShowUserLabels } from 'src/components/UserLabels';
 
 import {
   PublishedTag,
@@ -526,6 +527,7 @@ export default class ReactionDetails extends Component {
         <div style={{ display: "inline-block", marginLeft: "10px" }}>
           {colLabel}
           {rsPlanLabel}
+          <ShowUserLabels element={reaction} />
           <ElementAnalysesLabels element={reaction} key={reaction.id + "_analyses"} />
           { schemeOnly ? <span>&nbsp;<Label>scheme only</Label></span> : '' }
           <HeaderCommentSection element={reaction} />

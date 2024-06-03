@@ -29,6 +29,7 @@ class PublicStore {
     this.showReviewModal = false;
     this.showCommendModal = false;
     this.reviewData = {};
+    this.u = {};
 
     this.bindListeners({
       handleInitialize: PublicActions.initialize,

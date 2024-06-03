@@ -12,7 +12,12 @@ import UserStore from 'src/stores/alt/stores/UserStore';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import { getFormattedISODateTime } from 'src/components/chemrepo/date-utils';
-import { SvgPath, ElStateLabel, SchemeWord, ChecklistPanel } from 'src/repoHome/RepoCommon';
+import StateLabel from 'src/components/chemrepo/common/StateLabel';
+import SVGView from 'src/components/chemrepo/SVGViewPan';
+import { SchemeWord, ChecklistPanel } from 'src/repoHome/RepoCommon';
+import { ShowUserLabels, SearchUserLabels } from 'src/components/UserLabels';
+
+
 // import RepoReviewModal from '../components/common/RepoReviewModal';
 
 const renderElement = (e, currentElement, embargoBtn) => {
@@ -30,10 +35,13 @@ const renderElement = (e, currentElement, embargoBtn) => {
             <i className="icon-reaction" />{schemeOnly ? <SchemeWord /> : ''}&nbsp;{e.title}
           </span>
           &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-          {getFormattedISODateTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+          {getFormattedISODateTime(e.submit_at)}&nbsp;{StateLabel(e.state)}&nbsp;{StateLabel(e.embargo)}
           &nbsp;{embargoBtn}
+          <div style={{ paddingTop: '5px' }}>
+            <ShowUserLabels element={e} />
+          </div>
           <div>
-            <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
+            <SVGView svg={e.svg} type={e.type} className="molecule-mid" />
             <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} review_info={e?.review_info || {}}  />
           </div>
         </td>
@@ -52,10 +60,13 @@ const renderElement = (e, currentElement, embargoBtn) => {
           <i className="icon-sample" />&nbsp;{e.title}
         </span>
         &nbsp;By&nbsp;{e.published_by}&nbsp;at&nbsp;
-        {getFormattedISODateTime(e.submit_at)}&nbsp;{ElStateLabel(e.state)}&nbsp;{ElStateLabel(e.embargo)}
+        {getFormattedISODateTime(e.submit_at)}&nbsp;{StateLabel(e.state)}&nbsp;{StateLabel(e.embargo)}
         &nbsp;{embargoBtn}
+        <div style={{ paddingTop: '5px' }}>
+          <ShowUserLabels element={e} />
+        </div>
         <div>
-          <SVG src={SvgPath(e.svg, e.type)} className="molecule-mid" key={e.svg} />
+          <SVGView svg={e.svg} type={e.type} className="molecule-mid" />
           <ChecklistPanel isReviewer={e.isReviewer} checklist={e.checklist} review_info={e?.review_info || {}} />
         </div>
       </td>
@@ -99,6 +110,7 @@ export default class RepoReview extends Component {
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this);
+    this.setUserLabel = this.setUserLabel.bind(this);
   }
 
   componentDidMount() {
@@ -141,22 +153,31 @@ export default class RepoReview extends Component {
     ReviewActions.updateComment(elementId, elementType, cinfo);
   }
 
+  setUserLabel(label) {
+    const { userLabel } = this.state;
+    this.setState({ userLabel: label });
+    if (userLabel !== label) ReviewActions.setUserLabel(label);
+
+    this.handleElementSelection('label', label);
+  }
+
+
   onPerPageChange(e) {
     const {
-      page, selectType, selectState, searchType, searchValue
+      page, selectType, selectState, selectLabel, searchType, searchValue
     } = this.state;
     const perPage = e.target.value;
     this.setState({ perPage });
-    ReviewActions.getElements(selectType, selectState, searchType, searchValue, page, perPage);
+    ReviewActions.getElements(selectType, selectState, selectLabel, searchType, searchValue, page, perPage);
   }
 
   onPaginationSelect(eventKey) {
     const {
-      pages, perPage, selectType, selectState, searchType, searchValue
+      pages, perPage, selectType, selectState, selectLabel, searchType, searchValue
     } = this.state;
     if (eventKey > 0 && eventKey <= pages) {
       ReviewActions.getElements(
-        selectType, selectState, searchType, searchValue,
+        selectType, selectState, selectLabel, searchType, searchValue,
         eventKey, perPage
       );
     }
@@ -231,18 +252,18 @@ export default class RepoReview extends Component {
   }
 
   handleSelectType(val) {
-    const { selectType, selectState, perPage } = this.state;
+    const { selectType, selectState, perPage, selectLabel } = this.state;
     if (val && (val === 'Submitter' || val === 'Embargo')) {
       RepositoryFetcher.fetchReviewSearchOptions(val, selectType, selectState).then((res) => {
         const options = res && res.result && res.result
           .map(u => ({ value: u.key, name: u.name, label: u.label }));
         this.setState({ listTypeOptions: options });
-        ReviewActions.getElements(selectType, selectState, val, '', 1, perPage);
+        ReviewActions.getElements(selectType, selectState, selectLabel, val, '', 1, perPage);
       }).catch((errorMessage) => {
         console.log(errorMessage);
       });
     } else {
-      ReviewActions.getElements(selectType, selectState, val, '', 1, perPage);
+      ReviewActions.getElements(selectType, selectState, selectLabel, val, '', 1, perPage);
     }
   }
 
@@ -255,32 +276,35 @@ export default class RepoReview extends Component {
 
   handleSelectAdvValue(val) {
     const {
-      perPage, selectType, selectState, searchType
+      perPage, selectType, selectState, selectLabel, searchType
     } = this.state;
     if (val) {
       this.setState({ page: 1, searchValue: val });
-      ReviewActions.getElements(selectType, selectState, searchType, val, 1, perPage);
+      ReviewActions.getElements(selectType, selectState, selectLabel, searchType, val, 1, perPage);
     }
   }
 
   handleElementSelection(t, event) {
-    const { perPage, searchType, searchValue } = this.state;
+    const { perPage, searchType, selectLabel, searchValue } = this.state;
     if (t === 'type') {
       this.setState({ selectType: event });
-      ReviewActions.getElements(event, this.state.selectState, searchType, searchValue, 1, perPage);
+      ReviewActions.getElements(event, this.state.selectState, selectLabel, searchType, searchValue, 1, perPage);
     } else if (t === 'state') {
       this.setState({ selectState: event });
-      ReviewActions.getElements(this.state.selectType, event, searchType, searchValue, 1, perPage);
+      ReviewActions.getElements(this.state.selectType, event, selectLabel, searchType, searchValue, 1, perPage);
+    } else if (t === 'label') {
+      // this.setState({ selectState: event });
+      ReviewActions.getElements(this.state.selectType, this.state.selectState, event, searchType, searchValue, 1, perPage);
     }
   }
 
   handleKeyDown(event) {
     const {
-      perPage, selectType, selectState, searchType, searchValue
+      perPage, selectType, selectState, selectLabel, searchType, searchValue
     } = this.state;
     switch (event.keyCode) {
       case 13: // Enter
-        ReviewActions.getElements(selectType, selectState, searchType, searchValue, 1, perPage);
+        ReviewActions.getElements(selectType, selectState, selectLabel, searchType, searchValue, 1, perPage);
         event.preventDefault();
         break;
       default:
@@ -315,7 +339,7 @@ export default class RepoReview extends Component {
   }
 
   renderSearch() {
-    const { searchType, searchValue, listTypeOptions } = this.state;
+    const { searchType, searchValue, listTypeOptions, userLabel } = this.state;
 
     const customClass = '.btn-unified';
     const optSearchType = ['All', 'Samples', 'Reactions'];
@@ -344,6 +368,7 @@ export default class RepoReview extends Component {
         >
           {this.renderMenuItems('state', optSearchState)}
         </DropdownButton>
+        <SearchUserLabels fnCb={this.setUserLabel} userLabel={userLabel} className={customClass} />
       </ButtonGroup>
     );
 

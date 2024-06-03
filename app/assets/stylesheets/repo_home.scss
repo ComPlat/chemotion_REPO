@@ -132,6 +132,7 @@ $bs-successcolor: #5cb85c;
 .repo-registed-compound-desc {
   color: $bs-primarycolor;
   font-style: italic;
+  font-size: small;
   i {
     color: black;
     cursor: pointer;
@@ -705,6 +706,11 @@ $bs-successcolor: #5cb85c;
   }
 }
 
+@mixin preview-btn {
+  position: absolute;
+  top: 80%;
+}
+
 .repo-analysis-header {
   display: inline-block;
   width: 100%;
@@ -723,10 +729,16 @@ $bs-successcolor: #5cb85c;
     .preview-table:hover {
       border: 1px solid $statisticcolor;
     }
-    .spectra {
-      position: absolute;
-      top: 80%;
-      left: 76%;
+    .btn0 {
+      display: none;
+    }
+    .btn1 {
+      @include preview-btn;
+      right: 0px;
+    }
+    .btn2 {
+      @include preview-btn;
+      right: 30px;
     }
   }
   .abstract {
@@ -1105,16 +1117,16 @@ $bs-successcolor: #5cb85c;
   a {
     padding: 15px 15px 10px 0px !important;
   }
-}
-
-.white-nav-item:hover {
-  text-decoration: underline;
-  text-decoration-color: #2e6da4;
-  text-decoration-style: solid;
-  text-decoration-thickness: 4px;
-  text-underline-offset: 20%;
-  color: #2e6da4;
-  font-weight: bolder;
+  &:hover a,
+  &:hover b {
+    text-decoration: underline !important;
+    text-decoration-color: #2e6da4 !important;
+    text-decoration-style: solid !important;
+    text-decoration-thickness: 4px !important;
+    text-underline-offset: 20% !important;
+    color: #2e6da4 !important;
+    font-weight: bolder !important;
+  }
 }
 
 .hub-menu {
@@ -1149,4 +1161,13 @@ $bs-successcolor: #5cb85c;
   align-items: stretch;
   justify-content: center;
   margin-top: 8px;
+}
+
+.repo-nfdi-award {
+  display: inline-flex;;
+  align-items: center;
+  justify-content: center;
+  > img {
+    width: 80%;
+  }
 }

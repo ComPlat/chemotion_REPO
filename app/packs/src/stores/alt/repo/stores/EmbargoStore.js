@@ -68,7 +68,7 @@ class EmbargoStore {
       EmbargoActions.getEmbargoBundle();
       // refresh element list
       PublicActions.getElements(
-        this.selectType, this.selectState, this.searchType,
+        this.selectType, this.selectState, null, this.searchType,
         this.searchValue, this.page, this.perPage
       );
     }

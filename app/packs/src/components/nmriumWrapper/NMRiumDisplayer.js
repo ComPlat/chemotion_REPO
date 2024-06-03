@@ -98,7 +98,7 @@ export default class NMRiumDisplayer extends React.Component {
       const spectra = data?.spectra || [];
       return spectra.some((spc) => spc.info?.dimension === 2);
     };
-    
+
     if (event.origin === nmriumOrigin && event.data) {
       const eventData = event.data;
       const eventDataType = eventData.type;
@@ -430,10 +430,14 @@ export default class NMRiumDisplayer extends React.Component {
 
   renderModalTitle() {
     const { nmriumData } = this.state;
-    const { sample } = this.props;
+    const { sample, readOnly: forecReadOnly = false } = this.props; // forecReadOnly for REPO
     let readOnly = false;
     if (sample.hasOwnProperty('can_update')) {
       readOnly = !(sample.can_update);
+    }
+    // forecReadOnly for REPO
+    if (forecReadOnly) {
+      readOnly = true;
     }
     let hasSpectra = false;
     if (nmriumData) {
@@ -462,7 +466,7 @@ export default class NMRiumDisplayer extends React.Component {
           </span>
         </Button>
         {
-          hasSpectra && !readOnly ? 
+          hasSpectra && !readOnly ?
           (
             <Button
               bsStyle="success"

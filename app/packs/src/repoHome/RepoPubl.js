@@ -22,6 +22,7 @@ import RepoMoleculeList from 'src/repoHome/RepoMoleculeList';
 import RepoMoleculeArchive from 'src/repoHome/RepoMoleculeArchive';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
 import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import { SearchUserLabels } from 'src/components/UserLabels';
 
 const renderMoleculeArchive =
   (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
@@ -478,14 +479,20 @@ export default class RepoPubl extends Component {
   }
 
   handleSelectAdvValue(val) {
-    if (val && val.length > 0) {
+    if (this.state.advType === 'Label') {
       this.setState({ advValue: val }, () => {
         PublicActions.setSearchParams({ advValue: val });
       });
-    } else {
-      this.setState({ advValue: [], searchOptions: [] }, () => {
-        PublicActions.setSearchParams({ advValue: [], searchOptions: [] });
-      });
+  } else {
+      if (val && val.length > 0) {
+        this.setState({ advValue: val }, () => {
+          PublicActions.setSearchParams({ advValue: val });
+        });
+      } else {
+        this.setState({ advValue: [], searchOptions: [] }, () => {
+          PublicActions.setSearchParams({ advValue: [], searchOptions: [] });
+        });
+      }
     }
   }
 
@@ -509,8 +516,54 @@ export default class RepoPubl extends Component {
       this.listOptions = [
         { value: 'Authors', label: 'by authors' },
         { value: 'Ontologies', label: 'by analysis type' },
-        { value: 'Embargo', label: 'by Embargo Bundle#' }
+        { value: 'Embargo', label: 'by Embargo Bundle#' },
+        { value: 'Label', label: 'by label' }
       ];
+      // const userLabel = [];
+      const customClass = '.btn-unified';
+      let valSelect = '';
+      if (advType === 'Label') {
+        valSelect = (
+          <SearchUserLabels
+            userLabel={advValue}
+            isPublish
+            className={customClass}
+            fnCb={this.handleSelectAdvValue}
+          />
+        );
+      } else {
+        valSelect = (
+          <AsyncSelect
+            isMulti
+            backspaceRemovesValue
+            value={advValue}
+            valueKey="value"
+            labelKey="label"
+            defaultOptions={searchOptions}
+            loadOptions={this.loadAdvValuesByName}
+            onChange={this.handleSelectAdvValue}
+            styles={{
+              control: base => ({
+                ...base,
+                height: '36px',
+                minHeight: '36px',
+                minWidth: '200px',
+                borderRadius: 'unset',
+                border: '1px solid #ccc',
+              }),
+              multiValue: styles => ({
+                ...styles,
+                backgroundColor: '#00b8d91a',
+                opacity: '0.8',
+              }),
+              multiValueLabel: styles => ({
+                ...styles,
+                color: '#0052CC',
+              }),
+            }}
+          />
+        );
+      }
       return (
         <div className="home-adv-search">
           <div>
@@ -528,37 +581,7 @@ export default class RepoPubl extends Component {
               className="o-author"
             />
           </div>
-          <div>
-            <AsyncSelect
-              isMulti
-              backspaceRemovesValue
-              value={advValue}
-              valueKey="value"
-              labelKey="label"
-              defaultOptions={searchOptions}
-              loadOptions={this.loadAdvValuesByName}
-              onChange={this.handleSelectAdvValue}
-              styles={{
-                control: base => ({
-                  ...base,
-                  height: '36px',
-                  minHeight: '36px',
-                  minWidth: '200px',
-                  borderRadius: 'unset',
-                  border: '1px solid #ccc',
-                }),
-                multiValue: styles => ({
-                  ...styles,
-                  backgroundColor: '#00b8d91a',
-                  opacity: '0.8',
-                }),
-                multiValueLabel: styles => ({
-                  ...styles,
-                  color: '#0052CC',
-                }),
-              }}
-            />
-          </div>
+          <div>{valSelect}</div>
           <div className="btns-grp">
             <ButtonGroup>
               <OverlayTrigger placement="bottom" overlay={<Tooltip id="advSearch">Advanced Search</Tooltip>}>

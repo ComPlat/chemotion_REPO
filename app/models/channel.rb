@@ -43,6 +43,7 @@ class Channel < ApplicationRecord
   # REPOSITORY ONLY
   PUBLICATION_REVIEW = 'Publication Review'
   PUBLICATION_PUBLISHED = 'Publication Published'
+  SUBMITTING = 'Publication Submission'
 
   class << self
     def build_message(**args)

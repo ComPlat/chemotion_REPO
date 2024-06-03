@@ -91,7 +91,8 @@ export default class EmbargoCommentsModal extends React.Component {
 
 EmbargoCommentsModal.propTypes = {
   showModal: PropTypes.bool.isRequired,
-  selectEmbargo: PropTypes.object.isRequired,
+  // eslint-disable-next-line react/require-default-props
+  selectEmbargo: PropTypes.object,
   onSaveFn: PropTypes.func.isRequired,
   onCloseFn: PropTypes.func.isRequired,
 };

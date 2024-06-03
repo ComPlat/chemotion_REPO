@@ -82,14 +82,6 @@ module Entities
     expose_timestamps
 
     expose :is_repo_public
-    expose :labels
-
-    def labels
-      return [] if object.tag&.taggable_data&.nil?
-
-      label_ids = object.tag.taggable_data['user_labels'] || []
-      UserLabel.public_labels(label_ids) || []
-    end
 
     # expose :molecule, using: Entities::MoleculeEntity
     # expose :container, using: Entities::ContainerEntity
@@ -156,7 +148,7 @@ module Entities
     end
 
     def comment_count
-      object.comments.count
+      0 # object.comments.count
     end
   end
 end

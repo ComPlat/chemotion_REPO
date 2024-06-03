@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Panel, Row, Col } from 'react-bootstrap';
 import uuid from 'uuid';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
-import QuillViewer from 'src/components/QuillViewer';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 import { DateFormatYMDLong } from 'src/repoHome/RepoCommon';
 
 export default class RepoNewsReader extends Component {
@@ -96,7 +96,7 @@ export default class RepoNewsReader extends Component {
                         news.article ?
                           news.article.map((s) => {
                             if (s.art === 'txt') {
-                              return <QuillViewer key={uuid.v4()} value={s.quill} />;
+                              return <Quill2Viewer key={uuid.v4()} value={s.quill} />;
                             }
                             if (s.art === 'img') {
                               return (

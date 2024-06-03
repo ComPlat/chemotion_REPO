@@ -1,5 +1,16 @@
 import React, { Component } from 'react';
-import { Alert, Jumbotron, Row, Col, Form, FormGroup, FormControl, ControlLabel, Button, InputGroup } from 'react-bootstrap';
+import {
+  Alert,
+  Button,
+  Col,
+  ControlLabel,
+  Form,
+  FormGroup,
+  FormControl,
+  InputGroup,
+  Jumbotron,
+  Row,
+} from 'react-bootstrap';
 import Dropzone from 'react-dropzone';
 import moment from 'moment';
 import ArticleFetcher from 'src/repo/fetchers/ArticleFetcher';
@@ -7,10 +18,16 @@ import NewsPreviewModal from 'src/components/common/NewsPreviewModal';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import { ConfirmModal } from 'src/components/common/ConfirmModal';
 import Attachment from 'src/models/Attachment';
-import { EditorTips, DateFormatDMYTime, NewsroomTemplate } from 'src/repoHome/RepoCommon';
+import { EditorTips, DateFormatDMYTime } from 'src/repoHome/RepoCommon';
 import { contentToText } from 'src/utilities/quillFormat';
 import { EditorBtn, EditorBaseBtn } from 'src/libHome/RepoHowTo/EditorBtn';
 import EditorStelle from 'src/libHome/RepoHowTo/EditorStelle';
+
+const NewsroomTemplate = {
+  title: '',
+  content: {},
+  article: [],
+};
 
 const extractIntro = (article) => {
   const result = article.filter(a => a.art === 'txt');

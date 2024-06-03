@@ -3,8 +3,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Modal, Checkbox, Table, Col, Badge, Panel, ButtonGroup, Button,
-  Form, FormGroup, FormControl, ControlLabel, InputGroup,
+  Modal,
+  Table,
+  Col,
+  Badge,
+  Panel,
+  ButtonGroup,
+  Button,
+  Form,
+  FormGroup,
+  FormControl,
+  ControlLabel,
+  InputGroup,
 } from 'react-bootstrap';
 import { CirclePicker } from 'react-color';
 import Select from 'react-select';
@@ -12,9 +22,6 @@ import UsersFetcher from 'src/fetchers/UsersFetcher';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import UserStore from 'src/stores/alt/stores/UserStore';
-import MatrixCheck from 'src/components/common/MatrixCheck';
-
-const UL_FUNC_NAME = 'userLabel';
 
 class UserLabelModal extends Component {
   constructor(props) {
@@ -23,7 +30,7 @@ class UserLabelModal extends Component {
       labels: [],
       label: {},
       showDetails: false,
-      defaultColor: '#428BCA'
+      defaultColor: '#428BCA',
     };
     this.onChange = this.onChange.bind(this);
     this.handelNewLabel = this.handelNewLabel.bind(this);
@@ -113,31 +120,33 @@ class UserLabelModal extends Component {
 
   onChange(state) {
     const { currentUser, labels } = state;
-    const list = (labels || []).filter(
-      (r) => r.access_level === 2 || r.user_id === (currentUser && currentUser.id)
-    ) || [];
+    const list =
+      (labels || []).filter(
+        r =>
+          r.access_level === 2 || r.user_id === (currentUser && currentUser.id)
+      ) || [];
 
     this.setState({
-      labels: list
+      labels: list,
     });
   }
 
   handelNewLabel() {
     this.setState({
       label: {},
-      showDetails: true
+      showDetails: true,
     });
   }
 
   renderUserLabels() {
     const { labels } = this.state;
     if (labels == null || labels.length === 0) {
-      return (<div />);
+      return <div />;
     }
 
-    return (labels || []).map((g) => {
+    return (labels || []).map(g => {
       const badgeStyle = {
-        backgroundColor: g.color || this.state.defaultColor
+        backgroundColor: g.color || this.state.defaultColor,
       };
       let accessLabel = '';
       switch (g.access_level) {
@@ -150,11 +159,12 @@ class UserLabelModal extends Component {
         case 2:
           accessLabel = 'Global';
           break;
+        case 3:
+          accessLabel = 'Review';
+          break;
         default:
           accessLabel = '';
       }
-      const currentUser = UserStore.getState()?.currentUser;
-      const isReviewer = (currentUser?.is_reviewer) || false;
 
       return (
         <tr key={`row_${g.id}`}>
@@ -228,6 +238,7 @@ class UserLabelModal extends Component {
     const isReviewer = (currentUser?.is_reviewer) || false;
 
     if (isReviewer) {
+      accessList.unshift({ label: 'Review - Reviewer only', value: 3 });
       accessList.unshift({ label: 'Global - Open to everyone', value: 2 });
     }
 
@@ -239,6 +250,7 @@ class UserLabelModal extends Component {
           </Col>
           <Col sm={10}>
             <Select
+              style={{ zIndex: 2000 }}
               name="userLabel"
               clearable={false}
               options={accessList}
@@ -254,6 +266,7 @@ class UserLabelModal extends Component {
           <Col sm={10}>
             <FormControl
               type="text"
+              style={{ height: '40px' }}
               inputRef={(m) => { this.titleInput = m; }}
               defaultValue={label.title || ''}
             />
@@ -267,6 +280,7 @@ class UserLabelModal extends Component {
           <Col sm={10}>
             <FormControl
               type="text"
+              style={{ height: '40px' }}
               inputRef={(m) => { this.descInput = m; }}
               defaultValue={label.description || ''}
             />
@@ -327,7 +341,7 @@ class EditUserLabels extends React.Component {
     super(props);
     this.state = {
       currentUser: (UserStore.getState() && UserStore.getState().currentUser) || {},
-      labels: (UserStore.getState() && UserStore.getState().labels) || [],
+      labels: this.props.labels || (UserStore.getState() && UserStore.getState().labels) || [],
       selectedLabels: null
     };
     this.onChange = this.onChange.bind(this);
@@ -343,13 +357,15 @@ class EditUserLabels extends React.Component {
   }
 
   handleSelectChange(val) {
+    const { element } = this.props;
     if (val) {
       const ids = val.map((v) => v.value);
       if (ids != null) {
-        this.props.element.setUserLabels(ids);
+        element.setUserLabels(ids);
+        this.props.fnCb(element);
       }
       this.setState({ selectedLabels: val });
-    }
+        }
   }
 
   onChange(state) {
@@ -363,10 +379,6 @@ class EditUserLabels extends React.Component {
   render() {
     let { selectedLabels } = this.state;
     const { currentUser, labels } = this.state;
-
-    if (!MatrixCheck(currentUser && currentUser.matrix, UL_FUNC_NAME)) {
-      return (<span />);
-    }
 
     const { element } = this.props;
     const curLableIds = element.tag && element.tag.taggable_data
@@ -384,10 +396,7 @@ class EditUserLabels extends React.Component {
           <Badge
             style={{
               backgroundColor: ll.color,
-              borderRadius:
-                ll.access_level === 1 && ll.user_id !== currentUser.id
-                  ? 'unset'
-                  : '10px',
+              borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
             }}
           >
             {ll.title}
@@ -399,19 +408,134 @@ class EditUserLabels extends React.Component {
       selectedLabels = defaultLabels;
     }
 
-    const labelOptions = (this.state.labels || [])
-      .filter((r) => r.access_level === 2 || r.user_id === currentUser.id)
-      .map((ll) => ({
-        value: ll.id,
-        label: (
-          <Badge style={{ backgroundColor: ll.color }}>{ll.title}</Badge>
-        ),
-      })) || [];
+    const labelOptions =
+      (this.state.labels || [])
+        .filter(r => r.access_level === 2 || r.user_id === currentUser.id)
+        .map(ll => ({
+          value: ll.id,
+          label: (
+            <Badge
+              style={{
+                backgroundColor: ll.color,
+                borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
+              }}
+            >
+              {ll.title}
+            </Badge>
+          ),
+        })) || [];
 
     return (
       <div>
         <FormGroup>
           <ControlLabel>My Labels</ControlLabel>
+          <Select
+            className="status-select"
+            name="sampleUserLabels"
+            clearable={false}
+            multi
+            options={labelOptions}
+            value={selectedLabels}
+            onChange={(e) => this.handleSelectChange(e)}
+          />
+        </FormGroup>
+      </div>
+    );
+  }
+}
+
+class ReviewUserLabels extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentUser: (UserStore.getState() && UserStore.getState().currentUser) || {},
+      labels: this.props.labels || (UserStore.getState() && UserStore.getState().labels) || [],
+      selectedLabels: this.props.element.user_labels || [],
+    };
+    this.onChange = this.onChange.bind(this);
+    this.handleSelectChange = this.handleSelectChange.bind(this);
+  }
+
+  componentDidMount() {
+    UserStore.listen(this.onChange);
+  }
+
+  componentWillUnmount() {
+    UserStore.unlisten(this.onChange);
+  }
+
+  handleSelectChange(val) {
+    const { element } = this.props;
+    if (val) {
+      const ids = val.map(v => v.value);
+      if (ids != null) {
+        // element.setUserLabels(ids);
+        this.props.fnCb(element, ids);
+      }
+      this.setState({ selectedLabels: val });
+    }
+  }
+
+  onChange(state) {
+    const { currentUser, labels } = state;
+    this.setState({
+      currentUser,
+      labels
+    });
+  }
+
+  render() {
+    let { selectedLabels } = this.state;
+    const { currentUser, labels } = this.state;
+    const { element } = this.props;
+    const curLableIds = element.user_labels || [];
+
+    // const reviewLabel = labels.filter(l => l.access_level === 3);
+    const reviewLabel = labels;
+
+    const defaultLabels = (labels || [])
+      .filter(
+        (r) => (curLableIds || []).includes(r.id)
+          && (r.access_level > 0 || r.user_id === currentUser.id)
+      )
+      .map((ll) => ({
+        value: ll.id,
+        label: (
+          <Badge
+            style={{
+              backgroundColor: ll.color,
+              borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
+            }}
+          >
+            {ll.title}
+          </Badge>
+        ),
+      }));
+
+    if (selectedLabels == null) {
+      selectedLabels = defaultLabels;
+    }
+
+    const labelOptions =
+      (reviewLabel || [])
+        .filter(r => r.access_level > 0 || r.user_id === currentUser.id)
+        .map(ll => ({
+          value: ll.id,
+          label: (
+            <Badge
+              style={{
+                backgroundColor: ll.color,
+                borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
+              }}
+            >
+              {ll.title}
+            </Badge>
+          ),
+       })) || [];
+
+    return (
+      <div>
+        <FormGroup>
           <Select
             className="status-select"
             name="sampleUserLabels"
@@ -457,16 +581,24 @@ class ShowUserLabels extends React.Component {
   render() {
     const { element } = this.props;
     const { currentUser, labels } = this.state;
-    const curLableIds = element.tag && element.tag.taggable_data
-      ? element.tag.taggable_data.user_labels
-      : [];
+    let showLabels = null;
 
-    if (!MatrixCheck(currentUser && currentUser.matrix, UL_FUNC_NAME)) {
-      return (<span />);
+    if (element.labels != null) {
+      showLabels = element.labels;
+    } else {
+      const curLableIds =
+        element.tag && element.tag.taggable_data
+          ? element.tag.taggable_data.user_labels
+          : [];
+
+      showLabels = (labels || []).filter(
+        r =>
+          (curLableIds || []).includes(r.id) &&
+          (r.access_level > 0 || r.user_id === currentUser.id)
+      );
     }
-    const elementLabels = (labels || []).filter((r) => (
-      (curLableIds || []).includes(r.id) && (r.access_level > 0 || r.user_id === currentUser.id)
-    )).map((ll) => (
+
+    const elementLabels = (showLabels || []).map((ll) => (
       <Badge
         key={`bg_${ll.id}`}
         style={{
@@ -475,7 +607,7 @@ class ShowUserLabels extends React.Component {
           borderColor: 'white',
           borderStyle: 'solid',
           borderWidth: 'thin',
-          borderRadius: (ll.access_level === 1 && ll.user_id !== currentUser.id) ? 'unset' : '10px'
+          borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
         }}
       >
         {ll.title}
@@ -492,16 +624,118 @@ class ShowUserLabels extends React.Component {
   }
 }
 
+class SearchUserLabels extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentUser:
+        (UserStore.getState() && UserStore.getState().currentUser) || {},
+      labels: (UserStore.getState() && UserStore.getState().labels) || [],
+    };
+    this.onChange = this.onChange.bind(this);
+    this.handleSelectChange = this.handleSelectChange.bind(this);
+  }
+
+  componentDidMount() {
+    UserStore.listen(this.onChange);
+  }
+
+  componentWillUnmount() {
+    UserStore.unlisten(this.onChange);
+  }
+
+  handleSelectChange(val) {
+    this.props.fnCb(val || null);
+  }
+
+  onChange(state) {
+    const { currentUser, labels } = state;
+    this.setState({
+      currentUser,
+      labels
+    });
+  }
+
+  render() {
+    const { currentUser, labels } = this.state;
+    const { className, userLabel, isPublish } = this.props;
+
+    let labelList = [];
+    if (isPublish === true) {
+      labelList = (labels || []).filter(r => r.access_level === 2);
+    } else {
+      labelList = (labels || []);
+    }
+
+    const labelOptions =
+      labelList.map(ll => ({
+        value: ll.id,
+        label: (
+          <Badge
+            style={{
+              backgroundColor: ll.color,
+              borderRadius: ll.access_level === 2 ? '0.25em' : '10px',
+            }}
+          >
+            {ll.title}
+          </Badge>
+        ),
+      })) || [];
+
+    return (
+      <div>
+        <Select
+          simpleValue
+          clearable
+          style={{ minWidth: 120 }}
+          className={className}
+          name="sampleUserLabels"
+          multi={false}
+          options={labelOptions}
+          value={userLabel}
+          onChange={(e) => this.handleSelectChange(e)}
+        />
+      </div>
+    );
+  }
+}
+
 UserLabelModal.propTypes = {
   showLabelModal: PropTypes.bool.isRequired,
   onHide: PropTypes.func.isRequired
 };
 
 EditUserLabels.propTypes = {
-  element: PropTypes.object.isRequired
+  element: PropTypes.object.isRequired,
+  fnCb: PropTypes.func.isRequired,
+};
+
+ReviewUserLabels.propTypes = {
+  element: PropTypes.object.isRequired,
+  fnCb: PropTypes.func.isRequired,
 };
 
 ShowUserLabels.propTypes = {
   element: PropTypes.object.isRequired
 };
-export { UserLabelModal, EditUserLabels, ShowUserLabels };
+
+SearchUserLabels.propTypes = {
+  fnCb: PropTypes.func.isRequired,
+  // eslint-disable-next-line react/require-default-props
+  userLabel: PropTypes.number,
+  className: PropTypes.string,
+  isPublish: PropTypes.bool,
+};
+
+SearchUserLabels.defaultProps = {
+  className: 'header-group-select',
+  isPublish: false,
+};
+
+export {
+  UserLabelModal,
+  EditUserLabels,
+  ReviewUserLabels,
+  ShowUserLabels,
+  SearchUserLabels,
+};

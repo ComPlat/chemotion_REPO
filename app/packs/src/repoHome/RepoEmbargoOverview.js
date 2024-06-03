@@ -4,7 +4,9 @@ import { Col, Button } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import uuid from 'uuid';
 import { AffiliationMap } from 'repo-review-ui';
-import { ElStateLabel, OrcidIcon } from 'src/repoHome/RepoCommon';
+import { OrcidIcon } from 'src/repoHome/RepoCommon';
+import RepoConst from 'src/components/chemrepo/common/RepoConst';
+import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
 
 const renderAffiliations = ({ affiliations, affiliationMap }) => {
@@ -31,7 +33,7 @@ const renderAuthors = ({ creators, affiliationMap }) => {
   if (!creators) return null;
   return (
     <span>
-      {creators.map((creator, i) => (
+      {creators.map(creator => (
         <div key={`auth_${creator.id}_${uuid.v4()}`}>
           <OrcidIcon orcid={creator.ORCID} />
           {creator.name}
@@ -51,7 +53,7 @@ const renderAuthors = ({ creators, affiliationMap }) => {
 const renderOverview = ({ states, state }) => {
   return (
     <Col sm={4} md={4} style={{ display: 'flex', flexDirection: 'column' }}>
-      {ElStateLabel(state)}
+      {StateLabel(state)}
       <div
         style={{
           display: 'flex',
@@ -106,7 +108,10 @@ const renderRecord = (rec, index, currentUser) => {
   });
 
   const viewDetailBtn =
-    currentUser.is_reviewer || currentUser.is_submitter ? (
+    currentUser.is_reviewer ||
+    currentUser.is_submitter ||
+    (rec?.review?.submitters || []).includes(currentUser?.id) ||
+    currentUser?.type === RepoConst.U_TYPE.ANONYMOUS ? (
       <Button
         className="detail-button"
         onClick={() => EmbargoActions.getEmbargoElements(recId)}
@@ -115,15 +120,16 @@ const renderRecord = (rec, index, currentUser) => {
       </Button>
     ) : null;
 
-  const viewComment = comment ? (
-    <span
-      role="alert"
-      className="alert alert-info"
-      style={{ fontSize: 'small' }}
-    >
-      {comment}
-    </span>
-  ) : null;
+  const viewComment =
+    comment && (currentUser.is_reviewer || currentUser.is_submitter) ? (
+      <span
+        role="alert"
+        className="alert alert-info"
+        style={{ fontSize: 'small' }}
+      >
+        {comment}
+      </span>
+    ) : null;
 
   return (
     <Col sm={12} md={12} className="repo-ebg-line" key={index}>

@@ -182,7 +182,7 @@ const isEmwInMargin = (diff) => {
 };
 
 const emwInStr = (emw, msStr) => {
-  const peaks = msStr.split(/,|:|;|=/).map((s) => {
+  const peaks = msStr.split(/,|:|;|\+|=/).map((s) => {
     const t = s.replace('found', '')
       .replace(/[\(\[\{](.*?)[\)\]\}]/g, '')
       .replace(/\s/g, '');

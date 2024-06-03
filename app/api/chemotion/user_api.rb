@@ -26,8 +26,7 @@ module Chemotion
 
       desc 'list user labels'
       get 'list_labels' do
-        labels = UserLabel.where('user_id = ? or access_level >= 1', current_user.id)
-                          .order('access_level desc, position, title')
+        labels = UserLabel.my_labels(current_user, false)
         present labels || [], with: Entities::UserLabelEntity, root: 'labels'
       end
 

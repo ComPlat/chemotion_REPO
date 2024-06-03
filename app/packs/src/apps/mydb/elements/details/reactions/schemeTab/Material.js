@@ -403,7 +403,7 @@ class Material extends Component {
 
   createParagraph(m) {
     const { materialGroup } = this.props;
-    let molName = m.molecule_name_hash.label;
+    let molName = m.molecule_name_hash?.label;
     if (!molName) { molName = m.molecule.iupac_name; }
     if (!molName) { molName = m.molecule.sum_formular; }
 

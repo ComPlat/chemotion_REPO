@@ -45,9 +45,6 @@ export default class SampleDetailsContainers extends Component {
     TextTemplateActions.fetchTextTemplates('sample');
   }
 
-  // componentWillReceiveProps(nextProps) {
-  // }
-
   componentWillUnmount() {
     UIStore.unlisten(this.onUIStoreChange);
   }

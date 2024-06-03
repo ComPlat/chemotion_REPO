@@ -5,7 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Panel, Button } from 'react-bootstrap';
 import ContainerComponent from 'src/components/container/ContainerComponent';
-import QuillViewer from 'src/components/QuillViewer';
+import Quill2Viewer from 'src/components/Quill2Viewer';
 import ImageModal from 'src/components/common/ImageModal';
 import { instrumentText } from 'src/utilities/ElementUtils';
 import { previewContainerImage } from 'src/utilities/imageHelper';
@@ -108,11 +108,11 @@ const newHeader = (props) => {
           <div className="sub-title">Type: {kind}</div>
           <div className="sub-title">Status: {status} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {insText}</div>
 
-          <div className="desc sub-title">
+          <div className="desc sub-title expand-p">
             <span style={{ float: 'left', marginRight: '5px' }}>
               Content:
             </span>
-            <QuillViewer value={contentOneLine} preview />
+            <Quill2Viewer value={contentOneLine} preview />
           </div>
 
         </div>
