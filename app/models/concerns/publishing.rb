@@ -169,17 +169,15 @@ module Publishing
       end
     end
 
-    def tag_as_new_version(previous_element, scheme_only: false, parent: nil)
+    def tag_as_new_version(previous_element, scheme_only: false)
       previous_license = previous_element&.tag&.taggable_data['publication']['license']
       previous_users = previous_element&.tag&.taggable_data['publication']['creators']
-      previous_parent = parent.nil? ? nil : parent.id
 
       element_tag = self.tag
       element_tag.update!(
         taggable_data: (element_tag.taggable_data || {}).merge(
           previous_version: {
             id: previous_element.id,
-            parent: previous_parent,
             doi: {
               id: previous_element&.doi&.id
             },
@@ -188,6 +186,26 @@ module Publishing
             users: previous_users
           }
         )
+      )
+    end
+
+    def tag_replace_in_publication
+      element_tag = self.tag
+      element_tag.update!(
+        taggable_data: (element_tag.taggable_data || {}).merge(
+          replace_in_publication: true
+        )
+      )
+    end
+
+    def untag_replace_in_publication
+      element_tag = self.tag
+
+      taggable_data = element_tag.taggable_data || {}
+      taggable_data.delete('replace_in_publication')
+
+      element_tag.update!(
+        taggable_data: taggable_data
       )
     end
 

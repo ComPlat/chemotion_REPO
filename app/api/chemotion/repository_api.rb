@@ -165,17 +165,22 @@ module Chemotion
           analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
           link_analyses(new_sample, analyses)
 
-          new_sample.update_tag!(analyses_tag: true)
+          new_sample.update_tag!(analyses_tag: true, reaction_tag: reaction.id)
 
           sample.tag_as_previous_version(new_sample)
-          new_sample.tag_as_new_version(sample, parent: reaction)
+          new_sample.tag_as_new_version(sample)
           new_sample.update_versions_tag
 
-          # replace previous sample in reaction, if it is a new version
-          unless reaction.nil? or current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
-            reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
-            reaction_sample.sample_id = new_sample.id
-            reaction_sample.save!
+          unless reaction.nil?
+            if current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
+              # this sample will replace the old sample when beeing published
+              new_sample.tag_replace_in_publication
+            else
+              # replace previous sample in reaction now
+              reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
+              reaction_sample.sample_id = new_sample.id
+              reaction_sample.save!
+            end
           end
 
           new_sample
@@ -383,6 +388,10 @@ module Chemotion
             unless sample&.tag&.taggable_data['versions'].nil?
               last_sample_version_id = sample&.tag&.taggable_data['versions'].max()
               if last_sample_version_id > sample.id
+                last_sample_version = Sample.find_by(id: last_sample_version_id)
+                last_sample_version.update_tag!(reaction_tag: new_reaction.id)
+                last_sample_version.untag_replace_in_publication
+
                 new_reaction_sample.sample_id = last_sample_version_id
               end
             end

@@ -183,15 +183,19 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
     unless @element&.tag&.taggable_data['previous_version'].nil?
       return unless @publication.element_type == 'Sample'
 
-      previous_version_id = @element&.tag&.taggable_data['previous_version']['id']
-      reaction_id = @element&.tag&.taggable_data['previous_version']['parent']
+      if @element&.tag&.taggable_data['replace_in_publication']
+        previous_version_id = @element&.tag&.taggable_data['previous_version']['id']
+        reaction_id = @element&.tag&.taggable_data['reaction_id']
 
-      unless reaction_id.nil?
-        reaction = Collection.public_collection.reactions.find_by(id: reaction_id)
-        unless reaction.nil?
-          reaction_sample = reaction.reactions_samples.find_by(sample_id: previous_version_id)
-          reaction_sample.sample_id = element.id
-          reaction_sample.save!
+        unless reaction_id.nil?
+          reaction = Collection.public_collection.reactions.find_by(id: reaction_id)
+          unless reaction.nil?
+            reaction_sample = reaction.reactions_samples.find_by(sample_id: previous_version_id)
+            reaction_sample.sample_id = @element.id
+            reaction_sample.save!
+
+            @element.untag_replace_in_publication
+          end
         end
       end
     end

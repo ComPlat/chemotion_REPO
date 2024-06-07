@@ -1093,6 +1093,11 @@ export default class Sample extends Element {
     const analyses = this.container.children.find(c => (c && c.container_type === 'analyses'));
     return analyses ? analyses.children : [];
   }
+
+  check_replace_in_publication() {
+    // checks if this sample is a new version for a reaction where the reaction does not have a new version
+    return _.get(this, 'tag.taggable_data.replace_in_publication')
+  }
 }
 
 Sample.counter = 0;

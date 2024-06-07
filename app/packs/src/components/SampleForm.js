@@ -423,7 +423,7 @@ export default class SampleForm extends React.Component {
 
   sampleAmount(sample) {
     const content = [];
-    const isDisabled = !permitOn(sample);
+    const isDisabled = !permitOn(sample) || sample.check_replace_in_publication();
     const volumeBlocked = !sample.has_density && !sample.has_molarity;
 
     if (sample.isMethodDisabled('amount_value') === false) {
@@ -484,7 +484,7 @@ export default class SampleForm extends React.Component {
   render() {
     const sample = this.props.sample || {};
     const isPolymer = (sample.molfile || '').indexOf(' R# ') !== -1;
-    const isDisabled = !permitOn(sample);
+    const isDisabled = !permitOn(sample) || sample.check_replace_in_publication();
     const polyDisabled = isPolymer || isDisabled;
     const molarityBlocked = isDisabled ? true : this.state.molarityBlocked;
     const densityBlocked = isDisabled ? true : !molarityBlocked;
