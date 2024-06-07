@@ -84,10 +84,12 @@ const NewVersionModal = (props) => {
       break;
     case 'Sample':
       display = (isPublisher || isElementPublisher) && isComplete;
-      disable = !(isLatestVersion || isElementLatestVersion) || element.changed;
+      disable = !(isLatestVersion || isElementLatestVersion) || element.changed || (parent && parent.changed);
       if (disable) {
         if (element.changed) {
           tooltip = <Tooltip>A new version cannot be created from an unsaved sample.</Tooltip>;
+        } else if (parent && parent.changed) {
+          tooltip = <Tooltip>A new version cannot be created from an unsaved reaction.</Tooltip>;
         } else {
           tooltip = <Tooltip>A new version of this sample has already been created.</Tooltip>;
         }
