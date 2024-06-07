@@ -188,7 +188,8 @@ class PublicStore {
     // initially, show only the last versions
     moleculeList.moleculeData.published_samples.forEach((sample) => {
       // eslint-disable-next-line no-param-reassign
-      sample.show = (sample.new_version === null);
+      // sample.show = (sample.new_version === null);
+      sample.show = isNil(sample.new_version) || isNil(moleculeList.moleculeData.published_samples.find((s) => s.sample_id == sample.new_version))
     });
 
     this.setState({
