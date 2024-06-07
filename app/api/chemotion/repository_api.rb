@@ -367,9 +367,6 @@ module Chemotion
           new_reaction.update_versions_tag
 
           reaction.reactions_samples.each  do |reaction_sample|
-            # copy the reaction sample instance
-            new_reaction_sample = reaction_sample.dup
-
             # look for the sample in the public collection or the scheme only reactions collection
             unless scheme_only
               sample = Collection.public_collection.samples.find_by(id: reaction_sample.sample_id, created_by: current_user.id)
@@ -378,12 +375,25 @@ module Chemotion
             end
             next unless sample
 
+            # duplicate the reaction_sample object
+            new_reaction_sample = reaction_sample.dup
+
+            # check if new versions of the sample have already been created
+            # if yes, use the *last* sample version for the new reaction_sample
+            unless sample&.tag&.taggable_data['versions'].nil?
+              last_sample_version_id = sample&.tag&.taggable_data['versions'].max()
+              if last_sample_version_id > sample.id
+                new_reaction_sample.sample_id = last_sample_version_id
+              end
+            end
+
             # update the new reaction sample instance
             new_reaction_sample.reaction_id = new_reaction.id
             new_reaction_sample.save!
 
-            # remove sample from versions collectoin again, overriding the behaviour in ReactionSampleCollections
-            CollectionsSample.find_by(sample: sample, collection: @current_user.versions_collection).delete
+            # remove sample from versions collection again, overriding the behaviour in ReactionSampleCollections
+            collections_sample = CollectionsSample.find_by(sample: sample, collection: @current_user.versions_collection)
+            collections_sample.delete unless collections_sample.nil?
           end
 
           new_reaction.update_svg_file!
