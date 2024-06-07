@@ -195,7 +195,7 @@ class Material extends Component {
         ? <td />
         : <td>
           <Radio
-            disabled={!permitOn(this.props.reaction) || material.sealed}
+            disabled={!permitOn(this.props.reaction)}
             name="reference"
             checked={material.reference}
             onChange={e => this.handleReferenceChange(e)}
