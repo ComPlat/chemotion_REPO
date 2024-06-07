@@ -172,7 +172,7 @@ module Chemotion
           new_sample.update_versions_tag
 
           # replace previous sample in reaction, if it is a new version
-          unless current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
+          unless reaction.nil? or current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
             reaction_sample = reaction.reactions_samples.find_by(sample_id: sample.id)
             reaction_sample.sample_id = new_sample.id
             reaction_sample.save!
