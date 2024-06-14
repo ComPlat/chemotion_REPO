@@ -101,7 +101,8 @@ module RepositoryHelpers
         samples.*,
         (select published_at from publications where element_type='Sample' and element_id=samples.id and deleted_at is null) as published_at,
         (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as new_version,
-        (select taggable_data -> 'versions' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as versions
+        (select taggable_data -> 'versions' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as versions,
+        (select taggable_data -> 'reaction_id' from element_tags where taggable_type = 'Sample' and taggable_id = samples.id) as reaction_id
         SQL
       )
       .order('published_at desc')
@@ -123,6 +124,9 @@ module RepositoryHelpers
           SQL
         ).group('literatures.id').as_json
       reaction_ids = ReactionsProductSample.where(sample_id: s.id).pluck(:reaction_id)
+      if reaction_ids.empty? and not s.reaction_id.nil?
+        reaction_ids = [s.reaction_id]
+      end
       pub = Publication.find_by(element_type: 'Sample', element_id: s.id)
       sid = pub.taggable_data["sid"] unless pub.nil? || pub.taggable_data.nil?
       xvial = s.tag.taggable_data['xvial'] && s.tag.taggable_data['xvial']['num'] unless s.tag.taggable_data.nil?
