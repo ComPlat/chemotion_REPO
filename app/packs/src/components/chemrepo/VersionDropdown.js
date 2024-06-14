@@ -1,14 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Dropdown, MenuItem } from 'react-bootstrap';
-import { isUndefined } from 'lodash';
+import { isNil } from 'lodash';
 
 import PublicActions from '../actions/PublicActions';
 
 const VersionDropdown = (props) => {
   const { type, element } = props;
-
-  const display = !isUndefined(element.versions) && element.versions.filter((element) => !isUndefined(element)).length > 1;
+  const display = !isNil(element.versions) && element.versions.filter((element) => !isNil(element)).length > 1;
 
   const handleSelect = (version) => {
     if (type === 'Reaction') {
@@ -26,7 +25,7 @@ const VersionDropdown = (props) => {
         </Dropdown.Toggle>
         <Dropdown.Menu>
           {
-            element.versions.filter((element) => !isUndefined(element)).map((version) => {
+            element.versions.filter((element) => !isNil(element)).map((version) => {
               const versionId = (type === 'Reaction') ? version.id : version.sample_id;
               const doi = version.taggable_data ? version.taggable_data.doi : version.doi;
 
