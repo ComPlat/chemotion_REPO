@@ -165,13 +165,15 @@ module Chemotion
           analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
           link_analyses(new_sample, analyses)
 
-          new_sample.update_tag!(analyses_tag: true, reaction_tag: reaction.id)
+          new_sample.update_tag!(analyses_tag: true)
 
           sample.tag_as_previous_version(new_sample)
           new_sample.tag_as_new_version(sample)
           new_sample.update_versions_tag
 
           unless reaction.nil?
+            new_sample.update_tag!(reaction_tag: reaction.id)
+
             if current_user.versions_collection.reactions.find_by(id: reaction.id).nil?
               # this sample will replace the old sample when beeing published
               new_sample.tag_replace_in_publication

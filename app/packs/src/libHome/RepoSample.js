@@ -227,6 +227,7 @@ export default class RepoSample extends Component {
             <NewVersionModal
               type="Sample"
               element={sample}
+              parentId={sample.reaction_ids.length > 0 ? sample.reaction_ids[0] : null}
               isPublisher={isPublisher}
               isLatestVersion={!sample.new_version}
             />
