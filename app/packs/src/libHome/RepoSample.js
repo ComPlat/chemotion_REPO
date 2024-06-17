@@ -237,6 +237,7 @@ export default class RepoSample extends Component {
         <VersionDropdown
           type="Sample"
           element={sample}
+          onChange={(version) => PublicActions.selectSampleVersion(version)}
         />
         <br />
         {iupacUserDefined}

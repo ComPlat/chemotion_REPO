@@ -62,6 +62,7 @@ export default class RepoReactionDetails extends Component {
       showCommentModal: false,
       commentField: '',
       originInfo: '',
+      displayedProducts: []
     };
 
     this.toggleScheme = this.toggleScheme.bind(this);
@@ -75,6 +76,12 @@ export default class RepoReactionDetails extends Component {
     this.handleSubmitReview = this.handleSubmitReview.bind(this);
     this.handleCommentBtn = this.handleCommentBtn.bind(this);
     this.handleSubmitComment = this.handleSubmitComment.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.reaction !== prevProps.reaction) {
+      this.setState({ displayedProducts: this.props.reaction.products });
+    }
   }
 
   toggleScheme() {
@@ -391,6 +398,13 @@ export default class RepoReactionDetails extends Component {
           updateRepoXvial={() => this.updateRepoXvial()}
           xvialCom={product.xvialCom}
           literatures={references}
+          onVersionChange={(product, version) => {
+            this.setState({
+              displayedProducts: this.state.displayedProducts.map((sample) => (sample.id == product.id) ? {
+                ...version, versions: product.versions // propagate the versions array to the newly selected version
+              } : sample)
+            })
+          }}
         />
       ) : (
         <span />
@@ -482,11 +496,12 @@ export default class RepoReactionDetails extends Component {
   }
 
   renderProductAnalysisView(
-    products,
     isLogin = false,
     isReviewer = false,
     references = []
   ) {
+    const products = this.state.displayedProducts;
+
     if (typeof products === 'undefined' || !products || products.length === 0) {
       return <span />;
     }
@@ -705,6 +720,7 @@ export default class RepoReactionDetails extends Component {
             <VersionDropdown
               type="Reaction"
               element={reaction}
+              onChange={(version) => PublicActions.displayReaction(version.id)}
             />
             <br />
             <ContributorInfo
@@ -753,7 +769,6 @@ export default class RepoReactionDetails extends Component {
             {schemeOnly
               ? ''
               : this.renderProductAnalysisView(
-                  reaction.products,
                   idyLogin,
                   idyReview,
                   literatures

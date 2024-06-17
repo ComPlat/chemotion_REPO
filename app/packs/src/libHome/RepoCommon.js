@@ -61,6 +61,7 @@ import LicenseIcon from '../components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from '../components/chemrepo/date-utils';
 import getFormattedRange from '../components/chemrepo/range-utils';
 import LdData from '../components/chemrepo/LdData';
+import VersionDropdown from '../components/chemrepo/VersionDropdown';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === 'DUMMY') ? { display: 'none' } : {});
 
@@ -957,7 +958,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false }) => {
 
 const RenderAnalysisHeader = (props) => {
   const {
-    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures
+    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures, onVersionChange
   } = props;
   const svgPath = `/images/samples/${element.sample_svg_file}`;
   let doiLink = '';
@@ -1000,6 +1001,12 @@ const RenderAnalysisHeader = (props) => {
             <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
             <br /><br />
           </span>
+          <VersionDropdown
+            type="Sample"
+            element={element}
+            versions={versions}
+            onChange={(version) => onVersionChange(element, version)}
+          />
           <span style={hideInfo(molecule)}>
             {nameOrFormula}
             {iupacUserDefined}

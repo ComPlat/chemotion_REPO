@@ -48,6 +48,13 @@ module RepositoryHelpers
       pub_product_tag = pub_product[:tag]['taggable_data']
       next if pub_product_tag.nil?
 
+      unless pub_product_tag['versions'].nil?
+        p[:versions] = pub_product_tag['versions'].map do |version_id|
+          sample = Sample.find(version_id)
+          Entities::SampleEntity.represent(sample, serializable: true)
+        end
+      end
+
       xvial = pub_product_tag['xvial'] && pub_product_tag['xvial']['num']
       next unless xvial.present?
 

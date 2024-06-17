@@ -6,16 +6,8 @@ import { isNil } from 'lodash';
 import PublicActions from '../actions/PublicActions';
 
 const VersionDropdown = (props) => {
-  const { type, element } = props;
+  const { type, element, onChange } = props;
   const display = !isNil(element.versions) && element.versions.filter((element) => !isNil(element)).length > 1;
-
-  const handleSelect = (version) => {
-    if (type === 'Reaction') {
-      PublicActions.displayReaction(version.id);
-    } else {
-      PublicActions.selectSampleVersion(version);
-    }
-  };
 
   if (display) {
     return (
@@ -26,18 +18,18 @@ const VersionDropdown = (props) => {
         <Dropdown.Menu>
           {
             element.versions.filter((element) => !isNil(element)).map((version) => {
-              const versionId = (type === 'Reaction') ? version.id : version.sample_id;
+              const versionId = isNil(version.id) ? version.sample_id : version.id;
               const doi = version.taggable_data ? version.taggable_data.doi : version.doi;
 
               if (doi) {
                 return (
                   <MenuItem
                     key={versionId}
-                    onSelect={() => handleSelect(version)}
+                    onSelect={() => onChange(version)}
                     active={(element.id === versionId)}
                     className="version-dropdown-item"
                   >
-                    {doi}
+                    {doi.full_doi || doi}
                   </MenuItem>
                 );
               }
@@ -56,6 +48,7 @@ const VersionDropdown = (props) => {
 VersionDropdown.propTypes = {
   type: PropTypes.string.isRequired,
   element: PropTypes.oneOf(['sample', 'reaction']).isRequired,
+  onChange: PropTypes.func.isRequired
 };
 
 export default VersionDropdown;
