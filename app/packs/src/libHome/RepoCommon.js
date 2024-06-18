@@ -1004,7 +1004,6 @@ const RenderAnalysisHeader = (props) => {
           <VersionDropdown
             type="Sample"
             element={element}
-            versions={versions}
             onChange={(version) => onVersionChange(element, version)}
           />
           <span style={hideInfo(molecule)}>
