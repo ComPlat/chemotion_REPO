@@ -1001,11 +1001,17 @@ const RenderAnalysisHeader = (props) => {
             <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} />
             <br /><br />
           </span>
-          <VersionDropdown
-            type="Sample"
-            element={element}
-            onChange={(version) => onVersionChange(element, version)}
-          />
+          {
+            element.versions && (
+              <div style={{ marginBottom: 10 }}>
+                <VersionDropdown
+                  type="Sample"
+                  element={element}
+                  onChange={(version) => onVersionChange(element, version)}
+                />
+              </div>
+            )
+          }
           <span style={hideInfo(molecule)}>
             {nameOrFormula}
             {iupacUserDefined}
