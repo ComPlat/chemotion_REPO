@@ -209,6 +209,16 @@ class PublicStore {
     let cb = () => PublicActions.getReactions();
 
     if (this.reactions.length > 0) {
+      const reactions = this.reactions.map((reaction) => {
+        let show = reaction.show
+        if (reaction.id == reactionList.id) {
+          show = true
+        } else if (reactionList.reactionData.versions.includes(reaction.id)) {
+          show = false
+        }
+        return {...reaction, show}
+      })
+
       // eslint-disable-next-line no-param-reassign
       reactionList.reactionData.versions =
         (reactionList.reactionData.versions || []).map(versionId => (
@@ -216,7 +226,7 @@ class PublicStore {
         ));
 
       cb = () => {};
-      this.setState({ reactions: this.reactions });
+      this.setState({ reactions });
     }
 
     this.setState({
