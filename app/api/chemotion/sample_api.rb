@@ -223,7 +223,7 @@ module Chemotion
             end
           end
         else
-          scope = scope.order('updated_at DESC')
+          scope = scope.order('updated_at DESC').distinct
           paginate(scope).each do |sample|
             next if sample.nil?
             serialized_sample = sample_serializer_selector.call(sample)
