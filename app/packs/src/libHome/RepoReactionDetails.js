@@ -62,7 +62,7 @@ export default class RepoReactionDetails extends Component {
       showCommentModal: false,
       commentField: '',
       originInfo: '',
-      displayedProducts: []
+      displayedProducts: [...props.reaction.products]
     };
 
     this.toggleScheme = this.toggleScheme.bind(this);
