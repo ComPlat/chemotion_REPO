@@ -213,7 +213,7 @@ class PublicStore {
         let show = reaction.show
         if (reaction.id == reactionList.id) {
           show = true
-        } else if (reactionList.reactionData.versions.includes(reaction.id)) {
+        } else if ((reactionList.reactionData.versions || []).includes(reaction.id)) {
           show = false
         }
         return {...reaction, show}
