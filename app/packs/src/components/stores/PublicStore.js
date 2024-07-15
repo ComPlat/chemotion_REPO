@@ -96,13 +96,14 @@ class PublicStore {
     const listType = (reactions && reactions[0] && reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction') || 'reaction';
 
     // update the currentElements versions if it was loaded before
-    const currentElement = { ...this.currentElement };
-    if (currentElement !== null) {
+    if (this.currentElement !== null) {
+      const currentElement = { ...this.currentElement };
       // eslint-disable-next-line no-param-reassign
       currentElement.versions =
         (currentElement.versions || []).map(versionId => (
           reactions.find(r => (r.id === versionId))
         ));
+      this.setState({ currentElement });
     }
 
     // check which elements to display
@@ -112,7 +113,7 @@ class PublicStore {
     })
 
     this.setState({
-      reactions, page, pages, perPage, listType, guestPage: 'publications', currentElement
+      reactions, page, pages, perPage, listType, guestPage: 'publications'
     });
   }
 
