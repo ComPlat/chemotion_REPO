@@ -575,10 +575,9 @@ module Chemotion
             new_reaction = submit_new_reaction_version
           else
             new_reaction = duplicate_reaction(@reaction, @analysis_set)
+            reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
+            @reaction.tag_as_published(new_reaction, reaction_analysis_set)
           end
-
-          reaction_analysis_set = @reaction.analyses.where(id: @analysis_set_ids)
-          @reaction.tag_as_published(new_reaction, reaction_analysis_set)
 
           new_reaction.create_publication_tag(current_user, @author_ids, @license)
           new_reaction.samples.each do |new_sample|
@@ -612,9 +611,9 @@ module Chemotion
             new_sample = submit_new_sample_version
           else
             new_sample = duplicate_sample(@sample, @analyses)
+            @sample.tag_as_published(new_sample, @analyses)
           end
 
-          @sample.tag_as_published(new_sample, @analyses)
           new_sample.create_publication_tag(current_user, @author_ids, @license)
           @sample.untag_reserved_suffix
           pub = Publication.where(element: new_sample).first
