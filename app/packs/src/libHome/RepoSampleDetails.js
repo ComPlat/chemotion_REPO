@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Panel } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import { RepoCommentModal } from 'repo-review-ui';
+import { isEmpty } from 'lodash';
 import {
   ClosePanel,
   MoleculeInfo,
@@ -102,7 +103,7 @@ export default class RepoSampleDetails extends Component {
     tagData = (pubData?.taggable_data) || {};
     const details = (samples || []).map((s) => {
       // only display the active version
-      if (!s.show) {
+      if (isEmpty(review) && !s.show) {
         return null;
       }
 
