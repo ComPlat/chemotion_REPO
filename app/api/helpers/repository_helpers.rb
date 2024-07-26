@@ -49,9 +49,12 @@ module RepositoryHelpers
       next if pub_product_tag.nil?
 
       unless pub_product_tag['versions'].nil?
-        p[:versions] = pub_product_tag['versions'].map do |version_id|
+        p[:versions] = pub_product_tag['versions'].reduce([]) do |versions, version_id|
           sample = Sample.find(version_id)
-          Entities::SampleEntity.represent(sample, serializable: true)
+          if sample.publication.state == 'completed'
+            versions.append Entities::SampleEntity.represent(sample, serializable: true)
+          end
+          versions
         end
       end
 
