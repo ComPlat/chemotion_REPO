@@ -18,6 +18,7 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
     #  process_element
     notify_users
     mail_users
+    remove_new_version_if_declined
   end
 
   private
@@ -80,4 +81,19 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
     TXT
 
   end
+
+  def remove_new_version_if_declined
+    case publication.state
+    when Publication::STATE_DECLINED
+      unless publication.element&.tag&.taggable_data['previous_version'].nil?
+        @publications.each do |publication|
+          publication.element.destroy
+          publication.doi.destroy
+        end
+      end
+    else
+      return
+    end
+  end
+
 end

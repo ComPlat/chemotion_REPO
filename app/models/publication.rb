@@ -103,9 +103,11 @@ class Publication < ActiveRecord::Base
       move_to_accepted_collection
       group_review_collection
     when Publication::STATE_DECLINED
-      declined_reverse_original_element
-      declined_move_collections
-      group_review_collection
+      unless original_element.nil?
+        declined_reverse_original_element
+        declined_move_collections
+        group_review_collection
+      end
     end
   end
 
