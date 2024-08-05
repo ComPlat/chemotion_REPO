@@ -142,7 +142,7 @@ const ReviewPublishBtn = ({ element, showComment, validation }) => {
   const canPublish =  element.can_publish || (element.type === 'reaction' && !element.notPublishable && element.is_published === false)
 
   const isEdit = element.type === 'reaction' ? element.changed : element.isEdited;
-  const reviewBtn = (canPublish && !isEdit && !publishedId && tagData.publication) ? (
+  const reviewBtn = (canPublish && !isEdit && !publishedId && tagData.publication && element.publication.state == 'reviewed') ? (
                     <OverlayTrigger
                       placement="bottom"
                       overlay={<Tooltip id="reviewPublish">Submit for Publication</Tooltip>}

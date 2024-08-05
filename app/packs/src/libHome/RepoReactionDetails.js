@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Panel, Row, Col, Button, Jumbotron } from 'react-bootstrap';
 import PropTypes from 'prop-types';
-import { head, filter } from 'lodash';
+import { head, filter, isNil } from 'lodash';
 import { RepoCommentModal } from 'repo-review-ui';
 import ArrayUtils from '../components/utils/ArrayUtils';
 import {
@@ -62,7 +62,7 @@ export default class RepoReactionDetails extends Component {
       showCommentModal: false,
       commentField: '',
       originInfo: '',
-      displayedProducts: [...props.reaction.products]
+      displayedProducts: isNil(props.reaction) ? [] : [...props.reaction.products]
     };
 
     this.toggleScheme = this.toggleScheme.bind(this);
