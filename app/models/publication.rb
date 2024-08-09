@@ -103,7 +103,7 @@ class Publication < ActiveRecord::Base
       move_to_accepted_collection
       group_review_collection
     when Publication::STATE_DECLINED
-      unless original_element.nil?
+      if element&.tag&.taggable_data['previous_version'].nil?
         declined_reverse_original_element
         declined_move_collections
         group_review_collection
