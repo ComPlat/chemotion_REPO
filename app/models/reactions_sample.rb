@@ -2,18 +2,19 @@
 #
 # Table name: reactions_samples
 #
-#  id           :integer          not null, primary key
-#  reaction_id  :integer
-#  sample_id    :integer
-#  reference    :boolean
-#  equivalent   :float
-#  position     :integer
-#  type         :string
-#  deleted_at   :datetime
-#  waste        :boolean          default(FALSE)
-#  coefficient  :float            default(1.0)
-#  scheme_yield :float
-#  show_label   :boolean          default(FALSE), not null
+#  id             :integer          not null, primary key
+#  reaction_id    :integer
+#  sample_id      :integer
+#  reference      :boolean
+#  equivalent     :float
+#  position       :integer
+#  type           :string
+#  deleted_at     :datetime
+#  waste          :boolean          default(FALSE)
+#  coefficient    :float            default(1.0)
+#  show_label     :boolean          default(FALSE), not null
+#  gas_type       :integer          default("off")
+#  gas_phase_data :jsonb
 #
 # Indexes
 #
@@ -29,6 +30,8 @@ class ReactionsSample < ApplicationRecord
   before_validation :set_default
 
   include ReactionSampleCollections
+
+  enum gas_type: { off: 0, feedstock: 1, catalyst: 2, gas: 3 }
 
   def self.get_samples(reaction_ids)
     where(reaction_id: reaction_ids).pluck(:sample_id).compact.uniq

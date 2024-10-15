@@ -103,6 +103,7 @@ const affbody = (taggData, creator, fields, countries, organizations, department
   const affs = taggData.affiliations || {};
   const mainAff = creator.affiliationIds && creator.affiliationIds.length > 0 ?
     creator.affiliationIds.map(aid => lineAff(creator, aid, affs, onDeleteAff)) : '';
+    creator.affiliations = creator.affiliationIds.map(aid => affs[aid]);
   const moreAff = secAff(fields, creator, countries, organizations, departments, onAddAff, onDeleteAff, onInputChange) || '';
 
   return (
@@ -328,8 +329,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
     const taggData = this.state.taggData || this.props.taggData;
     const { creators } = taggData;
 
-    const ax = findIndex(g.affiliationIds, o => o.id === aid);
-    g.affiliationIds.splice(ax, 1);
+    g.affiliationIds = g.affiliationIds.filter(id => id !== aid);
     const cx = findIndex(creators, o => o.id === g.id);
     taggData.creators[cx] = g;
     this.setState({ taggData });

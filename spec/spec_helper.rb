@@ -14,6 +14,20 @@ require 'webdrivers'
 # require 'capybara/rspec'
 require 'rails_helper'
 
+bad_smiles = JSON.parse(File.read('spec/fixtures/structures/bad_smiles.json'))
+
+def stub_pubchem_request(status, body, end_point)
+  stub_request(:get, end_point)
+    .with(
+      headers: {
+        'Accept' => '*/*',
+        'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+        'Content-Type' => 'text/json',
+        'User-Agent' => 'Ruby',
+      },
+    ).to_return(status: status, body: body, headers: {})
+end
+
 Capybara.register_driver :selenium do |app|
   http_client = Selenium::WebDriver::Remote::Http::Default.new(
     open_timeout: nil,
@@ -92,6 +106,29 @@ RSpec.configure do |config|
         )
     end
 
+    error_body = "<<~BODY
+      Status: 400
+      Code: PUGREST.BadRequest
+      Message: Unable to standardize the given structure - perhaps some special characters need to be escaped or data
+      packed in a MIME form?
+      Detail: error:
+      Detail: status: 400
+      Detail: output: Caught ncbi::CException: Standardization failed
+      Detail: Output Log:
+      Detail: Record 1: Warning: Cactvs Ensemble cannot be created from input string
+      Detail: Record 1: Error: Unable to convert input into a compound object
+      Detail:
+      Detail:
+    BODY"
+
+    bad_smiles.each_value do |entry|
+      smiles_end_point = "http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/#{entry['smiles']}/record/SDF"
+      inchikey_end_point = "http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/#{entry['inchikey']}/record/JSON"
+
+      stub_pubchem_request(400, error_body, smiles_end_point)
+      stub_pubchem_request(200, '', inchikey_end_point)
+    end
+
     stub_request(:get, 'http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/UFWIBTONFRDIAS-UHFFFAOYSA-N/record/JSON')
       .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'text/json' })
       .to_return(status: 200, body: '', headers: {})
@@ -144,17 +181,6 @@ RSpec.configure do |config|
         body: File.read(Rails.root + 'spec/fixtures/body_643785_LCSS.json'),
         headers: { 'Content-Type' => 'application/json' }
       )
-    stub_request(:get, 'https://www.alfa.com/en/catalog/A14672')
-      .with(headers: { 'Accept' => '*/*', 'Access-Control-Request-Method' => 'GET', 'User-Agent' => 'Google Chrome' })
-      .to_return(status: 200, body: '', headers: {})
-    stub_request(:get, 'https://www.alfa.com/en/search/?q=')
-      .with(headers: { 'Access-Control-Request-Method' => 'GET', 'Accept' => '*/*', 'User-Agent': 'Google Chrome' })
-      .to_return(status: 200, body: '', headers: {})
-    stub_request(:get, 'https://www.sigmaaldrich.com/US/en/search')
-      .with(headers: { 'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-                       'Access-Control-Request-Method' => 'GET',
-                       'User-Agent' => 'Google Chrome' })
-      .to_return(status: 200, body: '', headers: {})
   end
 
   config.expect_with :rspec do |expectations|

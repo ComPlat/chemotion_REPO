@@ -29,6 +29,8 @@ import Sample from 'src/models/Sample';
 import UserCommentModal from 'src/components/chemrepo/UserCommentModal';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import { ExtIcon, ExtInfo } from 'src/components/chemrepo/ExtIcon';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -299,6 +301,18 @@ export default class RepoSample extends Component {
             </Panel.Body>
           </Panel.Collapse>
         </Panel>
+        <NMRiumDisplayer
+          sample={sample}
+          handleSampleChanged={() => {}}
+          handleSubmit={() => {}}
+          readOnly
+        />
+        <ViewSpectra
+          sample={sample}
+          handleSampleChanged={() => {}}
+          handleSubmit={() => {}}
+          isPublic
+        />
       </Jumbotron>
     );
   }

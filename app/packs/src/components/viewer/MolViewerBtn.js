@@ -35,26 +35,28 @@ export default class MolViewerBtn extends Component {
       <>
         <OverlayTrigger
           placement="top"
-          overlay={
+          overlay={(
             <Tooltip id="tooltip_molviewer" style={{ pointerEvents: 'none' }}>
               Click to see structure in Viewer
             </Tooltip>
-          }
+          )}
         >
           <Button
             className={className}
             bsSize="xsmall"
             bsStyle="info"
             disabled={disabled}
-            onClick={e => this.handleModalOpen(e)}
+            onClick={(e) => this.handleModalOpen(e)}
           >
-            <i className="fa fa-cube" aria-hidden="true" /> View in 3D
+            <i className="fa fa-cube" aria-hidden="true" />
+            {' '}
+            View in 3D
           </Button>
         </OverlayTrigger>
         {show ? (
           <MolViewerModal
             fileContent={fileContent}
-            handleModalOpen={e => this.handleModalOpen(e)}
+            handleModalOpen={(e) => this.handleModalOpen(e)}
             isPublic={isPublic}
             show={show}
             viewType={viewType}

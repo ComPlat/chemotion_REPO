@@ -58,6 +58,8 @@ class PublicStore {
       handleDisplayCollection: PublicActions.displayCollection,
       handlePublicSearch: PublicActions.publicSearch,
       handleSetSearchParams: PublicActions.setSearchParams,
+      // Use in REPO
+      handleFetchOlsChmo: PublicActions.fetchOlsChmo,
     });
   }
 
@@ -300,6 +302,11 @@ class PublicStore {
 
   handleSetSearchParams(params) {
     this.setState(params);
+  }
+
+  // Use in REPO
+  handleFetchOlsChmo(result) {
+    this.setState({ chmos: result.ols_terms });
   }
 }
 

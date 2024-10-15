@@ -30,6 +30,7 @@ const buildQcs = (sample, infer) => {
   const { files } = infer.result || {};
   let irQc = {};
   let msQc = {};
+  let hrmsQc = {};
   let hnmrQc = {};
   let cnmrQc = {};
   sample.container.children[0].children.forEach((ai) => {
@@ -37,8 +38,10 @@ const buildQcs = (sample, infer) => {
     const { ops } = content;
     const inferO = extractInfer(ai, files);
     const { type } = inferO;
-    if ((!type || type === 'ms') && (kind && kind.includes('mass spectrometry'))) {
+    if ((!type || type === 'ms') && (kind && kind.includes('mass spectrometry') && !kind.includes('HRMS'))) {
       msQc = Object.assign({}, msQc, inferO, { ops, exist: true, type: 'Mass' });
+    } else if ((!type || type === 'ms') && (kind && kind.includes('mass spectrometry') && kind.includes('HRMS'))) {
+      hrmsQc = Object.assign({}, hrmsQc, inferO, { ops, exist: true, type: 'Mass' });
     } else if ((!type || type === 'nmr;13C;1d') && (kind && kind.includes('13C NMR'))) {
       cnmrQc = Object.assign({}, cnmrQc, inferO, { ops, exist: true, type: '13C NMR' });
     } else if ((!type || type === 'nmr;1H;1d') && (kind && kind.includes('1H NMR'))) {
@@ -47,6 +50,7 @@ const buildQcs = (sample, infer) => {
       irQc = Object.assign({}, irQc, inferO, { ops, exist: true, type: 'IR' });
     }
   });
+  if (msQc.hasValidFiles === false && hrmsQc.hasValidFiles === true) msQc = hrmsQc;
   return {
     irQc, msQc, hnmrQc, cnmrQc,
   };

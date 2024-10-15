@@ -37,6 +37,7 @@ export default class NMRiumDisplayer extends React.Component {
     this.findDisplayingSpectrumID = this.findDisplayingSpectrumID.bind(this);
     this.buildPeaksBody = this.buildPeaksBody.bind(this);
     this.readNMRiumData = this.readNMRiumData.bind(this);
+    this.onChangeElement = this.onChangeElement.bind(this);
 
     this.loadNMRDisplayerHostInfo();
   }
@@ -67,6 +68,12 @@ export default class NMRiumDisplayer extends React.Component {
     if (showModalNMRDisplayer) {
       this.sendJcampDataToNMRDisplayer();
     }
+  }
+
+  onChangeElement() {
+    const { sample } = this.props;
+    const { updatedElement } = this.state;
+    return updatedElement || sample;
   }
 
   getSpcInfo() {
@@ -172,7 +179,7 @@ export default class NMRiumDisplayer extends React.Component {
   }
 
   buildDataToBeSent(files, spectraInfos) {
-    const { sample } = this.props;
+    const sample = this.onChangeElement(); // REPO multiple samples
     const nmriumData = this.readNMRiumData(files, spectraInfos);
     if (nmriumData) {
       const data = { data: nmriumData, type: 'nmrium' };
@@ -247,7 +254,8 @@ export default class NMRiumDisplayer extends React.Component {
       this.prepareAnalysisMetadata(nmriumData);
     }
 
-    const { sample, handleSampleChanged } = this.props;
+    const { handleSampleChanged } = this.props;
+    const sample = this.onChangeElement(); // REPO multiple samples
 
     datasetToBeUpdated.attachments.push(imageAttachment);
     datasetToBeUpdated.attachments.push(nmriumAttachment);
@@ -261,7 +269,7 @@ export default class NMRiumDisplayer extends React.Component {
 
   prepareDatasets(fileNameToBeDeleted = []) {
     const specInfo = this.getSpcInfo();
-    const { sample } = this.props;
+    const sample = this.onChangeElement(); // REPO multiple samples
 
     const datasetContainers = sample.datasetContainers();
     const listDatasetFiltered = datasetContainers.filter((e) => specInfo.idDt === e.id);
@@ -317,7 +325,7 @@ export default class NMRiumDisplayer extends React.Component {
       return '';
     }
 
-    const { sample } = this.props;
+    const sample = this.onChangeElement(); // REPO multiple samples
     const specInfo = this.getSpcInfo();
 
     const analysesContainers = sample.analysesContainers();
@@ -430,7 +438,8 @@ export default class NMRiumDisplayer extends React.Component {
 
   renderModalTitle() {
     const { nmriumData } = this.state;
-    const { sample, readOnly: forecReadOnly = false } = this.props; // forecReadOnly for REPO
+    const { readOnly: forecReadOnly = false } = this.props; // forecReadOnly for REPO
+    const sample = this.onChangeElement(); // REPO multiple samples
     let readOnly = false;
     if (sample.hasOwnProperty('can_update')) {
       readOnly = !(sample.can_update);

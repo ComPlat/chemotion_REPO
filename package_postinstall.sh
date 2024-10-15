@@ -3,10 +3,6 @@
 
 set -euo pipefail
 
-## ag-grid css
-src5=$(node -e 'console.log(require.resolve("ag-grid-community/styles/ag-grid.css"))')
-src6=$(node -e 'console.log(require.resolve("ag-grid-community/styles/ag-grid-no-native-widgets.css"))')
-
 YEL='\033[0;33m'
 NOC='\033[0m'
 yellow() {
@@ -14,14 +10,19 @@ yellow() {
 }
 
 
+## ag-grid css
+src5=$(node -e 'console.log(require.resolve("ag-grid-community/styles/ag-grid.css"))')
+dest5=$(dirname $src5)
 
-yellow "$src5"
-sed -i "s~height: min~height: Min~" $src5
-sed -i "s~height: min~height: Min~" $src6
+# for each css file in the parent directory, run a sed command
+
+for file in ${dest5}/*.{css,scss}; do
+  yellow "Processing $file"
+   sed -i -E "s~min\(var\(([^)]+)\), var\(([^)]+)\) \* var\(([^)]+)\)~min\(var\(\1\), calc\(var\(\2\) * var\(\3\)\)~g" $file
+   sed -i "s~ min(~ Min(~" $file
+done
+
 yellow "Done fixing css."
-
-
-
 
 # move svgedit to public folder
 yellow "Adding symbolic link to svg editor in public folder"
@@ -34,8 +35,9 @@ yellow "Finished adding symbolic link to svg editor in public folder"
 # move molviewer to public folder
 yellow "Adding symbolic link to jsmol in public folder"
 node_modules_folder="$(node -e 'const p = require.resolve("react"); console.log(p.slice(0, p.indexOf("react")))')"
-rm -rf ./public/jsmol && ln -s "$node_modules_folder"/react-molviewer/dist/jsmol ./public/jsmol
+rm -rf ./public/jsmol && ln -s "$node_modules_folder"react-molviewer/dist/jsmol ./public/jsmol
 yellow "Finished adding symbolic link to jsmol in public folder"
+
 
 # copy pdfjs worker to public folder
 node_modules_folder_pdfjs="$(node -e 'const p = require.resolve("pdfjs-dist/build/pdf.worker"); console.log(p.slice(0, p.indexOf("pdfjs-dist/build/pdf.worker")))')"
@@ -52,6 +54,8 @@ src_d3=(
   "@complat/react-spectra-editor/dist/helpers/compass.js"
   "@complat/react-spectra-editor/dist/helpers/init.js"
   "@complat/react-spectra-editor/dist/helpers/zoom.js"
+  "@complat/react-svg-file-zoom-pan/dist/components/zoomable.js"
+  "@complat/react-svg-file-zoom-pan/dist/components/svg_wrapper.js"
 )
 
 # Rewrite import for d3.js

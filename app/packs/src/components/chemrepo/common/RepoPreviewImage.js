@@ -39,11 +39,7 @@ function RepoPreviewImage(props) {
     <div className="preview">
       <div className={btnClass.nmrium} {...imageStyle}>
         {spcs.nmrium.hasData ? (
-          <RepoNmriumBtn
-            element={element}
-            spc={spcs.nmrium.data}
-            isPublic={isPublic}
-          />
+          <RepoNmriumBtn spc={spcs.nmrium.data} isPublic={isPublic} />
         ) : null}
       </div>
       <div className={btnClass.spectra} {...imageStyle}>

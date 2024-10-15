@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import { Tooltip, Button, OverlayTrigger } from 'react-bootstrap';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
-import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 
 function RepoNmriumBtn(props) {
   const { element, spc, isPublic } = props;
@@ -13,9 +12,9 @@ function RepoNmriumBtn(props) {
     e.stopPropagation();
     SpectraActions.ToggleModalNMRDisplayer();
     if (isPublic) {
-      PublicActions.loadSpectraForNMRDisplayer.defer(spc);
+      PublicActions.loadSpectraForNMRDisplayer.defer(spc, element);
     } else {
-      SpectraActions.LoadSpectraForNMRDisplayer.defer(spc);
+      SpectraActions.LoadSpectraForNMRDisplayer.defer(spc, element);
     }
   };
 
@@ -47,12 +46,6 @@ function RepoNmriumBtn(props) {
           />
         </Button>
       </OverlayTrigger>
-      <NMRiumDisplayer
-        sample={element}
-        handleSampleChanged={() => {}}
-        handleSubmit={() => {}}
-        readOnly
-      />
     </span>
   );
 }

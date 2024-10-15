@@ -67,7 +67,7 @@ const infoTag = (reaction, schemeOnly) => {
       </div>
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">When the X-Vial icon available, a physical sample of this molecule was registered to the Molecule Archive of the Compound Platform and can be requested from there</Tooltip>}>
         <div className="home_wrapper_item">
-          <div>X-Vial</div><div className="item_xvial">{xvialTag(reaction)}</div>
+          <div>Sample</div><div className="item_xvial">{xvialTag(reaction)}</div>
         </div>
       </OverlayTrigger>
     </Row>

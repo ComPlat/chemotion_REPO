@@ -357,12 +357,12 @@ class EditUserLabels extends React.Component {
   }
 
   handleSelectChange(val) {
-    const { element } = this.props;
+    const { element, fnCb } = this.props;
     if (val) {
       const ids = val.map((v) => v.value);
       if (ids != null) {
         element.setUserLabels(ids);
-        this.props.fnCb(element);
+        fnCb(element);
       }
       this.setState({ selectedLabels: val });
         }
@@ -382,8 +382,8 @@ class EditUserLabels extends React.Component {
 
     const { element } = this.props;
     const curLableIds = element.tag && element.tag.taggable_data
-      ? element.tag.taggable_data.user_labels
-      : [];
+          ? element.tag.taggable_data.user_labels
+          : [];
 
     const defaultLabels = (labels || [])
       .filter(

@@ -14,15 +14,15 @@ import {
   ContributorInfo,
   ClipboardCopyBtn,
   Doi,
-  ReactionTable,
   ReactionRinChiKey,
   RenderAnalysisHeader,
   RenderPublishAnalysesPanel,
   IconToMyDB,
   AnalysesTypeJoinLabel,
   SchemeWord,
-  resizableSvg,
+  zoomSvg,
 } from 'src/repoHome/RepoCommon';
+import ReactionTable from 'src/repoHome/RepoReactionTable';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
@@ -46,6 +46,7 @@ import Sample from 'src/models/Sample';
 import RepoSegment from 'src/repoHome/RepoSegment';
 import { getAuthorLabel } from 'src/components/chemrepo/publication-utils';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
@@ -246,7 +247,7 @@ export default class RepoReactionDetails extends Component {
         <Panel.Body style={{ paddingBottom: '1px' }}>
           <Row>
             <Col sm={12} md={12} lg={12}>
-              {resizableSvg(svgPath)}
+              {zoomSvg(svgPath)}
             </Col>
           </Row>
           <Row>
@@ -263,7 +264,6 @@ export default class RepoReactionDetails extends Component {
                 show={showScheme}
                 isPublic
                 isReview={this.props.isReview}
-                bodyAttrs={bodyAttrs}
                 canComment={canComment}
               />
             </Col>
@@ -736,6 +736,12 @@ export default class RepoReactionDetails extends Component {
                   literatures
                 )}
           </Jumbotron>
+          <NMRiumDisplayer
+            sample={reaction}
+            handleSampleChanged={() => {}}
+            handleSubmit={() => {}}
+            readOnly
+          />
         </div>
       </div>
     );

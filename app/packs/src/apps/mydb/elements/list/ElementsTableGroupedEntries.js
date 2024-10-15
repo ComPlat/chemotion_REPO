@@ -13,11 +13,11 @@ import KeyboardStore from 'src/stores/alt/stores/KeyboardStore';
 
 import { DragDropItemTypes } from 'src/utilities/DndConst';
 import { elementShowOrNew } from 'src/utilities/routesUtils';
-import { ShowUserLabels } from 'src/components/UserLabels';
 import SvgWithPopover from 'src/components/common/SvgWithPopover';
 
 import { reactionStatus, reactionRole } from 'src/apps/mydb/elements/list/ElementsTableEntries';
 import CommentIcon from 'src/components/comments/CommentIcon';
+import { ShowUserLabels } from 'src/components/UserLabels';
 import Aviator from 'aviator';
 
 const dragHandle = (element) => {

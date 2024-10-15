@@ -102,7 +102,7 @@ export default class ImageModal extends Component {
       const fileSrc = ['/images/publications', this.props.popObject.fetchId, this.props.popObject.fetchFilename].join('/');
       this.setState({ fetchSrc: fileSrc });
     } else {
-      AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId }).then(
+      AttachmentFetcher.fetchImageAttachment({ id: this.props.popObject.fetchId, annotated: true }).then(
         (result) => {
           if (result.data != null) {
             this.setState({ fetchSrc: result.data, isPdf: result.type === 'application/pdf' });

@@ -103,34 +103,37 @@ export default class NumeralInputWithUnitsCompo extends Component {
     }, () => this._onChangeCallback());
   }
 
-  handleInputDoubleClick() {
-    if (this.state.block) {
-      this.setState({
-        block: false,
-        value: 0,
-      });
-    }
-  }
-
   _onChangeCallback() {
     if (this.props.onChange) {
       this.props.onChange({ ...this.state, unit: this.props.unit });
     }
   }
 
-  togglePrefix() {
-    const { metricPrefixes } = this.props;
-    let ind = metricPrefixes.indexOf(this.state.metricPrefix);
-    if (ind < metricPrefixes.length - 1) {
-      ind += 1;
+  togglePrefix(currentUnit) {
+    const units = ['TON/h', 'TON/m', 'TON/s', '°C', '°F', 'K', 'h', 'm', 's'];
+    const excludedUnits = ['ppm', 'TON', '%'];
+    const { onMetricsChange, unit } = this.props;
+    if (units.includes(currentUnit)) {
+      // eslint-disable-next-line no-unused-expressions
+      onMetricsChange && onMetricsChange(
+        { ...this.state, metricUnit: unit }
+      );
+    } else if (excludedUnits.includes(currentUnit)) {
+      return null;
     } else {
-      ind = 0;
-    }
-    this.setState({
-      metricPrefix: metricPrefixes[ind]
-    });
+      const { metricPrefixes } = this.props;
+      let ind = metricPrefixes.indexOf(this.state.metricPrefix);
+      if (ind < metricPrefixes.length - 1) {
+        ind += 1;
+      } else {
+        ind = 0;
+      }
+      this.setState({
+        metricPrefix: metricPrefixes[ind]
+      });
 
-    this.props.onMetricsChange && this.props.onMetricsChange({ ...this.state, metricUnit: this.props.unit, metricPrefix: metricPrefixes[ind] });
+      onMetricsChange && onMetricsChange({ ...this.state, metricUnit: unit, metricPrefix: metricPrefixes[ind] });
+    }
   }
 
   render() {
@@ -152,6 +155,8 @@ export default class NumeralInputWithUnitsCompo extends Component {
       return valueString;
     };
     const inputDisabled = disabled ? true : block;
+    const alwaysAllowDisplayUnit = ['TON', 'TON/h', 'TON/m', 'TON/s', 'g', 'mg', 'μg', 'mol', 'mmol', 'l', 'ml', 'μl'];
+    const unitDisplayMode = alwaysAllowDisplayUnit.includes(unit) ? false : inputDisabled;
     // BsStyle-s for Input and buttonAfter have differences
     const bsStyleBtnAfter = bsStyle === 'error' ? 'danger' : bsStyle;
     const labelWrap = label ? <ControlLabel>{label}</ControlLabel> : null;
@@ -159,9 +164,9 @@ export default class NumeralInputWithUnitsCompo extends Component {
       const prefixSwitch = (
         <InputGroup.Button>
           <Button
-            disabled={inputDisabled}
+            disabled={unitDisplayMode}
             active
-            onClick={() => { this.togglePrefix(); }}
+            onClick={() => { this.togglePrefix(unit); }}
             bsStyle={bsStyleBtnAfter}
             bsSize={bsSize}
           >
@@ -173,9 +178,7 @@ export default class NumeralInputWithUnitsCompo extends Component {
       return (
         <div className={`numeric-input-unit_${this.props.unit}`}>
           {labelWrap}
-          <InputGroup
-            onDoubleClick={event => this.handleInputDoubleClick(event)}
-          >
+          <InputGroup>
             <FormControl
               type="text"
               bsClass="bs-form--compact form-control"
@@ -183,9 +186,9 @@ export default class NumeralInputWithUnitsCompo extends Component {
               bsSize={bsSize}
               bsStyle={bsStyle}
               value={val() || ''}
-              onChange={event => this._handleInputValueChange(event)}
-              onFocus={event => this._handleInputValueFocus(event)}
-              onBlur={event => this._handleInputValueBlur(event)}
+              onChange={(event) => this._handleInputValueChange(event)}
+              onFocus={(event) => this._handleInputValueFocus(event)}
+              onBlur={(event) => this._handleInputValueBlur(event)}
               name={name}
             />
             {prefixSwitch}
@@ -196,7 +199,7 @@ export default class NumeralInputWithUnitsCompo extends Component {
     return (
       <div className="numeric-input-unit">
         {labelWrap}
-        <div onDoubleClick={event => this.handleInputDoubleClick(event)}>
+        <div>
           <FormControl
             type="text"
             bsClass="bs-form--compact form-control"
@@ -204,10 +207,9 @@ export default class NumeralInputWithUnitsCompo extends Component {
             bsSize={bsSize}
             bsStyle={bsStyle}
             value={val() || ''}
-            onChange={event => this._handleInputValueChange(event)}
-            onFocus={event => this._handleInputValueFocus(event)}
-            onBlur={event => this._handleInputValueBlur(event)}
-            onDoubleClick={event => this.handleInputDoubleClick(event)}
+            onChange={(event) => this._handleInputValueChange(event)}
+            onFocus={(event) => this._handleInputValueFocus(event)}
+            onBlur={(event) => this._handleInputValueBlur(event)}
             name={name}
           />
         </div>

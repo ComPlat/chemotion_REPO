@@ -148,11 +148,10 @@ module ReviewHelpers
     et = ElementTag.find_or_create_by(taggable_id: declared_params[:elementId], taggable_type: declared_params[:elementType])
     tagg_data = declared_params[:taggData] || {}
     leaders = declared_params[:leaders]
-
     if tagg_data.present?
       tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
       tagg_data['affiliation_ids'] = [tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq]
-      tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].include?(k.to_i) }
+      tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].first&.include?(k.to_i) }
 
       pub_taggable_data = pub.taggable_data || {}
       pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})

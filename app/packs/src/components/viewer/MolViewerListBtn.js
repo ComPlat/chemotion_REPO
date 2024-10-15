@@ -29,18 +29,19 @@ export default class MolViewerListBtn extends Component {
     const btnStyle = disabled ? 'warning' : 'info';
     const tipDesc = disabled ? ' (No supported format)' : '';
     const onClick = disabled
-      ? e => e.stopPropagation()
-      : e => this.handleModalOpen(e);
+      ? (e) => e.stopPropagation()
+      : (e) => this.handleModalOpen(e);
 
     return (
       <OverlayTrigger
         placement="top"
         delayShow={500}
-        overlay={
+        overlay={(
           <Tooltip id="_fast_create_btn">
-            Click to see structure in Viewer{tipDesc}
+            Click to see structure in Viewer
+            {tipDesc}
           </Tooltip>
-        }
+        )}
       >
         <Button
           bsSize="xs"
@@ -48,7 +49,9 @@ export default class MolViewerListBtn extends Component {
           onClick={onClick}
           disabled={disabled || propsDisabled}
         >
-          <i className="fa fa-cube" aria-hidden="true" /> View in 3D
+          <i className="fa fa-cube" aria-hidden="true" />
+          {' '}
+          View in 3D
         </Button>
       </OverlayTrigger>
     );
@@ -70,26 +73,24 @@ export default class MolViewerListBtn extends Component {
     let datasetContainer = ArrayUtils.sortArrByIndex(
       filter(
         container.children,
-        o => o.container_type === 'dataset' && o.attachments.length > 0
+        (o) => o.container_type === 'dataset' && o.attachments.length > 0
       )
     );
     if (datasetContainer?.length < 1) {
       return this.renderBtn(true);
     }
 
-    datasetContainer = datasetContainer.map(dc => {
+    datasetContainer = datasetContainer.map((dc) => {
       const ds = { ...dc };
       const { attachments } = ds;
-      ds.attachments = attachments.filter(attachment =>
-        ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(
-          attachment.filename?.match(/\.([^.]+)$/)?.[1]?.toLowerCase()
-        )
-      );
+      ds.attachments = attachments.filter((attachment) => ['cif', 'mmcif', 'mol', 'sdf', 'pdb', 'mol2'].includes(
+        attachment.filename?.match(/\.([^.]+)$/)?.[1]?.toLowerCase()
+      ));
       if (ds.attachments.length > 0) return ds;
       return null;
     });
 
-    datasetContainer = datasetContainer.filter(dc => dc !== null);
+    datasetContainer = datasetContainer.filter((dc) => dc !== null);
     if (datasetContainer?.length < 1) {
       return this.renderBtn(true);
     }
@@ -98,7 +99,7 @@ export default class MolViewerListBtn extends Component {
         {this.renderBtn(false)}
         {openModal ? (
           <MolViewerListModal
-            handleModalOpen={e => this.handleModalOpen(e)}
+            handleModalOpen={(e) => this.handleModalOpen(e)}
             show={openModal}
             title={el.short_label}
             datasetContainer={datasetContainer}

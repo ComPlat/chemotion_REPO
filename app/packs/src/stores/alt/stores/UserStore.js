@@ -19,7 +19,7 @@ class UserStore {
       dsKlasses: [],
       matriceConfigs: [],
       omniauthProviders: [],
-      bao:[]
+      bao: []
     };
 
     this.bindListeners({
@@ -47,6 +47,7 @@ class UserStore {
   handleFetchEditors(result) {
     this.state.matriceConfigs = result.matrices;
   }
+
   handleFetchOlsBao(result) {
     this.state.bao = result.ols_terms;
   }
@@ -64,35 +65,37 @@ class UserStore {
   }
 
   handleFetchCurrentUser(result) {
-    this.state.currentUser = result
- }
+    this.state.currentUser = result;
+  }
 
   handleFetchProfile(result) {
+    // DEFAULT_KETCHER2: disable to remove default ketcher2
+    // result.data.default_structure_editor = "ketcher2"
     this.state.profile = result;
     const { layout } = this.state.profile.data;
     if (this.state.currentType === '') {
-      const { currentTab } = this.state
+      const { currentTab } = this.state;
       const type = Object.keys(layout).filter((e) => {
-        return layout[e] === currentTab + 1
-      })[0]
-      this.state.currentType = type
+        return layout[e] === currentTab + 1;
+      })[0];
+      this.state.currentType = type;
     }
   }
 
   handleUpdateUserProfile(result) {
     if (this.state.profile && result) {
-      this.state.profile = result
+      this.state.profile = result;
     }
   }
 
   handleSelectTab(tab) {
     const { layout } = this.state.profile.data;
     const type = Object.keys(layout).filter((e) => {
-      return layout[e] === tab + 1
-    })[0]
+      return layout[e] === tab + 1;
+    })[0];
 
-    this.state.currentTab = tab
-    this.state.currentType = type
+    this.state.currentTab = tab;
+    this.state.currentType = type;
   }
 
   handleFetchNoVNCDevices(devices) {

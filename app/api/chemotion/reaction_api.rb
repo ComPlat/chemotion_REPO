@@ -168,6 +168,8 @@ module Chemotion
         optional :segments, type: Array
         optional :user_labels, type: Array
         optional :variations, type: [Hash]
+        optional :vessel_size, type: Hash
+        optional :gaseous, type: Boolean
       end
       route_param :id do
         after_validation do
@@ -191,7 +193,12 @@ module Chemotion
 
           reaction.update!(attributes)
           reaction.touch
-          reaction = Usecases::Reactions::UpdateMaterials.new(reaction, materials, current_user).execute!
+          reaction_vessel_size = attributes[:vessel_size]
+          reaction = Usecases::Reactions::UpdateMaterials.new(
+            reaction, materials,
+            current_user,
+            reaction_vessel_size
+          ).execute!
           reaction.save_segments(segments: params[:segments], current_user_id: current_user.id)
           reaction.reload
           recent_ols_term_update('rxno', [params[:rxno]]) if params[:rxno].present?
@@ -237,6 +244,8 @@ module Chemotion
         optional :duration, type: String
         optional :rxno, type: String
         optional :variations, type: [Hash]
+        optional :vessel_size, type: Hash
+        optional :gaseous, type: Boolean
       end
 
       post do
@@ -314,8 +323,14 @@ module Chemotion
               prod
             end
           end
+          reaction_vessel_size = attributes[:vessel_size]
 
-          reaction = Usecases::Reactions::UpdateMaterials.new(reaction, materials, current_user).execute!
+          reaction = Usecases::Reactions::UpdateMaterials.new(
+            reaction,
+            materials,
+            current_user,
+            reaction_vessel_size,
+          ).execute!
           reaction.reload
 
           # save to profile

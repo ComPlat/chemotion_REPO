@@ -1,6 +1,8 @@
 module Reporter
   module Docx
     class DetailReaction < Detail
+      include Reactable
+
       def initialize(args)
         super
         @obj = args[:reaction]
@@ -59,6 +61,7 @@ module Reporter
             'reactants' => variation_materials(var, :reactants),
             'solvents' => variation_materials(var, :solvents),
             'products' => variation_products(var),
+            'notes' => var[:notes],
           }
         end
       end
@@ -289,14 +292,39 @@ module Reporter
         output
       end
 
+      def calculate_amount_mmol(sample)
+        return sample.real_amount_mmol unless sample.gas_type == 'gas'
+
+        vessel_size = @obj.vessel_size
+        return if vessel_size['amount'].blank? || vessel_size['unit'].blank?
+
+        vessel_volume = case vessel_size['unit']
+                        when 'ml'
+                          vessel_size['amount'] * 0.001
+                        when 'l'
+                          vessel_size['amount']
+                        else
+                          0
+                        end
+        return unless vessel_volume
+
+        mole_value = calculate_mole_gas_product(
+          sample.gas_phase_data['part_per_million'],
+          sample.gas_phase_data['temperature'],
+          vessel_volume,
+        )
+
+        mole_value * 1000
+      end
+
       def assigned_amount(s, is_product = false)
         mass = s.real_amount_g == 0.0 && !is_product ? s.amount_g : s.real_amount_g
         vol = s.real_amount_ml == 0.0 && !is_product ? s.amount_ml : s.real_amount_ml
-        mmol = s.real_amount_mmol == 0.0 && !is_product ? s.amount_mmol : s.real_amount_mmol
+        mmol = s.real_amount_mmol == 0.0 && !is_product ? s.amount_mmol : calculate_amount_mmol(s)
 
         mass = met_pre_conv(mass, 'n', assigned_metric_pref(s, 0))
         vol = met_pre_conv(vol, 'm', assigned_metric_pref(s, 1))
-        mmol = met_pre_conv(mmol, 'm', assigned_metric_pref(s, 2, %w[m n]))
+        mmol = met_pre_conv(mmol, 'm', assigned_metric_pref(s, 2, %w[m n])) if mmol.present?
 
         [mass, vol, mmol]
       end
@@ -333,7 +361,7 @@ module Reporter
           mol: valid_digit(mmol, digit),
           mmol_unit: mmol_unit,
           equiv: valid_digit(s.equivalent, digit),
-          molecule_name_hash: s[:molecule_name_hash]
+          molecule_name_hash: s[:molecule_name_hash],
         }
 
         if is_product
@@ -344,6 +372,7 @@ module Reporter
                                mol: valid_digit(mmol, digit),
                                equiv: equiv,
                                molecule_name_hash: s[:molecule_name_hash],
+                               conversion_rate: s.conversion_rate,
                              })
         end
 
@@ -430,8 +459,7 @@ module Reporter
 
       def observation
         delta_obs = obj.observation.deep_stringify_keys['ops']
-        one_line_obs = remove_redundant_space_break(delta_obs)
-        clean_obs = { 'ops' => rm_head_tail_space(one_line_obs) }
+        clean_obs = { 'ops' => rm_redundant_newline(delta_obs) }
         [Sablon.content(:html, Delta.new(clean_obs, @font_family).getHTML), clean_obs]
       end
 

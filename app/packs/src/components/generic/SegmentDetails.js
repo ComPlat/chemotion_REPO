@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 import React from 'react';
 import { findIndex, cloneDeep } from 'lodash';
 import Aviator from 'aviator';
@@ -16,7 +17,7 @@ const onNaviClick = (type, id) => {
     : `${currentCollection.id}/${type}`;
   Aviator.navigate(
     isSync ? `/scollection/${collectionUrl}` : `/collection/${collectionUrl}`,
-    { silent: true }
+    { silent: true },
   );
   if (type === 'reaction') {
     ElementActions.fetchReactionById(id);

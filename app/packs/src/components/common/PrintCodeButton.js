@@ -1,87 +1,124 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Tooltip, OverlayTrigger, MenuItem, SplitButton, ButtonGroup } from 'react-bootstrap';
+import { Tooltip, OverlayTrigger, MenuItem, DropdownButton, ButtonGroup } from 'react-bootstrap';
+import PrintCodeModal from 'src/components/common/PrintCodeModal';
 
-import Utils from 'src/utilities/Functions';
+// Component that allows users to print a PDF.
+export default function PrintCodeButton({element, analyses}) {
+  // State for the modal and preview
+  const [showModal, setShowModal] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState('');
+  const [json, setJson] = useState({});
 
-const PrintCodeButton = ({
-  element,
-  analyses, allAnalyses, ident
-}) => {
-  const { type, id } = element;
-  let tooltipText = 'Print bar/qr-code Label';
-  const ids = analyses.length > 0 ? analyses.map(e => e.id) : [];
-  const contentsUri = analyses.length > 0
-    ? `/api/v1/code_logs/print_analyses_codes?element_type=${type}&id=${id}&analyses_ids[]=${ids}`
-    : `/api/v1/code_logs/print_codes?element_type=${type}&ids[]=${id}`;
-  const menuItems = [
+  useEffect(() => {
+    // Import the file when the component mounts
+    async function loadData() {
+      try {
+        const response = await fetch('/json/printingConfig/defaultConfig.json');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const tmpJson = await response.json();
+        setJson(tmpJson);
+      } catch (err) {
+        console.error('Failed to fetch JSON', err);
+      }
+    }
+    loadData();
+  }, []); // Empty dependency array ensures this runs only once when the component mounts
+
+  // Handles the show event for the modal.
+  const handleModalShow = () => {
+    setShowModal(true);
+  };
+
+  // Handles the close event for the modal.
+  const handleModalClose = () => {
+    setShowModal(false);
+  };
+
+  // Set the tooltip text for the button
+  const tooltipText = 'Print code Label';
+
+  // Create the menu items for the dropdown button
+  const menuItemsAnalyses = [
     {
       key: 'smallCode',
-      contents: `${contentsUri}&size=small`,
+      contents: 'small',
       text: 'Small Label',
     },
     {
       key: 'bigCode',
-      contents: `${contentsUri}&size=big`,
+      contents: 'big',
       text: 'Large Label',
     },
   ];
 
-  if (analyses.length > 0) { tooltipText = 'Print bar/qr-code Labels for this analysis'; }
-  if (allAnalyses && analyses.length > 0) { tooltipText = 'Print bar/qr-code Labels for all analyses'; }
 
+
+  // Create the menu items for the split button
+  const menuItems = analyses.length > 0
+    ? menuItemsAnalyses
+    : Object.entries(json).map(([key]) => ({
+      key,
+      text: key,
+      contents: key,
+    }));
+
+  // Render the component
   return (
-    <OverlayTrigger
-      placement="top"
-      delayShow={500}
-      overlay={<Tooltip id="printCode">{tooltipText}</Tooltip>}
-    >
-      <ButtonGroup className="button-right">
-        <SplitButton
-          id={`print-code-split-button-${ident || 0}`}
-          pullRight
-          bsStyle="default"
-          disabled={element.isNew}
-          bsSize="xsmall"
-          onToggle={(isOpen, event) => { if (event) { event.stopPropagation(); } }}
-          title={<i className="fa fa-barcode fa-lg" />}
-          onClick={(event) => {
-            event.stopPropagation();
-            Utils.downloadFile({ contents: menuItems[0].contents });
-          }}
-        >
-          {menuItems.map(e => (
-            <MenuItem
-              key={e.key}
-              onSelect={(eventKey, event) => {
-                event.stopPropagation();
-                Utils.downloadFile({ contents: e.contents });
-              }}
-            >
-              {e.text}
-            </MenuItem>
-          ))}
-        </SplitButton>
-      </ButtonGroup>
-    </OverlayTrigger>
+    <>
+      {/* Overlay for the button */}
+      <OverlayTrigger
+        placement="top"
+        delayShow={500}
+        overlay={(
+          <Tooltip id="printCode">
+            {tooltipText}
+          </Tooltip>
+        )}
+      >
+        <ButtonGroup className="button-right">
+          <DropdownButton
+            id="print-code"
+            pullRight
+            bsStyle="default"
+            disabled={element.isNew}
+            bsSize="xsmall"
+            onToggle={(isOpen, event) => { if (event) { event.stopPropagation(); } }}
+            title={<i className="fa fa-barcode fa-lg" />}
+          >
+            {menuItems.map((e) => (
+              <MenuItem
+                key={e.key}
+                onSelect={() => {
+                  setSelectedConfig(e.contents);
+                  handleModalShow();
+                }}
+              >
+                {e.text}
+              </MenuItem>
+            ))}
+          </DropdownButton>
+        </ButtonGroup>
+      </OverlayTrigger>
+
+      {/* Display the modal */}
+      <PrintCodeModal
+        showModal={showModal}
+        handleModalClose={handleModalClose}
+        element={element}
+        selectedConfig={selectedConfig}
+        analyses={analyses}
+      />
+    </>
   );
-};
+}
 
 PrintCodeButton.propTypes = {
-  element: PropTypes.object,
-  analyses: PropTypes.array,
-  allAnalyses: PropTypes.bool,
-  ident: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ])
+  element: PropTypes.object.isRequired,
 };
 
 PrintCodeButton.defaultProps = {
-  // element: ,
   analyses: [],
-  allAnalyses: false,
-  ident: 0
 };
-
-export default PrintCodeButton;

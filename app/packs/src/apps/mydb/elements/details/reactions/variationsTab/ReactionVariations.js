@@ -4,40 +4,49 @@ import React, {
   useRef, useState, useEffect, useMemo, useCallback
 } from 'react';
 import {
-  Button, ButtonGroup, OverlayTrigger, Tooltip, Badge
+  Button, OverlayTrigger, Tooltip, Alert
 } from 'react-bootstrap';
-import {
-  set, cloneDeep, isEqual
-} from 'lodash';
+import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import Reaction from 'src/models/Reaction';
 import {
-  createVariationsRow, temperatureUnits, durationUnits, convertUnit, materialTypes,
-  getSequentialId, removeObsoleteMaterialsFromVariations, addMissingMaterialsToVariations,
-  getReferenceMaterial, getMolFromGram, getGramFromMol, computeEquivalent, computePercentYield,
-  updateYields, updateEquivalents, getReactionMaterials, getMaterialHeaderNames, getVariationsRowName
+  createVariationsRow, copyVariationsRow, updateVariationsRow, getCellDataType,
+  temperatureUnits, durationUnits, getStandardUnit, materialTypes, updateColumnDefinitions,
 } from 'src/apps/mydb/elements/details/reactions/variationsTab/ReactionVariationsUtils';
 import {
   AnalysesCellRenderer, AnalysesCellEditor, getReactionAnalyses, updateAnalyses, getAnalysesOverlay, AnalysisOverlay
 } from 'src/apps/mydb/elements/details/reactions/variationsTab/ReactionVariationsAnalyses';
+import {
+  getMaterialColumnGroupChild, updateColumnDefinitionsMaterials,
+  getReactionMaterials, getReactionMaterialsIDs,
+  removeObsoleteMaterialsFromVariations, addMissingMaterialsToVariations
+} from 'src/apps/mydb/elements/details/reactions/variationsTab/ReactionVariationsMaterials';
+import {
+  PropertyFormatter, PropertyParser,
+  MaterialFormatter, MaterialParser,
+  EquivalentFormatter, EquivalentParser,
+  RowToolsCellRenderer, NoteCellEditor
+} from 'src/apps/mydb/elements/details/reactions/variationsTab/ReactionVariationsCellComponents';
 
 function MenuHeader({
-  column, context, setSort, units, names, entries
+  column, context, setSort, names, entries
 }) {
   const { field } = column.colDef;
+  const { columnDefinitions, setColumnDefinitions } = context;
   const [ascendingSort, setAscendingSort] = useState('inactive');
   const [descendingSort, setDescendingSort] = useState('inactive');
   const [noSort, setNoSort] = useState('inactive');
-  const [unit, setUnit] = useState(units[0]);
   const [name, setName] = useState(names[0]);
-  const [entry, setEntry] = useState(entries[0]);
+  const [entry, setEntry] = useState(Object.keys(entries)[0]);
+  const [units, setUnits] = useState(entries[entry]);
+  const [unit, setUnit] = useState(units[0]);
 
   const onSortChanged = () => {
-    setAscendingSort(column.isSortAscending() ? 'active' : 'inactive');
-    setDescendingSort(column.isSortDescending() ? 'active' : 'inactive');
+    setAscendingSort(column.isSortAscending() ? 'sort_active' : 'inactive');
+    setDescendingSort(column.isSortDescending() ? 'sort_active' : 'inactive');
     setNoSort(
       !column.isSortAscending() && !column.isSortDescending()
-        ? 'active'
+        ? 'sort_active'
         : 'inactive'
     );
   };
@@ -53,8 +62,15 @@ function MenuHeader({
 
   const onUnitChanged = () => {
     const newUnit = units[(units.indexOf(unit) + 1) % units.length];
+    const newColumnDefinitions = updateColumnDefinitions(
+      columnDefinitions,
+      field,
+      'currentEntryWithDisplayUnit',
+      { entry, displayUnit: newUnit }
+    );
+
     setUnit(newUnit);
-    context.updateColumnDefinitions(field, '_variationsUnit', newUnit);
+    setColumnDefinitions(newColumnDefinitions);
   };
 
   const unitSelection = (
@@ -70,9 +86,27 @@ function MenuHeader({
   );
 
   const onEntryChanged = () => {
-    const newEntry = entries[(entries.indexOf(entry) + 1) % entries.length];
+    const entryKeys = Object.keys(entries);
+    const newEntry = entryKeys[(entryKeys.indexOf(entry) + 1) % entryKeys.length];
+    const newUnits = entries[newEntry];
+    const newUnit = newUnits[0];
+    let newColumnDefinitions = updateColumnDefinitions(
+      columnDefinitions,
+      field,
+      'cellDataType',
+      getCellDataType(newEntry)
+    );
+    newColumnDefinitions = updateColumnDefinitions(
+      newColumnDefinitions,
+      field,
+      'currentEntryWithDisplayUnit',
+      { entry: newEntry, displayUnit: newUnit }
+    );
+
     setEntry(newEntry);
-    context.updateColumnDefinitions(field, 'cellDataType', newEntry === 'mass' ? 'valueUnit' : newEntry);
+    setUnits(newUnits);
+    setUnit(newUnit);
+    setColumnDefinitions(newColumnDefinitions);
   };
 
   const entrySelection = (
@@ -80,8 +114,8 @@ function MenuHeader({
       className="entrySelection"
       bsStyle="default"
       bsSize="xsmall"
-      style={{ display: entry === null ? 'none' : 'inline' }}
-      disabled={entries.length === 1}
+      style={{ display: ['temperature', 'duration'].includes(entry) ? 'none' : 'inline' }}
+      disabled={Object.keys(entries).length === 1}
       onClick={onEntryChanged}
     >
       {entry}
@@ -89,7 +123,7 @@ function MenuHeader({
   );
 
   const sortMenu = (
-    <div style={{ display: 'flex', alignItems: 'center', opacity: 0.5 }}>
+    <div className="sortHeader" style={{ display: 'flex', alignItems: 'center', opacity: 0.5 }}>
       <div
         onClick={(event) => onSortRequested('asc', event)}
         onTouchEnd={(event) => onSortRequested('asc', event)}
@@ -116,7 +150,12 @@ function MenuHeader({
 
   return (
     <div style={{ display: 'grid' }}>
-      <b onClick={() => setName(names[(names.indexOf(name) + 1) % names.length])}>{name}</b>
+      <span
+        className="header-title"
+        onClick={() => setName(names[(names.indexOf(name) + 1) % names.length])}
+      >
+        {name}
+      </span>
       <div>
         {entrySelection}
         {' '}
@@ -131,269 +170,18 @@ MenuHeader.propTypes = {
   column: PropTypes.instanceOf(AgGridReact.column).isRequired,
   context: PropTypes.instanceOf(AgGridReact.context).isRequired,
   setSort: PropTypes.func.isRequired,
-  units: PropTypes.arrayOf(PropTypes.string).isRequired,
   names: PropTypes.arrayOf(PropTypes.string).isRequired,
-  entries: PropTypes.arrayOf(PropTypes.string).isRequired,
+  entries: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
 };
-
-function MaterialOverlay({
-  value: cellData, colDef
-}) {
-  const { aux = null, value, unit: standardUnit } = cellData;
-  const { _variationsUnit: displayUnit } = colDef;
-
-  return (
-    <div
-      className="custom-tooltip"
-      style={{
-        padding: '3px 8px',
-        color: '#fff',
-        backgroundColor: '#000',
-        borderRadius: '4px',
-      }}
-    >
-      <p>
-        <span>
-          {Number(convertUnit(value, standardUnit, displayUnit)).toPrecision(4)}
-          {' '}
-          [
-          {displayUnit}
-          ]
-        </span>
-      </p>
-      {aux?.isReference ? (
-        <p>
-          <span>Reference</span>
-        </p>
-      ) : null}
-
-      {aux?.equivalent !== null && (
-      <p>
-        <span>
-          Equivalent:
-        </span>
-        {' '}
-        {Number(aux.equivalent).toPrecision(4)}
-      </p>
-      )}
-
-      {aux?.coefficient !== null && (
-      <p>
-        <span>
-          Coefficient:
-        </span>
-        {' '}
-        {Number(aux.coefficient).toPrecision(4)}
-      </p>
-      )}
-
-      {aux?.yield !== null && (
-      <p>
-        <span>
-          Yield:
-        </span>
-        {' '}
-        {Number(aux.yield).toPrecision(4)}
-        %
-      </p>
-      )}
-
-      {aux?.molecularWeight !== null && (
-        <p>
-          <span>
-            Molar mass:
-          </span>
-          {' '}
-          {Number(aux.molecularWeight).toPrecision(2)}
-          {' '}
-          g/mol
-        </p>
-      )}
-    </div>
-  );
-}
-
-MaterialOverlay.propTypes = {
-  value: PropTypes.instanceOf(AgGridReact.value).isRequired,
-  colDef: PropTypes.instanceOf(AgGridReact.colDef).isRequired,
-};
-
-function RowToolsCellRenderer({
-  data: variationsRow, context
-}) {
-  const { reactionShortLabel, copyRow, removeRow } = context;
-  return (
-    <div>
-      <Badge>{getVariationsRowName(reactionShortLabel, variationsRow.id)}</Badge>
-      {' '}
-      <ButtonGroup>
-        <Button bsSize="xsmall" bsStyle="success" onClick={() => copyRow(variationsRow)}>
-          <i className="fa fa-clone" />
-        </Button>
-        <Button bsSize="xsmall" bsStyle="danger" onClick={() => removeRow(variationsRow)}>
-          <i className="fa fa-trash-o" />
-        </Button>
-      </ButtonGroup>
-    </div>
-  );
-}
-
-RowToolsCellRenderer.propTypes = {
-  data: PropTypes.instanceOf(AgGridReact.data).isRequired,
-  context: PropTypes.instanceOf(AgGridReact.context).isRequired,
-};
-
-function ValueUnitFormatter({ value: cellData, colDef }) {
-  const { _variationsUnit: displayUnit } = colDef;
-  const value = convertUnit(Number(cellData.value), cellData.unit, displayUnit);
-
-  return `${Number(value).toPrecision(4)}`;
-}
-
-function ValueUnitParser({
-  data: variationsRow, oldValue: cellData, newValue, colDef, context
-}) {
-  const { field, _variationsUnit: displayUnit } = colDef;
-  const standardUnit = cellData.unit;
-  const columnGroup = field.split('.')[0];
-  const column = field.split('.').splice(1).join('.');
-  const referenceMaterial = getReferenceMaterial(variationsRow);
-  let value = Number(newValue);
-  if (column !== 'temperature' && value < 0) {
-    value = 0;
-  }
-  value = convertUnit(value, displayUnit, standardUnit);
-  const updatedCellData = { ...cellData, value };
-
-  if (!Object.keys(materialTypes).includes(columnGroup)) {
-    return updatedCellData;
-  }
-  /*
-  Reference materials don't require adaptation of their own equivalent.
-  However, they require adaptations of other materials' equivalents, i.e., cells that aren't currently edited.
-  Those updates are handled in `ReactionVariations.updateRow()`.
-  Non-reference materials require adaptation of their own equivalent only.
-  Those are handled here.
-  */
-
-  // Adapt equivalent to updated mass.
-  const equivalent = (!updatedCellData.aux.isReference && ['startingMaterials', 'reactants'].includes(columnGroup))
-    ? computeEquivalent(updatedCellData, referenceMaterial) : updatedCellData.aux.equivalent;
-
-  // Adapt yield to updated mass.
-  const percentYield = (columnGroup === 'products')
-    ? computePercentYield(updatedCellData, referenceMaterial, context.reactionHasPolymers) : updatedCellData.aux.yield;
-
-  const updatedAux = { ...updatedCellData.aux, equivalent, yield: percentYield };
-
-  return {
-    ...updatedCellData, aux: updatedAux
-  };
-}
-
-function EquivalentFormatter({ value: cellData }) {
-  const { equivalent } = cellData.aux;
-
-  return `${Number(equivalent).toPrecision(4)}`;
-}
-
-function EquivalentParser({ data: variationsRow, oldValue: cellData, newValue }) {
-  let equivalent = Number(newValue);
-  if (equivalent < 0) {
-    equivalent = 0;
-  }
-  // Adapt mass to updated equivalent.
-  const referenceMaterial = getReferenceMaterial(variationsRow);
-  const referenceMol = getMolFromGram(
-    convertUnit(referenceMaterial.value, referenceMaterial.unit, 'g'),
-    referenceMaterial
-  );
-  const value = Number(convertUnit(getGramFromMol(referenceMol * equivalent, cellData), 'g', cellData.unit));
-
-  return { ...cellData, value, aux: { ...cellData.aux, equivalent } };
-}
-
-function reactionMaterialsChanged(reactionVariations, reaction) {
-  const reactionMaterialIDs = Object.entries(materialTypes).reduce((
-    materialIDsByType,
-    [materialType, { reactionAttributeName }]
-  ) => {
-    materialIDsByType[materialType] = reaction[reactionAttributeName].map(
-      (material) => material.id
-    ).map(String).sort(); // Sort to ensure consistency and unambiguous comparison.
-    return materialIDsByType;
-  }, {});
-
-  const reactionVariationsMaterialIDs = Object.keys(materialTypes).reduce((
-    materialsByType,
-    materialType
-  ) => {
-    // Sort to ensure consistency and unambiguous comparison.
-    materialsByType[materialType] = Object.keys(reactionVariations[0][materialType]).sort();
-    return materialsByType;
-  }, {});
-
-  return !isEqual(reactionVariationsMaterialIDs, reactionMaterialIDs);
-}
-
-function getMaterialColumnGroupChild(material, materialType) {
-  let entries = [null];
-  if (materialType === 'solvents') {
-    entries = ['volume'];
-  }
-  if (materialType === 'products') {
-    entries = ['mass'];
-  }
-  if (['startingMaterials', 'reactants'].includes(materialType)) {
-    entries = ['mass'];
-    if (!material.reference ?? false) {
-      entries.push('equivalent');
-    }
-  }
-  return {
-    field: `${materialType}.${material.id}`, // Must be unique.
-    tooltipField: `${materialType}.${material.id}`,
-    tooltipComponent: MaterialOverlay,
-    _variationsUnit: materialTypes[materialType].units[0],
-    headerComponent: MenuHeader,
-    headerComponentParams: {
-      units: materialTypes[materialType].units,
-      names: getMaterialHeaderNames(material),
-      entries
-    },
-  };
-}
-
-function updateColumnDefinitionsMaterials(columnDefinitions, currentMaterials) {
-  const updatedColumnDefinitions = cloneDeep(columnDefinitions);
-
-  Object.keys(materialTypes).forEach((materialType) => {
-    const currentMaterialsOfType = currentMaterials[materialType]; // Array of material objects.
-    const currentMaterialsOfTypeIDs = currentMaterials[materialType].map((material) => material.id.toString());
-    const materialColumnGroup = updatedColumnDefinitions.find((columnGroup) => columnGroup.groupId === materialType);
-
-    // Remove obsolete materials.
-    materialColumnGroup.children = materialColumnGroup.children.filter((child) => {
-      const childID = child.field.split('.').splice(1).join('.'); // Ensure that IDs that contain "." are handled correctly.
-      return currentMaterialsOfTypeIDs.includes(childID);
-    });
-    // Add missing materials.
-    currentMaterialsOfType.forEach((material) => {
-      if (!materialColumnGroup.children.some((child) => child.field === `${materialType}.${material.id}`)) {
-        materialColumnGroup.children.push(getMaterialColumnGroupChild(material, materialType));
-      }
-    });
-  });
-
-  return updatedColumnDefinitions;
-}
 
 export default function ReactionVariations({ reaction, onReactionChange }) {
   const gridRef = useRef(null);
-  const [reactionVariations, setReactionVariations] = useState(reaction.variations);
+  const [reactionVariations, _setReactionVariations] = useState(reaction.variations);
   const [allReactionAnalyses, setAllReactionAnalyses] = useState(getReactionAnalyses(reaction));
+  const [reactionMaterials, setReactionMaterials] = useState(getReactionMaterials(reaction));
   const [columnDefinitions, setColumnDefinitions] = useState([
     {
+      headerName: 'Tools',
       field: null,
       cellRenderer: RowToolsCellRenderer,
       lockPosition: 'left',
@@ -402,6 +190,14 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
       minWidth: 140,
       cellDataType: 'object',
       headerComponent: null,
+    },
+    {
+      headerName: 'Notes',
+      field: 'notes',
+      sortable: false,
+      cellDataType: 'text',
+      cellEditor: NoteCellEditor,
+      cellEditorPopup: true,
     },
     {
       headerName: 'Analyses',
@@ -422,41 +218,53 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
       children: [
         {
           field: 'properties.temperature',
-          _variationsUnit: temperatureUnits[0],
+          cellDataType: getCellDataType('temperature'),
+          currentEntryWithDisplayUnit: {
+            entry: 'temperature',
+            displayUnit: getStandardUnit('temperature')
+          },
           headerComponent: MenuHeader,
           headerComponentParams: {
-            units: temperatureUnits,
             names: ['Temperature'],
-            entries: [null]
+            entries: { temperature: temperatureUnits }
           }
         },
         {
           field: 'properties.duration',
-          _variationsUnit: durationUnits[0],
+          cellDataType: getCellDataType('duration'),
+          currentEntryWithDisplayUnit: {
+            entry: 'duration',
+            displayUnit: getStandardUnit('duration')
+          },
           headerComponent: MenuHeader,
           headerComponentParams: {
-            units: durationUnits,
             names: ['Duration'],
-            entries: [null]
+            entries: { duration: durationUnits }
           }
         },
       ]
     },
   ].concat(
-    Object.entries(materialTypes).map(([materialType, { label, reactionAttributeName }]) => ({
-      headerName: label,
+    Object.entries(reactionMaterials).map(([materialType, materials]) => ({
+      headerName: materialTypes[materialType].label,
       groupId: materialType,
       marryChildren: true,
-      children: reaction[reactionAttributeName].map((material) => getMaterialColumnGroupChild(material, materialType))
+      children: materials.map((material) => getMaterialColumnGroupChild(material, materialType, MenuHeader))
     }))
   ));
 
   const dataTypeDefinitions = useMemo(() => ({
-    valueUnit: {
+    property: {
       extendsDataType: 'object',
       baseDataType: 'object',
-      valueFormatter: ValueUnitFormatter,
-      valueParser: ValueUnitParser,
+      valueFormatter: PropertyFormatter,
+      valueParser: PropertyParser,
+    },
+    material: {
+      extendsDataType: 'object',
+      baseDataType: 'object',
+      valueFormatter: MaterialFormatter,
+      valueParser: MaterialParser,
     },
     equivalent: {
       extendsDataType: 'object',
@@ -474,51 +282,38 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
     maxWidth: 200,
     wrapHeaderText: true,
     autoHeaderHeight: true,
-    cellDataType: 'valueUnit',
   }), []);
 
-  const updateColumnDefinitions = useCallback((column, property, newValue) => {
-    const updatedColumnDefinitions = cloneDeep(columnDefinitions);
-
-    updatedColumnDefinitions.forEach((columnDefinition) => {
-      if (columnDefinition.groupId) {
-        // Column group.
-        columnDefinition.children.forEach((child) => {
-          if (child.field === column) {
-            child[property] = newValue;
-          }
-        });
-      } else if (columnDefinition.field === column) {
-        columnDefinition[property] = newValue;
-      }
-    });
-
-    setColumnDefinitions(updatedColumnDefinitions);
-  }, [columnDefinitions]);
-
-  useEffect(() => {
-    /*
-    Push changes to parent component. Treat parent component as external system,
-    since it's not obvious when and how state is mutated in the parent component.
-    */
-    reaction.variations = reactionVariations;
+  const setReactionVariations = (updatedReactionVariations) => {
+    // Set updated state here and in parent component.
+    _setReactionVariations(updatedReactionVariations);
+    reaction.variations = updatedReactionVariations;
     onReactionChange(reaction);
-  }, [reactionVariations]);
+  };
 
-  if ((reactionVariations.length > 0) && reactionMaterialsChanged(reactionVariations, reaction)) {
+  const updatedReactionMaterials = getReactionMaterials(reaction);
+  if (
+    !isEqual(
+      getReactionMaterialsIDs(reactionMaterials),
+      getReactionMaterialsIDs(updatedReactionMaterials)
+    )
+  ) {
     /*
     Keep set of materials up-to-date.
     Materials could have been added or removed in the "Scheme" tab.
     These changes need to be reflected in the variations.
     */
-    const currentMaterials = getReactionMaterials(reaction);
+    const updatedColumnDefinitions = updateColumnDefinitionsMaterials(
+      columnDefinitions,
+      updatedReactionMaterials,
+      MenuHeader
+    );
+    let updatedReactionVariations = removeObsoleteMaterialsFromVariations(reactionVariations, updatedReactionMaterials);
+    updatedReactionVariations = addMissingMaterialsToVariations(updatedReactionVariations, updatedReactionMaterials);
 
-    const updatedColumnDefinitions = updateColumnDefinitionsMaterials(columnDefinitions, currentMaterials);
-    setColumnDefinitions(updatedColumnDefinitions);
-
-    let updatedReactionVariations = removeObsoleteMaterialsFromVariations(reactionVariations, currentMaterials);
-    updatedReactionVariations = addMissingMaterialsToVariations(updatedReactionVariations, currentMaterials);
     setReactionVariations(updatedReactionVariations);
+    setColumnDefinitions(updatedColumnDefinitions);
+    setReactionMaterials(updatedReactionMaterials);
   }
 
   const updatedAllReactionAnalyses = getReactionAnalyses(reaction);
@@ -570,14 +365,12 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
 
   const addRow = useCallback(() => {
     setReactionVariations(
-      [...reactionVariations, createVariationsRow(reaction, getSequentialId(reactionVariations))]
+      [...reactionVariations, createVariationsRow(reaction, reactionVariations)]
     );
   }, [reaction, reactionVariations]);
 
   const copyRow = useCallback((data) => {
-    const copiedRow = cloneDeep(data);
-    copiedRow.id = getSequentialId(reactionVariations);
-    copiedRow.analyses = [];
+    const copiedRow = copyVariationsRow(data, reactionVariations);
     setReactionVariations(
       [...reactionVariations, copiedRow]
     );
@@ -588,29 +381,25 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
   }, [reactionVariations]);
 
   const updateRow = useCallback(({ data: oldRow, colDef, newValue }) => {
-    /*
-    Some properties of a material need to be updated in response to changes in other properties:
-
-    property   | needs to be updated in response to
-    -----------|----------------------------------
-    equivalent | own mass changes*, reference material's mass changes+
-    mass       | own equivalent changes*
-    yield      | own mass changes*, reference material's mass change
-
-    *: handled in corresponding cell parsers (local, cell-internal changes)
-    +: handled here (non-local, row-wide changes)
-    */
     const { field } = colDef;
-    let updatedRow = { ...oldRow };
-    set(updatedRow, field, newValue);
-    // TODO: Only run the following two updates if `newValue` pertains to the mass of the reference material.
-    // It's not incorrect to run those updates for other changes as well, just wasteful.
-    updatedRow = updateEquivalents(updatedRow);
-    updatedRow = updateYields(updatedRow, reaction.hasPolymers());
+    const updatedRow = updateVariationsRow(oldRow, field, newValue, reaction.hasPolymers());
     setReactionVariations(
       reactionVariations.map((row) => (row.id === oldRow.id ? updatedRow : row))
     );
   }, [reactionVariations, reaction]);
+
+  if (reaction.isNew) {
+    return (
+      <Alert bsStyle="info">
+        Save the reaction to enable the variations tab.
+      </Alert>
+    );
+  }
+
+  const fitColumnToContent = (event) => {
+    const { column } = event;
+    gridRef.current.api.autoSizeColumns([column], false);
+  };
 
   return (
     <div>
@@ -647,11 +436,12 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
           dataTypeDefinitions={dataTypeDefinitions}
           tooltipShowDelay={0}
           domLayout="autoHeight"
-          reactiveCustomComponents
+          popupParent={document.getElementById('reaction-detail-tab') || null}
           context={{
             copyRow,
             removeRow,
-            updateColumnDefinitions,
+            columnDefinitions,
+            setColumnDefinitions,
             reactionHasPolymers: reaction.hasPolymers(),
             reactionShortLabel: reaction.short_label,
             allReactionAnalyses
@@ -664,8 +454,9 @@ export default function ReactionVariations({ reaction, onReactionChange }) {
           */
           readOnlyEdit
           onCellEditRequest={updateRow}
-          onVirtualColumnsChanged={() => gridRef.current.api.autoSizeAllColumns(false)}
-          onColumnHeaderClicked={() => gridRef.current.api.autoSizeAllColumns(false)}
+          onFirstDataRendered={() => gridRef.current.api.autoSizeAllColumns()}
+          onCellValueChanged={(event) => fitColumnToContent(event)}
+          onColumnHeaderClicked={(event) => fitColumnToContent(event)}
         />
       </div>
     </div>

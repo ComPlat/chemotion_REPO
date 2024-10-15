@@ -8,6 +8,16 @@ import Molecule from 'src/models/Molecule';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import Container from 'src/models/Container';
 import Segment from 'src/models/Segment';
+import GasPhaseReactionStore from 'src/stores/alt/stores/GasPhaseReactionStore';
+import {
+  convertTemperatureToKelvin,
+  calculateVolumeForFeedstockOrGas,
+  calculateGasMoles,
+  updateFeedstockMoles,
+  calculateTON,
+  calculateTONPerTimeValue,
+  determineTONFrequencyValue,
+} from 'src/utilities/UnitsConversion';
 
 const prepareRangeBound = (args = {}, field) => {
   const argsNew = args;
@@ -73,6 +83,14 @@ export default class Sample extends Element {
 
     if (sample.elemental_compositions) {
       newSample.elemental_compositions = sample.elemental_compositions;
+    }
+
+    if (sample.gas_type) {
+      newSample.gas_type = sample.gas_type;
+    }
+
+    if (sample.gas_phase_data) {
+      newSample.gas_phase_data = sample.gas_phase_data;
     }
 
     newSample.filterElementalComposition();
@@ -200,7 +218,8 @@ export default class Sample extends Element {
       inventory_sample: false,
       molecular_mass: 0,
       sum_formula: '',
-      xref: {}
+      xref: {},
+      gas_type: 'off',
     });
 
     sample.short_label = Sample.buildNewShortLabel();
@@ -222,6 +241,7 @@ export default class Sample extends Element {
     sample.container = Container.init();
     sample.can_update = true;
     sample.can_copy = false;
+    sample.gas_type = 'off';
     return sample;
   }
 
@@ -247,6 +267,7 @@ export default class Sample extends Element {
     newSample.density = sample.density;
     newSample.metrics = sample.metrics;
     newSample.molfile = sample.molfile || '';
+    newSample.gas_type = 'off';
     return newSample;
   }
 
@@ -278,6 +299,7 @@ export default class Sample extends Element {
     splitSample.split_label = splitSample.buildSplitShortLabel();
     // Todo ???
     splitSample.container = Container.init();
+    splitSample.gas_type = 'off';
     return splitSample;
   }
 
@@ -699,15 +721,79 @@ export default class Sample extends Element {
   }
 
   get amount_mol() {
+    if (this.amount_unit === 'mol' && (this.gas_type === 'gas'
+    || this.gas_type === 'feedstock')) return this.amount_value;
     return this.convertGramToUnit(this.amount_g, 'mol');
   }
 
+  calculateFeedstockOrGasMoles(purity, gasType, amountLiter = null) {
+    // number of moles for feedstock = Purity*1*Volume/(0.0821*294) & pressure = 1
+    // number of moles for gas =  ppm*1*V/(0.0821*temp_in_K*1000000) & pressure = 1
+    if (gasType === 'gas') {
+      const vesselSize = this.fetchReactionVesselSizeFromStore();
+      return this.updateGasMoles(vesselSize);
+    }
+    return updateFeedstockMoles(purity, amountLiter, this.amount_l);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  fetchReactionVesselSizeFromStore() {
+    const gasPhaseStore = GasPhaseReactionStore.getState();
+    return gasPhaseStore.reactionVesselSizeValue;
+  }
+
+  updateGasMoles(volume) {
+    const { part_per_million, temperature } = this.gas_phase_data;
+    const temperatureInKelvin = convertTemperatureToKelvin(temperature);
+
+    if (!temperatureInKelvin || temperatureInKelvin === 0 || !part_per_million || part_per_million === 0
+      || !volume) {
+      this.updateTONValue(null);
+      return null;
+    }
+
+    const moles = calculateGasMoles(volume, part_per_million, temperatureInKelvin);
+    this.updateTONValue(moles);
+    return moles;
+  }
+
+  updateTONPerTimeValue(tonValue, gasPhaseTime) {
+    const { value, unit } = gasPhaseTime;
+    const tonFrequencyUnit = this.gas_phase_data.turnover_frequency.unit;
+
+    const timeValues = calculateTONPerTimeValue(value, unit);
+
+    this.gas_phase_data.turnover_frequency.value = determineTONFrequencyValue(
+      tonValue,
+      tonFrequencyUnit,
+      timeValues,
+      value
+    );
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  fetchCatalystMoleFromStore() {
+    const gasPhaseStore = GasPhaseReactionStore.getState();
+    return gasPhaseStore.catalystReferenceMolValue;
+  }
+
+  updateTONValue(moles) {
+    if (this.gas_phase_data) {
+      const moleOfCatalystReference = this.fetchCatalystMoleFromStore();
+      const value = calculateTON(moles, moleOfCatalystReference);
+      this.gas_phase_data.turnover_number = value;
+      const gasPhaseTime = this.gas_phase_data.time;
+      this.updateTONPerTimeValue(value, gasPhaseTime);
+    }
+  }
   // Menge in mmol = Menge (mg) * Reinheit  / Molmasse (g/mol)
   // Volumen (ml) = Menge (mg) / Dichte (g/ml) / 1000
   // Menge (mg)  = Volumen (ml) * Dichte (g/ml) * 1000
   // Menge (mg) = Menge (mmol)  * Molmasse (g/mol) / Reinheit
 
   convertGramToUnit(amount_g = 0, unit) {
+    const purity = this.purity || 1.0;
+    const molecularWeight = this.molecule_molecular_weight;
     if (this.contains_residues) {
       const { loading } = this.residues[0].custom_info;
       switch (unit) {
@@ -723,25 +809,31 @@ export default class Sample extends Element {
         case 'g':
           return amount_g;
         case 'l': {
+          if (this.gas_type && this.gas_type !== 'off' && this.gas_type !== 'catalyst') {
+            return calculateVolumeForFeedstockOrGas(
+              amount_g,
+              molecularWeight,
+              purity,
+              this.gas_type,
+              this.gas_phase_data
+            );
+          }
           if (this.has_molarity) {
-            const molecularWeight = this.molecule_molecular_weight;
-            const purity = this.purity || 1.0;
             const molarity = this.molarity_value;
             return (amount_g * purity) / (molarity * molecularWeight);
           } if (this.has_density) {
             const { density } = this;
             return amount_g / (density * 1000);
           }
-
           return 0;
         }
         case 'mol': {
+          if (this.gas_type && this.gas_type !== 'off' && this.gas_type !== 'catalyst') {
+            return this.calculateFeedstockOrGasMoles(purity, this.gas_type);
+          }
           if (this.has_molarity) {
             return this.amount_l * this.molarity_value;
           }
-
-          const molecularWeight = this.molecule_molecular_weight;
-          const purity = this.purity || 1.0;
           return (amount_g * purity) / molecularWeight;
         }
         default:
@@ -773,7 +865,14 @@ export default class Sample extends Element {
           return amount_value;
         case 'mg':
           return amount_value / 1000.0;
-        case 'l':
+        case 'l': {
+          // amount in  gram for feedstock gas material is calculated according to equation of molecular weight x moles
+          if (this.gas_type && this.gas_type !== 'off' && this.gas_type !== 'catalyst') {
+            const molecularWeight = this.molecule_molecular_weight;
+            const purity = this.purity || 1.0;
+            const moles = this.calculateFeedstockOrGasMoles(purity, this.gas_type, amount_value);
+            return moles * molecularWeight;
+          }
           if (this.has_molarity) {
             const molecularWeight = this.molecule_molecular_weight;
             return amount_value * this.molarity_value * molecularWeight;
@@ -781,9 +880,11 @@ export default class Sample extends Element {
             return amount_value * (this.density || 1.0) * 1000;
           }
           return 0;
-        case 'mol':
+        }
+        case 'mol': {
           const molecularWeight = this.molecule_molecular_weight;
           return (amount_value / (this.purity || 1.0)) * molecularWeight;
+        }
         default:
           return amount_value;
       }
@@ -792,7 +893,7 @@ export default class Sample extends Element {
 
   get molecule_iupac_name() {
     return this.molecule_name_hash && this.molecule_name_hash.label
-      || this.molecule && this.molecule.iupac_name;
+        || this.molecule && this.molecule.iupac_name;
   }
 
   set molecule_iupac_name(iupac_name) {
@@ -904,7 +1005,7 @@ export default class Sample extends Element {
 
   get isValid() {
     return (this && ((this.molfile && !this.decoupled) || this.decoupled)
-      && !this.error_loading && !this.error_polymer_type);
+        && !this.error_loading && !this.error_polymer_type);
   }
 
   get svgPath() {
@@ -968,6 +1069,9 @@ export default class Sample extends Element {
       show_label: (this.decoupled && !this.molfile) ? true : (this.show_label || false),
       waste: this.waste,
       coefficient: this.coefficient,
+      gas_type: this.gas_type || false,
+      gas_phase_data: this.gas_phase_data,
+      conversion_rate: this.conversion_rate,
     };
     _.merge(params, extra_params);
     return params;
@@ -1016,6 +1120,24 @@ export default class Sample extends Element {
     this._solvent = solvent;
   }
 
+  set gas_phase_data(gas_phase_data) {
+    let initializeGasPhaseData;
+    if (gas_phase_data === null || gas_phase_data === undefined) {
+      initializeGasPhaseData = {
+        time: { unit: 'h', value: null },
+        temperature: { unit: 'K', value: null },
+        turnover_number: null,
+        part_per_million: null,
+        turnover_frequency: { unit: 'TON/h', value: null }
+      };
+    }
+    this._gas_phase_data = gas_phase_data || initializeGasPhaseData;
+  }
+
+  get gas_phase_data() {
+    return this._gas_phase_data;
+  }
+
   addSolvent(newSolvent) {
     const { molecule } = newSolvent;
     if (molecule) {
@@ -1027,8 +1149,8 @@ export default class Sample extends Element {
         label: molecule.iupac_name, smiles: molecule.cano_smiles, inchikey: molecule.inchikey, ratio: 1
       };
       const filtered = tmpSolvents.find((solv) => (solv && solv.label === solventData.label
-          && solv.smiles === solventData.smiles
-          && solv.inchikey && solventData.inchikey));
+            && solv.smiles === solventData.smiles
+            && solv.inchikey && solventData.inchikey));
       if (!filtered) {
         tmpSolvents.push(solventData);
       }
@@ -1043,8 +1165,8 @@ export default class Sample extends Element {
     }
 
     const filteredIndex = tmpSolvents.findIndex((solv) => (solv.label === solventToDelete.label
-        && solv.smiles === solventToDelete.smiles
-        && solv.inchikey === solventToDelete.inchikey));
+            && solv.smiles === solventToDelete.smiles
+            && solv.inchikey === solventToDelete.inchikey));
     if (filteredIndex >= 0) {
       tmpSolvents.splice(filteredIndex, 1);
     }
@@ -1058,7 +1180,7 @@ export default class Sample extends Element {
     }
 
     const filteredIndex = tmpSolvents.findIndex((solv) => (solv.smiles === solventToUpdate.smiles
-        && solv.inchikey && solventToUpdate.inchikey));
+              && solv.inchikey && solventToUpdate.inchikey));
     if (filteredIndex >= 0) {
       tmpSolvents[filteredIndex] = solventToUpdate;
     }

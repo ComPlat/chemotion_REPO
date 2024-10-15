@@ -63,7 +63,7 @@ const handleResetPassword = (id, random, handleShowAlert) => {
     });
 };
 
-const validateEmail = (mail) => (/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(mail));
+const validateEmail = (mail) => (/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,63})+$/.test(mail));
 const editTooltip = <Tooltip id="inchi_tooltip">Edit user info</Tooltip>;
 const resetPasswordTooltip = <Tooltip id="assign_button">Reset password</Tooltip>;
 const resetPasswordInstructionsTooltip = <Tooltip id="assign_button">Send password instructions</Tooltip>;
@@ -211,13 +211,15 @@ export default class UserManagement extends React.Component {
 
   handleNewUserShow() {
     this.setState({
-      showNewUserModal: true
+      showNewUserModal: true,
+      messageNewUserModal: ''
     });
   }
 
   handleNewUserClose() {
     this.setState({
-      showNewUserModal: false
+      showNewUserModal: false,
+      messageNewUserModal: ''
     });
   }
 
@@ -611,7 +613,7 @@ export default class UserManagement extends React.Component {
     // The backend doesn't validate user type because in the modal for adding a single users,
     // the user type cannot be invalid since it's selected from a dropdown.
     // However, when multiple users are created from a file, type can be any string.
-    const validTypes = ['Person', 'Device', 'Admin'];
+    const validTypes = ['Person', 'Admin'];
     let invalidTypeMessage = '';
     this.newUsers.forEach((user) => {
       const userType = user.data.type.trim();
@@ -779,7 +781,9 @@ export default class UserManagement extends React.Component {
                     Email:
                   </Col>
                   <Col sm={9}>
-                    <FormControl type="email" name="email" inputRef={(ref) => { this.email = ref; }} />
+                    <FormControl type="email" name="email" inputRef={(ref) => { this.email = ref; }}
+                      maxLength={120}
+                    />
                   </Col>
                 </FormGroup>
                 <FormGroup controlId="formControlPassword">
@@ -830,7 +834,6 @@ export default class UserManagement extends React.Component {
                     <FormControl componentClass="select" inputRef={(ref) => { this.type = ref; }}>
                       <option value="Person">Person</option>
                       <option value="Admin">Admin</option>
-                      <option value="Device">Device</option>
                     </FormControl>
                   </Col>
                 </FormGroup>
@@ -1012,7 +1015,6 @@ export default class UserManagement extends React.Component {
                         >
                           <option value="Person">Person</option>
                           <option value="Group">Group</option>
-                          <option value="Device">Device</option>
                           <option value="Admin">Admin</option>
                         </FormControl>
                       </Col>
@@ -1333,12 +1335,11 @@ export default class UserManagement extends React.Component {
           <th>
             <FormControl
               componentClass="select"
-              placeholder="Person-Device-Admin"
+              placeholder="Person-Admin"
               onChange={(e) => this.updateDropdownFilter('type', e.target.value)}
             >
               <option value="">All</option>
               <option value="Person">Person</option>
-              <option value="Device">Device</option>
               <option value="Admin">Admin</option>
             </FormControl>
           </th>
@@ -1444,7 +1445,7 @@ export default class UserManagement extends React.Component {
             <Button
               bsSize="xsmall"
               bsStyle={(g.generic_admin?.elements
-               || g.generic_admin?.segments || g.generic_admin?.datasets) ? 'success' : 'default'}
+                || g.generic_admin?.segments || g.generic_admin?.datasets) ? 'success' : 'default'}
               onClick={() => this.handleGenericAdminModal(true, g)}
             >
               <i className="fa fa-empire" aria-hidden="true" />

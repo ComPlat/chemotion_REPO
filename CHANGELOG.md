@@ -1,5 +1,44 @@
 # Chemotion_Repository Changelog
 
+## [2.3.0]
+> 2025-02-11
+
+* Features and Enhancements:
+  * Default lock zooming on the publication page.
+  * Introduced a yield and conversion switch for the review and publication pages.
+  * Added support for the ChemSpectra function with multiple molecules.
+  * Enabled the NMRium feature based on ontology selection.
+  * Improved the QC check logic for mass spectra.
+  * Added support for SURMOF change type.
+
+* Bug Fixes:
+  * Fixed an issue where empty files were being downloaded.
+  * Fixed an issue with adding collaboration via ORCID iD.
+  * Fixed missing molarity values during data transfer from ELN.
+  * Fixed an issue with advanced search.
+  * Fixed NMRium view issues on the review page.
+  * Fixed user view presentation for generic datasets.
+
+* Chores:
+  * Optimized fetch structure operation to improve performance.
+  * Adjusted layout for datetime range.
+  * Refactored the code structure for easier maintenance.
+  * Changed 'x-vial' to 'sample' on the publication page.
+  * Upgraded react-molviewer.
+  * Upgraded chem-generic-ui-viewer.
+  * Upgrade ag-grid-react.
+  * Upgrade Node.js version.
+  * Removed redundant code.
+  * Included the [Chemotion LabIMotion 1.4.1](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#141).
+  * Included the [Chemotion LabIMotion 1.4.0](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#140).
+  * Included the [Chemotion ELN version 1.10.5](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.4](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.3](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.2](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.10.1/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.10.0/CHANGELOG.md).
+
+
 ## [2.2.0]
 > 2024-11-06
 

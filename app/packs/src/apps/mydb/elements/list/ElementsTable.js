@@ -28,6 +28,7 @@ import CellLineContainer from 'src/apps/mydb/elements/list/cellLine/CellLineCont
 export default class ElementsTable extends React.Component {
   constructor(props) {
     super(props);
+    this.elementRef = React.createRef();
 
     this.state = {
       elements: [],
@@ -78,9 +79,15 @@ export default class ElementsTable extends React.Component {
       }, () => {
         const { page } = this.state;
         UIActions.setPagination({ type, page });
+        this.handleScrollToElement(this.elementRef);
       });
     }
   }
+  handleScrollToElement = () => {
+    if (this.elementRef.current) {
+      this.elementRef.current.scrollTo({ top: 0, left: 0, behavior: "smooth", });
+    }
+  };
 
   handleNumberOfResultsChange(event, query=false) {
     const { value } = event.target;
@@ -165,7 +172,6 @@ export default class ElementsTable extends React.Component {
     if (elementsDidChange) { nextState.elements = elements; }
     if (elementsDidChange || currentElementDidChange) { this.setState(nextState); }
   }
-
 
   setUserLabel(label) {
     const { userLabel } = this.state;
@@ -587,19 +593,13 @@ export default class ElementsTable extends React.Component {
     let typeSpecificHeader = <span />;
     if (type === 'sample') {
       typeSpecificHeader = this.renderSamplesHeader();
-      searchLabel = (
-        <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />
-      );
+      searchLabel = <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />;
     } else if (type === 'reaction') {
       typeSpecificHeader = this.renderReactionsHeader();
-      searchLabel = (
-        <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />
-      );
+      searchLabel = <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />;
     } else if (genericEl) {
       typeSpecificHeader = this.renderGenericElementsHeader();
-      searchLabel = (
-        <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />
-      );
+      searchLabel = <SearchUserLabels userLabel={userLabel} fnCb={this.setUserLabel} />;
     }
 
     const filterTitle = filterCreatedAt === true
@@ -645,7 +645,7 @@ export default class ElementsTable extends React.Component {
               onChange={this.setFromDate}
               popperPlacement="bottom-start"
               isClearable
-              dateFormat="DD-MM-YY"
+              dateFormat="dd-MM-YY"
             />
           </div>
           <div className="sample-list-to-date">
@@ -655,7 +655,7 @@ export default class ElementsTable extends React.Component {
               popperPlacement="bottom"
               onChange={this.setToDate}
               isClearable
-              dateFormat="DD-MM-YY"
+              dateFormat="dd-MM-YY"
             />
           </div>
           {typeSpecificHeader}
@@ -724,7 +724,7 @@ export default class ElementsTable extends React.Component {
     }
 
     return (
-      <div className="list-elements">
+      <div ref={this.elementRef} className="list-elements">
         {elementsTableEntries}
       </div>
     );

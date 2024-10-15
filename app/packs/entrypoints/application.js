@@ -8,7 +8,6 @@ var React = require('react');
 var Home = require('src/apps/home/Home');
 var CnC = require('src/apps/commandAndControl');
 var AdminHome = require('src/apps/admin');
-var ChemScanner = require('src/apps/chemscanner/');
 var ChemSpectra = require('src/apps/chemspectra/ChemSpectra');
 var ChemSpectraEditor = require('src/apps/chemspectra/ChemSpectraEditor');
 var MoleculeModerator = require('src/apps/moleculeModerator');

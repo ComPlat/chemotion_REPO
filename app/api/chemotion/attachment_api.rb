@@ -59,7 +59,6 @@ module Chemotion
       error!(message, 404)
     end
 
-
     resource :export_ds do
       before do
         @container = Container.find_by(id: params[:container_id])
@@ -69,7 +68,7 @@ module Chemotion
                     ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
         error!('401 Unauthorized', 401) unless can_dwnld
       end
-      desc "Download the dataset attachment file"
+      desc 'Download the dataset attachment file'
       get 'dataset/:container_id' do
         export = prepare_and_export_dataset(@container.id)
       end
@@ -103,11 +102,19 @@ module Chemotion
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
             end
           elsif @attachment
+
             can_dwnld = @attachment.container_id.nil? && @attachment.created_for == current_user.id
-            if !can_dwnld && (element = @attachment.container&.root&.containable)
-              can_dwnld = (element.is_a?(User) && (element == current_user)) ||
-                          (ElementPolicy.new(current_user, element).read? &&
-                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
+
+            if !can_dwnld && (element = @attachment.container&.root&.containable || @attachment.attachable)
+              can_dwnld = if element.is_a?(Container)
+                            false
+                          else
+                            (element.is_a?(User) && (element == current_user)) ||
+                              (
+                                ElementPolicy.new(current_user, element).read? &&
+                              ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+                              )
+                          end
             end
 
             if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
@@ -219,30 +226,19 @@ module Chemotion
       desc 'get_annotated_image_of_attachment'
       get ':attachment_id/annotated_image' do
         content_type 'application/octet-stream'
-
         env['api.format'] = :binary
-        store = @attachment.attachment.storage.directory
-        file_location = store.join(
-          @attachment.attachment_data['derivatives']['annotation']['annotated_file_location'] || 'not available',
-        )
 
-        uploaded_file = if file_location.present? && File.file?(file_location)
-                          extension_of_annotation = File.extname(@attachment.filename)
-                          extension_of_annotation = '.png' if @attachment.attachment.mime_type == 'image/tiff'
-                          filename_of_annotated_image = @attachment.filename.gsub(
-                            File.extname(@attachment.filename),
-                            "_annotated#{extension_of_annotation}",
-                          )
-                          header['Content-Disposition'] = "attachment; filename=\"#{filename_of_annotated_image}\""
-                          File.open(file_location)
-                        else
-                          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
-                          @attachment.attachment_attacher.file
-                        end
-        data = uploaded_file.read
-        uploaded_file.close
-
-        data
+        annotation = @attachment.annotated_file_location.presence
+        if annotation.present? && File.file?(annotation)
+          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.annotated_filename}\""
+          file = File.open(annotation)
+        else
+          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
+          file = @attachment.attachment_attacher.file
+        end
+        file.read
+      ensure
+        file&.close
       end
 
       desc 'update_annotation_of_attachment'
@@ -313,13 +309,12 @@ module Chemotion
             next unless att.annotated?
 
             begin
-              annotated_file_name = "#{File.basename(att.filename, '.*')}_annotated#{File.extname(att.filename)}"
-              zip.put_next_entry annotated_file_name
+              zip.put_next_entry att.annotated_filename
               file = File.open(att.annotated_file_location)
               zip.write file.read
-              file_text += "#{annotated_file_name} #{file.size}\n"
+              file_text += "#{att.annotated_filename} #{file.size}\n"
             ensure
-              file.close
+              file&.close
             end
           end
 
@@ -499,6 +494,7 @@ module Chemotion
         optional :simulatenmr, type: Boolean
         optional :axesUnits, type: String
         optional :detector, type: String
+        optional :dscMetaData, type: String
       end
       post 'save_spectrum' do
         jcamp_att = @attachment.generate_spectrum(

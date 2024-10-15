@@ -10,7 +10,7 @@ const RepoCardMoleculeArchive = (params) => {
   }
   const tooltipView = <Tooltip id="id_icon_tip">Click to view chemical compounds</Tooltip>;
   return (
-    <Row className="repo-statistic" style={{ height: 'unset', paddingBottom: '0px' }}>
+    <Row className="repo-statistic">
       <Col lg={12} md={12} sm={12}>
         <h3>archive for materials</h3>
       </Col>
@@ -40,16 +40,16 @@ const RepoCardMoleculeArchive = (params) => {
         </Col>
       </Col>
       <Col lg={12} md={12} sm={12}>
-        <Col lg={4} md={4} sm={4} className="panel-heading dtl">
+        <Col lg={12} md={12} sm={12} className="panel-heading dtl">
+          find chemical compounds provided as reference compounds from <b>Molecule Archive</b>
+        </Col>
+        <Col lg={12} md={12} sm={12} className="panel-heading dtl" style={{ display: 'inline-flex', justifyContent: 'center' }}>
           <img
             className="icon-molecule-archive2"
             src="/images/repo/molecule-archive-logo-weiss.svg"
             key="chemotion_full"
             alt="Molecule Archive"
           />
-        </Col>
-        <Col lg={8} md={8} sm={8} className="panel-heading dtl">
-          find chemical compounds provided as reference compounds from <b>Molecule Archive</b>
         </Col>
       </Col>
     </Row>

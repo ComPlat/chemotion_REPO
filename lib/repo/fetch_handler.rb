@@ -75,7 +75,7 @@ module Repo
         samples.target_amount_value, samples.target_amount_unit,
         samples.purity, samples.density, samples.external_label,
         samples.molarity_value, samples.molarity_unit,
-        reactions_samples.equivalent,reactions_samples.scheme_yield,
+        reactions_samples.equivalent,reactions_samples.scheme_yield,reactions_samples.conversion_rate,
         reactions_samples."position" as rs_position,
         case when reactions_samples."type" = 'ReactionsStartingMaterialSample' then 'starting_materials'
         when reactions_samples."type" = 'ReactionsReactantSample' then 'reactants'

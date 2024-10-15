@@ -147,6 +147,8 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.string "short_label"
+    t.string "ancestry"
+    t.index ["ancestry"], name: "index_cellline_samples_on_ancestry"
   end
 
   create_table "channels", id: :serial, force: :cascade do |t|
@@ -297,6 +299,9 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.integer "collection_id"
     t.integer "cellline_sample_id"
     t.datetime "deleted_at"
+    t.index ["cellline_sample_id", "collection_id"], name: "index_collections_celllines_on_cellsample_id_and_coll_id", unique: true
+    t.index ["collection_id"], name: "index_collections_celllines_on_collection_id"
+    t.index ["deleted_at"], name: "index_collections_celllines_on_deleted_at"
   end
 
   create_table "collections_elements", id: :serial, force: :cascade do |t|
@@ -323,6 +328,7 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.integer "collection_id"
     t.integer "research_plan_id"
     t.datetime "deleted_at"
+    t.index ["collection_id"], name: "index_collections_research_plans_on_collection_id"
     t.index ["research_plan_id", "collection_id"], name: "index_collections_research_plans_on_rplan_id_and_coll_id", unique: true
   end
 
@@ -541,6 +547,35 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.string "data_cite_creator_name"
     t.index ["deleted_at"], name: "index_device_metadata_on_deleted_at"
     t.index ["device_id"], name: "index_device_metadata_on_device_id"
+  end
+
+  create_table "devices", force: :cascade do |t|
+    t.string "name"
+    t.string "name_abbreviation"
+    t.string "first_name"
+    t.string "last_name"
+    t.string "email"
+    t.string "serial_number"
+    t.string "verification_status", default: "none"
+    t.boolean "account_active", default: false
+    t.boolean "visibility", default: false
+    t.datetime "deleted_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.string "datacollector_method"
+    t.string "datacollector_dir"
+    t.string "datacollector_host"
+    t.string "datacollector_user"
+    t.string "datacollector_authentication"
+    t.string "datacollector_number_of_files"
+    t.string "datacollector_key_name"
+    t.boolean "datacollector_user_level_selected", default: false
+    t.string "novnc_token"
+    t.string "novnc_target"
+    t.string "novnc_password"
+    t.index ["deleted_at"], name: "index_devices_on_deleted_at"
+    t.index ["email"], name: "index_devices_on_email", unique: true
+    t.index ["name_abbreviation"], name: "index_devices_on_name_abbreviation", unique: true, where: "(name_abbreviation IS NOT NULL)"
   end
 
   create_table "dois", id: :serial, force: :cascade do |t|
@@ -1076,6 +1111,8 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.jsonb "variations", default: []
     t.text "plain_text_description"
     t.text "plain_text_observation"
+    t.boolean "gaseous", default: false
+    t.jsonb "vessel_size", default: {"unit"=>"ml", "amount"=>nil}
     t.index ["deleted_at"], name: "index_reactions_on_deleted_at"
     t.index ["rinchi_short_key"], name: "index_reactions_on_rinchi_short_key", order: :desc
     t.index ["rinchi_web_key"], name: "index_reactions_on_rinchi_web_key"
@@ -1443,6 +1480,15 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.index ["user_id"], name: "index_text_templates_on_user_id"
   end
 
+  create_table "third_party_apps", force: :cascade do |t|
+    t.string "url"
+    t.string "name", limit: 100, null: false
+    t.string "file_types", limit: 100
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["name"], name: "index_third_party_apps_on_name", unique: true
+  end
+
   create_table "user_affiliations", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "affiliation_id"
@@ -1760,8 +1806,8 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
        RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
-         where l.literature_id = l2.id 
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
+         where l.literature_id = l2.id
          and l.element_type = $1 and l.element_id = $2
        $function$
   SQL

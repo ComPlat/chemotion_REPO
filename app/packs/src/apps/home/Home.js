@@ -47,6 +47,7 @@ class Home extends Component {
     PublicStore.listen(this.onChange);
     RStore.listen(this.onChange);
     PublicActions.initialize();
+    PublicActions.fetchOlsChmo();
   }
 
   componentWillUnmount() {
@@ -55,11 +56,16 @@ class Home extends Component {
   }
 
   onChange(publicState) {
-    if ((publicState.guestPage && publicState.guestPage !== this.state.guestPage)
-    || (publicState.listType && publicState.listType !== this.state.listType)
-    || (publicState.searchOptions)) {
+    const { guestPage, listType } = this.state;
+    if (
+      (publicState.guestPage && publicState.guestPage !== guestPage) ||
+      (publicState.listType && publicState.listType !== listType) ||
+      publicState.searchOptions
+    ) {
       this.setState(prevState => ({
-        ...prevState, guestPage: publicState.guestPage, listType: publicState.listType
+        ...prevState,
+        guestPage: publicState.guestPage,
+        listType: publicState.listType,
       }));
     }
   }

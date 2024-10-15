@@ -26,7 +26,6 @@ import Clipboard from 'clipboard';
 import moment from 'moment';
 import Select from 'react-select';
 import uuid from 'uuid';
-import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import { RepoCommentBtn } from 'repo-review-ui';
 import ContainerComponent from 'src/components/chemrepo/reaction/ContainerComponent';
 import ExactMass from 'src/components/chemrepo/ExactMass';
@@ -65,8 +64,12 @@ import LdData from 'src/components/chemrepo/LdData';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import PublicReactionTlc from 'src/components/chemrepo/PublicReactionTlc';
 import PublicReactionProperties from 'src/components/chemrepo/PublicReactionProperties';
+import ReactionTable from 'src/repoHome/RepoReactionTable';
 import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
+import zoomSvg from 'src/components/chemrepo/svg-utils';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === RepoConst.INCHIKEY_DUMMY) ? { display: 'none' } : {});
 
@@ -100,13 +103,6 @@ const CollectionDesc = (props) => {
     </div>
   );
 };
-
-const resizableSvg = (path, extra = null) => (
-  <div className="preview-table" style={{ cursor: 'row-resize' }}>
-    {extra}
-    <SvgFileZoomPan svgPath={path} duration={300} resize />
-  </div>
-);
 
 const ChemotionId = props => (
   <h5>
@@ -877,7 +873,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false, childr
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
+        {zoomSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
       <div>
@@ -950,7 +946,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_el_${element.id}`} />)}
+          {zoomSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_el_${element.id}`} />)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">
@@ -1018,6 +1014,18 @@ const RenderAnalysisHeader = (props) => {
         )
       }
       <br />
+      <NMRiumDisplayer
+        sample={new Sample(element)}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        readOnly
+      />
+      <ViewSpectra
+        sample={new Sample(element)}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        isPublic
+      />
     </div>
   );
 };
@@ -1049,138 +1057,6 @@ ToggleIndicator.propTypes = {
 ToggleIndicator.defaultProps = {
   indicatorStyle: '',
   name: '',
-};
-
-
-const ReactionTable = ({
-  reaction, toggle, show, bodyAttrs, canComment, isPublic = true, isReview = false
-}) => {
-  let schemes = [];
-  let sumSolvents = 0.0;
-  const showIndicator = (show) ? 'down' : 'right';
-
-  const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
-    reaction.publication.taggable_data.scheme_only === true) || false;
-
-  if (isPublic) {
-    ({ schemes } = reaction);
-  } else {
-    reaction.starting_materials.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'starting_materials';
-      schemes.push(ns);
-    });
-    reaction.reactants.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'reactants';
-      schemes.push(ns);
-    });
-    reaction.products.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'products';
-      schemes.push(ns);
-    });
-    reaction.solvents.map((s) => {
-      const ns = new Sample(s);
-      sumSolvents += ns.amount_l;
-      ns.mat_group = 'solvents';
-      schemes.push(ns);
-    });
-  }
-
-  const materialCalc = (target, multi, precision) => {
-    return (target ? (target * multi).toFixed(precision) : ' - ')
-  }
-
-  const equivYield = (s, sumSolvents=1.0, isPublic = true) => {
-    let val = 0;
-    switch (s.mat_group) {
-      case 'products':
-        if (schemeOnly === true) {
-          val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`;
-        } else {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
-        }
-        break;
-      case 'solvents':
-        if (isPublic) {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
-        } else {
-          val = `${materialCalc((s.amount_l / sumSolvents) * 100, 1, 1).toString()}%`;
-        }
-        break;
-      default:
-        val = materialCalc(s.equivalent, 1, 3)
-    }
-    return (
-      val
-    );
-  };
-
-  const rows = (samples, isReview = false) => {
-    let currentType = '';
-    return (
-      typeof samples !== 'undefined'
-        ? samples.map((sample, i) => {
-          const matType = sample.mat_group && sample.mat_group[0].toUpperCase() + sample.mat_group.replace('_', ' ').slice(1);
-          const rLabel = (sample.short_label || '').concat('   ', sample.name || '');
-          const useName = isPublic ? (sample.molecule_iupac_name || sample.iupac_name || sample.sum_formular) : (sample.molecule_iupac_name);
-          let label = isReview ? (<span>{rLabel}<br />{useName}</span>) : useName;
-          if (sample.mat_group === 'solvents') label = sample.external_label;
-          let title = null;
-          if (currentType !== sample.mat_group) {
-            currentType = sample.mat_group;
-            title = (currentType === 'products') ? (<tr><td colSpan="6"><b>{matType}</b></td><td style={{ fontWeight: 'bold', textAlign: 'center' }}>Yield</td></tr>) : (<tr><td colSpan="7"><b>{matType}</b></td></tr>);
-          }
-          return (
-            <tbody key={i}>
-              {title}
-              <tr>
-                <td style={{ width: '26%' }}>{label}</td>
-                <td style={{ width: '12%' }}>{isPublic ? sample.sum_formular : sample.molecule.sum_formular}</td>
-                <td style={{ width: '14%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' ' : isPublic ? sample.dmv: !sample.has_molarity && !sample.has_density ? '- / -' : sample.has_density ? + sample.density + ' / - ' : ' - / ' + sample.molarity_value + sample.molarity_unit}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{materialCalc(sample.amount_l, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_mol, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{equivYield(sample, sumSolvents, isPublic)}</td>
-              </tr>
-            </tbody>
-          );
-        })
-        : null
-    );
-  };
-  const table = dataRows => (
-    <Table responsive>
-      <thead>
-        <tr>
-          <th>IUPAC</th>
-          <th>Formula</th>
-          <th style={{ textAlign: 'center' }}>Density/Molarity</th>
-          <th style={{ textAlign: 'center' }}>Amount [mg]</th>
-          <th style={{ textAlign: 'center' }}>Volume [mL]</th>
-          <th style={{ textAlign: 'center' }}>Amount [mmol]</th>
-          <th style={{ textAlign: 'center' }}>Equiv</th>
-        </tr>
-      </thead>
-      {dataRows}
-    </Table>
-  );
-
-  return (
-    <span>
-      <ToggleIndicator onClick={toggle} name="Reaction Table" indicatorStyle={showIndicator} />
-      <Panel style={{ border: 'none' }} id="collapsible-panel-scheme" expanded={show} defaultExpanded={show} onToggle={() => { }}>
-        <Panel.Collapse>
-          <Panel.Body {...bodyAttrs} >
-            <div>
-              {table(rows(schemes, isReview))}
-            </div>
-          </Panel.Body>
-        </Panel.Collapse>
-      </Panel>
-    </span>
-  );
 };
 
 const ReactionRinChiKey = ({
@@ -1531,7 +1407,6 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
               show={showScheme}
               isPublic={isPublic}
               isReview={false}
-              bodyAttrs={bodyAttrs}
             />
           </Col>
         </Row>
@@ -1630,6 +1505,7 @@ class RenderPublishAnalysesPanel extends Component {
     return (
       <div className="repo-analysis-header">
         <RepoPreviewImage
+          key={`preview-${analysis.id}`}
           element={element}
           analysis={analysis}
           isLogin={isLogin}
@@ -1706,6 +1582,7 @@ class RenderPublishAnalyses extends Component {
         className="repo-analysis-header"
       >
         <RepoPreviewImage
+          key={`preview-${analysis.id}`}
           element={element}
           analysis={analysis}
           isLogin={idyLogin}
@@ -2043,13 +1920,14 @@ const DatasetDetail = ({ isPublished, element }) => {
   };
 
   const moleculeView = molecule.inchikey === null ? (<span />) : (<MoleculeInfo molecule={molecule} sample_svg_file={element.sample_svg_file} />);
+  const elementView = element.element?.type === 'reaction' ? new Reaction(element.element) : new Sample(element.element);
   const datasetView = !element ? (
     <span>There is no published dataset</span>
   ) : (
     <RenderPublishAnalyses
       key={`${element.id}-${element.updated_at}`}
       analysis={element.dataset}
-      element={element.element}
+      element={elementView}
       expanded
       elementType="Sample"
       license={element.license}
@@ -2057,7 +1935,6 @@ const DatasetDetail = ({ isPublished, element }) => {
       isPublic={isPublished}
     />
   );
-
   return (
     <Grid>
       {moleculeView}
@@ -2067,6 +1944,18 @@ const DatasetDetail = ({ isPublished, element }) => {
           {datasetView}
         </Col>
       </Row>
+      <NMRiumDisplayer
+        sample={elementView}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        readOnly
+      />
+      <ViewSpectra
+        sample={elementView}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        isPublic
+      />
     </Grid>
   );
 };
@@ -2209,15 +2098,14 @@ export {
   PublishTypeAs,
   ReactionSchemeOnlyInfo,
   ReactionInfo,
-  ReactionTable,
   ReactionRinChiKey,
   RenderAnalysisHeader,
   RenderPublishAnalyses,
   RenderPublishAnalysesPanel,
-  resizableSvg,
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
   ToggleIndicator,
-  CollectionDesc
+  CollectionDesc,
+  zoomSvg,
 };
