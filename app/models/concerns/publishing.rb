@@ -180,9 +180,82 @@ module Publishing
           taggable_data: (et.taggable_data || {}).merge(public_reaction: pub_sample.id, publish_pending: true)
         )
       else
-        et.update!(
-          taggable_data: (et.taggable_data || {}).merge(public_sample: pub_sample.id, publish_pending: true)
-        )
+        ds_version =  term_id + version_str
+      end
+      "#{Datacite::Mds.new.doi_prefix}/#{ds_version}"
+    else
+      version_str = version.to_i.zero? ? '' : '.' + version.to_s
+      inchikey_version = self.molecule.inchikey + version_str
+      "#{Datacite::Mds.new.doi_prefix}/#{inchikey_version}"
+    end
+  end
+
+  def create_publication_tag(contributor, author_ids, license)
+    return if self.is_a?(Container)
+
+    authors = User.where(id: author_ids, type: %w(Person Collaborator))
+                    .includes(:affiliations)
+                    .order(Arel.sql("position(users.id::text in '#{author_ids}')"))
+    affiliations = authors.map(&:current_affiliations)
+    affiliations_output = {}
+    affiliations.flatten.each do |aff|
+      affiliations_output[aff.id] = aff.output_full
+    end
+    publication = {
+      published_by: author_ids[0],
+      author_ids: author_ids,
+      creators: authors.map { |author|
+        {
+          'givenName' => author.first_name,
+          'familyName' => author.last_name,
+          'name' => author.name,
+          'ORCID' => author.orcid,
+          'affiliationIds' => author.current_affiliations.map(&:id),
+          'id' => author.id
+        }
+      },
+      contributors: {
+        'givenName' => contributor.first_name,
+        'familyName' => contributor.last_name,
+        'name' => contributor.name,
+        'ORCID' => contributor.orcid,
+        'affiliations' => contributor.current_affiliations.map{ |aff| aff.output_full },
+        'affiliationIds' => contributor.current_affiliations.map{ |aff| aff.id },
+        'id' => contributor.id
+      },
+      affiliations: affiliations_output,
+      affiliation_ids: affiliations.map { |as| as.map(&:id) },
+      queued_at: DateTime.now,
+      license: license
+    }
+    et = self.tag
+    et.update!(
+      taggable_data: (et.taggable_data || {}).merge(publication: publication)
+    )
+  end
+
+  ##
+  # Update the tag['publication'] for a (being) published public sample
+
+  def update_publication_tag(**args)
+    return if self.is_a?(Container)
+
+    data = args.slice(
+      :doi_reg_at, :pubchem_reg_at, :published_at, :sample_version, :doi, :chem_first
+    )
+    et = self.tag
+    td = et.taggable_data
+    td['publication'].merge!(data)
+
+    ## update molecule tag
+    if self.is_a?(Sample)
+      mt = self.molecule.tag
+      mt_data = mt.taggable_data || {}
+      # chemotion_first unless already chemotion_first
+      mt_data['chemotion'] ||= {}
+
+      if args[:chem_first] && mt_data['chemotion']['chemotion_first'].blank?
+        mt_data['chemotion']['chemotion_first'] = args[:chem_first]
       end
 
       ori_analyses.each do |analysis|

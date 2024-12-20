@@ -226,7 +226,7 @@ const UrlSilentNavigation = (element) => {
       { silent: true },
     );
   } else {
-    const cId = currentCollection.id;
+    const cId = currentCollection?.id || 'all';
     Aviator.navigate(
       isSync ? `/scollection/${cId}/` : `/collection/${cId}/`,
       { silent: true },

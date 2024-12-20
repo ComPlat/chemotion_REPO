@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import SVG from 'react-inlinesvg';
-import { Table, Col, Row, Navbar, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Table, Col, Row, DropdownButton, MenuItem, ButtonGroup, Pagination, Form, FormGroup, InputGroup, FormControl, Modal, Panel, ButtonToolbar, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Select from 'react-select';
 import { filter } from 'lodash';
 import { RepoReviewModal, RepoCommentModal } from 'repo-review-ui';
@@ -16,7 +15,7 @@ import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
 import { SchemeWord, ChecklistPanel } from 'src/repoHome/RepoCommon';
 import { ShowUserLabels, SearchUserLabels } from 'src/components/UserLabels';
-
+import ReviewSearchBar from 'src/components/chemrepo/ReviewSearchBar';
 
 // import RepoReviewModal from '../components/common/RepoReviewModal';
 
@@ -98,7 +97,7 @@ export default class RepoReview extends Component {
       orgInfo: '',
       showEmbargoModal: false,
       selectedElement: null,
-      selectedEmbargo: null
+      selectedEmbargo: null,
     };
     this.onChange = this.onChange.bind(this);
     this.handleElementSelection = this.handleElementSelection.bind(this);
@@ -368,7 +367,9 @@ export default class RepoReview extends Component {
         >
           {this.renderMenuItems('state', optSearchState)}
         </DropdownButton>
-        <SearchUserLabels fnCb={this.setUserLabel} userLabel={userLabel} className={customClass} />
+        <div style={{ width: '100%' }}>
+          <SearchUserLabels fnCb={this.setUserLabel} userLabel={userLabel} className={customClass} />
+        </div>
       </ButtonGroup>
     );
 
@@ -388,7 +389,7 @@ export default class RepoReview extends Component {
       />
     );
 
-    let searchValueTbl = (<div />);
+    let searchValueTbl = null;
     switch (searchType) {
       case 'Embargo':
       case 'Submitter':
@@ -418,21 +419,25 @@ export default class RepoReview extends Component {
         );
         break;
       default:
-        searchValueTbl = (<div />);
+        searchValueTbl = null;
     }
 
     const searchTbl = (
       <div className="home-adv-search">
-        <div style={{ display: 'flex' }}>
-          { filterDropdown }
-          { searchTypeTbl }
-          { searchValueTbl }
+        <div style={{ display: 'flex', width: '100%' }}>
+          <div style={{ flexGrow: 1, width: '100%' }}>{filterDropdown}</div>
+          <div style={{ display: 'flex', flexGrow: 1, width: '100%' }}>
+            <div style={{ width: '100%' }}>{searchTypeTbl}</div>
+            {searchValueTbl && (
+              <div style={{ width: '100%' }}>{searchValueTbl}</div>
+            )}
+          </div>
         </div>
       </div>
     );
 
     return (
-      <div style={{ paddingLeft: '15px', marginTop: '8px', marginBottom: '8px' }}>
+      <div style={{ paddingLeft: '8px', marginTop: '8px', marginBottom: '8px', width: '100%' }}>
         {searchTbl}
       </div>
     );
@@ -545,12 +550,13 @@ export default class RepoReview extends Component {
     };
     return (
       <div>
-        <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
+        <div style={{ position: 'relative', maxWidth: '2000px', margin: '0 auto' }}>
+          <ReviewSearchBar
+            renderSearch={this.renderSearch.bind(this)}
+          />
+        </div>
+        <Row style={{ width: '100%', maxWidth: '2000px', margin: '0 auto' }}>
           <Col md={currentElement ? 4 : 12} >
-            <Navbar fluid className="navbar-custom" style={{ marginBottom: '5px' }}>
-              {this.renderSearch()}
-              <div style={{ clear: 'both' }} />
-            </Navbar>
             <div>
               <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
                 <Table striped className="review-entries">

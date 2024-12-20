@@ -34,7 +34,8 @@ module Entities
     end
 
     def children
-      if User.chemotion_user.id == current_user.id && USER_COLS.include?(object.label)
+      chemotion_user = User.chemotion_user
+      if chemotion_user&.id == current_user&.id && USER_COLS.include?(object.label)
         return nil
       end
 
@@ -43,7 +44,7 @@ module Entities
 
     def is_remote
       object.is_shared &&
-        (object.shared_by_id != current_user.id)
+        (object.shared_by_id != current_user&.id)
     end
 
     def descendant_ids

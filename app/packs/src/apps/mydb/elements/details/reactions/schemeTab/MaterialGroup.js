@@ -14,6 +14,8 @@ import { reagents_kombi } from 'src/components/staticDropdownOptions/reagents_ko
 import { permitOn } from 'src/components/common/uis';
 import HelpInfo from 'src/components/common/HelpInfo';
 import ToggleButton from 'src/components/common/ToggleButton';
+// for REPO
+import { hasVersion } from 'src/components/chemrepo/publication-utils';
 
 const MaterialGroup = ({
   materials, materialGroup, deleteMaterial, onChange,

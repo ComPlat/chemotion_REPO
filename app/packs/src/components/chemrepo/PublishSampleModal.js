@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -22,15 +23,34 @@ import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import LiteraturesFetcher from 'src/fetchers/LiteraturesFetcher';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
+import OrcidIcon from 'src/components/chemrepo/common/Orcid';
+import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
+import UserAffInfo from 'src/components/chemrepo/publish-helper';
+import VersionComment from 'src/components/chemrepo/VersionComment';
+import {
+  getTagDataByTag,
+  hasVersion,
+} from 'src/components/chemrepo/publication-utils';
 
 export default class PublishSampleModal extends Component {
   constructor(props) {
     super(props);
     const { currentUser } = UserStore.getState();
     const { sample } = props;
+    const previousUsers = get(
+      sample,
+      'tag.taggable_data.previous_version.users',
+      []
+    );
+    const selectedUsers = previousUsers
+      .filter((user) => user.id !== currentUser.id)
+      .map((user) => ({
+        label: user.name,
+        value: user.id,
+      }));
     this.state = {
       sample,
-      selectedUsers: [],
+      selectedUsers,
       selectedReviewers: [],
       showSelectionUser: false,
       showSelectionAnalysis: false,
@@ -42,10 +62,16 @@ export default class PublishSampleModal extends Component {
       literatures: new Immutable.Map(),
       sortedIds: [],
       selectedEmbargo: '-1',
-      selectedLicense: 'CC BY',
+      selectedLicense:
+        getTagDataByTag(sample, 'previous_version')?.license || 'CC BY',
+      disableLicense: Boolean(
+        getTagDataByTag(sample, 'previous_version')?.license
+      ),
+      behalfAsAuthor: previousUsers.length > 0,
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noEmbargo: false,
+      newVersion: hasVersion(sample),
       addMeAsAuthor: true,
       addGroupLeadAsAuthor: true
     };
@@ -63,6 +89,7 @@ export default class PublishSampleModal extends Component {
     this.handleEmbargoChange = this.handleEmbargoChange.bind(this);
     this.handleLicenseChange = this.handleLicenseChange.bind(this);
     this.handleCC0ConsentChange = this.handleCC0ConsentChange.bind(this);
+    this.handleVersionComment = this.handleVersionComment.bind(this);
     this.toggleAddMeAsAuthor = this.toggleAddMeAsAuthor.bind(this);
     this.toggleAddGroupLeadAsAuthor = this.toggleAddGroupLeadAsAuthor.bind(this);
   }
@@ -74,11 +101,43 @@ export default class PublishSampleModal extends Component {
     this.loadMyCollaborations();
   }
 
-  // UNSAFE_componentWillReceiveProps(nextProps) {
-  //   this.setState({
-  //     sample: nextProps.sample,
-  //   });
-  // }
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    const { currentUser } = UserStore.getState();
+
+    const newVersion = !isUndefined(
+      get(nextProps.sample, 'tag.taggable_data.previous_version')
+    );
+    const previousLicense = get(
+      nextProps.sample,
+      'tag.taggable_data.previous_version.license'
+    );
+    const previousUsers = get(
+      nextProps.sample,
+      'tag.taggable_data.previous_version.users',
+      []
+    );
+
+    let behalfAsAuthor = false;
+    const selectedUsers = [];
+    previousUsers.forEach((user) => {
+      if (user.id !== currentUser.id) {
+        behalfAsAuthor = true;
+        selectedUsers.push({
+          label: user.name,
+          value: user.id,
+        });
+      }
+    });
+
+    this.setState({
+      sample: nextProps.sample,
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
+      behalfAsAuthor,
+      selectedUsers,
+      newVersion,
+    });
+  }
 
   componentWillUnmount() {
     UserStore.unlisten(this.onUserChange);
@@ -128,16 +187,6 @@ export default class PublishSampleModal extends Component {
     });
   }
 
-  loadReferences() {
-    let { selectedRefs } = this.state;
-    const { sample } = this.state;
-    LiteraturesFetcher.fetchElementReferences(sample).then(literatures => {
-      const sortedIds = groupByCitation(literatures);
-      selectedRefs = selectedRefs.filter(item => sortedIds.includes(item));
-      this.setState({ selectedRefs, literatures, sortedIds });
-    });
-  }
-
   handleSelectUser(val) {
     if (val) { this.setState({ selectedUsers: val }); }
   }
@@ -148,39 +197,6 @@ export default class PublishSampleModal extends Component {
 
   handleSampleChanged(sample) {
     this.setState(prevState => ({ ...prevState, sample }));
-  }
-
-  validateAnalyses() {
-    const publishedAnalyses = this.state.sample.analysisArray().filter(a => (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')))
-    if (publishedAnalyses.length === 0) {
-      return false;
-    }
-    return true;
-  }
-
-  // molecule-submissions mandatory check (https://git.scc.kit.edu/ComPlat/chemotion_REPO/issues/236)
-  validateSubmission() {
-    const { sample, selectedEmbargo, noEmbargo } = this.state;
-    if (selectedEmbargo === '-1' && !noEmbargo) return false;
-    const analyses = sample.analysisArray();
-    if (!this.validateAnalyses()) {
-      return false;
-    }
-
-    let publishedAnalyses = analyses.filter(a =>
-      (a.extended_metadata &&
-        (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true'))));
-
-    publishedAnalyses = publishedAnalyses.filter(a =>
-      (a.extended_metadata &&
-        (((a.extended_metadata.kind || '') !== '') && // fail if analysis-type is empty
-        ((a.extended_metadata.status || '') === 'Confirmed') && // fail if status is not set to Confirmed
-        (isNmrPass(a, sample)) && // fail if NMR check fail
-        (isDatasetPass(a))))); // fail if Dataset check fail
-    if (publishedAnalyses.length === 0) {
-      return false;
-    }
-    return true;
   }
 
   handlePublishSample() {
@@ -256,6 +272,117 @@ export default class PublishSampleModal extends Component {
     return true;
   }
 
+  handleEmbargoChange(selectedValue) {
+    if (selectedValue) {
+      this.setState({ selectedEmbargo: selectedValue });
+    }
+  }
+
+  handleLicenseChange(selectedValue) {
+    if (selectedValue) {
+      this.setState({
+        selectedLicense: selectedValue,
+        cc0Consent: { consent1: false, consent2: false },
+      });
+    }
+  }
+
+  handleCC0ConsentChange(selectedValue, selectedType) {
+    const { cc0Consent } = this.state;
+    if (selectedType === 'consent1') {
+      cc0Consent.consent1 = selectedValue;
+    }
+    if (selectedType === 'consent2') {
+      cc0Consent.consent2 = selectedValue;
+    }
+    this.setState({ cc0Consent });
+  }
+
+  handleVersionComment(value) {
+    const { sample } = this.state;
+    sample.versionComment = value;
+    this.setState({ sample });
+  }
+
+  handleNoEmbargoCheck() {
+    const { noEmbargo } = this.state;
+    this.setState({ noEmbargo: !noEmbargo });
+  }
+
+  onUserChange(state) {
+    this.setState((previousState) => ({
+      ...previousState,
+      users: state.users,
+    }));
+  }
+
+  loadReferences() {
+    let { selectedRefs } = this.state;
+    const { sample, newVersion } = this.state;
+    LiteraturesFetcher.fetchElementReferences(sample).then((literatures) => {
+      const sortedIds = groupByCitation(literatures);
+      selectedRefs = selectedRefs.filter((item) => sortedIds.includes(item));
+
+      // pre-select all refs when submitting a new version
+      if (newVersion) {
+        literatures.forEach((literature) => {
+          if (!selectedRefs.includes(literature.literal_id)) {
+            selectedRefs.push(literature.literal_id);
+          }
+        });
+      }
+
+      this.setState({ selectedRefs, literatures, sortedIds });
+    });
+  }
+
+  validateAnalyses() {
+    const { sample } = this.state;
+    const publishedAnalyses = sample
+      .analysisArray()
+      .filter(
+        (a) =>
+          a.extended_metadata.publish &&
+          (a.extended_metadata.publish === true ||
+            a.extended_metadata.publish === 'true')
+      );
+    if (publishedAnalyses.length === 0) {
+      return false;
+    }
+    return true;
+  }
+
+  // molecule-submissions mandatory check (https://git.scc.kit.edu/ComPlat/chemotion_REPO/issues/236)
+  validateSubmission() {
+    const { sample, selectedEmbargo, noEmbargo, newVersion } = this.state;
+    if (selectedEmbargo === '-1' && !noEmbargo && !newVersion) return false;
+    const analyses = sample.analysisArray();
+    if (!this.validateAnalyses()) {
+      return false;
+    }
+
+    let publishedAnalyses = analyses.filter(
+      (a) =>
+        a.extended_metadata &&
+        a.extended_metadata.publish &&
+        (a.extended_metadata.publish === true ||
+          a.extended_metadata.publish === 'true')
+    );
+
+    publishedAnalyses = publishedAnalyses.filter(
+      (a) =>
+        a.extended_metadata &&
+        (a.extended_metadata.kind || '') !== '' && // fail if analysis-type is empty
+        (a.extended_metadata.status || '') === 'Confirmed' && // fail if status is not set to Confirmed
+        isNmrPass(a, sample) && // fail if NMR check fail
+        isDatasetPass(a)
+    ); // fail if Dataset check fail
+    if (publishedAnalyses.length === 0) {
+      return false;
+    }
+    return true;
+  }
+
   contributor() {
     const { currentUser } = this.state;
     const orcid = currentUser.orcid == null ? '' : <OrcidIcon orcid={currentUser.orcid} />;
@@ -303,9 +430,7 @@ export default class PublishSampleModal extends Component {
           options={options}
           onChange={this.handleSelectUser}
         />
-        <div>
-          {authorInfo}
-        </div>
+        <div>{authorInfo}</div>
       </div>
     );
   }
@@ -411,29 +536,17 @@ export default class PublishSampleModal extends Component {
     );
   }
 
-  toggleDiv(key) {
-    if (key) {
-      this.setState((previousState) => {
-        const newState = previousState;
-        newState[key] = !previousState[key];
-        return { ...newState };
-      }, this.forceUpdate());
-    }
-  }
-
-  handleEmbargoChange(selectedValue) {
-    if (selectedValue) {
-      this.setState({ selectedEmbargo: selectedValue });
-    }
-  }
-
-  handleLicenseChange(selectedValue) {
-    if (selectedValue) {
-      this.setState({
-        selectedLicense: selectedValue,
-        cc0Consent: { consent1: false, consent2: false }
+  validatePub() {
+    const { sample } = this.state;
+    const validates = [];
+    if (hasVersion(sample) && !!sample.versionComment) {
+      validates.push({
+        name: 'version-comment',
+        value: !!sample.versionComment,
+        message: 'New Version Details is missing',
       });
     }
+    return validates;
   }
 
   handleCC0ConsentChange(selectedValue, selectedType) {
@@ -463,12 +576,12 @@ export default class PublishSampleModal extends Component {
     const { show, onHide, sample } = this.props;
     const { bundles } = this.state;
     const canPublish = this.validateSubmission(); // this.validateAnalyses();
-    const {
-      showPreview,
-      selectedUsers,
-      selectedReviewers,
-      selectedRefs
-    } = this.state;
+    const validateInfo = this.validatePub();
+    const validateObjs =
+      validateInfo && validateInfo.filter((v) => v.value === false);
+    const validated = !!(validateObjs && validateObjs.length === 0);
+    const { showPreview, selectedUsers, selectedReviewers, selectedRefs } =
+      this.state;
     const analyses = sample.analysisArray();
     const selectedAnalysesCount = analyses.filter(
       a => (a.extended_metadata && (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')) && a.extended_metadata.kind && a.extended_metadata.status === 'Confirmed' && isNmrPass(a, sample) && isDatasetPass(a))).length;
@@ -530,6 +643,15 @@ export default class PublishSampleModal extends Component {
                   <MoleculeInfo molecule={molecule} sample_svg_file={sample.sample_svg_file} />
                 </Panel.Body>
               </Panel>
+              <div style={{ margin: '5px 0px' }}>
+                <SubmissionCheck validates={validateInfo} />
+              </div>
+              {hasVersion(sample) && (
+                <VersionComment
+                  element={sample}
+                  onChange={this.handleVersionComment}
+                />
+              )}
               {awareEmbargo}
               <PanelGroup accordion id="publish-sample-config">
                 <Panel eventKey="2">
@@ -584,7 +706,7 @@ export default class PublishSampleModal extends Component {
               <Button onClick={() => onHide()}>Close</Button>
               <Button
                 bsStyle="primary"
-                disabled={!canPublish}
+                disabled={!canPublish || !validated}
                 onClick={this.handlePublishSample}
               >
                 Publish Sample

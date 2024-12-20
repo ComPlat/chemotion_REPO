@@ -694,6 +694,7 @@ class SearchUserLabels extends React.Component {
           options={labelOptions}
           value={userLabel}
           onChange={(e) => this.handleSelectChange(e)}
+          placeholder="Select Label"
         />
       </div>
     );

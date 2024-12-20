@@ -23,6 +23,26 @@ DisplayName.propTypes = {
   orcid: PropTypes.string.isRequired,
 };
 
+function DisplayName({ name, orcid }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        margin: '0 4px 10px 0',
+      }}
+    >
+      {name}&nbsp;
+      <OrcidIcon orcid={orcid} />
+    </span>
+  );
+}
+
+DisplayName.propTypes = {
+  name: PropTypes.string.isRequired,
+  orcid: PropTypes.string.isRequired,
+};
+
 function RepoAbout() {
   const bodyStyle = {
     maxHeight: 'calc(100vh - 262px)',
