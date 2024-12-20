@@ -236,9 +236,13 @@ module Chemotion
           ensure
             FileUtils.rm_f(filepath)
           end
-          
+
           begin
-            ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
+            if Rails.env.development?
+              ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_now(att, @user.id, true, @collection.id, @origin)
+            else
+              ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
+            end
             Message.create_msg_notification(
               channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
               message_from: @user&.id,

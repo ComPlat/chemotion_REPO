@@ -3,6 +3,18 @@ import PropTypes from 'prop-types';
 import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+
+const ACTIONS = {
+  reaction: {
+    true: id => PublicActions.displayReaction(id),
+    false: id => ReviewActions.displayReviewReaction(id),
+  },
+  sample: {
+    true: id => PublicActions.displayMolecule(id), // pageId
+    false: id => ReviewActions.displayReviewSample(id),
+  },
+};
 
 export default class PublicCommentModal extends React.Component {
   constructor(props) {
@@ -17,15 +29,15 @@ export default class PublicCommentModal extends React.Component {
     const {
       id, type, pageType, pageId
     } = this.props;
-    RepositoryFetcher.reviewerComment(id, type, this.commentInput.value)
-      .then(() => {
+    RepositoryFetcher.reviewerComment(id, type, this.commentInput.value).then(
+      () => {
         this.setState({ modalShow: false });
-        if (pageType === 'reactions') {
-          PublicActions.displayReaction(pageId || id);
-        } else {
-          PublicActions.displayMolecule(pageId);
-        }
-      });
+        const isOnPublications = window.location.pathname.includes('/publications');
+        const params = isOnPublications ? pageId : id;
+        const action = ACTIONS[type.toLowerCase()][isOnPublications];
+        if (action) action(params);
+      }
+    );
   }
 
   render() {
@@ -40,10 +52,9 @@ export default class PublicCommentModal extends React.Component {
     let btnTbl = (<span />);
     let commentModal = (<span />);
     const style = {
-      height: '20px', width: '20px', borderRadius: '50%', border: '1px'
+      height: '20px', width: '20px', borderRadius: '50%', border: '1px', margin: '4px'
     };
     const hasComment = userInfo !== '';
-
     if (hasComment === true) {
       btnTbl = (
         <OverlayTrigger placement="top" overlay={<Tooltip id="tt_metadata">Important information about this data</Tooltip>}>

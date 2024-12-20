@@ -20,12 +20,12 @@ const pubchemTag = (molecule) => {
 };
 
 const infoTag = (molecule) => {
-  const pubData = (molecule && molecule.pub_id) || '';
+  const { publication } = molecule;
   return (
     <Row key={`list-reaction-info-${molecule.id}`} className="home_wrapper">
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">Chemotion-Repository unique ID</Tooltip>}>
         <div className="home_wrapper_item">
-          <div>ID</div><div className="item_xvial">{`CRS-${pubData}`}</div>
+          <div>ID</div><div className="item_xvial">{`CRS-${publication?.id}`}</div>
         </div>
       </OverlayTrigger>
       <div className="home_wrapper_item">

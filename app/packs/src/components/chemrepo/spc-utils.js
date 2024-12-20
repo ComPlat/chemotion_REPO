@@ -4,6 +4,7 @@ import {
   isNMRKind,
 } from 'src/utilities/SpectraHelper';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
 
 const spcChemSpectra = (element, analysis) => {
   if (element == null || analysis == null) return [];
@@ -16,7 +17,8 @@ const spcNmrium = (element, analysis) => {
   if (element == null || analysis == null) return [];
   const container = analysis;
   const { chmos } = PublicStore.getState();
-  const hasNMRium = isNMRKind(container, chmos);
+  const { chmos: userChmos } = UserStore.getState();
+  const hasNMRium = isNMRKind(container, chmos || userChmos);
   if (!hasNMRium) return [];
   const spcInfosForNMRDisplayer = BuildSpcInfosForNMRDisplayer(
     element,

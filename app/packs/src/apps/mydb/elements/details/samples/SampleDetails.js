@@ -95,6 +95,7 @@ import {
 } from 'src/components/chemrepo/PublishCommon';
 import SampleDetailsRepoComment from 'src/components/chemrepo/SampleDetailsRepoComment';
 import { permitOn } from 'src/components/common/uis';
+import FundingReferences from 'src/components/chemrepo/funding/FundingReferences';
 
 const MWPrecision = 6;
 
@@ -801,6 +802,27 @@ export default class SampleDetails extends React.Component {
             sample={sample}
           />
         </ListGroupItem>
+      </Tab>
+    );
+  }
+
+  fundingsTab(ind) {
+    const { sample } = this.state;
+    if (!sample) {
+      return null;
+    }
+    return (
+      <Tab
+        eventKey={ind}
+        title="Fundings & Awards"
+        key={`fundings_${sample.id}_${ind}`}
+      >
+        <FundingReferences
+          elementId={sample.id}
+          elementType="Sample"
+          isNew={sample.isNew}
+          readOnly={sample.isNew || !permitOn(sample)}
+        />
       </Tab>
     );
   }
@@ -1753,7 +1775,8 @@ export default class SampleDetails extends React.Component {
       references: this.sampleLiteratureTab(),
       results: this.sampleImportReadoutTab('results'),
       qc_curation: this.qualityCheckTab('qc_curation'),
-      measurements: this.measurementsTab('measurements')
+      measurements: this.measurementsTab('measurements'),
+      fundings: this.fundingsTab('fundings'),
     };
 
     if (this.enableComputedProps) {

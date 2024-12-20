@@ -135,6 +135,14 @@ Rails.application.routes.draw do
     url_base = "/home/publications/"
     element = doi&.doiable
 
+    if element.nil?
+      # this is a concept doi
+      concept = Concept.find_by(doi: doi)
+      publication = concept&.latest_publication
+      element = publication&.element
+      suffix = publication&.doi&.suffix
+    end
+
     if element.present?
       element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))
       case element.class.name

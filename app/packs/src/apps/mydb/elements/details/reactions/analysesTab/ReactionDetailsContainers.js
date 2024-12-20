@@ -165,6 +165,7 @@ export default class ReactionDetailsContainers extends Component {
     }
 
     const { chmos } = UserStore.getState();
+    const { repoVersioning } = UIStore.getState();
     const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
 
     return (
@@ -178,6 +179,17 @@ export default class ReactionDetailsContainers extends Component {
         >
           <i className="fa fa-trash" />
         </Button>
+        {
+          container.link_id &&
+          <NewVersionModal
+            type="Analysis"
+            element={container}
+            repoVersioning={repoVersioning}
+            parent={reaction}
+            bsSize="xsmall"
+            className="button-right"
+          />
+        }
         <PrintCodeButton element={reaction} analyses={[container]} ident={container.id} />
         <SpectraEditorButton
           element={reaction}
@@ -357,18 +369,18 @@ export default class ReactionDetailsContainers extends Component {
                           container={container}
                           onChange={this.handleChange.bind(this, container)}
                         />
-                        <ViewSpectra
-                          sample={reaction}
-                          handleSampleChanged={this.handleSpChange}
-                          handleSubmit={this.props.handleSubmit}
-                        />
-                        <NMRiumDisplayer
-                          sample={reaction}
-                          handleSampleChanged={this.handleSpChange}
-                          handleSubmit={this.props.handleSubmit}
-                        />
                       </Panel.Body>
                     </Panel>
+                    <ViewSpectra
+                      sample={reaction}
+                      handleSampleChanged={this.handleSpChange}
+                      handleSubmit={this.props.handleSubmit}
+                    />
+                    <NMRiumDisplayer
+                      sample={reaction}
+                      handleSampleChanged={this.handleSpChange}
+                      handleSubmit={this.props.handleSubmit}
+                    />
                   </div>
                 );
               })}

@@ -21,6 +21,7 @@ import EmbargoStore from 'src/stores/alt/repo/stores/EmbargoStore';
 import { ElAspect } from 'src/repoHome/RepoCommon';
 import { ConfirmModal } from 'src/components/common/ConfirmModal';
 import { MetadataModal, InfoModal } from 'src/repoHome/RepoEmbargoModal';
+import RepoFundingModal from 'src/components/chemrepo/common/RepoFundingModal';
 import RepoReviewAuthorsModal from 'src/components/chemrepo/common/RepoReviewAuthorsModal';
 import EmbargoCommentsModal from 'src/components/chemrepo/common/EmbargoCommentsModal';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
@@ -360,6 +361,12 @@ export default class RepoEmbargo extends Component {
             title=''
             taggData={selectEmbargo?.taggable_data}
           />
+          {selectEmbargo?.element_id && (
+            <RepoFundingModal
+              elementId={selectEmbargo?.element_id}
+              elementType={selectEmbargo?.element_type}
+            />
+          )}
         </ButtonGroup>
       </div>
     );

@@ -56,7 +56,6 @@ import RepoPreviewImage from 'src/components/chemrepo/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
 import RepoSegment from 'src/repoHome/RepoSegment';
 import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
-import MolViewerListBtn from 'src/components/viewer/MolViewerListBtn';
 import LicenseIcon from 'src/components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from 'src/components/chemrepo/date-utils';
 import { formatPhysicalProps } from 'src/components/chemrepo/publication-utils';
@@ -68,9 +67,12 @@ import ReactionTable from 'src/repoHome/RepoReactionTable';
 import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
 import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import VersionDropdown from 'src/components/chemrepo/VersionDropdown';
 import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 import zoomSvg from 'src/components/chemrepo/svg-utils';
 import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
+import RdfBtn from 'src/components/chemrepo/RdfBtn';
+import FundingDisplay from 'src/components/chemrepo/funding/FundingDisplay';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === RepoConst.INCHIKEY_DUMMY) ? { display: 'none' } : {});
 
@@ -258,7 +260,6 @@ const DownloadMetadataBtn = (l) => {
     </OverlayTrigger>
   );
 };
-
 
 const DownloadJsonBtn = (l) => {
   const contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
@@ -666,7 +667,6 @@ SidToPubChem.propTypes = {
   sid: PropTypes.string
 };
 
-
 const OrcidIcon = ({ orcid }) => {
   if (typeof orcid === 'undefined' || orcid === null) {
     return (<span />);
@@ -983,6 +983,7 @@ const RenderAnalysisHeader = (props) => {
   } else {
     doiLink = (element.doi && element.doi.full_doi) || '';
   }
+  const conceptLink = element.concept?.doi?.full_doi;
   const nameOrFormula = molecule.iupac_name && molecule.iupac_name !== ''
     ? <span><b>IUPAC Name: </b> {molecule.iupac_name} (<ExactFormula sample={element} molecule={molecule} />)</span>
     : <span><b>Formula: </b> <ExactFormula sample={element} molecule={molecule} /></span>;
@@ -1036,7 +1037,7 @@ const RenderAnalysisHeader = (props) => {
                   </Button>
                   <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
                   <DownloadMetadataBtn type="sample" id={element.id} />
-                  <DownloadJsonBtn type="sample" id={element.id} />
+                  <RdfBtn type="sample" id={element.id} info={{ pid: crsId, doi: doiLink }} />
                 </span>
               )
               :
@@ -1059,6 +1060,12 @@ const RenderAnalysisHeader = (props) => {
         <Col sm={12} md={12} lg={12}>
           <h5><b>Reference{references.length > 1 ? 's' : null} in the Literature: </b></h5>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
+          {element.fundingReferences && element.fundingReferences.length > 0 && (
+            <h5>
+              <b>Funding References:</b>
+              <FundingDisplay elementId={element.id} elementType="Sample" />
+            </h5>
+          )}
           <RepoSegment segments={element.segments} isPublic={isPublic} />
         </Col>
       </Row>
@@ -1563,7 +1570,7 @@ class RenderPublishAnalyses extends Component {
               </Button>
               <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
               <DownloadMetadataBtn type="container" id={analysis.id} />
-              <DownloadJsonBtn type="container" id={analysis.id} />
+              <RdfBtn type="container" id={analysis.id} info={{ pid: analysis.pub_id, doi: analysis.dataset_doi }} />
             </div>
             <div className="sub-title" inline="true">
               <b>Analysis ID: </b>
@@ -1975,7 +1982,7 @@ CommentBtn.defaultProps = {
 
 const Doi = (props) => {
   const {
-    type, id, doi, isPublished
+    type, id, doi, isPublished, concept, pid
   } = props;
   let data = '';
   const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
@@ -1986,8 +1993,8 @@ const Doi = (props) => {
           {doi}
         </Button>
         <ClipboardCopyBtn text={`https://dx.doi.org/${doi}`} />
-        <DownloadMetadataBtn type={type} id={id} />
-        <DownloadJsonBtn type={type} id={id} />
+        <DownloadMetadataBtn type={type} id={id} concept={concept} />
+        {!concept && <RdfBtn type={type} id={id} concept={concept} info={{ pid: pid, doi: doi }} />}
       </span>
     );
   } else {

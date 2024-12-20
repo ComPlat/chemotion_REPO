@@ -12,7 +12,6 @@ module Repo
         fake_ancestry: current_user.publication_embargo_collection.sync_collections_users.first.id.to_s)
         #embargo = Embargo.create!(name: new_embargo_col.label, collection_id: new_embargo_col.id, created_by: current_user.id)
         d = Doi.create_for_element!(new_embargo_col)
-
         Publication.create!(
           state: Publication::STATE_PENDING,
           element: new_embargo_col,

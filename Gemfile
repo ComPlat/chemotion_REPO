@@ -129,6 +129,9 @@ gem 'moneta'
 
 gem 'icalendar'
 
+# RDF gems
+gem 'linkeddata'
+
 group :development do
   gem 'better_errors' # allows to debug exception on backend from browser
 
