@@ -126,14 +126,22 @@ Rails.application.routes.draw do
     url || '/'
   }
 
-  get 'inchikey/*suffix(.:version)' => redirect { |params, request|
+  get 'inchikey/*suffix(.:version)(/:publication_version)' => redirect { |params, request|
     suffix = params[:suffix]
-    if !params[:version].blank?
-      suffix = "#{params[:suffix]}.#{params[:version]}"
-    end
+    suffix += ".#{params[:version]}" if !params[:version].blank?
+    suffix += "/#{params[:publication_version]}" if !params[:publication_version].blank?
+
     doi = Doi.find_by(suffix: suffix)
     url_base = "/home/publications/"
     element = doi&.doiable
+
+    if element.nil?
+      # this is a concept doi
+      concept = Concept.find_by(doi: doi)
+      publication = concept&.latest_publication
+      element = publication&.element
+      suffix = publication&.doi&.suffix
+    end
 
     if element.present?
       element = element.root.containable if (element.class.name == 'Container' && suffix.start_with?("reaction"))

@@ -220,9 +220,15 @@ module Chemotion
         end
         after_validation do
           @sample = current_user.samples.find_by(id: params[:id])
+          @sample = current_user.versions_collection.samples.find_by(id: params[:id]) unless @sample
           error!('You do not have permission to publish this sample', 403) unless @sample
 
-          @analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          analyses = @sample&.analyses&.where(id: params[:analysesIds])
+          links = @sample&.links&.where(id: params[:analysesIds])
+
+          # To fix issue: Relation passed to #or must be structurally compatible. Incompatible values: [:joins]
+          # Use Ruby Merge instead of ActiveRecord #or (Limitation: Performance, Sorting, DB Query Optimization)
+          @analyses = (analyses.to_a + links.to_a).uniq # Avoid duplication
           ols_validation(@analyses)
           error!('No analysis data available for publication', 404) if @analyses.empty?
 
@@ -231,11 +237,22 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
+
+          if ENV['REPO_VERSIONING'] == 'true'
+            previous_version = @sample&.tag&.taggable_data['previous_version']
+            ## if previous_license && previous_license != params[:license]
+            if previous_version && previous_version['license'] != params[:license]
+              error!('License does not match previous version', 400)
+            end
+          end
+
           @author_ids |= current_user.group_leads.pluck(:id) if params[:addGroupLead]
         end
+
         post do
           declared_params = declared(params, include_missing: false)
           SubmittingJob.send(perform_method, declared_params, 'Sample', @author_ids, current_user.id)
+          @sample.reload
           send_message_and_tag(@sample, current_user)
         end
 
@@ -258,9 +275,12 @@ module Chemotion
         end
         after_validation do
           @reaction = current_user.reactions.find_by(id: params[:id])
+          @reaction = current_user.versions_collection.reactions.find_by(id: params[:id]) unless @reaction
           error!('You do not have permission to publish this reaction', 404) unless @reaction
 
-          @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds]))
+          @analysis_set = @reaction.analyses.where(id: params[:analysesIds]) | @reaction&.links&.where(id: params[:analysesIds]) \
+                          | Container.where(id: (@reaction.samples.map(&:analyses).flatten.map(&:id) & params[:analysesIds])) \
+                          | Container.where(id: (@reaction.samples.map(&:links).flatten.map(&:id) & params[:analysesIds]))
           ols_validation(@analysis_set)
           error!('No analysis data available for publication', 404) unless @analysis_set.present?
 
@@ -269,12 +289,21 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
+
+          if ENV['REPO_VERSIONING'] == 'true'
+            previous_version = @reaction&.tag&.taggable_data['previous_version']
+            ## if previous_license && previous_license != params[:license]
+            if previous_version && previous_version['license'] != params[:license]
+              error!('License does not match previous version', 400)
+            end
+          end
           @author_ids |= current_user.group_leads.pluck(:id) if params[:addGroupLead]
         end
         post do
           declared_params = declared(params, include_missing: false)
           declared_params[:scheme_only] = false
           SubmittingJob.send(perform_method, declared_params, 'Reaction', @author_ids, current_user.id)
+          @reaction.reload
           send_message_and_tag(@reaction, current_user)
         end
 
@@ -293,6 +322,7 @@ module Chemotion
         end
         after_validation do
           @reaction = current_user.reactions.find_by(id: params[:id])
+          @reaction = current_user.versions_collection.reactions.find_by(id: params[:id]) unless @reaction
           error!('You do not have permission to publish this reaction', 404) unless @reaction
 
           @author_ids = if params[:addMe]
@@ -305,9 +335,195 @@ module Chemotion
           declared_params = declared(params, include_missing: false)
           declared_params[:scheme_only] = true
           SubmittingJob.send(perform_method, declared_params, 'Reaction', @author_ids, current_user.id)
+          @reaction.reload
           send_message_and_tag(@reaction, current_user)
         end
       end
+
+      namespace :create_new_version do
+        desc 'Create a new version of a published Sample'
+        params do
+          requires :id, type: Integer, desc: 'id'
+          requires :type, type: String, desc: 'type', values: %w[samples reactions containers]
+          optional :parent_id, type: Integer, desc: 'parent id'
+          optional :parent_type, type: String, desc: 'parent type', values: %w[sample reaction]
+          optional :link_id, type: Integer, desc: 'link id'
+          optional :schemeOnly, type: Boolean, desc: 'schemeOnly', default: false
+          optional :is_async, type: Boolean, desc: 'perform job method', default: false
+        end
+        after_validation do
+          error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
+
+          @scheme_only = params[:schemeOnly] || false
+          @id = params[:id]
+          @element_type = params[:type]
+          if params[:type] == 'containers'
+            @element =  current_user.versions_collection.send(:"#{params[:parent_type]}s").find_by(id: params[:parent_id], created_by: current_user.id)
+          else
+            @element = Collection.public_collection.send(@element_type).find_by(id: @id, created_by: current_user.id)
+          end
+          error!('401 Unauthorized', 401) unless @element
+
+          ## Analysis only
+          if params[:type] == 'containers'
+            @link = @element.links.find_by(id: params[:link_id]) if params[:link_id]
+            error!('401 Unauthorized', 401) unless @link or @link&.extended_metadata['target_id'] != params[:id]
+
+            # look for the actual container
+            @analysis = Container.find_by(id: params[:id])
+            error!('401 Unauthorized', 401) unless @analysis
+          end
+
+          ## Product only
+          if params[:parent_id] && params[:type] == 'samples'
+            @parent = Collection.public_collection.reactions.find_by(id: params[:parent_id]) ||
+            current_user.versions_collection.reactions.find_by(id: params[:parent_id]) ||
+            error!('Reaction not found', 404)
+
+            error!('Sample not part of reaction', 400) unless @parent.samples.exists?(@element.id)
+          end
+        end
+        post do
+          # method = ENV['PUBLISH_MODE'] == 'production' ? :perform_later : :perform_now
+          method = params[:is_async] ? :perform_later : :perform_now
+          method = :perform_now unless ENV['PUBLISH_MODE'] == 'production'
+
+          VersioningJob.send(method, params[:type], @element, @parent, @analysis, @link, current_user, @scheme_only)
+          { newVerCol: current_user.version_sync_collection }
+        end
+      end
+
+      namespace :createNewSampleVersion do
+        desc 'Create a new version of a published Sample'
+        params do
+          requires :sampleId, type: Integer, desc: 'Sample Id'
+          optional :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
+
+          # look for the sample in all public samples created by the current user
+          @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)   ## TO BE CHANGED by Paggy ****
+          error!('401 Unauthorized', 401) unless @sample
+
+          # look for an optional reaction in the public collection or the versions_collection of the current user
+          unless params[:reactionId].nil?
+            @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId])
+            unless @reaction
+              @reaction = current_user.versions_collection.reactions.find_by(id: params[:reactionId])
+            end
+
+            error!('400 reaction not found', 404) unless @reaction
+            error!('400 sample not part of reaction', 404) unless @reaction.samples.find_by(id: @sample.id)
+          end
+        end
+
+        post do
+          new_sample = Repo::VersionHandler.create_new_sample_version(@sample, @reaction, current_user)
+          entities = Entities::SampleEntity.represent(new_sample, serializable: true)
+          {
+            sample: entities,
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createNewReactionVersion do
+        desc 'Create a new version of a published Sample'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+        after_validation do
+          error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
+
+          @scheme_only = false
+          @reaction = Collection.public_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+        post do
+          method = params[:is_async] ? :perform_later : :perform_now
+          method = :perform_now unless ENV['PUBLISH_MODE'] == 'production'
+
+          VersioningJob.send(method, @reaction, current_user, @scheme_only)
+          { newVerCol: current_user.version_sync_collection }
+        end
+      end
+
+      namespace :createNewReactionSchemeVersion do
+        desc 'Create a new version of a published scheme only reaction'
+        params do
+          requires :reactionId, type: Integer, desc: 'Reaction Id'
+        end
+
+        after_validation do
+          error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
+
+          @scheme_only = true
+          @reaction = Collection.scheme_only_reactions_collection.reactions.find_by(id: params[:reactionId], created_by: current_user.id)
+          error!('401 Unauthorized', 401) unless @reaction
+        end
+
+        post do
+          new_reaction = Repo::VersionHandler.create_new_reaction_version
+          {
+            reaction: Entities::ReactionEntity.represent(new_reaction, serializable: true),
+            message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+          }
+        end
+      end
+
+      namespace :createAnalysisVersion do
+        desc 'Create a new version of a linked analysis'
+        params do
+          requires :analysisId, type: Integer, desc: 'Analysis Id'
+          requires :linkId, type: Integer, desc: 'Link Id'
+          requires :parentType, type: String, desc: 'Parent Type'
+          requires :parentId, type: Integer, desc: 'Parent Id'
+        end
+
+        after_validation do
+          error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
+
+          # look for the element in the versions samples/reactions created by the current user
+          if params[:parentType] == 'sample'
+            @element =  current_user.versions_collection.samples.find_by(id: params[:parentId], created_by: current_user.id)
+          elsif params[:parentType] == 'reaction'
+            @element =  current_user.versions_collection.reactions.find_by(id: params[:parentId], created_by: current_user.id)
+          end
+          error!('401 Unauthorized', 401) unless @element
+
+          # look for the link in the containers links (mainly for validation)
+          @link = @element.links.find_by(id: params[:linkId])
+          error!('401 Unauthorized', 401) unless @link or @link&.extended_metadata['target_id'] != params[:analysisId]
+
+          # look for the actual container
+          @analysis = Container.find_by(id: params[:analysisId])
+          error!('401 Unauthorized', 401) unless @analysis
+        end
+
+        post do
+          # duplicate the linked container for the element
+          Repo::VersionHandler.create_new_container_version(@element, @analysis, current_user)
+
+          # remove the link
+          Container.destroy(@link.id)
+
+          # return the sample or the reaction
+          if params[:parentType] == 'sample'
+            {
+              sample: SampleSerializer.new(@element).serializable_hash.deep_symbolize_keys,
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          elsif params[:parentType] == 'reaction'
+            {
+              reaction: Entities::ReactionEntity.represent(@element, serializable: true),
+              message: ENV['PUBLISH_MODE'] ? "publication on: #{ENV['PUBLISH_MODE']}" : 'publication off'
+            }
+          end
+        end
+      end
+
       namespace :reviewing do
         helpers ReviewHelpers
         helpers RepoCommentHelpers

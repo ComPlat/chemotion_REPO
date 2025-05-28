@@ -1,6 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Checkbox, OverlayTrigger, Tooltip, ButtonGroup, SplitButton, MenuItem } from 'react-bootstrap';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  OverlayTrigger,
+  Tooltip,
+  ButtonGroup,
+  SplitButton,
+  MenuItem
+} from 'react-bootstrap';
 import QuillViewer from 'src/components/QuillViewer';
 import PrintCodeButton from 'src/components/common/PrintCodeButton';
 import { stopBubble } from 'src/utilities/DomHelper';
@@ -19,6 +28,11 @@ import MolViewerSet from 'src/components/viewer/MolViewerSet';
 import { isNmrPass, isDatasetPass } from 'src/repoHome/RepoCommon';
 import MatrixCheck from 'src/components/common/MatrixCheck';
 import SpectraEditorButton from 'src/components/common/SpectraEditorButton';
+
+
+// For Repo
+import NewVersionModal from 'src/components/chemrepo/NewVersionModal';
+
 
 const qCheckPass = () => (
   <div style={{ display: 'inline', color: 'green' }}>
@@ -356,7 +370,7 @@ const headerBtnGroup = (
     }
   }
 
-  const { hasChemSpectra, hasNmriumWrapper } = UIStore.getState();
+  const { hasChemSpectra, hasNmriumWrapper, repoVersioning } = UIStore.getState();
   const { chmos } = UserStore.getState();
   const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -373,6 +387,17 @@ const headerBtnGroup = (
       >
         <i className="fa fa-trash" />
       </Button>
+      {
+        container.link_id &&
+        <NewVersionModal
+          type="Analysis"
+          element={container}
+          repoVersioning={repoVersioning}
+          parent={sample}
+          bsSize="xsmall"
+          className="button-right"
+        />
+      }
       <PrintCodeButton
         element={sample}
         analyses={[container]}
@@ -407,7 +432,7 @@ const headerBtnGroup = (
 const HeaderNormal = ({
   sample, container, mode, readOnly, isDisabled, serial,
   handleRemove, handleSubmit, handleAccordionOpen, toggleAddToReport,
-  publish,isReviewer
+  publish, isReviewer
 }) => {
   const clickToOpen = () => handleAccordionOpen(serial);
 

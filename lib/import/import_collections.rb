@@ -301,6 +301,7 @@ module Import
           eln_info = {
             id: fields['id'],
             short_label: fields['short_label'],
+            tracking_item_name: fields['tracking_item_name'],
             origin: @origin,
           }
           et.update!(

@@ -323,14 +323,18 @@ export default class PublicFetcher {
       });
   }
 
-  static affiliations(type) {
-    const api = `/api/v1/public/affiliations/${type}`;
+  static fetchAllAffiliationData() {
+    const api = '/api/v1/public/affiliations/all_data';
     return fetch(api, {
       credentials: 'same-origin',
     })
       .then(response => response.json())
       .catch(errorMessage => {
-        console.log(errorMessage);
+        console.log('Error fetching affiliation data:', errorMessage);
+        return {
+          countries: [],
+          organizations: {}
+        };
       });
   }
 
@@ -411,15 +415,34 @@ export default class PublicFetcher {
       });
   }
 
-  static getLD(type, id) {
-    const api = `/api/v1/public/metadata/jsonld?type=${type}&id=${id}`;
+  // Generic method to fetch RDF data
+  static getRDF(format, type, id, options = {}) {
+    const api = `/api/v1/public/metadata/${format}?type=${type}&id=${id}`;
+    const { responseType = 'text', errorPrefix = 'Error fetching RDF' } =
+      options;
+
     return fetch(api, {
       credentials: 'same-origin',
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return responseType === 'jsonld' ? response.json() : response.text();
+      })
       .catch(errorMessage => {
-        console.log(errorMessage);
+        console.log(`${errorPrefix}:`, errorMessage);
+        if (responseType === 'jsonld') {
+          return undefined;
+        }
+        return `${errorPrefix}: ${errorMessage}`;
       });
+  }
+
+  // Generic download method for RDF formats
+  static downloadRDF(format, type, id) {
+    const api = `/api/v1/public/metadata/download_rdf?rdf_format=${format}&type=${type}&id=${id}`;
+    window.open(api, '_blank');
   }
 
   static convertMolfile(params) {

@@ -82,6 +82,8 @@ class Sample < ApplicationRecord
     :sample_xref_cas
   ]
 
+  attr_accessor :previous_version
+
   # search scopes for exact matching
   pg_search_scope :search_by_sum_formula,  against: :sum_formula, associated_against: {
     molecule: :sum_formular
@@ -178,6 +180,7 @@ class Sample < ApplicationRecord
   before_create :set_boiling_melting_points
   after_save :update_counter
   after_create :create_root_container
+  before_destroy :remove_from_previous_version
   after_save :update_equivalent_for_reactions
   after_save :update_gas_material
   after_save :update_svg_for_reactions, unless: :skip_reaction_svg_update?
@@ -217,6 +220,7 @@ class Sample < ApplicationRecord
   has_many :wellplates, through: :wells
   has_many :residues, dependent: :destroy
   has_many :elemental_compositions, dependent: :destroy
+  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   has_many :sync_collections_users, through: :collections
   composed_of :amount, mapping: %w[amount_value amount_unit]
@@ -288,6 +292,10 @@ class Sample < ApplicationRecord
 
   def analyses
     self.container ? self.container.analyses : Container.none
+  end
+
+  def links
+    self.container ? self.container.links : Container.none
   end
 
   #TODO move to molecule (chemotion_ELN)
@@ -723,20 +731,24 @@ class Sample < ApplicationRecord
   # rubocop: disable Metrics/PerceivedComplexity
 
   def auto_set_short_label
-    sh_label = self['short_label']
-    return if sh_label =~ /solvents?|reactants?/
-    return if short_label && !short_label_changed?
+    unless self.previous_version.present?
+      sh_label = self['short_label']
+      return if sh_label =~ /solvents?|reactants?/
+      return if short_label && !short_label_changed?
 
-    if sh_label && (Sample.find_by(short_label: sh_label) || sh_label.eql?('NEW SAMPLE'))
-      if parent && !((parent_label = parent.short_label) =~ /solvents?|reactants?/)
-        self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
-      elsif creator && creator.counters['samples']
+      if sh_label && Sample.find_by(short_label: sh_label)
+        if parent && !((parent_label = parent.short_label) =~ /solvents?|reactants?/)
+          self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
+        elsif creator && creator.counters['samples']
+          abbr = self.creator.name_abbreviation
+          self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
+        end
+      elsif !sh_label && creator && creator.counters['samples']
         abbr = self.creator.name_abbreviation
         self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
       end
-    elsif !sh_label && creator && creator.counters['samples']
-      abbr = self.creator.name_abbreviation
-      self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
+    else
+      self.short_label = get_new_version_short_label
     end
   end
 
@@ -791,6 +803,14 @@ class Sample < ApplicationRecord
 
   def has_density
     density.present? && density.positive? && (!molarity_value.present? || molarity_value.zero?)
+  end
+
+  def remove_from_previous_version
+    previous_version = self.tag&.taggable_data['previous_version']
+      if previous_version
+        previous_element = Sample.find_by(id: previous_version['id'])
+        previous_element.untag_as_previous_version
+      end
   end
 
   # build a full path of the sample svg, nil if not buildable

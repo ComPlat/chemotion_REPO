@@ -7,6 +7,7 @@ import { Popover, OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
+import { getDoiVer } from 'src/components/chemrepo/publication-utils';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -62,9 +63,9 @@ const infoTag = (reaction, schemeOnly) => {
       <div className="home_wrapper_item">
         <div>Published on</div><div className="item_xvial">{getFormattedISODate(reaction.published_at)}</div>
       </div>
-      <div className="home_wrapper_item">
-        <div>Analyses</div><div className="item_xvial">{reaction.ana_cnt || 0}</div>
-      </div>
+      {/* <div className="home_wrapper_item">
+        <div>Version</div><div className="item_xvial">{getDoiVer(taggData?.doi)}</div>
+      </div> */}
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">When the X-Vial icon available, a physical sample of this molecule was registered to the Molecule Archive of the Compound Platform and can be requested from there</Tooltip>}>
         <div className="home_wrapper_item">
           <div>Sample</div><div className="item_xvial">{xvialTag(reaction)}</div>
@@ -78,7 +79,10 @@ const RepoReactionList = (props) => {
     element, currentElement, isPubElement, schemeOnly
   } = props;
   const listClass = (currentElement !== null && currentElement && currentElement.id === element.id) ? 'list_focus_on' : 'list_focus_off';
-  return (
+
+   // reaction.show is determined in PublicStore.handleGetReactions, shown are only
+  // reactions with no new_version or where the new_version is not published
+  return element.show && (
     <Col md={isPubElement === true ? 12 : 6} key={`list-reaction-${element.id}`} onClick={() => { LoadingActions.start(); PublicActions.displayReaction(element.id); }}>
       <div className={`home_reaction ${listClass}`}>
         <Row key={`list-reaction-svg-${element.id}`}>

@@ -82,5 +82,19 @@
     <%#   <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo"><%= c.doi %1></relatedIdentifier> %>
     <%# <% end %1> %>
     <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{dois[:parent_element][:DOI]}" %></relatedIdentifier>
+    <% if previous_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsNewVersionOf">https://dx.doi.org/<%= "#{previous_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if new_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPreviousVersionOf">https://dx.doi.org/<%= "#{new_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if concept.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{concept.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if versions.presence %>
+      <% versions.each do |version| %>
+        <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{version.doi.full_doi}" %></relatedIdentifier>
+      <% end %>
+    <% end %>
   </relatedIdentifiers>
 </resource>

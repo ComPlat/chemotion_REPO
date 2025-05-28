@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Col, Row, Panel } from 'react-bootstrap';
-import { OrcidIcon } from 'src/repoHome/RepoCommon';
+import OrcidIcon from 'src/components/chemrepo/common/Orcid';
 
 function DisplayName({ name, orcid }) {
   return (

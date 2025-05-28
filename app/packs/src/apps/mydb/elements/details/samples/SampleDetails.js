@@ -95,6 +95,7 @@ import {
 } from 'src/components/chemrepo/PublishCommon';
 import SampleDetailsRepoComment from 'src/components/chemrepo/SampleDetailsRepoComment';
 import { permitOn } from 'src/components/common/uis';
+import FundingReferences from 'src/components/chemrepo/funding/FundingReferences';
 
 const MWPrecision = 6;
 
@@ -805,6 +806,27 @@ export default class SampleDetails extends React.Component {
     );
   }
 
+  fundingsTab(ind) {
+    const { sample } = this.state;
+    if (!sample) {
+      return null;
+    }
+    return (
+      <Tab
+        eventKey={ind}
+        title="Fundings & Awards"
+        key={`fundings_${sample.id}_${ind}`}
+      >
+        <FundingReferences
+          elementId={sample.id}
+          elementType="Sample"
+          isNew={sample.isNew}
+          readOnly={sample.isNew || !permitOn(sample)}
+        />
+      </Tab>
+    );
+  }
+
   nmrSimTab(ind) {
     const { sample } = this.state;
     if (!sample) { return null; }
@@ -1157,6 +1179,7 @@ export default class SampleDetails extends React.Component {
     const titleTooltip = formatTimeStampsOfElement(sample || {});
     const isChemicalTab = activeTab === 'inventory';
     const saveBtnDisplay = sample.isEdited || (isChemicalEdited && isChemicalTab) ? '' : 'none';
+    const reactionId = sample.tag && sample.tag.taggable_data && sample.tag.taggable_data.reaction_id
 
     const { currentCollection } = UIStore.getState();
     const defCol = currentCollection && currentCollection.is_shared === false
@@ -1753,7 +1776,8 @@ export default class SampleDetails extends React.Component {
       references: this.sampleLiteratureTab(),
       results: this.sampleImportReadoutTab('results'),
       qc_curation: this.qualityCheckTab('qc_curation'),
-      measurements: this.measurementsTab('measurements')
+      measurements: this.measurementsTab('measurements'),
+      fundings: this.fundingsTab('fundings'),
     };
 
     if (this.enableComputedProps) {

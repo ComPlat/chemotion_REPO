@@ -87,8 +87,14 @@ module Taggable
   end
 
   def grouped_analyses
-    analyses.map(&:extended_metadata).map { |x| x.extract!('kind', 'status') }
-            .group_by { |x| x['status'] }
+    analyses_extended_metadata = analyses.map(&:extended_metadata)
+    links_extended_metadata = links.map do |container|
+      target_container = Container.find(container.extended_metadata['target_id'])
+      target_container[:extended_metadata]
+    end
+    extended_metadata = analyses_extended_metadata.concat(links_extended_metadata)
+    extended_metadata.map { |x| x.extract!('kind', 'status') }
+                     .group_by { |x| x['status'] }
   end
 
   def count_by_kind(analyses)
@@ -96,7 +102,7 @@ module Taggable
   end
 
   def analyses_tag
-    return nil unless is_a?(Sample) && analyses.count.positive?
+    return nil unless is_a?(Sample) && (analyses.count.positive? || links.count.positive?)
 
     grouped_analyses.to_h do |key, val|
       vv = count_by_kind(val)

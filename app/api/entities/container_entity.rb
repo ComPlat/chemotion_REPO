@@ -10,14 +10,108 @@ module Entities
       :description,
       :extended_metadata,
     )
-    expose :preview_img, if: ->(object, _options) { object.container_type == 'analysis' }
 
+    expose :preview_img, if: ->(object, _options) do
+      object.container_type == 'analysis'
+    end
     expose :attachments, using: 'Entities::AttachmentEntity'
     expose :code_log, using: 'Entities::CodeLogEntity'
-    expose :children, using: 'Entities::ContainerEntity'
+    # expose :children  ## To be checked by Paggy
+    # expose :children, using: 'Entities::ContainerEntity'
+    expose :children, using: 'Entities::ContainerEntity' do |container, opts|
+      if container.children.present?
+        container.children.map do |child|
+          if child['container_type'] == 'link'
+            get_link(child)
+          else
+            child
+          end
+        end
+      else
+        []
+      end
+    end
     expose :dataset, using: 'Labimotion::DatasetEntity'
     expose :dataset_doi
     expose :pub_id
+
+    # For Versioning
+    if ENV['REPO_VERSIONING'] == 'true'
+      expose :concept_doi
+      expose :versions
+      expose :link_id, if: ->(object, _options) do
+        object.container_type == 'analysis' && object.link_id.present?
+      end
+    end
+
+    ## To be checked by Paggy
+    # def children
+    #   if object.container_type == 'link'
+    #   else
+    #     Entities::ContainerEntity.represent(object.children, serializable: true)
+    #   end
+    # end
+
+    def get_link(container)
+      target_container = Container.find(container.extended_metadata['target_id'])
+      # Instead of using hash_tree, get the children directly
+      target_children = target_container.children
+      link = get_analysis(target_container, target_children)
+      link.link_id = container.id # attr_accessor link_id on Container
+      link
+    end
+
+    def get_analysis(container, children)
+      # Create a new Container object or use an existing one <- not sure about this
+      analysis = container
+      analysis.assign_attributes(container.attributes.slice('id', 'container_type', 'name', 'description'))
+      analysis.dataset_doi = container.full_doi if container.respond_to? :full_doi
+      analysis.pub_id = container.publication&.id if container.respond_to? :publication
+      analysis.extended_metadata = container.extended_metadata
+
+      dids = []
+
+      # Map children to Container objects as well
+      analysis.children = children.map do |child|
+        ds = child
+        ds.assign_attributes(child.attributes.slice('id', 'container_type', 'name', 'description'))
+        ds.dataset_doi = child.full_doi if child.respond_to? :full_doi
+        ds.pub_id = child.publication&.id if child.respond_to? :publication
+        ds.extended_metadata = child.extended_metadata
+        dids << ds.id
+        ds
+      end
+
+      # Assign preview_img
+      analysis.preview_img = dids
+
+      analysis
+    end
+
+    def get_extended_metadata(container)
+      ext_mdata = container.extended_metadata
+      return ext_mdata unless ext_mdata
+      ext_mdata['report'] = ext_mdata['report'] == 'true' || ext_mdata == true
+      unless ext_mdata['content'].blank?
+        ext_mdata['content'] = JSON.parse(container.extended_metadata['content'])
+      end
+      unless ext_mdata['hyperlinks'].blank?
+        ext_mdata['hyperlinks'] = JSON.parse(container.extended_metadata['hyperlinks'])
+      end
+      ext_mdata
+    end
+
+    def concept_doi
+      object.concept_doi
+    end
+
+    def versions
+      return nil unless object.container_type == 'analysis'
+
+      object.versions.map do |container|
+        { doi: container.full_doi, id: container.id }
+      end
+    end
 
     def dataset_doi
       object.full_doi

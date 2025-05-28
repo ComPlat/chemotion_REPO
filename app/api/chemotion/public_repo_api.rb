@@ -149,9 +149,13 @@ module Chemotion
             (select "collections".label from "collections" inner join collections_samples cs on collections.id = cs.collection_id
               and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
               select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
-            (select id from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as pub_id,
-            (select to_char(published_at, 'YYYY-MM-DD') from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as published_at,
-            (select taggable_data -> 'creators'->0->>'name' from publications where element_type = 'Sample' and element_id = sid and deleted_at is null) as author_name
+            (
+                select json_build_object('id', id, 'published_at', to_char(published_at, 'YYYY-MM-DD'), 'author_name', taggable_data -> 'creators'->0->>'name', 'doi', taggable_data -> 'doi')
+                from publications
+                where element_type = 'Sample'
+                  and element_id = sid
+                  and deleted_at is null
+            ) as publication
           SQL
 
           mol_scope = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
@@ -222,7 +226,8 @@ module Chemotion
             (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
             (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
             and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
-            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo
+            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
+            (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version
           SQL
 
           if params[:scheme_only]
@@ -283,14 +288,34 @@ module Chemotion
       resource :last_published do
         desc "Return Last PUBLIC serialized entities"
         get do
+          res = {
+            last_published: {}
+          }
           s_pub = Publication.where(element_type: 'Sample', state: 'completed').order(:published_at).last
-          sample = s_pub.element
+          unless s_pub.nil?
+            sample = s_pub.element
+            res[:last_published][:sample] = {
+              id: sample.id,
+              sample_svg_file: sample.sample_svg_file,
+              molecule: sample.molecule,
+              tag: s_pub.taggable_data,
+              contributor: User.find(s_pub.published_by).name
+            }
+          end
 
           r_pub = Publication.where(element_type: 'Reaction', state: 'completed').order(:published_at).last
-          reaction = r_pub.element
-
-          { last_published: { sample: { id: sample.id, sample_svg_file: sample.sample_svg_file, molecule: sample.molecule, tag: s_pub.taggable_data, contributor: User.with_deleted.find(s_pub.published_by).name  },
-          reaction: { id: reaction.id, reaction_svg_file: reaction.reaction_svg_file, tag: r_pub.taggable_data, contributor: User.with_deleted.find(r_pub.published_by).name } } }
+          unless r_pub.nil?
+            reaction = r_pub.element
+            res[:last_published][:reaction] = {
+              id: reaction.id,
+              reaction_svg_file: reaction.reaction_svg_file,
+              tag: r_pub.taggable_data,
+              contributor: User.find(r_pub.published_by).name
+            }
+          end
+          res
+          # { last_published: { sample: { id: sample.id, sample_svg_file: sample.sample_svg_file, molecule: sample.molecule, tag: s_pub.taggable_data, contributor: User.with_deleted.find(s_pub.published_by).name  },
+          # reaction: { id: reaction.id, reaction_svg_file: reaction.reaction_svg_file, tag: r_pub.taggable_data, contributor: User.with_deleted.find(r_pub.published_by).name } } }
         end
       end
 
@@ -321,6 +346,12 @@ module Chemotion
             # ds_json[:dataset_doi] = dataset.full_doi
             # ds_json[:pub_id] = dataset.publication&.id
 
+            ## For Versioning
+            # ds_json[:concept_doi] = dataset.concept_doi
+            # ds_json[:versions] = dataset.versions.map do |container|
+            #   {doi: container.full_doi, id: container.id }
+            # end
+
             res = {
               dataset: ds_json,
               isLogin: current_user.present?,
@@ -336,7 +367,7 @@ module Chemotion
                 molecule_svg_file: molecule&.molecule_svg_file,
                 pubchem_cid: molecule&.tag&.taggable_data && molecule&.tag&.taggable_data["pubchem_cid"]
               },
-              license: dataset.tag.taggable_data["publication"]["license"] || 'CC BY-SA',
+              license: dataset.tag&.taggable_data&.dig("publication", "license") || 'CC BY-SA',
               publication: {
                 author_ids: sample&.publication&.taggable_data['author_ids'] || [],
                 creators: sample&.publication&.taggable_data['creators'] || [],
@@ -525,9 +556,15 @@ module Chemotion
             zip_f = Zip::OutputStream.write_buffer do |zip|
               file_text = ''
               @container.attachments.each do |att|
-                next if att.read_file.nil? || !att.read_file.present?
+                begin
+                  file_content = att.read_file
+                  next if file_content.nil? || !file_content.present?
+                rescue Shrine::Error => e
+                  Rails.logger.error "Failed to read file for attachment #{att.id}: #{e.message}"
+                  next
+                end
 
-                file_text += add_to_zip_and_update_file_text(zip, att.filename, att.read_file)
+                file_text += add_to_zip_and_update_file_text(zip, att.filename, file_content)
 
                 next unless att.annotated?
 
@@ -648,17 +685,36 @@ module Chemotion
           requires :limit, type: Integer, desc: 'Limit', default: 100
           optional :date_from, type: String, desc: 'Published date from'
           optional :date_to, type: String, desc: 'Published date to'
+          optional :rdf_format, type: String, desc: 'RDF format', values: %w[jsonld turtle ntriples trig nquads], default: 'jsonld'
         end
         get :publications do
           service_url = Rails.env.production? ? 'https://www.chemotion-repository.net' : 'http://localhost:3000'
-          api_url = '/api/v1/public/metadata/download_json?inchikey='
+          api_url = "/api/v1/public/metadata/download_rdf?rdf_format=#{params[:rdf_format]}&inchikey="
 
           result = declared(params, include_missing: false)
           list = []
           limit = params[:limit] - params[:offset] > 1000 ? params[:offset] + 1000 : params[:limit]
           scope = Publication.includes(:doi).where(element_type: params[:type], state: 'completed')
-          scope = scope.where('published_at >= ?', params[:date_from]) if params[:date_from].present?
-          scope = scope.where('published_at <= ?', params[:date_to]) if params[:date_to].present?
+
+          # Handle date_from parameter safely
+          if params[:date_from].present? && params[:date_from] != '{date_from}'
+            begin
+              scope = scope.where('published_at >= ?', params[:date_from])
+            rescue ArgumentError
+              # Handle invalid date format gracefully
+              Rails.logger.warn "Invalid date_from parameter: #{params[:date_from]}"
+            end
+          end
+
+          # Handle date_to parameter safely
+          if params[:date_to].present? && params[:date_to] != '{date_to}'
+            begin
+              scope = scope.where('published_at <= ?', params[:date_to])
+            rescue ArgumentError
+              # Handle invalid date format gracefully
+              Rails.logger.warn "Invalid date_to parameter: #{params[:date_to]}"
+            end
+          end
           publications = scope.order(:published_at).offset(params[:offset]).limit(limit)
           publications.each do |publication|
             inchikey = publication&.doi&.suffix
@@ -674,7 +730,9 @@ module Chemotion
           optional :id, type: Integer, desc: "Id"
           optional :type, type: String, desc: "Type", values: %w[sample reaction container collection]
           optional :inchikey, type: String, desc: "inchikey"
+          optional :concept, type: Boolean, desc: "concept"
           optional :extension, type: String, desc: 'JSON-LD extension option', values: %w[LLM]
+          optional :rdf_format, type: String, desc: 'RDF format', values: %w[jsonld turtle ntriples trig nquads], default: 'jsonld'
         end
         after_validation do
           @type = params['type']&.classify
@@ -689,19 +747,25 @@ module Chemotion
         end
         desc "Download metadata_xml"
         get :download do
-          filename = URI.encode_www_form_component("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+          if ENV['REPO_VERSIONING'] == 'true' && params[:concept]
+            filename = URI.encode_www_form_component("metadata_#{@type}_#{@publication.element_id}_concept-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+            metadata_xml = @publication.concept.metadata_xml
+          else
+            filename = URI.encode_www_form_component("metadata_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.xml")
+            metadata_xml = @publication.metadata_xml
+          end
           content_type('application/octet-stream')
           header['Content-Disposition'] = "attachment; filename=" + filename
           env['api.format'] = :binary
-          @publication.metadata_xml
+          metadata_xml
         end
 
         desc "Download JSON-Link Data"
         get :download_json do
           filename = URI.encode_www_form_component("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
-          content_type('application/json')
+          content_type('application/ld+json')
           header['Content-Disposition'] = "attachment; filename=" + filename
-          env['api.format'] = :binary
+          env['api.format'] = :json
           @publication.json_ld(params['extension'])
         end
 
@@ -709,7 +773,77 @@ module Chemotion
         get :jsonld do
           @publication.json_ld
         end
+
+        desc "Download RDF Turtle Data"
+        get :download_turtle do
+          filename = URI.encode_www_form_component("RDF-Turtle_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.ttl")
+          content_type('text/turtle')
+          header['Content-Disposition'] = "attachment; filename=" + filename
+          env['api.format'] = :binary
+          JsonldConverterService.convert_publication(@publication, format: :turtle)
+        end
+
+        desc "Get RDF Turtle Data"
+        get :turtle do
+          content_type('text/turtle')
+          env['api.format'] = :binary
+          JsonldConverterService.convert_publication(@publication, format: :turtle)
+        end
+
+        desc "Download RDF N-Triples Data"
+        get :download_ntriples do
+          filename = URI.encode_www_form_component("RDF-NTriples_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.nt")
+          content_type('application/n-triples')
+          header['Content-Disposition'] = "attachment; filename=" + filename
+          env['api.format'] = :binary
+          JsonldConverterService.convert_publication(@publication, format: :ntriples)
+        end
+
+        desc "Get RDF N-Triples Data"
+        get :ntriples do
+          content_type('application/n-triples')
+          env['api.format'] = :binary
+          JsonldConverterService.convert_publication(@publication, format: :ntriples)
+        end
+
+        desc "Download RDF Data in specified format"
+        get :download_rdf do
+          case params[:rdf_format]
+          when 'jsonld'
+            filename = URI.encode_www_form_component("JSON-LD_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.json")
+            content_type('application/ld+json')
+            header['Content-Disposition'] = "attachment; filename=" + filename
+            env['api.format'] = :json
+            @publication.json_ld(params['extension'])
+          when 'turtle'
+            filename = URI.encode_www_form_component("RDF-Turtle_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.ttl")
+            content_type('text/turtle')
+            header['Content-Disposition'] = "attachment; filename=" + filename
+            env['api.format'] = :binary
+            JsonldConverterService.convert_publication(@publication, format: :turtle)
+          when 'ntriples'
+            filename = URI.encode_www_form_component("RDF-NTriples_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.nt")
+            content_type('application/n-triples')
+            header['Content-Disposition'] = "attachment; filename=" + filename
+            env['api.format'] = :binary
+            JsonldConverterService.convert_publication(@publication, format: :ntriples)
+          when 'trig'
+            filename = URI.encode_www_form_component("RDF-TriG_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.trig")
+            content_type('application/trig')
+            header['Content-Disposition'] = "attachment; filename=" + filename
+            env['api.format'] = :binary
+            JsonldConverterService.convert_publication(@publication, format: :trig)
+          when 'nquads'
+            filename = URI.encode_www_form_component("RDF-NQuads_#{@type}_#{@publication.element_id}-#{Time.new.strftime("%Y%m%d%H%M%S")}.nq")
+            content_type('application/n-quads')
+            header['Content-Disposition'] = "attachment; filename=" + filename
+            env['api.format'] = :binary
+            JsonldConverterService.convert_publication(@publication, format: :nquads)
+          end
+        end
       end
+
+
 
       resource :published_statics do
         desc 'Return PUBLIC statics'

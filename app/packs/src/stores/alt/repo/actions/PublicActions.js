@@ -391,6 +391,10 @@ class PublicActions {
     };
   }
 
+  selectSampleVersion(version) {
+    return version;
+  }
+
   publicSearch(params) {
     return params;
   }

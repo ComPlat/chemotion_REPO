@@ -23,7 +23,9 @@ import {
   Tabs, Tab, Label, Button
 } from 'react-bootstrap';
 
-import { getPublicationId } from 'src/components/chemrepo/publication-utils';
+
+// for REPO
+import { getPublicationId, getPublication } from 'src/components/chemrepo/publication-utils';
 
 const tabInfoHash = {
   metadata: {
@@ -177,6 +179,13 @@ export default class ElementDetails extends Component {
     const isPending = el?.tag?.taggable_data?.publish_pending;
 
     el.sealed = isPending || !!getPublicationId(el);
+
+    // for reactions, check if the samples are published (with another reaction, for new versions)
+    if (el && el.type === 'reaction') {
+      el.samples.forEach(sample => {
+        sample.sealed = getPublication(sample) ? true : false;
+      });
+    }
 
     if (el && el.klassType === 'GenericEl' && el.type != null) {
       return (

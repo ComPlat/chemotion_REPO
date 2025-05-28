@@ -1,7 +1,7 @@
 import UIStore from 'src/stores/alt/stores/UIStore';
 import getFormattedRange from 'src/components/chemrepo/range-utils';
 
-export const getElementType = element => element?.tag?.taggable_type;
+export const getElementType = (element) => element?.tag?.taggable_type;
 
 export const getPublicationId = (element) => {
   const tag = element?.tag || {};
@@ -9,6 +9,18 @@ export const getPublicationId = (element) => {
   const tagType = getElementType(element) || '';
   const publishedId = tagData[`public_${tagType.toLowerCase()}`];
   return publishedId;
+};
+
+export const getPublication = (element) => {
+  const tag = element?.tag || {};
+  const tagData = tag.taggable_data || {};
+  return tagData.publication;
+};
+
+export const getTagDataByTag = (element, tagName = 'previous_version') => {
+  const tag = element?.tag || {};
+  const tagData = tag.taggable_data || {};
+  return tagData[tagName];
 };
 
 export const getAuthorLabel = (authorIds) => {
@@ -82,4 +94,13 @@ export const doStValidation = element => {
   });
 
   return exceptions;
+};
+
+export const hasVersion = (element) =>
+  Boolean(getTagDataByTag(element, 'previous_version'));
+
+export const getDoiVer = (doi) => {
+  if (!doi) return '';
+  const value = (doi || '').match(/\/V(\d+)/i);
+  return value ? value[1] : '';
 };

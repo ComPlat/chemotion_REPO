@@ -4,10 +4,10 @@ import { Col, Button } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import uuid from 'uuid';
 import { AffiliationMap } from 'repo-review-ui';
-import { OrcidIcon } from 'src/repoHome/RepoCommon';
 import RepoConst from 'src/components/chemrepo/common/RepoConst';
 import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import EmbargoActions from 'src/stores/alt/repo/actions/EmbargoActions';
+import OrcidIcon from 'src/components/chemrepo/common/Orcid';
 
 const renderAffiliations = ({ affiliations, affiliationMap }) => {
   const names = [];
@@ -35,7 +35,7 @@ const renderAuthors = ({ creators, affiliationMap }) => {
     <span>
       {creators.map(creator => (
         <div key={`auth_${creator.id}_${uuid.v4()}`}>
-          <OrcidIcon orcid={creator.ORCID} />
+          {OrcidIcon({ orcid: creator.ORCID })}
           {creator.name}
           <sup>
             {creator.affiliationIds &&
@@ -149,14 +149,14 @@ const renderRecord = (rec, index, currentUser) => {
           </span>
           <span style={{ fontSize: '4em' }}>
             <h3 style={{ fontWeight: 'bolder' }}>
-              <OrcidIcon orcid={taggableData.contributors?.ORCID} />
+              {OrcidIcon({ orcid: taggableData.contributors?.ORCID })}
               {` ${taggableData.contributors?.name}`}
             </h3>
             <h4>
               {taggableData.contributors?.affiliations?.map((e, i) => (
                 <React.Fragment key={uuid.v4()}>
                   <span style={{ wordWrap: 'break-word' }}>
-                    {i + 1}. {e.replace(/,/g, ',\u00A0')}
+                    {i + 1}. {e?.replace(/,/g, ',\u00A0')}
                   </span>
                   <br />
                 </React.Fragment>

@@ -25,7 +25,7 @@ import PropTypes from 'prop-types';
 import Aviator from 'aviator';
 
 // for REPO
-import { PublishedTag } from 'src/components/chemrepo/PublishCommon';
+import { PublishedTag, NewVersionTag } from 'src/components/chemrepo/PublishCommon';
 
 export function reactionRole(element) {
   let tooltip = null;
@@ -161,9 +161,10 @@ function topSecretIcon(element) {
 
 const reactionPublished = (element) => {
   if (element.type === 'reaction') {
-    return (
+    return <>
       <PublishedTag element={element} />
-    );
+      <NewVersionTag element={element} />
+    </>;
   }
   return (<span />);
 };

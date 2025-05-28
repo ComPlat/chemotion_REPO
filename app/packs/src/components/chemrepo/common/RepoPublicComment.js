@@ -1,8 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl, Label } from 'react-bootstrap';
+import { Modal, Button, OverlayTrigger, ButtonToolbar, Tooltip, FormControl } from 'react-bootstrap';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
+import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
+
+const ACTIONS = {
+  reactions: {
+    true: id => PublicActions.displayReaction(id),
+    false: id => ReviewActions.displayReviewReaction(id),
+  },
+  molecules: {
+    true: id => PublicActions.displayMolecule(id),
+    false: id => ReviewActions.displayReviewSample(id),
+  },
+};
 
 export default class RepoPublicComment extends React.Component {
   constructor(props) {
@@ -14,16 +26,17 @@ export default class RepoPublicComment extends React.Component {
   }
 
   updateComment() {
-    const { id, type, pageType, pageId } = this.props;
-    RepositoryFetcher.reviewerComment(id, type, this.commentInput.value)
-      .then((result) => {
+    const { id, type, pageType, pageId, element } = this.props;
+    RepositoryFetcher.reviewerComment(id, type, this.commentInput.value).then(
+      () => {
         this.setState({ modalShow: false });
-        if (pageType === 'reactions') {
-          PublicActions.displayReaction(pageId || id);
-        } else {
-          PublicActions.displayMolecule(pageId);
-        }
-      });
+        const isOnPublications = window.location.pathname.includes('/publications');
+        let params = isOnPublications ? pageId : element?.id || pageId;
+        params = pageType === 'reactions' ? pageId : params;
+        const action = ACTIONS[pageType.toLowerCase()][isOnPublications];
+        if (action) action(params);
+      }
+    );
   }
 
   render() {
@@ -37,7 +50,7 @@ export default class RepoPublicComment extends React.Component {
 
     let btnTbl = (<span />);
     let commentModal = (<span />);
-    const style = { height: '20px', width: '20px', borderRadius: '50%', border: '1px' };
+    const style = { height: '20px', width: '20px', borderRadius: '50%', border: '1px', margin: '4px' };
     const hasComment = userInfo != '';
 
     if (hasComment === true) {

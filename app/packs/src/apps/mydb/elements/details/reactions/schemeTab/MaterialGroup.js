@@ -14,6 +14,8 @@ import { reagents_kombi } from 'src/components/staticDropdownOptions/reagents_ko
 import { permitOn } from 'src/components/common/uis';
 import HelpInfo from 'src/components/common/HelpInfo';
 import ToggleButton from 'src/components/common/ToggleButton';
+// for REPO
+import { hasVersion } from 'src/components/chemrepo/publication-utils';
 
 const MaterialGroup = ({
   materials, materialGroup, deleteMaterial, onChange,
@@ -146,7 +148,7 @@ function GeneralMaterialGroup({
     });
     reagentDd = (
       <VirtualizedSelect
-        disabled={!permitOn(reaction)}
+        disabled={!permitOn(reaction) || hasVersion(reaction)}
         className="reagents-select"
         name="Reagents"
         multi={false}
@@ -196,7 +198,7 @@ function GeneralMaterialGroup({
    */
   const addSampleButton = (
     <Button
-      disabled={!permitOn(reaction)}
+      disabled={!permitOn(reaction) || hasVersion(reaction)}
       bsStyle="success"
       bsSize="xs"
       onClick={() => ElementActions.addSampleToMaterialGroup({ reaction, materialGroup })}

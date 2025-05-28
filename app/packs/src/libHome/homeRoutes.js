@@ -197,10 +197,14 @@ const routes = {
         PublicActions.displayMolecule(e.params.moleculeId)
       },
       tag: function (e) {
-        PublicActions.displayMolecule(e.params.moleculeId, e.params.suffix)
+        if (e.params.version === 'undefined') {
+          PublicActions.displayMolecule(e.params.moleculeId, e.params.suffix)
+        } else {
+          PublicActions.displayMolecule(e.params.moleculeId, `${e.params.suffix}/${e.params.version}`)
+        }
       }
     },
-    '/:moleculeId/:suffix': 'tag',
+    '/:moleculeId/:suffix/:version': 'tag',
     '/:moleculeId': 'show'
   },
 

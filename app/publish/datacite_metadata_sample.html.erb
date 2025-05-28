@@ -102,8 +102,11 @@
       OBI - Ontology for Biomedical Investigations
     </description>
   </descriptions>
-
+  <%= render_funding_references(fundings) %>
   <relatedIdentifiers>
+    <% if previous_version_doi %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsNewVersionOf">https://dx.doi.org/<%= "#{previous_version_doi}" %></relatedIdentifier>
+    <% end %>
     <% dois[:analyses_dois].each do |_, ds| %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>
     <% end %>
@@ -116,5 +119,20 @@
     <% lits.each do |ref| %>
       <relatedIdentifier relatedIdentifierType="<%=ref['relatedidentifiertype'].split(' {|} ').shift%>" relationType="<%=ref['relationtype']%>"><%=ref['relatedidentifiertype'].split(' {|} ').pop%></relatedIdentifier>
     <% end %>
+    <% if previous_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsNewVersionOf">https://dx.doi.org/<%= "#{previous_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if new_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPreviousVersionOf">https://dx.doi.org/<%= "#{new_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if concept.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{concept.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if versions.presence %>
+      <% versions.each do |version| %>
+        <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{version.doi.full_doi}" %></relatedIdentifier>
+      <% end %>
+    <% end %>
+
   </relatedIdentifiers>
 </resource>

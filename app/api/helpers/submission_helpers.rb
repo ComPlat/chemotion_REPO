@@ -10,7 +10,8 @@ module SubmissionHelpers
     et = element.tag
     return if et.taggable_data.nil?
 
-    et.update!(taggable_data: (et.taggable_data || {}).merge(publish_pending: true))
+    publish_pending = !et.taggable_data.key?('previous_version')
+    et.update!(taggable_data: (et.taggable_data || {}).merge(publish_pending: publish_pending))
   rescue StandardError => e
     Publication.repo_log_exception(e, { element: element&.id })
     nil
@@ -40,8 +41,10 @@ module SubmissionHelpers
   end
 
   def ols_validation(analyses)
-    analyses.each do |ana|
-      error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+    analyses&.each do |ana|
+      if ana.container_type == 'analysis'
+        error!('analyses check fail', 404) if (ana.extended_metadata['kind'].match /^\w{3,4}\:\d{6,7}\s\|\s\w+/).nil?
+      end
     end
   rescue StandardError => e
     Publication.repo_log_exception(e, { analyses: analyses })

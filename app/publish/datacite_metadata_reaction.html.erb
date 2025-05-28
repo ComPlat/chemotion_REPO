@@ -74,7 +74,7 @@
       <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.description.to_json)).text, false, nil, false).to_s %>
     </description>
   </descriptions>
-
+  <%= render_funding_references(fundings) %>
   <relatedIdentifiers>
     <% dois[:analyses_dois].each do |_, ds| %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>
@@ -84,6 +84,20 @@
     <% end %>
     <% if col_doi.presence %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{col_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if previous_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsNewVersionOf">https://dx.doi.org/<%= "#{previous_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if new_version.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPreviousVersionOf">https://dx.doi.org/<%= "#{new_version.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if concept.presence %>
+      <relatedIdentifier relatedIdentifierType="DOI" relationType="IsPartOf">https://dx.doi.org/<%= "#{concept.doi.full_doi}" %></relatedIdentifier>
+    <% end %>
+    <% if versions.presence %>
+      <% versions.each do |version| %>
+        <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{version.doi.full_doi}" %></relatedIdentifier>
+      <% end %>
     <% end %>
     <% lits.each do |ref| %>
       <relatedIdentifier relatedIdentifierType="<%=ref['relatedidentifiertype'].split(' {|} ').shift%>" relationType="<%=ref['relationtype']%>"><%=ref['relatedidentifiertype'].split(' {|} ').pop%></relatedIdentifier>

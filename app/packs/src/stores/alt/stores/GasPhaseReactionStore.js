@@ -11,6 +11,7 @@ class GasPhaseReactionStore {
     this.bindListeners({
       setCatalystReferenceMole: this.setCatalystReferenceMole,
       setReactionVesselSize: this.setReactionVesselSize,
+      resetStore: this.resetStore,
     });
     this.bindActions(GasPhaseReactionActions);
   }
@@ -24,6 +25,14 @@ class GasPhaseReactionStore {
   setReactionVesselSize(value) {
     this.setState({
       reactionVesselSizeValue: value,
+    });
+  }
+
+  // REPO: Added to fix the dispatching during another dispatch issue in ReactionDetailsScheme
+  resetStore() {
+    this.setState({
+      catalystReferenceMolValue: null,
+      reactionVesselSizeValue: null,
     });
   }
 }

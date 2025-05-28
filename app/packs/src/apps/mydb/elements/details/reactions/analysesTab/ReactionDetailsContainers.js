@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Badge,
   PanelGroup,
   Panel,
   Button,
@@ -24,6 +25,10 @@ import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 import TextTemplateActions from 'src/stores/alt/actions/TextTemplateActions';
 import SpectraEditorButton from 'src/components/common/SpectraEditorButton';
 import { AnalysisVariationLink } from 'src/apps/mydb/elements/details/reactions/variationsTab/ReactionVariationsAnalyses';
+
+
+// For REPO
+import NewVersionModal from 'src/components/chemrepo/NewVersionModal';
 
 const nmrMsg = (reaction, container) => {
   const ols = container.extended_metadata?.kind?.split('|')[0].trim();
@@ -165,6 +170,7 @@ export default class ReactionDetailsContainers extends Component {
     }
 
     const { chmos } = UserStore.getState();
+    const { repoVersioning } = UIStore.getState();
     const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
 
     return (
@@ -178,6 +184,17 @@ export default class ReactionDetailsContainers extends Component {
         >
           <i className="fa fa-trash" />
         </Button>
+        {
+          container.link_id &&
+          <NewVersionModal
+            type="Analysis"
+            element={container}
+            repoVersioning={repoVersioning}
+            parent={reaction}
+            bsSize="xsmall"
+            className="button-right"
+          />
+        }
         <PrintCodeButton element={reaction} analyses={[container]} ident={container.id} />
         <SpectraEditorButton
           element={reaction}
@@ -357,18 +374,18 @@ export default class ReactionDetailsContainers extends Component {
                           container={container}
                           onChange={this.handleChange.bind(this, container)}
                         />
-                        <ViewSpectra
-                          sample={reaction}
-                          handleSampleChanged={this.handleSpChange}
-                          handleSubmit={this.props.handleSubmit}
-                        />
-                        <NMRiumDisplayer
-                          sample={reaction}
-                          handleSampleChanged={this.handleSpChange}
-                          handleSubmit={this.props.handleSubmit}
-                        />
                       </Panel.Body>
                     </Panel>
+                    <ViewSpectra
+                      sample={reaction}
+                      handleSampleChanged={this.handleSpChange}
+                      handleSubmit={this.props.handleSubmit}
+                    />
+                    <NMRiumDisplayer
+                      sample={reaction}
+                      handleSampleChanged={this.handleSpChange}
+                      handleSubmit={this.props.handleSubmit}
+                    />
                   </div>
                 );
               })}

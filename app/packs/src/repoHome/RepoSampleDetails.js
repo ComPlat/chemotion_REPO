@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Panel } from 'react-bootstrap';
 import PropTypes from 'prop-types';
+import { isEmpty } from 'lodash';
 import { ClosePanel, MoleculeInfo } from 'src/repoHome/RepoCommon';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
@@ -89,6 +90,10 @@ export default class RepoSampleDetails extends Component {
 
     tagData = (pubData?.taggable_data) || {};
     const details = (samples || []).map((s) => {
+      // only display the active version
+      if (isEmpty(review) && !s.show) {
+        return null;
+      }
       if (isPublished) {
         pubData = {
           id: s.pub_id
@@ -123,6 +128,7 @@ export default class RepoSampleDetails extends Component {
         contributors: s.contributors || tagData.contributors,
         creators: s.creators || tagData.creators,
         doi: s.doi || element.doi,
+        concept: s.concept,
         reaction_ids: s.reaction_ids || [],
         showed_name: s.showed_name,
         molecule_iupac: molecule.iupac_name || [],
@@ -134,9 +140,12 @@ export default class RepoSampleDetails extends Component {
         labels: (isPublished ? s.labels : labels) || [],
         molecular_mass: s.molecular_mass || '',
         sum_formula: s.sum_formula || '',
+        new_version: s.new_version,
+        versions: (s.versions || []),
         molecule: s.molecule || '',
         sample_svg_file: s.sample_svg_file || '',
         molfile: s.molfile || '',
+        fundingReferences: s.fundingReferences || [],
       };
 
       return (
@@ -149,6 +158,7 @@ export default class RepoSampleDetails extends Component {
           isLogin={idyLogin}
           isCI={!!isCI}
           isReviewer={idyReview}
+          isPublisher={s.isPublisher}
           {...this.props}
         />
       );

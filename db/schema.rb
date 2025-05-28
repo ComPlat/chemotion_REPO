@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_03_31_144600) do
+ActiveRecord::Schema.define(version: 2025_07_15_140007) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -420,6 +420,15 @@ ActiveRecord::Schema.define(version: 2025_03_31_144600) do
     t.index ["deleted_at"], name: "index_computed_props_on_deleted_at"
   end
 
+  create_table "concepts", force: :cascade do |t|
+    t.jsonb "taggable_data"
+    t.integer "doi_id"
+    t.text "metadata_xml"
+    t.datetime "deleted_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "container_hierarchies", id: false, force: :cascade do |t|
     t.integer "ancestor_id", null: false
     t.integer "descendant_id", null: false
@@ -597,7 +606,8 @@ ActiveRecord::Schema.define(version: 2025_03_31_144600) do
     t.integer "doiable_id"
     t.string "doiable_type"
     t.string "suffix"
-    t.index ["inchikey", "molecule_count", "analysis_type", "analysis_count"], name: "index_on_dois", unique: true
+    t.integer "version_count", default: 0
+    t.index ["inchikey", "molecule_count", "analysis_type", "analysis_count", "version_count"], name: "index_on_dois", unique: true
     t.index ["suffix"], name: "index_dois_on_suffix", unique: true
   end
 
@@ -751,6 +761,18 @@ ActiveRecord::Schema.define(version: 2025_03_31_144600) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.time "deleted_at"
+  end
+
+  create_table "fundings", force: :cascade do |t|
+    t.string "element_type", null: false
+    t.integer "element_id", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.integer "created_by", null: false
+    t.datetime "deleted_at"
+    t.integer "deleted_by"
+    t.index ["element_type", "element_id"], name: "index_fundings_on_element_type_and_element_id"
+    t.index ["metadata"], name: "index_fundings_on_metadata", using: :gin
   end
 
   create_table "hub_logs", id: :serial, force: :cascade do |t|
@@ -1110,6 +1132,7 @@ ActiveRecord::Schema.define(version: 2025_03_31_144600) do
     t.jsonb "review"
     t.datetime "accepted_at"
     t.text "oai_metadata_xml"
+    t.integer "concept_id"
     t.index ["ancestry"], name: "index_publications_on_ancestry"
     t.index ["element_type", "element_id", "deleted_at"], name: "publications_element_idx"
     t.index ["element_type", "state"], name: "index_publications_element_type_state"
@@ -1882,8 +1905,8 @@ ActiveRecord::Schema.define(version: 2025_03_31_144600) do
        RETURNS TABLE(literatures text)
        LANGUAGE sql
       AS $function$
-         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2
-         where l.literature_id = l2.id
+         select string_agg(l2.id::text, ',') as literatures from literals l , literatures l2 
+         where l.literature_id = l2.id 
          and l.element_type = $1 and l.element_id = $2
        $function$
   SQL

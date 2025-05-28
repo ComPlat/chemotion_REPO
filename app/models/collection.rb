@@ -67,6 +67,7 @@ class Collection < ApplicationRecord
 
   has_many :sync_collections_users, dependent: :destroy, inverse_of: :collection
   has_many :shared_users, through: :sync_collections_users, source: :user
+  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   has_one :metadata
 

@@ -37,6 +37,8 @@ class CollectionsReaction < ApplicationRecord
   def self.move_to_collection(reaction_ids, from_col_ids, to_col_ids)
     # Get associated samples
     sample_ids = Reaction.get_associated_samples(reaction_ids)
+    # exclude samples which are already public, they are not supposed to be moved
+    sample_ids = sample_ids.difference(Collection.public_collection.samples.where(id: sample_ids).pluck(:id))
     # Delete reactions from collection
     delete_in_collection(reaction_ids, from_col_ids)
     # Move associated samples in current collection

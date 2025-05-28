@@ -203,7 +203,8 @@ module Usecases
 
       def associate_sample_with_reaction(sample, modified_sample, material_group)
         reactions_sample_klass = "Reactions#{material_group.camelize}Sample"
-        existing_association = ReactionsSample.find_by(sample_id: modified_sample.id)
+        # existing_association = ReactionsSample.find_by(sample_id: modified_sample.id)
+        existing_association = ReactionsSample.find_by(reaction_id: @reaction.id, sample_id: modified_sample.id)
         if existing_association
           existing_association.update!(
             reaction_id: @reaction.id,

@@ -78,6 +78,9 @@ module Entities
       ## Repo
       expose! :doi,                     unless: :displayed_in_list, anonymize_with: nil, using: Entities::DoiEntity
       expose! :publication,             unless: :displayed_in_list
+      expose! :links if ENV['REPO_VERSIONING'] == 'true'
+      expose! :concept, unless: :displayed_in_list, anonymize_with: nil, using: Entities::ConceptEntity if ENV['REPO_VERSIONING'] == 'true'
+      ## expose :concept, using: Entities::ConceptEntity
     end
     # rubocop:enable Layout/LineLength, Layout/ExtraSpacing, Metrics/BlockLength
 
@@ -87,6 +90,10 @@ module Entities
 
     # expose :molecule, using: Entities::MoleculeEntity
     # expose :container, using: Entities::ContainerEntity
+
+    def concept
+      object.publication.concept unless object.publication.nil?
+    end
 
     def is_repo_public
       cols = object.tag&.taggable_data['collection_labels']&.select do |c|
@@ -101,8 +108,22 @@ module Entities
       object.residues.any?
     end
 
+    # REPO: This method is used to retrieve the policy for the sample.
+    # Issue: ELN changed its policy logic when it refactored its code and now retrieves policies from Reaction.
+    # The policy should follow the object (sample) and not the parent object.
+    def retrieve_policy
+      return options[:policy] if options[:policy].nil?
+
+      if options[:policy]&.record.is_a?(Sample)
+        options[:policy]
+      else
+        ElementPolicy.new(options[:policy].user, object)
+      end
+    end
+
     def can_update
-      options[:policy].try(:update?) || false
+      sample_policy = retrieve_policy
+      sample_policy.try(:update?) || false
     end
 
     def can_publish

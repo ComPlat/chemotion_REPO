@@ -140,7 +140,7 @@ function Editor({
 Editor.propTypes = {
   type: PropTypes.string.isRequired,
   editor: PropTypes.object.isRequired,
-  molfile: PropTypes.string.isRequired,
+  molfile: PropTypes.string,
   iframeHeight: PropTypes.string.isRequired,
   iframeStyle: PropTypes.object.isRequired,
   fnCb: PropTypes.func.isRequired,

@@ -44,7 +44,7 @@ const UserCommentModal = (props) => {
             <FormControl
               componentClass="textarea"
               {...defaultAttrs}
-              inputRef={commentInputRef}
+              inputRef={(ref) => { commentInputRef.current = ref; }}
             />
             <br />
             <ButtonToolbar>

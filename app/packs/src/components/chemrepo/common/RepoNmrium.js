@@ -7,7 +7,7 @@ import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
 
 function RepoNmriumBtn(props) {
-  const { element, spc, isPublic } = props;
+  const { spc, isPublic } = props;
   const toggleNMRDisplayerModal = e => {
     e.stopPropagation();
     SpectraActions.ToggleModalNMRDisplayer();
@@ -41,8 +41,8 @@ function RepoNmriumBtn(props) {
         >
           <img
             alt="NMRium"
-            src="/images/repo/nmrium-favicon.ico"
-            style={{ maxHeight: '1.8vh' }}
+            src="/images/repo/nmrium-favicon.svg"
+            style={{ maxHeight: '1.4vh' }}
           />
         </Button>
       </OverlayTrigger>
@@ -51,7 +51,6 @@ function RepoNmriumBtn(props) {
 }
 
 RepoNmriumBtn.propTypes = {
-  element: PropTypes.object,
   spc: PropTypes.array,
   isPublic: PropTypes.bool,
 };

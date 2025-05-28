@@ -65,8 +65,8 @@ class InboxStore {
         ElementActions.createScreen,
         ElementActions.updateScreen,
       ],
-      handleClose: DetailActions.close,
-      handleConfirmDelete: DetailActions.confirmDelete,
+      // handleClose: DetailActions.close, // REPO: see #219
+      // handleConfirmDelete: DetailActions.confirmDelete, // REPO: see #219
       handleDeleteElement: ElementActions.deleteElementsByUIState,
       handleSetPagination: InboxActions.setInboxPagination,
       setInboxVisible: InboxActions.setInboxVisible,

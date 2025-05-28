@@ -655,7 +655,7 @@ export class ContainerDatasetModalContent extends Component {
           data={this.state.datasetContainer.extended_metadata.hyperlinks}
           onAddLink={this.handleAddLink}
           onRemoveLink={this.handleRemoveLink}
-          disabled={this.props.disabled}
+          disabled={this.props.disabled || this.props.isLink}
         />
       </div>
     );

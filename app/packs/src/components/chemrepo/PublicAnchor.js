@@ -4,8 +4,10 @@ import PropTypes from 'prop-types';
 function PublicAnchor(props) {
   const { doi, isPublished } = props;
   if (!isPublished || typeof doi !== 'string') return null;
-  const anchorId = doi?.split('/').pop() || '';
-  return <span id={anchorId} />;
+  const doiSplit = doi.split('/');
+  const anchorId = isNaN(doiSplit[doiSplit.length - 1]) ? doiSplit[doiSplit.length - 1]
+                                                        : doiSplit.slice(-2).join('/');
+  return <span id={anchorId || ''}></span>;
 }
 
 PublicAnchor.propTypes = {

@@ -13,7 +13,7 @@ import {
   Grid,
   ControlLabel
 } from 'react-bootstrap';
-import { head, filter, findIndex, flatten, sortedUniq } from 'lodash';
+import { head, filter, findIndex, flatten, sortedUniq, get, isUndefined } from 'lodash';
 import Select from 'react-select';
 import Immutable from 'immutable';
 import uuid from 'uuid';
@@ -31,7 +31,6 @@ import {
   isNmrPass,
   isDatasetPass,
   PublishTypeAs,
-  OrcidIcon,
 } from 'src/repoHome/RepoCommon';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import { groupByCitation, Citation } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
@@ -40,7 +39,13 @@ import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
 import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
-import { doStValidation } from 'src/components/chemrepo/publication-utils';
+import {
+  doStValidation,
+  hasVersion,
+} from 'src/components/chemrepo/publication-utils';
+import OrcidIcon from 'src/components/chemrepo/common/Orcid';
+import UserAffInfo from 'src/components/chemrepo/publish-helper';
+import VersionComment from 'src/components/chemrepo/VersionComment';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
@@ -104,12 +109,20 @@ export default class PublishReactionModal extends Component {
       sortedIds: [],
       selectedEmbargo: '-1',
       selectedLicense: 'CC BY',
+      disableLicense: false,
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
       noSolvent: false,
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
+      publishType: {
+        options: Object.values(publishOptions),
+        selected: publishOptions.f,
+        disabled: false
+      },
+      behalfAsAuthor: false,
+      newVersion: false,
       addMeAsAuthor: true,
       addGroupLeadAsAuthor: true,
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f },
@@ -141,6 +154,7 @@ export default class PublishReactionModal extends Component {
     this.handleYieldChange = this.handleYieldChange.bind(this);
     this.handlePropertiesChange = this.handlePropertiesChange.bind(this);
     this.handleUnitChange = this.handleUnitChange.bind(this);
+    this.handleVersionComment = this.handleVersionComment.bind(this);
     this.toggleAddMeAsAuthor = this.toggleAddMeAsAuthor.bind(this);
     this.toggleAddGroupLeadAsAuthor = this.toggleAddGroupLeadAsAuthor.bind(this);
   }
@@ -155,10 +169,45 @@ export default class PublishReactionModal extends Component {
     if (!nextProps.reaction) { return; }
     nextProps.reaction.convertDurationDisplay();
 
+    const { currentUser } = UserStore.getState();
+
+    const newVersion = !isUndefined(get(nextProps.reaction, 'tag.taggable_data.previous_version'));
+
+    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_version.license');
+    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_version.scheme_only');
+    const previousUsers = get(nextProps.reaction, 'tag.taggable_data.previous_version.users', []);
+
+    const publishType = { ...this.state.publishType };
+    if (previousSchemeOnly === true) {
+      publishType.selected = publishOptions.s;
+      publishType.disabled = true;
+    } else if (previousSchemeOnly === false) {
+      publishType.selected = publishOptions.f;
+      publishType.disabled = true;
+    }
+
+    let behalfAsAuthor = false
+    const selectedUsers = []
+    previousUsers.forEach((user) => {
+      if (user.id != currentUser.id) {
+        behalfAsAuthor = true
+        selectedUsers.push({
+          label: user.name,
+          value: user.id
+        })
+      }
+    })
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
+      publishType,
+      behalfAsAuthor,
+      selectedUsers,
+      newVersion
     });
   }
 
@@ -285,6 +334,12 @@ export default class PublishReactionModal extends Component {
     this.setState({ noAmountYield: !this.state.noAmountYield });
   }
 
+  handleVersionComment(value) {
+    const { reaction } = this.state;
+    reaction.versionComment = value;
+    this.setState({ reaction });
+  }
+
   loadBundles() {
     EmbargoFetcher.fetchEmbargoCollections(true).then((result) => {
       const cols = result.repository || [];
@@ -301,10 +356,20 @@ export default class PublishReactionModal extends Component {
   }
 
   loadReferences() {
-    let { selectedRefs } = this.state;
+    let { selectedRefs, newVersion } = this.state;
     LiteraturesFetcher.fetchElementReferences(this.state.reaction, true).then((literatures) => {
       const sortedIds = groupByCitation(literatures);
       selectedRefs = selectedRefs.filter(item => sortedIds.includes(item));
+
+      // pre-select all refs when submitting a new version
+      if (newVersion) {
+        literatures.forEach(literature => {
+          if (!selectedRefs.includes(literature.literal_id)) {
+            selectedRefs.push(literature.literal_id)
+          }
+        });
+      }
+
       this.setState({ selectedRefs, literatures, sortedIds });
     });
   }
@@ -332,7 +397,7 @@ export default class PublishReactionModal extends Component {
 
   contributor() {
     const { currentUser } = this.state;
-    const orcid = currentUser.orcid == null ? '' : <OrcidIcon orcid={currentUser.orcid} />;
+    const orcid = OrcidIcon({ orcid: currentUser.orcid });
     const aff = currentUser && currentUser.current_affiliations && Object.keys(currentUser.current_affiliations).map(k => (
       <div key={uuid.v4()}>  -{currentUser.current_affiliations[k]}</div>
     ));
@@ -416,11 +481,11 @@ export default class PublishReactionModal extends Component {
 
   handlePublishReaction() {
     const {
-      selectedLicense, cc0Consent, publishType, selectedUsers
+      selectedLicense, disableLicense, cc0Consent, publishType, selectedUsers
     } = this.state;
     const authorCount = selectedUsers && selectedUsers.length;
 
-    if (selectedLicense === 'CC0' && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
+    if (selectedLicense === 'CC0' && !disableLicense && (!cc0Consent.consent1 || !cc0Consent.consent2)) {
       alert('Please check the license section before sending your data.');
       return true;
     }
@@ -479,19 +544,13 @@ export default class PublishReactionModal extends Component {
   }
 
   selectUsers() {
-    const { selectedUsers, collaborations, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
-    const options = collaborations.map(c => (
-      { label: c.name, value: c.id }
-    ));
+    const { selectedUsers, collaborations, behalfAsAuthor, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
+    const options = collaborations.map(c => ({ label: c.name, value: c.id }));
     const authorCount = selectedUsers && selectedUsers.length;
-    const authorInfo = selectedUsers && selectedUsers.map((a) => {
-      const us = collaborations.filter(c => c.id === a.value);
-      const u = us && us.length > 0 ? us[0] : {};
-      const orcid = u.orcid == null ? '' : <OrcidIcon orcid={u.orcid} />;
-      const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
-        <div>  -{af.department}, {af.organization}, {af.country}</div>
-      ));
-      return (<div key={uuid.v4()}>{orcid}{a.label}<br/>{aff}<br/></div>);
+    const authorsInfo = UserAffInfo({
+      users: selectedUsers,
+      collaborations,
+      parentId: 'author',
     });
 
     return (
@@ -501,7 +560,9 @@ export default class PublishReactionModal extends Component {
         <Checkbox inputRef={(ref) => { this.refBehalfAsAuthor = ref; }}>
           I am contributing on behalf of the author{authorCount > 0 ? 's' : '' }
         </Checkbox>
-        <h5><b>Authors:</b></h5>
+        <h5>
+          <b>Authors:</b>
+        </h5>
         <Select
           multi
           searchable
@@ -514,33 +575,25 @@ export default class PublishReactionModal extends Component {
           options={options}
           onChange={this.handleSelectUser}
         />
-        <div>
-          {authorInfo}
-        </div>
+        <div>{authorsInfo}</div>
       </div>
     );
   }
 
   addReviewers() {
     const { selectedReviewers, collaborations } = this.state;
-    const options = collaborations.map(c => (
-      { label: c.name, value: c.id }
-    ));
-
-    const reviewerInfo = selectedReviewers && selectedReviewers.map((a) => {
-      const us = collaborations.filter(c => c.id === a.value);
-      const u = us && us.length > 0 ? us[0] : {};
-      const orcid = u.orcid == null ? '' : <OrcidIcon orcid={u.orcid} />;
-      const aff = u && u.current_affiliations && u.current_affiliations.map(af => (
-        <div>  -{af.department}, {af.organization}, {af.country}</div>
-      ));
-      return (<div>{orcid}{a.label}<br/>{aff}<br/></div>)
+    const options = collaborations.map(c => ({ label: c.name, value: c.id }));
+    const reviewersInfo = UserAffInfo({
+      users: selectedReviewers,
+      collaborations,
+      parentId: 'reviewer',
     });
 
-
     return (
-      <div >
-        <h5><b>Group Lead / Additional Reviewers:</b></h5>
+      <div>
+        <h5>
+          <b>Group Lead / Additional Reviewers:</b>
+        </h5>
         <Select
           multi
           searchable
@@ -553,9 +606,7 @@ export default class PublishReactionModal extends Component {
           options={options}
           onChange={this.handleSelectReviewer}
         />
-        <div>
-          {reviewerInfo}
-        </div>
+        <div>{reviewersInfo}</div>
       </div>
     );
   }
@@ -666,10 +717,12 @@ export default class PublishReactionModal extends Component {
   }
 
   validatePub(isFullyPublish = true) {
-    const { reaction, noEmbargo, selectedEmbargo } = this.state;
+    const { reaction, noEmbargo, selectedEmbargo, newVersion } = this.state;
     let validates = [];
     if (isFullyPublish) {
-      validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
+      if (!newVersion) {
+        validates.push({ name: 'embargo', value: selectedEmbargo !== '-1' || (selectedEmbargo === '-1' && noEmbargo), message: 'No embargo bundle' });
+      }
       validates.push({ name: 'reaction type', value: !!(reaction.rxno && reaction.rxno.length > 0), message: reaction.rxno ? '' : 'Reaction type is missing' });
       const hasSt = reaction.starting_materials?.length > 0;
       validates.push({ name: 'start_material', value: !!hasSt, message: hasSt ? '' : 'Start material is missing' });
@@ -695,6 +748,9 @@ export default class PublishReactionModal extends Component {
         });
       }
     }
+    if (newVersion && !reaction.versionComment) {
+      validates.push({ name: 'version-comment', value: !!reaction.versionComment, message: 'New Version Details is missing' });
+    }
     validates = this.state.noAmountYield ? validates : validates.concat(validateYield(reaction));
     return validates;
   }
@@ -702,7 +758,7 @@ export default class PublishReactionModal extends Component {
   render() {
     const { show } = this.props;
     const {
-      reaction, selectedUsers, selectedReviewers, selectedRefs, publishType, bundles
+      reaction, selectedUsers, selectedReviewers, selectedRefs, publishType, bundles, newVersion
     } = this.state;
 
     const isFullyPublish = publishType.selected === publishOptions.f;
@@ -739,7 +795,7 @@ export default class PublishReactionModal extends Component {
 
     if (show) {
       const analysesView = [];
-      const analysesReaction = head(filter(reaction?.container?.children, o => o.container_type === 'analyses')).children;
+      const analysesReaction = reaction.container ? head(filter(reaction.container.children, o => o.container_type === 'analyses')).children : [];
 
       selectedAnalysesCount = (analysesReaction || []).filter(a =>
         (a.extended_metadata && (a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')) && a.extended_metadata.kind)).length;
@@ -792,7 +848,7 @@ export default class PublishReactionModal extends Component {
       });
 
       const {
-        selectedEmbargo, selectedLicense, cc0Consent, noEmbargo
+        selectedEmbargo, selectedLicense, disableLicense, cc0Consent, noEmbargo
       } = this.state;
 
       const publishTypeAs = {
@@ -807,7 +863,7 @@ export default class PublishReactionModal extends Component {
         opts.push({ value: col.element_id, name: tag.label, label: tag.label });
       });
 
-      const awareEmbargo = selectedEmbargo === '-1' ? (
+      const awareEmbargo = (selectedEmbargo === '-1' && !newVersion) ? (
         <Checkbox
           onChange={() => { this.handleNoEmbargoCheck(); }}
           checked={noEmbargo}
@@ -849,6 +905,7 @@ export default class PublishReactionModal extends Component {
                 selectedValue={selectedEmbargo}
                 onEmbargoChange={this.handleEmbargoChange}
                 selectedLicense={selectedLicense}
+                disableLicense={disableLicense}
                 onLicenseChange={this.handleLicenseChange}
                 onCC0ConsentChange={this.handleCC0ConsentChange}
                 cc0Deed={cc0Consent}
@@ -880,6 +937,7 @@ export default class PublishReactionModal extends Component {
               <div style={{ margin: '5px 0px' }}>
                 <SubmissionCheck validates={validateInfo} />
               </div>
+              {hasVersion(reaction) && <VersionComment element={reaction} onChange={this.handleVersionComment} />}
               {awareEmbargo}
               <Checkbox
                 onChange={() => { this.handleNoSolventCheck(); }}

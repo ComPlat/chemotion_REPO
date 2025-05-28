@@ -27,6 +27,11 @@ class Container < ApplicationRecord
   include Labimotion::Datasetable
   include Taggable
   include Publishing
+  if ENV['REPO_VERSIONING'] == 'true'
+    include Versioning
+  end
+
+  attr_accessor :dataset_doi, :pub_id, :preview_img, :link_id # decide if we need to expose these conditionally <--- ASK PAGGY
 
   belongs_to :containable, polymorphic: true, optional: true
   has_many :attachments, as: :attachable
@@ -38,12 +43,19 @@ class Container < ApplicationRecord
   before_destroy :destroy_datasetable
 
   ## has_closure_tree order: "extended_metadata->'index' asc"  ## TODO: Paggy
+  ## has_closure_tree order: Arel.sql("extended_metadata->'index' asc") ## TODO: 10122024
   has_closure_tree
 
   scope :analyses_for_root, lambda { |root_id|
     where(container_type: 'analysis').joins(
       "inner join container_hierarchies ch on ch.generations = 2
       and ch.ancestor_id = #{root_id} and ch.descendant_id = containers.id ",
+    )
+  }
+
+  scope :links_for_root, ->(root_id) {
+    where(container_type: 'link').joins(
+      "inner join container_hierarchies ch on ch.generations = 2 and ch.ancestor_id = #{root_id} and ch.descendant_id = containers.id "
     )
   }
 
@@ -60,6 +72,10 @@ class Container < ApplicationRecord
 
   def analyses
     Container.analyses_for_root(id)
+  end
+
+  def links
+    Container.links_for_root(self.id)
   end
 
   def root_element

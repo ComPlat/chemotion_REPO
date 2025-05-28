@@ -18,7 +18,9 @@ import {
 import DateInfo from 'src/components/chemrepo/DateInfo';
 import LicenseIcon from 'src/components/chemrepo/LicenseIcon';
 import MAPanel from 'src/components/chemrepo/MoleculeArchive';
-import StateLabel from 'src/components/chemrepo/common/StateLabel';
+import StateLabel, {
+  StateLabelDetail,
+} from 'src/components/chemrepo/common/StateLabel';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import PublicAnchor from 'src/components/chemrepo/PublicAnchor';
 import PublicSample from 'src/components/chemrepo/PublicSample';
@@ -32,6 +34,10 @@ import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
 
+import NewVersionModal from 'src/components/chemrepo/NewVersionModal';
+import VersionDropdown from 'src/components/chemrepo/VersionDropdown';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
+
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
   if (anchor) {
@@ -44,7 +50,10 @@ const scrollView = () => {
 export default class RepoSample extends Component {
   constructor(props) {
     super(props);
-    this.state = { expandSA: true };
+    this.state = {
+      expandSA: true,
+      repoVersioning: PublicStore.getState().repoVersioning,
+    };
     this.panelRef = React.createRef();
     this.materialRef = React.createRef();
     this.handleAnalysesLink = this.handleAnalysesLink.bind(this);
@@ -126,10 +135,11 @@ export default class RepoSample extends Component {
       isLogin,
       isCI,
       isReviewer,
+      isPublisher,
       element,
     } = this.props;
     const { xvialCom } = element;
-    const { expandSA } = this.state;
+    const { expandSA, repoVersioning } = this.state;
     const affiliationMap = AffiliationMap(sample.affiliation_ids);
 
     const iupacUserDefined =
@@ -222,9 +232,23 @@ export default class RepoSample extends Component {
               pageId={sample.molecule_id}
             />
             &nbsp;
+            <NewVersionModal
+              type="Sample"
+              element={sample}
+              repoVersioning={repoVersioning}
+              parentId={sample.reaction_ids.length > 0 ? sample.reaction_ids[0] : null}
+              isPublisher={isPublisher}
+              isLatestVersion={!sample.new_version}
+            />
           </span>
           {StateLabel(sample.embargo)}
+          <StateLabelDetail state={pubData.state} />
         </span>
+        <VersionDropdown
+          type="Sample"
+          element={sample}
+          onChange={version => PublicActions.selectSampleVersion(version)}
+        />
         <br />
         {iupacUserDefined}
         <ContributorInfo contributor={sample.contributors} affiliationMap={affiliationMap} />
@@ -330,11 +354,13 @@ RepoSample.propTypes = {
   handleCommentBtn: PropTypes.func,
   isLogin: PropTypes.bool,
   isReviewer: PropTypes.bool,
+  isPublisher: PropTypes.bool,
 };
 
 RepoSample.defaultProps = {
   canComment: false,
   isLogin: false,
   isReviewer: false,
+  isPublisher: false,
   handleCommentBtn: () => {},
 };

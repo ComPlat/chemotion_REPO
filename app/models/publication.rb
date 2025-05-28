@@ -44,10 +44,12 @@ class Publication < ActiveRecord::Base
   include MetadataJsonld
   include EmbargoCol
   include DataCitePublisher
+  include DataCiteFundingReferences
   has_ancestry
   belongs_to :element, polymorphic: true
   belongs_to :original_element, polymorphic: true, optional: true
   belongs_to :doi
+  belongs_to :concept, optional: true if ENV['REPO_VERSIONING'] == 'true'
 
   STATE_START = 'start'
 
@@ -106,9 +108,11 @@ class Publication < ActiveRecord::Base
       group_review_collection
       publish_user_labels
     when Publication::STATE_DECLINED
-      declined_reverse_original_element
-      declined_move_collections
-      group_review_collection
+      if element&.tag&.taggable_data['previous_version'].nil?
+        declined_reverse_original_element
+        declined_move_collections
+        group_review_collection
+      end
     end
   end
 
@@ -444,7 +448,7 @@ class Publication < ActiveRecord::Base
     rights
   end
 
-  def datacite_metadata_xml
+  def datacite_metadata_xml(for_concept: false)
     # Debug info
     Rails.logger.debug("Starting datacite_metadata_xml method")
 
@@ -460,23 +464,68 @@ class Publication < ActiveRecord::Base
     parent_element = parent&.element
     literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
 
-    # Create metadata object with all necessary data
-    metadata_obj = OpenStruct.new(
-      pub: self,
-      element: element,
-      pub_tag: taggable_data,
-      dois: doi_bag,
-      parent_element: parent_element.presence,
-      rights: rights_data,
-      lits: literals,
-      col_doi: cdoi,
-      cust_sample: cust_sample
-    )
+    fundings = []
+    if %w[Sample Reaction Collection].include?(element_type)
+      fundings = element.fundings&.order(:created_at)&.to_a || []
+      if %w[Sample Reaction].include?(element_type)
+        embargo = Repo::FetchHandler.publication_collection_by_element(element_type, element_id)
+        embargo_fundings = embargo&.fundings&.order(:created_at)&.to_a || []
+        fundings = embargo_fundings + fundings
+      end
+    end
+    if fundings.any?
+      fundings = fundings.map { |f| f.metadata.transform_keys(&:to_sym) }
+    end
 
-    # Extend with publisher methods
+    if ENV['REPO_VERSIONING'] == 'true'
+      if for_concept
+        versions = Publication.where(concept: self.concept)
+      else
+        concept = self.concept
+
+        previous_version_element_id = element.tag.taggable_data.dig('previous_version', 'id')
+        unless previous_version_element_id.nil?
+          previous_version = Publication.find_by(element_type: element_type, element_id: previous_version_element_id)
+        end
+
+        new_version_element_id = element.tag.taggable_data.dig('new_version', 'id')
+        unless new_version_element_id.nil?
+          new_version = Publication.find_by(element_type: element_type, element_id: new_version_element_id)
+        end
+      end
+
+      metadata_obj = OpenStruct.new(
+        pub: self,
+        element: element,
+        pub_tag: taggable_data,
+        dois: doi_bag,
+        parent_element: parent_element.presence,
+        concept: concept,
+        versions: versions,
+        previous_version: previous_version,
+        new_version: new_version, ## previous_version_doi: previous_version_doi,
+        rights: rights_data,
+        lits: literals,
+        col_doi: cdoi,
+        cust_sample: cust_sample,
+      )
+    else
+      metadata_obj = OpenStruct.new(
+        pub: self,
+        element: element,
+        pub_tag: taggable_data,
+        dois: doi_bag,
+        parent_element: parent_element.presence,
+        new_version: new_version, ## previous_version_doi: previous_version_doi,
+        rights: rights_data,
+        lits: literals,
+        col_doi: cdoi,
+        cust_sample: cust_sample,
+      )
+    end
+    metadata_obj[:fundings] = fundings if fundings.present?
     metadata_obj.extend(DataCitePublisher)
-
-    # Determine which template to use
+    metadata_obj.extend(DataCiteFundingReferences)
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
@@ -511,7 +560,9 @@ class Publication < ActiveRecord::Base
 
   def persit_datacite_metadata_xml!
     mt = datacite_metadata_xml
+    cmt = datacite_metadata_xml(for_concept: true)
     self.update!(metadata_xml: mt, oai_metadata_xml: mt)
+    concept.update!(metadata_xml: cmt) if ENV['REPO_VERSIONING'] == 'true'
     mt
   end
 
@@ -524,13 +575,19 @@ class Publication < ActiveRecord::Base
   def transition_from_start_to_metadata_uploading!
     return unless valid_transition(STATE_DC_METADATA_UPLOADING)
     mt = datacite_metadata_xml
+    cmt = datacite_metadata_xml(for_concept: true)
     self.update!(metadata_xml: mt, oai_metadata_xml: mt, state: STATE_DC_METADATA_UPLOADING)
+    concept.update!(metadata_xml: cmt) if ENV['REPO_VERSIONING'] == 'true'
   end
 
   def transition_from_metadata_uploading_to_uploaded!
     return unless valid_transition(STATE_DC_METADATA_UPLOADED)
+
+    mds = Datacite::Mds.new
+
+    # register the doi
     if (ENV['DATACITE_MODE'] == 'test' || ENV['PUBLISH_MODE'] == 'production') && scheme_only == false
-      resp = Datacite::Mds.new.upload_metadata(metadata_xml)
+      resp = mds.upload_metadata(metadata_xml)
       success = resp.is_a?(Net::HTTPSuccess)
       message = "#{resp.inspect}: metadata upload#{"ing fail" if !success}ed"
     else
@@ -539,6 +596,21 @@ class Publication < ActiveRecord::Base
     end
     logger([message, metadata])
     raise "#{message}" unless success
+
+    if ENV['REPO_VERSIONING'] == 'true'
+      # register the concept doi
+      if (ENV['DATACITE_MODE'] == 'test' || ENV['PUBLISH_MODE'] == 'production') && scheme_only == false
+        resp = mds.upload_metadata(concept.metadata_xml)
+        success = resp.is_a?(Net::HTTPSuccess)
+        message = "#{resp.inspect}: concept metadata upload#{"ing fail" if !success}ed"
+      else
+        success = true
+        message = "concept metadata not uploaded in mode #{ENV['PUBLISH_MODE']}"
+      end
+      logger([message, metadata])
+      raise "#{message}" unless success
+    end
+
     self.update!(state: STATE_DC_METADATA_UPLOADED)
   end
 
@@ -550,6 +622,8 @@ class Publication < ActiveRecord::Base
   def transition_from_doi_registering_to_registered!
     return unless valid_transition(STATE_DC_DOI_REGISTERED)
     mds = Datacite::Mds.new
+
+    # mint the doi
     suffix = doi.suffix
     short_doi = "#{mds.doi_prefix}/#{suffix}"
     url = "https://#{mds.doi_domain}/inchikey/#{suffix}"
@@ -563,6 +637,26 @@ class Publication < ActiveRecord::Base
     end
     logger([message, "doi: #{short_doi}", "url: #{url}"])
     raise "#{message}:\n #{short_doi} <-> #{url}" unless success
+
+
+    if ENV['REPO_VERSIONING'] == 'true'
+      # mint the concept doi
+      concept_suffix = concept.doi.suffix
+      concept_short_doi = "#{mds.doi_prefix}/#{concept_suffix}"
+      concept_url = "https://#{mds.doi_domain}/inchikey/#{concept_suffix}"
+      if (ENV['DATACITE_MODE'] == 'test' || ENV['PUBLISH_MODE'] == 'production') && scheme_only == false
+        resp = mds.mint(concept_short_doi, concept_url)
+        success = resp.is_a?(Net::HTTPSuccess)
+        message = "#{resp.inspect}: concept DOI mint#{'ing fail' unless success}ed"
+      else
+        success = true
+        message = "concept DOI not minted in mode #{ENV['PUBLISH_MODE']}"
+      end
+      logger([message, "doi: #{concept_short_doi}", "url: #{concept_url}"])
+      raise "#{message}:\n #{concept_short_doi} <-> #{concept_url}" unless success
+    end
+
+
     doi_date = DateTime.now
     case element_type
     when 'Sample'
@@ -602,6 +696,7 @@ class Publication < ActiveRecord::Base
 
     pd = taggable_data.merge(tag_data)
     self.update!(state: STATE_DC_DOI_REGISTERED,taggable_data: taggable_data.merge(pd))
+    self.concept.update_tag if ENV['REPO_VERSIONING'] == 'true'
   end
 
   def transition_from_doi_registered_to_pubchem_registering!
@@ -630,6 +725,7 @@ class Publication < ActiveRecord::Base
       logger([message, mt, "Pubchem FTP upload #{production ? '' : 'NOT'} sent (mode: #{ENV['PUBLISH_MODE']})"])
     end
     self.update!(state: STATE_PUBCHEM_REGISTERED, taggable_data: taggable_data.merge(pd))
+    self.concept.update_tag if ENV['REPO_VERSIONING'] == 'true'
   end
 
   def transition_from_pubchem_registered_to_completing!
@@ -686,6 +782,7 @@ class Publication < ActiveRecord::Base
       logger(['moved to collections'])
     end
     self.update!(state: STATE_COMPLETED, taggable_data: taggable_data.merge(pd), published_at: time)
+    self.concept.update_tag if ENV['REPO_VERSIONING'] == 'true'
   end
 
   def default_line

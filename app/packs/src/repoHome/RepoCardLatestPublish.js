@@ -39,37 +39,50 @@ const timeInterval = (_date) => {
 const RepoCardLatestPublish = ({ lastPublished }) => {
   if (lastPublished) {
     const { sample, reaction } = lastPublished;
-    const svgPathSample = sample.sample_svg_file
-      ? `/images/samples/${sample.sample_svg_file}`
-      : `/images/molecules/${sample.molecule.molecule_svg_file}`;
-    const pubTagSample = sample.tag || {};
-    const svgPathReaction = reaction
-      ? `/images/reactions/${reaction.reaction_svg_file}`
-      : '/images/no_image_180.svg';
-    const pubTagReaction = reaction.tag || {};
+    let svgPathSample, pubTagSample
+    if (sample) {
+      svgPathSample = sample.sample_svg_file
+        ? `/images/samples/${sample.sample_svg_file}`
+        : `/images/molecules/${sample.molecule.molecule_svg_file}`;
+      pubTagSample = sample.tag || {};
+    }
+
+    let svgPathReaction, pubTagReaction
+    if (reaction) {
+      svgPathReaction = reaction
+        ? `/images/reactions/${reaction.reaction_svg_file}`
+        : '/images/no_image_180.svg';
+      pubTagReaction = reaction.tag || {};
+    }
     return (
       <div className="card-well-competition card-latest">
         <Carousel className="carl-spt" indicators={false} interval={6000}>
-          <Carousel.Item className="carl-spt-item">
-            <div className="img">
-              <a title="Click to view details" onClick={() => PublicActions.displayMolecule(sample.molecule.id)}>
-                <SVG src={svgPathSample} key={svgPathSample} className="carl-sample" />
-              </a>
-              <Carousel.Caption className="caption">
-                Published {timeInterval(pubTagSample.published_at || pubTagSample.doi_reg_at || pubTagSample.queued_at)} by {sample.contributor}
-              </Carousel.Caption>
-            </div>
-          </Carousel.Item>
-          <Carousel.Item className="carl-spt-item">
-            <div className="img">
-              <a title="Click to view details" onClick={() => PublicActions.displayReaction(reaction.id)}>
-                <SVG src={svgPathReaction} key={svgPathReaction} className="carl-sample" />
-              </a>
-              <Carousel.Caption className="caption">
-                Published {timeInterval(pubTagReaction.published_at || pubTagReaction.doi_reg_at || pubTagReaction.queued_at)} by {reaction.contributor}
-              </Carousel.Caption>
-            </div>
-          </Carousel.Item>
+          {
+            sample &&
+            <Carousel.Item className="carl-spt-item">
+              <div className="img">
+                <a title="Click to view details" onClick={() => PublicActions.displayMolecule(sample.molecule.id)}>
+                  <SVG src={svgPathSample} key={svgPathSample} className="carl-sample" />
+                </a>
+                <Carousel.Caption className="caption">
+                  Published {timeInterval(pubTagSample.published_at || pubTagSample.doi_reg_at || pubTagSample.queued_at)} by {sample.contributor}
+                </Carousel.Caption>
+              </div>
+            </Carousel.Item>
+          }
+          {
+            reaction &&
+            <Carousel.Item className="carl-spt-item">
+              <div className="img">
+                <a title="Click to view details" onClick={() => PublicActions.displayReaction(reaction.id)}>
+                  <SVG src={svgPathReaction} key={svgPathReaction} className="carl-sample" />
+                </a>
+                <Carousel.Caption className="caption">
+                  Published {timeInterval(pubTagReaction.published_at || pubTagReaction.doi_reg_at || pubTagReaction.queued_at)} by {reaction.contributor}
+                </Carousel.Caption>
+              </div>
+            </Carousel.Item>
+          }
         </Carousel>
       </div>
     );

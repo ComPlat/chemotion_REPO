@@ -17,6 +17,11 @@ class GasPhaseReactionActions {
   setReactionVesselSize(value) {
     return value;
   }
+
+  // REPO: Added to fix the dispatching during another dispatch issue in ReactionDetailsScheme
+  resetStore() {
+    return null;
+  }
 }
 
 export default alt.createActions(GasPhaseReactionActions);

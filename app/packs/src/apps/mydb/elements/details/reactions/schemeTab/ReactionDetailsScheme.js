@@ -90,7 +90,10 @@ export default class ReactionDetailsScheme extends Component {
 
   componentWillUnmount() {
     TextTemplateStore.unlisten(this.handleTemplateChange);
-    this.resetGasPhaseStore();
+    // REPO: To fix the issue that Alt doesn't allow dispatching during another dispatch,
+    // use "GasPhaseReactionActions.resetStore.defer()" to replace the problematic code "this.resetGasPhaseStore()".
+    GasPhaseReactionActions.resetStore.defer();
+    // this.resetGasPhaseStore();
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -118,6 +121,7 @@ export default class ReactionDetailsScheme extends Component {
     if (tagGroup == 'solvents') {
       splitSample.reference = false;
     }
+    splitSample.can_update = reaction.can_update; // REPO: When adding a material(sample, molecule...etc) to a reaction, the 'can_update` prop is same as reaction's.
 
     this.insertSolventExtLabel(splitSample, tagGroup, extLabel);
     reaction.addMaterialAt(splitSample, null, tagMaterial, tagGroup);
@@ -280,11 +284,13 @@ export default class ReactionDetailsScheme extends Component {
     this.props.onReactionChange(reaction, options);
   }
 
+  // REPO: To fix the issue that Alt doesn't allow dispatching during another dispatch, the problematic code "this.resetGasPhaseStore()" is commented out.
+  // see "componentWillUnmount"
   // eslint-disable-next-line class-methods-use-this
-  resetGasPhaseStore() {
-    GasPhaseReactionActions.setReactionVesselSize(null);
-    GasPhaseReactionActions.setCatalystReferenceMole(null);
-  }
+  // resetGasPhaseStore() {
+  //   GasPhaseReactionActions.setReactionVesselSize(null);
+  //   GasPhaseReactionActions.setCatalystReferenceMole(null);
+  // }
 
   handleTemplateChange(state) {
     this.setState({

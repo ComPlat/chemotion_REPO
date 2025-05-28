@@ -56,7 +56,6 @@ import RepoPreviewImage from 'src/components/chemrepo/common/RepoPreviewImage';
 import { Citation, RefByUserInfo } from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
 import RepoSegment from 'src/repoHome/RepoSegment';
 import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
-import MolViewerListBtn from 'src/components/viewer/MolViewerListBtn';
 import LicenseIcon from 'src/components/chemrepo/LicenseIcon';
 import { getFormattedISODate, getFormattedISODateTime } from 'src/components/chemrepo/date-utils';
 import { formatPhysicalProps } from 'src/components/chemrepo/publication-utils';
@@ -68,9 +67,12 @@ import ReactionTable from 'src/repoHome/RepoReactionTable';
 import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
 import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import VersionDropdown from 'src/components/chemrepo/VersionDropdown';
 import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 import zoomSvg from 'src/components/chemrepo/svg-utils';
 import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
+import RdfBtn from 'src/components/chemrepo/RdfBtn';
+import FundingDisplay from 'src/components/chemrepo/funding/FundingDisplay';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === RepoConst.INCHIKEY_DUMMY) ? { display: 'none' } : {});
 
@@ -89,6 +91,7 @@ const CollectionDesc = (props) => {
     'Scheme-only reactions': 'Collections of published scheme-only reactions (no associated analytical data).',
     'My Published Elements': 'Collection of the published samples and reactions you submitted. The samples/reactions that were embargoed are placed in sub-folders.',
     'Pending Publications': 'Collection of the samples and reactions you have submitted and are currently being reviewed.',
+    'New Versions': 'Collection of samples and reactions which are new versions of already published elements before resubmission.',
     Reviewing: 'Collection of the samples and reactions that have been reviewed by a reviewer and needs revision from your side.',
     'Element To Review': 'Collection of the samples and reactions that currently have to be reviewed.',
     Reviewed: 'Collection of the samples and reactions that were reviewed and sent back to the submitters for revision/corrections (Read-Only). Waiting for resubmission.',
@@ -241,7 +244,11 @@ const isNmrPass = (analysis, sample) => {
 };
 
 const DownloadMetadataBtn = (l) => {
-  const contentUrl = `/api/v1/public/metadata/download?type=${l.type.toLowerCase()}&id=${l.id}`;
+  let contentUrl = `/api/v1/public/metadata/download?type=${l.type.toLowerCase()}&id=${l.id}`;
+  if (l.concept) {
+    contentUrl += '&concept=1'
+  }
+
   return (
     <OverlayTrigger
       placement="bottom"
@@ -259,9 +266,11 @@ const DownloadMetadataBtn = (l) => {
   );
 };
 
-
 const DownloadJsonBtn = (l) => {
-  const contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
+  let contentUrl = `/api/v1/public/metadata/download_json?type=${l.type.toLowerCase()}&id=${l.id}`;
+  if (l.concept) {
+    contentUrl += '&concept=1'
+  }
   return (
     <>
       <OverlayTrigger
@@ -366,7 +375,7 @@ class EmbargoCom extends Component {
       >
         {LicenseLegalCode(this.props.selectedLicense)}
         {
-        this.props.selectedLicense === 'CC0' ?
+        (this.props.selectedLicense === 'CC0' && !this.props.disableLicense) ?
           (
             <div stye={{ width: '100%' }}>
               <Checkbox checked={this.props.cc0Deed.consent1} onChange={e => this.handleCC0ConsentChange(e, 'consent1')}>
@@ -385,9 +394,12 @@ class EmbargoCom extends Component {
 
     return (
       <div>
-        <Form horizontal style={{ display: 'flex' }}>
-          <div style={{ width: '20%', textAlign: 'right' }}>
-            <ControlLabel>Choose license&nbsp;</ControlLabel>
+        <Form horizontal style={{ display: 'flex', marginBottom: 15 }}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            {
+              this.props.disableLicense ? <ControlLabel>Licence (from Previous Version)</ControlLabel>
+                                        : <ControlLabel>Choose license</ControlLabel>
+            }
           </div>
           <div style={{ width: '20%' }}>
             <Select
@@ -396,15 +408,16 @@ class EmbargoCom extends Component {
               options={licenses}
               className="select-assign-collection"
               clearable={false}
+              disabled={this.props.disableLicense}
             />
           </div>
-          <div style={{ width: '40%', textAlign: 'right' }}>
-            <ControlLabel>Publish with Embargo Bundle</ControlLabel>&nbsp;
-            <div role="button" style={{ display: 'inline' }} onClick={() => this.setState({ isShow: !isShow })}>
+          <div style={{ width: '30%', textAlign: 'right', paddingRight: 5 }}>
+            <ControlLabel>Publish with Embargo Bundle</ControlLabel>
+            <div role="button" style={{ display: 'inline', paddingLeft: 5 }} onClick={() => this.setState({ isShow: !isShow })}>
               <i className="fa fa-question-circle" aria-hidden="true" />
-            </div>&nbsp;
+            </div>
           </div>
-          <div style={{ width: '40%' }}>
+          <div style={{ width: '20%' }}>
             <Select
               value={this.props.selectedValue}
               onChange={e => this.handleEmbargoChange(e)}
@@ -448,6 +461,7 @@ const PublishTypeAs = props => (
     <DropdownButtonSelection
       options={props.options}
       selected={props.selected}
+      disabled={props.disabled}
       placeholder="Select publication type..."
       onSelect={e => props.onChange(e)}
     />
@@ -666,7 +680,6 @@ SidToPubChem.propTypes = {
   sid: PropTypes.string
 };
 
-
 const OrcidIcon = ({ orcid }) => {
   if (typeof orcid === 'undefined' || orcid === null) {
     return (<span />);
@@ -689,6 +702,7 @@ OrcidIcon.propTypes = {
 OrcidIcon.defaultProps = {
   orcid: null
 };
+
 
 const ElementIcon = (elementType) => {
   switch (elementType) {
@@ -973,7 +987,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false, childr
 
 const RenderAnalysisHeader = (props) => {
   const {
-    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures
+    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures, onVersionChange
   } = props;
   const svgPath = `/images/samples/${element.sample_svg_file}`;
   let doiLink = '';
@@ -983,6 +997,7 @@ const RenderAnalysisHeader = (props) => {
   } else {
     doiLink = (element.doi && element.doi.full_doi) || '';
   }
+  const conceptLink = element.concept?.doi?.full_doi;
   const nameOrFormula = molecule.iupac_name && molecule.iupac_name !== ''
     ? <span><b>IUPAC Name: </b> {molecule.iupac_name} (<ExactFormula sample={element} molecule={molecule} />)</span>
     : <span><b>Formula: </b> <ExactFormula sample={element} molecule={molecule} /></span>;
@@ -1017,6 +1032,17 @@ const RenderAnalysisHeader = (props) => {
             <RepoUserComment isLogin={isLogin} id={element.id} type="Sample" title={`Product CRS-${crsId}, ${element.showed_name}`} pageType="reactions" pageId={reactionId} isPublished={isPublic} />
             <br /><br />
           </span>
+          {
+            element.versions && (
+              <div style={{ marginBottom: 10 }}>
+                <VersionDropdown
+                  type="Sample"
+                  element={element}
+                  onChange={(version) => onVersionChange(element, version)}
+                />
+              </div>
+            )
+          }
           {PublicLabels(element.labels)}
           <div style={hideInfo(molecule)}>
             {nameOrFormula}
@@ -1036,7 +1062,7 @@ const RenderAnalysisHeader = (props) => {
                   </Button>
                   <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
                   <DownloadMetadataBtn type="sample" id={element.id} />
-                  <DownloadJsonBtn type="sample" id={element.id} />
+                  <RdfBtn type="sample" id={element.id} info={{ pid: crsId, doi: doiLink }} />
                 </span>
               )
               :
@@ -1047,6 +1073,20 @@ const RenderAnalysisHeader = (props) => {
               )
             }
           </h6>
+          {
+            isPublic && (
+              <h6>
+                <b>Sample concept DOI: </b>
+                <span className="sub-title" inline="true">
+                  <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${conceptLink}`; }}>
+                    {conceptLink}
+                  </Button>
+                  <ClipboardCopyBtn text={`https://dx.doi.org/${conceptLink}`} />
+                  <DownloadMetadataBtn type="sample" id={element.id} concept={true} />
+                </span>
+              </h6>
+            )
+          }
           <h6>
             <b>Sample ID: </b>
             <Button key={`reaction-jumbtn-${element.id}`} bsStyle="link" onClick={() => { window.location = `/pid/${crsId}`; }}>
@@ -1059,6 +1099,12 @@ const RenderAnalysisHeader = (props) => {
         <Col sm={12} md={12} lg={12}>
           <h5><b>Reference{references.length > 1 ? 's' : null} in the Literature: </b></h5>
           <ul style={{ listStyle: 'none' }}>{references}</ul>
+          {element.fundingReferences && element.fundingReferences.length > 0 && (
+            <h5>
+              <b>Funding References:</b>
+              <FundingDisplay elementId={element.id} elementType="Sample" />
+            </h5>
+          )}
           <RepoSegment segments={element.segments} isPublic={isPublic} />
         </Col>
       </Row>
@@ -1563,8 +1609,20 @@ class RenderPublishAnalyses extends Component {
               </Button>
               <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
               <DownloadMetadataBtn type="container" id={analysis.id} />
-              <DownloadJsonBtn type="container" id={analysis.id} />
+              <RdfBtn type="container" id={analysis.id} info={{ pid: analysis.pub_id, doi: analysis.dataset_doi }} />
             </div>
+            {
+              analysis.concept_doi && (
+                <div className="sub-title" inline="true">
+                  <b>Analysis concept DOI: </b>
+                  <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${analysis.concept_doi}`; }}>
+                    {analysis.concept_doi}
+                  </Button>
+                  <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.concept_doi}`} />
+                  <DownloadMetadataBtn type="container" id={analysis.id} concept={true} />
+                </div>
+              )
+            }
             <div className="sub-title" inline="true">
               <b>Analysis ID: </b>
               <Button bsStyle="link" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
@@ -1609,6 +1667,17 @@ class RenderPublishAnalyses extends Component {
               hasCoAuthors={(this.props.publication.author_ids.length > 1)}
             />
           </h4>
+          {/* {
+            analysis.versions && (
+              <div style={{ marginBottom: 10 }}>
+                <VersionDropdown
+                  type="Container"
+                  element={analysis}
+                  onChange={(version) => PublicActions.displayDataset(version.id)}
+                />
+              </div>
+            )
+          } */}
           <p>&nbsp;</p>
           <b>{kind}</b>&nbsp;
           <div style={{ textAlign: 'right', display: 'inline-block', float: 'right' }}>
@@ -1975,10 +2044,10 @@ CommentBtn.defaultProps = {
 
 const Doi = (props) => {
   const {
-    type, id, doi, isPublished
+    type, id, doi, isPublished, concept, pid
   } = props;
   let data = '';
-  const title = `${type} DOI:`.replace(/(^\w)/g, m => m.toUpperCase());
+  const title = (concept ? `${type} concept DOI:` : `${type} DOI:`).replace(/(^\w)/g, m => m.toUpperCase());
   if (isPublished) {
     data = (
       <span>
@@ -1986,8 +2055,8 @@ const Doi = (props) => {
           {doi}
         </Button>
         <ClipboardCopyBtn text={`https://dx.doi.org/${doi}`} />
-        <DownloadMetadataBtn type={type} id={id} />
-        <DownloadJsonBtn type={type} id={id} />
+        <DownloadMetadataBtn type={type} id={id} concept={concept} />
+        {!concept && <RdfBtn type={type} id={id} concept={concept} info={{ pid: pid, doi: doi }} />}
       </span>
     );
   } else {
@@ -2014,6 +2083,7 @@ Doi.propTypes = {
     PropTypes.object,
   ]).isRequired,
   isPublished: PropTypes.bool.isRequired,
+  concept: PropTypes.bool,
 };
 
 export {

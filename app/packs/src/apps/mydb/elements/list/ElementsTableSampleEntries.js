@@ -26,7 +26,7 @@ import SvgWithPopover from 'src/components/common/SvgWithPopover';
 import { ShowUserLabels } from 'src/components/UserLabels';
 import CommentIcon from 'src/components/comments/CommentIcon';
 
-import { LabelPublication, PublishedTag, ChemotionTag } from 'src/components/chemrepo/PublishCommon';
+import { LabelPublication, NewVersionTag, PublishedTag, ChemotionTag } from 'src/components/chemrepo/PublishCommon';
 
 const buildFlattenSampleIds = (displayedMoleculeGroup) => {
   let flatIndex = 0;
@@ -378,8 +378,9 @@ export default class ElementsTableSampleEntries extends Component {
               <div style={{ marginTop: '1px' }}><ElementReactionLabels element={sample} key={`${sample.id}_reactions`} /></div>
 
               <div style={{ marginTop: '1px' }}><LabelPublication element={sample} key={sample.id + "_publication"} /></div>
+              <div style={{ marginTop: '1px' }}><NewVersionTag element={sample} /></div>
               <div style={{ marginTop: '1px' }}><PublishedTag element={sample} /></div>
-              
+
               <ElementWellplateLabels element={sample} key={`${sample.id}_wellplate`} />
               <GenericElementLabels element={sample} key={`${sample.id}_element`} />
               <ElementCollectionLabels element={sample} key={`${sample.id}`} />
