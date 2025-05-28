@@ -91,10 +91,17 @@ module Repo
       authors = User.where(type: %w[Person Collaborator], id: @author_ids)
                     .includes(:affiliations)
                     .order(Arel.sql("position(users.id::text in '#{@author_ids}')"))
+      # Get affiliations from both authors and current user
       affiliations = authors.map(&:current_affiliations)
+      # Add current user's affiliations if they're not already included in authors
+      unless @author_ids.include?(@current_user.id)
+        affiliations << @current_user.current_affiliations
+      end
       affiliations_output = {}
+      rors = {}
       affiliations.flatten.each do |aff|
         affiliations_output[aff.id] = aff.output_full
+        rors[aff.id] = aff.ror_id if aff.ror_id.present?
       end
       {
         published_by: @author_ids[0],
@@ -115,9 +122,11 @@ module Repo
           'name' => @current_user.name,
           'ORCID' => @current_user.orcid,
           'affiliations' => @current_user.current_affiliations.map(&:output_full),
+          'affiliationIds' => @current_user.current_affiliations.map(&:id),
           'id' => @current_user.id
         },
         affiliations: affiliations_output,
+        rors: rors,
         affiliation_ids: affiliations.map { |as| as.map(&:id) },
         queued_at: DateTime.now,
         license: @license,

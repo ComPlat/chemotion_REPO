@@ -67,7 +67,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer, xvialCom, labels
+      molecule, isLogin, isCI, isReviewer, xvialCom, labels
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -115,6 +115,7 @@ export default class RepoSampleDetails extends Component {
         pub_info: s.pub_info,
         ana_infos: s.ana_infos,
         affiliation_ids: s.affiliation_ids || tagData.affiliation_ids,
+        ror_ids: s.rors || tagData.rors,
         affiliations: s.affiliations || tagData.affiliations,
         literatures: s.literatures || element.literatures,
         license: s.license || tagData.license || 'CC BY-SA',
@@ -146,6 +147,7 @@ export default class RepoSampleDetails extends Component {
           tagData={tagData}
           handleCommentBtn={this.handleCommentBtn}
           isLogin={idyLogin}
+          isCI={!!isCI}
           isReviewer={idyReview}
           {...this.props}
         />

@@ -12,7 +12,6 @@ import {
   ContributorInfo,
   ClipboardCopyBtn,
   IconToMyDB,
-  RenderPublishAnalysesPanel,
   SidToPubChem,
   ToggleIndicator,
 } from 'src/repoHome/RepoCommon';
@@ -31,6 +30,7 @@ import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import { ExtIcon, ExtInfo } from 'src/components/chemrepo/ExtIcon';
 import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
+import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
 
 const scrollView = () => {
   const anchor = window.location.hash.split('#')[1];
@@ -100,7 +100,7 @@ export default class RepoSample extends Component {
             orgInfo={kind}
             onShow={this.props.handleCommentBtn}
           />
-          <RenderPublishAnalysesPanel
+          <AnalysisRenderer
             key={analysis.id}
             userInfo={userInfo}
             analysis={analysis}
@@ -124,6 +124,7 @@ export default class RepoSample extends Component {
       tagData,
       isPublished,
       isLogin,
+      isCI,
       isReviewer,
       element,
     } = this.props;
@@ -180,6 +181,7 @@ export default class RepoSample extends Component {
           <span className="repo-pub-title">
             <IconToMyDB
               isLogin={isLogin}
+              isCI={isCI}
               isPublished={isPublished}
               id={sample.id}
               type="sample"
@@ -225,7 +227,7 @@ export default class RepoSample extends Component {
         </span>
         <br />
         {iupacUserDefined}
-        <ContributorInfo contributor={sample.contributors} />
+        <ContributorInfo contributor={sample.contributors} affiliationMap={affiliationMap} />
         <h5>
           <b>Author{sample.author_ids.length > 1 ? 's' : ''}: </b>
           <AuthorList
@@ -236,6 +238,7 @@ export default class RepoSample extends Component {
         <AffiliationList
           affiliations={sample.affiliations}
           affiliationMap={affiliationMap}
+          rorMap={sample.ror_ids}
         />
         {ExtInfo(sample.embargo)}
         <br />

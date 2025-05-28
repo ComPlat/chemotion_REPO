@@ -60,7 +60,7 @@ export default class RepositoryFetcher {
   }
 
   static publishSample(params, option = null) {
-    const { sample, coauthors, reviewers, refs, embargo, license, addMe } = params;
+    const { sample, coauthors, reviewers, refs, embargo, license, addMe, addGroupLead } = params;
     const analysesIds = AnalysisIdstoPublish(sample);
     return fetch(`/api/v1/repository/publishSample/${option ? 'dois' : ''}`, {
       credentials: 'same-origin',
@@ -78,6 +78,7 @@ export default class RepositoryFetcher {
         embargo,
         license,
         addMe,
+        addGroupLead,
       }),
     })
       .then(response => {
@@ -112,6 +113,7 @@ export default class RepositoryFetcher {
       embargo,
       license,
       addMe,
+      addGroupLead,
       schemeDesc,
     } = params;
     return fetch('/api/v1/repository/publishReactionScheme', {
@@ -132,6 +134,7 @@ export default class RepositoryFetcher {
         embargo,
         license,
         addMe,
+        addGroupLead,
       }),
     })
       .then(response => {
@@ -183,6 +186,7 @@ export default class RepositoryFetcher {
       license,
       isFullyPublish,
       addMe,
+      addGroupLead,
     } = params;
     if (!isFullyPublish) return this.publishReactionScheme(params);
     const analysesIds = reaction.samples.reduce(
@@ -205,6 +209,7 @@ export default class RepositoryFetcher {
         embargo,
         license,
         addMe,
+        addGroupLead,
       })
     })
       .then(response => {

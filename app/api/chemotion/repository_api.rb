@@ -231,6 +231,7 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
+          @author_ids |= current_user.group_leads.pluck(:id) if params[:addGroupLead]
         end
         post do
           declared_params = declared(params, include_missing: false)
@@ -268,6 +269,7 @@ module Chemotion
                         else
                           coauthor_validation(params[:coauthors])
                         end
+          @author_ids |= current_user.group_leads.pluck(:id) if params[:addGroupLead]
         end
         post do
           declared_params = declared(params, include_missing: false)
@@ -328,8 +330,8 @@ module Chemotion
         before do
           @root_publication = Publication.find_by(element_type: params['type'].classify,element_id: params['id']).root
           reviewer_auth = User.reviewer_ids.include?(current_user.id) && @root_publication.state == Publication::STATE_PENDING
-          grouplead_auth = @root_publication.review.dig('reviewers')&.include?(current_user&.id) && @root_publication.state == Publication::STATE_PENDING
-          submitter_auth = (@root_publication.published_by == current_user.id || @root_publication.review.dig('submitters')&.include?(current_user&.id)) && @root_publication.state == Publication::STATE_REVIEWED
+          grouplead_auth = @root_publication.review&.dig('reviewers')&.include?(current_user&.id) && @root_publication.state == Publication::STATE_PENDING
+          submitter_auth = (@root_publication.published_by == current_user.id || @root_publication.review&.dig('submitters')&.include?(current_user&.id)) && @root_publication.state == Publication::STATE_REVIEWED
           error!('Unauthorized. The operation cannot proceed.', 401) unless reviewer_auth || grouplead_auth || submitter_auth
         end
 

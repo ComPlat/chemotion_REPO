@@ -155,6 +155,33 @@ const routes = {
     '/': 'show'
   },
 
+  '/imprint': {
+    target: {
+      show: function(e) {
+        PublicActions.openRepositoryPage("imprint")
+      },
+    },
+    '/': 'show'
+  },
+
+  '/privacy': {
+    target: {
+      show: function(e) {
+        PublicActions.openRepositoryPage("privacy")
+      },
+    },
+    '/': 'show'
+  },
+
+  '/opt-out': {
+    target: {
+      show: function(e) {
+        PublicActions.openRepositoryPage("opt-out")
+      },
+    },
+    '/': 'show'
+  },
+
   '/datasets': {
     target: {
       show: function(e) {
