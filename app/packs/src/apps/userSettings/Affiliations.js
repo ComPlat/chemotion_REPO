@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select'
 import CreatableSelect from 'react-select/lib/Creatable';
 import { Button, Modal, Table } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
@@ -11,12 +12,63 @@ function Affiliations({ show, onHide }) {
   const [affiliations, setAffiliations] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
   const [orgOptions, setOrgOptions] = useState([]);
-  const [deptOptions, setDeptOptions] = useState([]);
-  const [groupOptions, setGroupOptions] = useState([]);
+  const [deptOptions, setDeptOptions] = useState({});
+  const [groupOptions, setGroupOptions] = useState({});
   const [inputError, setInputError] = useState({});
   const [errorMsg, setErrorMsg] = useState('');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const currentEntries = affiliations.filter((entry) => entry.current);
+
+  // Load all affiliation data at once
+  const loadAffiliationData = () => {
+    UserSettingsFetcher.fetchAffiliationData()
+      .then(data => {
+        // Create options for organizations - now uses the nested structure
+        const orgs = Object.keys(data.organizations || {}).map(org => ({
+          value: org,
+          label: org
+        }));
+        setOrgOptions(orgs);
+
+        // Set loaded flag
+        setDataLoaded(true);
+      })
+      .catch(error => {
+        console.error("Error loading affiliation data:", error);
+      });
+  };
+
+  // Get departments for a specific organization
+  const getDepartmentOptions = (organization) => {
+    if (!organization) return [];
+
+    return UserSettingsFetcher.getDepartmentOptions(organization)
+      .then(options => {
+        // Cache department options in state
+        setDeptOptions(prevState => ({
+          ...prevState,
+          [organization]: options
+        }));
+        return options;
+      });
+  };
+
+  // Get groups for a specific organization and department
+  const getGroupOptions = (organization, department) => {
+    if (!organization || !department) return [];
+
+    return UserSettingsFetcher.getGroupOptions(organization, department)
+      .then(options => {
+        // Cache group options in state with key that combines org and dept
+        const key = `${organization}|${department}`;
+        setGroupOptions(prevState => ({
+          ...prevState,
+          [key]: options
+        }));
+        return options;
+      });
+  };
 
   const getAllAffiliations = () => {
     UserSettingsFetcher.getAllAffiliations()
@@ -25,8 +77,9 @@ function Affiliations({ show, onHide }) {
           {
             ...item,
             disabled: true,
-            current: item.from !== null && item.to === null
-
+            current: (item.from === null && item.to === null) ||
+                     (item.from && moment(item.from).isBefore(moment()) &&
+                      (item.to === null || moment(item.to).isAfter(moment())))
           }
         )));
       });
@@ -35,42 +88,18 @@ function Affiliations({ show, onHide }) {
   };
 
   useEffect(() => {
+    // Load countries
     UserSettingsFetcher.getAutoCompleteSuggestions('countries')
       .then((data) => {
-        data.map((item) => {
-          if (!countryOptions.map((option) => option.value).includes(item)) {
-            setCountryOptions((prevItems) => [...prevItems, { value: item, label: item }]);
-          }
-        });
+        const options = data.map(item => ({ value: item, label: item }));
+        setCountryOptions(options);
         setInputError({});
       });
 
-    UserSettingsFetcher.getAutoCompleteSuggestions('organizations')
-      .then((data) => {
-        data.map((item) => {
-          if (!orgOptions.map((option) => option.value).includes(item)) {
-            setOrgOptions((prevItems) => [...prevItems, { value: item, label: item }]);
-          }
-        });
-      });
+    // Load all hierarchical data (organizations, departments, groups)
+    loadAffiliationData();
 
-    UserSettingsFetcher.getAutoCompleteSuggestions('departments')
-      .then((data) => {
-        data.map((item) => {
-          if (!deptOptions.map((option) => option.value).includes(item)) {
-            setDeptOptions((prevItems) => [...prevItems, { value: item, label: item }]);
-          }
-        });
-      });
-
-    UserSettingsFetcher.getAutoCompleteSuggestions('groups')
-      .then((data) => {
-        data.map((item) => {
-          if (!groupOptions.map((option) => option.value).includes(item)) {
-            setGroupOptions((prevItems) => [...prevItems, { value: item, label: item }]);
-          }
-        });
-      });
+    // Load user's affiliations
     getAllAffiliations();
   }, []);
 
@@ -96,19 +125,64 @@ function Affiliations({ show, onHide }) {
           }
           getAllAffiliations();
         });
+    } else {
+      // For newly added rows that don't have an ID yet, just remove from state
+      const updatedAffiliations = [...affiliations];
+      updatedAffiliations.splice(index, 1);
+      setAffiliations(updatedAffiliations);
     }
   };
 
   const onChangeHandler = (index, field, value) => {
     const updatedAffiliations = [...affiliations];
+    const prevValue = updatedAffiliations[index][field];
     updatedAffiliations[index][field] = value;
     const newInputErrors = { ...inputError };
-    if (field === 'from' && (updatedAffiliations[index].from === null || updatedAffiliations[index].from === '')) {
-      newInputErrors[index] = { ...newInputErrors[index], from: true };
-      setErrorMsg('Required');
-    } else if (field === 'to' && updatedAffiliations[index].from > value) {
+
+    // Handle specific field validations and dependencies
+    if (field === 'to' && updatedAffiliations[index].from > value) {
       newInputErrors[index] = { ...newInputErrors[index], to: true };
       setErrorMsg('Invalid date');
+    } else if (field === 'organization') {
+      // Organization validation
+      if (value) {
+        if (value.length < 8) {
+          // Check minimum length
+          newInputErrors[index] = { ...newInputErrors[index], organization: true };
+          setErrorMsg('Organization name must be at least 8 characters');
+        } else if (/www|\/|@|[^\w\s\-.,()äöüÄÖÜßøéÉà']/.test(value)) {
+          // Explicitly allow alphanumeric, spaces, hyphens, parentheses, commas, periods, and umlauts
+          // But disallow www, /, @, and other special characters
+          newInputErrors[index] = { ...newInputErrors[index], organization: true };
+          setErrorMsg('Only letters, numbers, spaces, hyphens, parentheses, commas and periods are allowed');
+        } else if (newInputErrors[index] && newInputErrors[index].organization) {
+          // Clear organization error if it's valid now
+          delete newInputErrors[index].organization;
+          if (Object.keys(newInputErrors[index]).length === 0) {
+            delete newInputErrors[index];
+          }
+        }
+
+        // Reset department and group when organization changes
+        if (prevValue !== value) {
+          updatedAffiliations[index].department = '';
+          updatedAffiliations[index].group = '';
+
+          // Pre-load department options for this organization
+          getDepartmentOptions(value);
+        }
+      }
+    } else if (field === 'department') {
+      // Reset group when department changes
+      if (prevValue !== value) {
+        updatedAffiliations[index].group = '';
+
+        // Pre-load group options for this organization and department
+        const org = updatedAffiliations[index].organization;
+        if (org && value) {
+          getGroupOptions(org, value);
+        }
+      }
     } else if (newInputErrors[index]) {
       delete newInputErrors[index][field];
       if (Object.keys(newInputErrors[index]).length === 0) {
@@ -122,10 +196,17 @@ function Affiliations({ show, onHide }) {
   const handleSaveButtonClick = (index) => {
     const updatedAffiliations = [...affiliations];
     const newInputErrors = { ...inputError };
-    if (!updatedAffiliations[index].from) {
-      newInputErrors[index] = { ...newInputErrors[index], from: true };
+
+    // Check organization field explicitly for all validation rules
+    if (!updatedAffiliations[index].organization || updatedAffiliations[index].organization.length < 8) {
+      newInputErrors[index] = { ...newInputErrors[index], organization: true };
+      setErrorMsg('Organization name must be at least 8 characters');
       setInputError(newInputErrors);
-      setErrorMsg('Required');
+      return;
+    } else if (/www|\/|@|[^\w\s\-.,()äöüÄÖÜßøéÉà']/.test(updatedAffiliations[index].organization)) {
+      newInputErrors[index] = { ...newInputErrors[index], organization: true };
+      setErrorMsg('Only letters, numbers, spaces, hyphens, parentheses, commas, and periods are allowed');
+      setInputError(newInputErrors);
       return;
     }
 
@@ -134,6 +215,44 @@ function Affiliations({ show, onHide }) {
       setAffiliations(updatedAffiliations);
       handleCreateOrUpdateAffiliation(index);
     }
+  };
+
+  // Get current department options for a specific affiliation in the table
+  const getCurrentDepartmentOptions = (index) => {
+    const organization = affiliations[index]?.organization;
+    if (!organization) return [];
+
+    // If we already have options for this organization in cache, use them
+    if (deptOptions[organization]) {
+      return deptOptions[organization];
+    }
+
+    // Otherwise, return empty array and trigger loading
+    if (dataLoaded) {
+      getDepartmentOptions(organization);
+    }
+    return [];
+  };
+
+  // Get current group options for a specific affiliation in the table
+  const getCurrentGroupOptions = (index) => {
+    const organization = affiliations[index]?.organization;
+    const department = affiliations[index]?.department;
+    if (!organization || !department) return [];
+
+    // Create a key for the cache
+    const key = `${organization}|${department}`;
+
+    // If we already have options for this org+dept in cache, use them
+    if (groupOptions[key]) {
+      return groupOptions[key];
+    }
+
+    // Otherwise, return empty array and trigger loading
+    if (dataLoaded && organization && department) {
+      getGroupOptions(organization, department);
+    }
+    return [];
   };
 
   return (
@@ -165,6 +284,25 @@ function Affiliations({ show, onHide }) {
                   <strong>Organization:</strong>
                   {' '}
                   {entry.organization}
+                  {entry.ror_id && (
+                  <a
+                    href={`https://ror.org/${entry.ror_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View in Research Organization Registry"
+                    className="ror-icon-link"
+                  >
+                    <img
+                      src="/images/ror-icon-rgb.svg"
+                      alt="ROR"
+                      style={{
+                        height: '1em',
+                        marginLeft: '5px',
+                        verticalAlign: 'text-top'
+                      }}
+                    />
+                  </a>
+                )}
                 </p>
                 <p>
                   <strong>Department:</strong>
@@ -180,6 +318,11 @@ function Affiliations({ show, onHide }) {
                   <strong>From:</strong>
                   {' '}
                   {entry.from}
+                </p>
+                <p>
+                  <strong>To:</strong>
+                  {' '}
+                  {entry.to}
                 </p>
               </div>
             ))}
@@ -223,17 +366,16 @@ function Affiliations({ show, onHide }) {
           <tbody>
 
             {affiliations.map((item, index) => (
-              <tr key={item.id}>
+              <tr key={item.id || `new-${index}`}>
                 <td>
                   {item.disabled ? item.country
                     : (
-                      <CreatableSelect
-                        isCreatable
+                      <Select
                         disabled={item.disabled}
                         placeholder="Select or enter a new option"
                         components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                         options={countryOptions}
-                        value={item.country || ''}
+                        value={item.country ? { value: item.country, label: item.country } : null}
                         isSearchable
                         isClearable
                         onChange={(choice) => onChangeHandler(index, 'country', !choice ? '' : choice.value)}
@@ -241,20 +383,48 @@ function Affiliations({ show, onHide }) {
                     )}
                 </td>
                 <td>
-                  {item.disabled ? item.organization
-                    : (
-                      <CreatableSelect
-                        required
-                        components={{ DropdownIndicator: () => null }}
-                        disabled={item.disabled}
-                        placeholder="Select or enter a new option"
-                        isCreatable
-                        options={orgOptions}
-                        value={item.organization}
-                        isClearable
-                        onChange={(choice) => onChangeHandler(index, 'organization', !choice ? '' : choice.value)}
-                      />
+                {item.disabled ? (
+                  <>
+                    {item.organization}
+                    {item.ror_id && (
+                      <a
+                        href={`https://ror.org/${item.ror_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="View in Research Organization Registry"
+                        className="ror-icon-link"
+                      >
+                        <img
+                          src="/images/ror-icon-rgb.svg"
+                          alt="ROR"
+                          style={{
+                            height: '1em',
+                            marginLeft: '5px',
+                            verticalAlign: 'text-top'
+                          }}
+                        />
+                      </a>
                     )}
+                  </>
+                ) : (
+                  <>
+                    <CreatableSelect
+                      required
+                      components={{ DropdownIndicator: () => null }}
+                      disabled={item.disabled}
+                      placeholder={inputError[index] && inputError[index].organization ?
+                        errorMsg : "Select an option"}
+                      options={orgOptions}
+                      value={item.organization ? { value: item.organization, label: item.organization } : null}
+                      isClearable
+                      className={inputError[index] && inputError[index].organization ? 'error-control' : ''}
+                      onChange={(choice) => onChangeHandler(index, 'organization', !choice ? '' : choice.value)}
+                    />
+                    {inputError[index] && inputError[index].organization && (
+                      <small className="text-danger">{errorMsg}</small>
+                    )}
+                  </>
+                )}
                 </td>
                 <td>
                   {item.disabled ? item.department
@@ -262,12 +432,12 @@ function Affiliations({ show, onHide }) {
                       <CreatableSelect
                         isCreatable
                         components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
-                        disabled={item.disabled}
-                        placeholder="Select or enter a new option"
-                        options={deptOptions}
-                        value={item.department}
+                        disabled={item.disabled || !item.organization}
+                        placeholder={!item.organization ? "Select organization first" : "Select or enter a new option"}
+                        options={getCurrentDepartmentOptions(index)}
+                        value={item.department ? { value: item.department, label: item.department } : null}
                         isSearchable
-                        clearable
+                        isClearable
                         onChange={(choice) => onChangeHandler(index, 'department', !choice ? '' : choice.value)}
                       />
                     )}
@@ -277,12 +447,11 @@ function Affiliations({ show, onHide }) {
                     : (
                       <CreatableSelect
                         isCreatable
-                        placeholder="Select or enter a new option"
+                        placeholder={!item.department ? "Select department first" : "Select or enter a new option"}
                         components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
-                        disabled={item.disabled}
-                        allowCreate
-                        options={groupOptions}
-                        value={item.group}
+                        disabled={item.disabled || !item.organization || !item.department}
+                        options={getCurrentGroupOptions(index)}
+                        value={item.group ? { value: item.group, label: item.group } : null}
                         isSearchable
                         closeMenuOnSelect
                         isClearable
@@ -292,7 +461,7 @@ function Affiliations({ show, onHide }) {
                 </td>
                 <td>
                   <DatePicker
-                    placeholderText={inputError[index] ? inputError[index].from ? errorMsg : '' : 'Required'}
+                    placeholderText={inputError[index] && inputError[index].from ? errorMsg : ''}
                     isClearable
                     clearButtonTitle="Clear"
                     className={inputError[index] && inputError[index].from ? 'error-control' : ''}
@@ -300,8 +469,8 @@ function Affiliations({ show, onHide }) {
                     disabled={item.disabled}
                     showMonthYearPicker
                     dateFormat="yyyy-MM"
-                    value={item.from}
-                    onChange={(date) => onChangeHandler(index, 'from', moment(date).format('YYYY-MM'))}
+                    selected={item.from ? moment(item.from).toDate() : null}
+                    onChange={(date) => onChangeHandler(index, 'from', date ? moment(date).format('YYYY-MM') : null)}
                   />
                 </td>
                 <td>
@@ -314,8 +483,8 @@ function Affiliations({ show, onHide }) {
                     disabled={item.disabled}
                     showMonthYearPicker
                     dateFormat="yyyy-MM"
-                    value={item.to}
-                    onChange={(date) => onChangeHandler(index, 'to', date ? moment(date).format('YYYY-MM') : date)}
+                    selected={item.to ? moment(item.to).toDate() : null}
+                    onChange={(date) => onChangeHandler(index, 'to', date ? moment(date).format('YYYY-MM') : null)}
                   />
                 </td>
                 <td>

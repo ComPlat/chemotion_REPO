@@ -1,24 +1,226 @@
 # Chemotion_Repository Changelog
 
+
+## [2.4.0]
+> 2025-05-23
+
+* Features and Enhancements:
+  * Enhanced `Group Lead` functionality:
+    * Users can now configure their Group Lead in the Account & Profile page.
+    * The system will automatically add the Group Lead as an Author by default (removable by the user).
+    * The system will automatically assign the Group Lead as a Reviewer.
+  * Improved the `Authors & Reviewers` function.
+  * Enabled affiliation modification for Contributors during the review process.
+  * Added reviewer labeling functionality.
+  * Upgraded to `DataCite Metadata Schema 4.6`.
+  * [Add ORCID iD via Account & Profile #79.](https://github.com/ComPlat/chemotion_REPO/issues/79)
+  * [Change in the affiliations on the review and publication page #110.](https://github.com/ComPlat/chemotion_REPO/issues/110)
+  * Integrated `ROR (Research Organization Registry)`. [#81](https://github.com/ComPlat/chemotion_REPO/issues/81)
+  * Refactored the `My Collaborations` UI.
+  * Provided export metadata to integrated with Chemotion Wiki.
+  * Added **redox** entries to the Chemotion Wiki sheet.
+  * Implemented Matomo toggle in/out.
+
+* Bug Fixes:
+  * Fixed issue where automated line breaks were not applied in the Comment to Reviewer function. [#144](https://github.com/ComPlat/chemotion_REPO/issues/144)
+  * Fixed missing `NMR` button in the reaction analysis view.
+  * Resolved CI collection issues.
+  * Corrected missing solvent name in the publication view.
+  * Fixed FTP connection issue.
+  * Fixed blank page issue in NMRium viewer.
+
+* Chores:
+  * Updated library dependencies.
+  * Updated `Imprint`, `Privacy` and `Directive` sections for the Chemotion Repository.
+  * Updated repository lifetime information.
+  * Upgraded node version.
+  * Removed redundant code.
+
 ## [2.3.0]
-> 2025-02-11
+> 2025-02-06
 
 * Features and Enhancements:
   * Default lock zooming on the publication page.
   * Introduced a yield and conversion switch for the review and publication pages.
   * Added support for the ChemSpectra function with multiple molecules.
+  * Fixed an issue where empty files were being downloaded.
   * Enabled the NMRium feature based on ontology selection.
   * Improved the QC check logic for mass spectra.
   * Added support for SURMOF change type.
+  * Included the [Chemotion LabIMotion version 1.4.1](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#141).
+  * Included the [Chemotion LabIMotion version 1.4.0](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#140).
 
 * Bug Fixes:
-  * Fixed an issue where empty files were being downloaded.
   * Fixed an issue with adding collaboration via ORCID iD.
   * Fixed missing molarity values during data transfer from ELN.
   * Fixed an issue with advanced search.
   * Fixed NMRium view issues on the review page.
   * Fixed user view presentation for generic datasets.
 
+* Chores:
+  * Improved performance with preload.
+  * Changed 'x-vial' to 'sample' on the publication page
+  * Upgraded react-molviewer
+  * Upgraded chem-generic-ui-viewer
+  * Upgrade ag-grid-react
+  * Upgrade node version
+  * Removed redundant code.
+  * Included the [Chemotion ELN version 1.10.5](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.4](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.3](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.2](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.10.1/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.10.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.10.0/CHANGELOG.md).
+
+
+## [2.2.0]
+> 2024-11-06
+
+* Features and Enhancements:
+  * Adjusted the button layout for preview images on the publication page.
+  * Expanded coverage of Ontology Terminology in metadata.
+  * Reduced paragraph spacing in the quill-viewer for space efficiency.
+  * Added ontology terminology to JSON-LD metadata based on template definitions.
+  * Introduced the StartingMaterial4Chem identifier to the publication list.
+  * A submission feature with dataset copy capability.
+  * Decoupled sample information in the Publication and Review pages, enhancing data clarity and management.
+  * Updated Schema.org JSON-LD metadata to enhance data interoperability and search engine optimization.
+  * Added functionality to add or remove reviewers during the review process.
+  * Enabled NMRium functionality on the Data Publications page.
+  * Enhanced preview capabilities for anonymous users.
+  * Added additional information settings for StartingMaterial4Chem.
+  * Refined JSON-LD metadata to further improve data interoperability and search engine optimization.
+  * Added advertisement for the NFDI4Chem award.
+  * Added StartingMaterial4Chem support for Buchler and Carbolution.
+  * Included the [Chemotion LabIMotion version 1.3.0](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#130).
+
+* Bug Fixes:
+  * Fixed an issue where clicking on embargo review.
+  * Fixed issue with uploading attachments.
+  * Fixed conversion failure while fetching thumbnails.
+  * Resolved blank page issue when clicking "Keep Changes" on the submit modal.
+  * Fixed issue where reviewers could not add an author.
+  * Corrected incorrect affiliation ID format.
+  * Fixed issue where submission failed when no review information was provided.
+  * Fixed an issue where the sample name was missing on the review page.
+  * Fixed an issue where importing collections failed when multiple collections were provided.
+
+* Chores:
+  * Improved performance with preload.
+  * Upgraded react-molviewer
+  * Upgraded chem-generic-ui-viewer
+  * Upgraded Quill for the quill-viewer function.
+  * Removed redundant code.
+  * Included the [Chemotion ELN version 1.9.2](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.9.1](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.1/CHANGELOG.md).
+  * Included the [Chemotion ELN version 1.9.0](https://github.com/ComPlat/chemotion_ELN/blob/v1.9.0/CHANGELOG.md).
+
+## [2.1.15]
+> 2024-10-15
+* **Bug Fixes:**
+  * Fixed issue where the suggestion list was empty due to a type error from the cell line.
+  * Fixed issue where data without xvial should not be listed on the `Molecule Archive` page.
+  * Fixed layout issue where columns with "hasOwnLine" enabled impacted arrangement.
+
+* **Chores:**
+  * Aligned button sizes after library upgrade.
+  * Upgraded chem-generic-ui.
+  * Upgraded chem-generic-ui-viewer.
+
+## [2.1.14]
+> 2024-10-09
+* **Bug Fixes:**
+  * Fixed the issue that readonly text should be displayed on publications.
+
+## [2.1.13]
+> 2024-09-29
+* **Bug Fixes:**
+  * Fixed the problem that rf value 0 is shown as empty on the publication page.
+
+## [2.1.12]
+> 2024-09-28
+* **Chores:**
+  * Upgraded chem-generic-ui-viewer
+
+## [2.1.11]
+> 2024-09-18
+* **Features and Enhancements:**
+  * Advertisement nfdi4chem award
+
+* **Bug Fixes:**
+  * Fixed an issue where clicking on embargo review.
+
+* **Chores:**
+  * Upgraded chem-generic-ui-viewer
+  * Upgraded react-molviewer
+
+## [2.1.10]
+> 2024-08-26
+* **Features and Enhancements:**
+  * Adjusted the layout of buttons for preview images on the publication page.
+  * Expanded Ontology Terminology coverage for metadata.
+  * Removed paragraph spacing in the quill-viewer to save space.
+
+* **Bug Fixes:**
+  * Fixed an issue where importing collections failed when multiple collections were provided.
+
+* **Chores:**
+  * Removed redundant code.
+
+## [2.1.9]
+> 2024-08-12
+* **Features and Enhancements:**
+  * Added ontology terminology to JSON-LD metadata based on the template definition.
+  * Introduced the StartingMaterial4Chem identifier to the publication list.
+
+* **Bug Fixes:**
+  * Fixed an issue where the sample name was missing on the review page.
+
+* **Chores:**
+  * Upgraded Quill for the quill-viewer function.
+
+## [2.1.8]
+> 2024-07-31
+* **Features and Enhancements:**
+  * Enhanced preview functionality for anonymous user.
+  * Added additional information setting for StartingMaterial4Chem.
+  * Polished JSON-LD metadata for enhanced data interoperability and search engine optimization.
+
+* **Bug Fixes:**
+  * Fixed issue where submission failed when no review information was provided.
+
+> 2024-07-30
+* **Features and Enhancements:**
+  * NMRium function is available on the Data Publications page.
+  * StartingMaterial4Chem - Buchler.
+  * StartingMaterial4Chem - Carbolution.
+
+* **Bug Fixes:**
+  * Fixed issue with uploading attachments.
+  * Fixed conversion failure while fetching thumbnails.
+  * Resolved blank page issue when clicking "Keep Changes" on the submit modal.
+  * Fixed issue where reviewers could not add an author.
+  * Corrected incorrect affiliation ID format.
+
+* **Chores:**
+  * Improved performance with preload.
+  * Removed redundant code.
+
+> 2024-07-22
+* **Features and Enhancements:**
+  * A submission feature with dataset copy capability.
+  * Decoupled sample information in the Publication and Review pages, enhancing data clarity and management.
+  * Updated Schema.org JSON-LD metadata for improved data interoperability and search engine optimization.
+
+## [2.1.7]
+> 2024-07-03
+* Features and enhancements:
+  * A feature to add or remove additional reviewers during the reviewing process.
+
+## [2.0.8]
+> 2024-04-29
+* Features and enhancements:
+  * LabIMotion 1.3.0
 * Chores:
   * Optimized fetch structure operation to improve performance.
   * Adjusted layout for datetime range.
@@ -85,7 +287,53 @@
 ## [2.1.0]
 > 2024-08-05
 
-* Features and Enhancements:
+* Bug fixes:
+  * Fixed svg scrubber
+
+
+## [2.0.6]
+> 2024-04-18
+
+* Features and enhancements:
+  * Implemented streaming data transfer from Chemotion ELN
+
+* Bug fixes:
+  * fixed downloading files via the pop-up modal fails on the publication page  (ComPlat/chemotion_REPO#96)
+  * Disabled annotate button for the publication
+  * Fixed initial load hang issue
+* Chores:
+  * chore: remove duplicate codes
+
+## [2.0.5]
+> 2024-04-09
+
+* Features and enhancements:
+  * Introduced the embargo overview page, which enables scientists to review their submission status and providing an overview for the reviewers
+  * Implemented the review comment function for the embargo collection
+
+* Bug fixes:
+  * Fixed the incorrect format of the sign-up terms and conditions content (ComPlat/chemotion_REPO#83)
+  * Fixed a flaw in the similarity search function that caused the error (ComPlat/chemotion_REPO#91)
+
+## [2.0.4]
+> 2024-03-12
+
+* Features and enhancements:
+  * Introduced a new confirmation and welcome email. (ComPlat/chemotion_REPO#74)
+* Chores:
+  * Updated API document. (ComPlat/chemotion_REPO#67)
+
+## [2.0.3]
+> 2024-03-08
+
+* Bug fixes:
+  * Fixed the missing warning dialog before canceling an account. (ComPlat/chemotion_REPO#78)
+
+## [2.0.2]
+> 2024-02-26
+
+* Features and enhancements:
+  * Introduced preservation strategy for the Chemotion Repository.
   * Use public domain icon to represent `No License`.
   * Use `ORCID iD` to refer to the ORCID identifier.
   * Group analysis attachments.

@@ -43,6 +43,7 @@ class Publication < ActiveRecord::Base
   acts_as_paranoid
   include MetadataJsonld
   include EmbargoCol
+  include DataCitePublisher
   has_ancestry
   belongs_to :element, polymorphic: true
   belongs_to :original_element, polymorphic: true, optional: true
@@ -309,7 +310,6 @@ class Publication < ActiveRecord::Base
     @@publication_logger ||= Logger.new(File.join(Rails.root, 'log', 'publication.log'))
   end
 
-
   def self.repository_logger
     @@repository_logger ||= Logger.new(Rails.root.join('log/repository.log'))
   end
@@ -380,15 +380,15 @@ class Publication < ActiveRecord::Base
       children.where(element_type: 'Sample').each do |new_sample|
         d = new_sample.doi
         if d
-          dois['samples'][new_sample.element_id.to_s] = {
-            sample: {
-              DOI: d.full_doi,
-              suffix: d.suffix,
-              inchikey: d.inchikey,
+        dois['samples'][new_sample.element_id.to_s] = {
+          sample: {
+            DOI: d.full_doi,
+            suffix: d.suffix,
+            inchikey: d.inchikey,
               count: d.molecule_count
-            },
+          },
             analyses_dois: {}
-          }
+        }
         end
       end
     when 'Container'
@@ -445,6 +445,9 @@ class Publication < ActiveRecord::Base
   end
 
   def datacite_metadata_xml
+    # Debug info
+    Rails.logger.debug("Starting datacite_metadata_xml method")
+
     if parent.nil? && %w[Sample Reaction].include?(element_type)
       coly = element.collections.where(
         <<~SQL
@@ -453,19 +456,57 @@ class Publication < ActiveRecord::Base
       ).last
       cdoi = coly.publication&.doi&.full_doi if coly.present?
     end
+
     parent_element = parent&.element
     literals = ActiveRecord::Base.connection.exec_query(literals_sql(element_id, element_type))
-    metadata_obj = OpenStruct.new(pub: self, element: element, pub_tag: taggable_data, dois: doi_bag, parent_element: parent_element.presence, rights: rights_data, lits: literals, col_doi: cdoi, cust_sample: cust_sample)
+
+    # Create metadata object with all necessary data
+    metadata_obj = OpenStruct.new(
+      pub: self,
+      element: element,
+      pub_tag: taggable_data,
+      dois: doi_bag,
+      parent_element: parent_element.presence,
+      rights: rights_data,
+      lits: literals,
+      col_doi: cdoi,
+      cust_sample: cust_sample
+    )
+
+    # Extend with publisher methods
+    metadata_obj.extend(DataCitePublisher)
+
+    # Determine which template to use
     erb_file = if element_type == 'Container'
                  "app/publish/datacite_metadata_#{parent_element.class.name.downcase}_#{element_type.downcase}.html.erb"
                else
                  "app/publish/datacite_metadata_#{element_type.downcase}.html.erb"
                end
-    metadata_file = ERB.new(File.read(File.join(
-        Rails.root,
-        erb_file
-    )))
-    metadata_file.result(metadata_obj.instance_eval { binding })
+
+    Rails.logger.debug("Using template: #{erb_file}")
+
+    # Create ERB object and process template with better error handling
+    template_path = File.join(Rails.root, erb_file)
+    begin
+      template_content = File.read(template_path)
+      metadata_file = ERB.new(template_content)
+
+      # Return processed template
+      result = metadata_file.result(metadata_obj.instance_eval { binding })
+      Rails.logger.debug("Finished datacite_metadata_xml method")
+      result
+    rescue SyntaxError => e
+      # Log the exact error and where it occurred
+      Rails.logger.error("SyntaxError in ERB template: #{erb_file}")
+      Rails.logger.error("Error message: #{e.message}")
+      Rails.logger.error("Template content: #{template_content}")
+      raise e
+    rescue StandardError => e
+      Rails.logger.error("Error processing ERB template: #{erb_file}")
+      Rails.logger.error("Error message: #{e.message}")
+      Rails.logger.error("Backtrace: #{e.backtrace.join("\n")}")
+      raise e
+    end
   end
 
   def persit_datacite_metadata_xml!
@@ -538,10 +579,10 @@ class Publication < ActiveRecord::Base
         taggable_type: 'Container', taggable_id: element_id
       )
       tag_data = parent.element.publication_tag.merge({
-        published_at: doi_date,
-        dataset_version: doi.analysis_count,
+                                                        published_at: doi_date,
+                                                        dataset_version: doi.analysis_count,
         analysis_doi: short_doi
-      })
+                                                      })
       et.update!(
         taggable_data: (et.taggable_data || {}).merge(publication: tag_data)
       )
@@ -574,7 +615,7 @@ class Publication < ActiveRecord::Base
       metadata_obj = OpenStruct.new(sample: element)
       metadata_file = ERB.new(File.read(
         File.join(Rails.root,'app', 'publish', 'pubchem_metadata.sdf.erb')
-      ))
+                              ))
       mt = metadata_file.result(metadata_obj.instance_eval { binding })
       if (production = Rails.env.production? && ENV['PUBLISH_MODE'] == 'production') && scheme_only == false
         ftp = Net::FTP.new('ftp-private.ncbi.nlm.nih.gov')
@@ -613,20 +654,20 @@ class Publication < ActiveRecord::Base
         "INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id"
       ).where("sync_collections_users.shared_by_id = ?", su_id)
        .where("sync_collections_users.user_id in (?)", published_by)
-       .where("collections.label = 'Pending Publications'").pluck(:id)
+                                         .where("collections.label = 'Pending Publications'").pluck(:id)
 
-       my_published_collection_ids = Collection.joins(
+      my_published_collection_ids = Collection.joins(
         "INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id"
       ).where("sync_collections_users.shared_by_id = ?", User.chemotion_user.id)
        .where("sync_collections_users.user_id in (?)", [published_by] + creator_ids)
-       .where("collections.label = 'Published Elements'")
-       .pluck(:id)
+                                              .where("collections.label = 'Published Elements'")
+                                              .pluck(:id)
 
       if element_type == 'Reaction' && scheme_only
         published_collection_ids = my_published_collection_ids + [Collection.scheme_only_reactions_collection.id]
-      else
+                                 else
         published_collection_ids = my_published_collection_ids + [Collection.public_collection_id]
-      end
+                                 end
       collections_klass = "Collections#{element_type}".constantize
       if element_type == 'Sample'
         gl_col_ids = collections_klass.joins(:collection).where(sample_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
@@ -648,7 +689,7 @@ class Publication < ActiveRecord::Base
   end
 
   def default_line
-     @default_line ||= "#{element_type} #{element_id}: "
+    @default_line ||= "#{element_type} #{element_id}: "
   end
 
   def valid_transition(to_state)
@@ -694,21 +735,21 @@ class Publication < ActiveRecord::Base
 
   def literals_sql(e_id, e_type)
     <<~SQL
-    select l.*,
-    case l.litype
-    when 'citedOwn' then 'IsCitedBy'
-    when 'citedRef' then 'Continues'
-    when 'referTo' then 'References'
-    end relationtype,
-    case
-    when nullif(l2.doi,'') is not null then 'DOI' || ' {|} ' || 'https://dx.doi.org/' || doi
-    when nullif(l2.isbn,'') is not null then 'ISBN' || ' {|} ' || isbn
-    when nullif(l2.url,'') is not null then 'URL' || ' {|} ' || url
-    end relatedIdentifiertype,
-    l2.title, l2.url, l2.refs, l2.doi, l2.isbn
-    from literals l
-    join literatures l2 on l.literature_id = l2.id
-    where l.element_id = #{e_id} and l.element_type = '#{e_type}' and l.litype in ('citedOwn', 'citedRef', 'referTo')
+      select l.*,
+      case l.litype
+      when 'citedOwn' then 'IsCitedBy'
+      when 'citedRef' then 'Continues'
+      when 'referTo' then 'References'
+      end relationtype,
+      case
+      when nullif(l2.doi,'') is not null then 'DOI' || ' {|} ' || 'https://dx.doi.org/' || doi
+      when nullif(l2.isbn,'') is not null then 'ISBN' || ' {|} ' || isbn
+      when nullif(l2.url,'') is not null then 'URL' || ' {|} ' || url
+      end relatedIdentifiertype,
+      l2.title, l2.url, l2.refs, l2.doi, l2.isbn
+      from literals l
+      join literatures l2 on l.literature_id = l2.id
+      where l.element_id = #{e_id} and l.element_type = '#{e_type}' and l.litype in ('citedOwn', 'citedRef', 'referTo')
     SQL
   end
 
@@ -765,9 +806,9 @@ class Publication < ActiveRecord::Base
     publication_logger.info(
       <<~INFO
       ******** MODE #{ENV['PUBLISH_MODE']}********
-      Publication #{id}. STATE: #{state}: #{default_line}
-      #{message}
-      ********************************************************************************
+        Publication #{id}. STATE: #{state}: #{default_line}
+        #{message}
+        ********************************************************************************
       INFO
     )
   end

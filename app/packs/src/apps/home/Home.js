@@ -14,8 +14,7 @@ import RepoPubl from 'src/repoHome/RepoPubl';
 import RepoReview from 'src/repoHome/RepoReview';
 import RepoAbout from 'src/repoHome/RepoAbout';
 import RepoContact from 'src/repoHome/RepoContact';
-import RepoDirective from 'src/repoHome/RepoDirective';
-import RepoPreservation from 'src/repoHome/RepoPreservation';
+import RepoInfo from 'src/repoHome/RepoInfo';
 import RepoNewsroom from 'src/repoHome/RepoNewsroom';
 import RepoNewsReader from 'src/repoHome/RepoNewsReader';
 import RepoNewsEditor from 'src/repoHome/RepoNewsEditor';
@@ -26,12 +25,13 @@ import RepoHowToEditor from 'src/repoHome/RepoHowToEditor';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import RStore from 'src/stores/alt/repo/stores/RStore';
 import RepoElementDetails from 'src/repoHome/RepoElementDetails';
-import NavFooter from 'src/libHome/NavFooter';
 import LoadingModal from 'src/components/common/LoadingModal';
 
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoGenericHub from 'src/repoHome/RepoGenericHub';
+import RepoOptOut from 'src/repoHome/RepoOptOut';
 
+import Footer from 'src/components/chemrepo/Footer';
 import SysInfo from 'src/components/chemrepo/SysInfo';
 
 class Home extends Component {
@@ -109,29 +109,17 @@ class Home extends Component {
       case 'welcome':
         return <RepoHome />;
       case 'directive':
-        return <RepoDirective />;
+        return <RepoInfo page="directive" />;
       case 'preservation':
-        return <RepoPreservation />;
+        return <RepoInfo page="preservation" />;
+      case 'imprint':
+        return <RepoInfo page="imprint" />;
+      case 'privacy':
+        return <RepoInfo page="privacy" />;
+      case 'opt-out':
+        return <RepoOptOut />;
       default:
         return <RepoHome />;
-    }
-  }
-
-  renderNavFooter() {
-    const { guestPage } = this.state;
-    switch (guestPage) {
-      case 'publications':
-      case 'review':
-      case 'embargo':
-      case 'newseditor':
-      case 'newsreader':
-      case 'newsroom':
-      case 'howtoeditor':
-      case 'howtoreader':
-      case 'howto':
-        return <span />;
-      default:
-        return <NavFooter />;
     }
   }
 
@@ -145,10 +133,12 @@ class Home extends Component {
               <Navigation />
               <Notifications />
             </Row>
-            <Row style={{ margin: '10px' }}>{this.renderGuestPage()}</Row>
+            <Row style={{ margin: '10px', paddingBottom: '10px' }}>
+              {this.renderGuestPage()}
+            </Row>
           </Grid>
-          {this.renderNavFooter()}
         </div>
+        <Footer />
         <LoadingModal />
       </div>
     );

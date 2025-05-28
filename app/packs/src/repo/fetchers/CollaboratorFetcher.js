@@ -95,6 +95,17 @@ export default class CollaboratorFetcher {
       .catch((errorMessage) => { console.log(errorMessage); });
   }
 
+  static updateCollaborator(params) {
+    return fetch('/api/v1/collaborators/update', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params)
+    }).then(response => response.json());
+  }
 
   static loadOrcidByUserId(params) {
     return fetch('/api/v1/collaborators/load_orcid', {

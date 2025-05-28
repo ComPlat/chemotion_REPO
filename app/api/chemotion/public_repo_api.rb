@@ -324,6 +324,7 @@ module Chemotion
             res = {
               dataset: ds_json,
               isLogin: current_user.present?,
+              isCI: current_user.present? && current_user.id == User.chemotion_user.id,
               element: sample.is_a?(Sample) ? Entities::SampleEntity.represent(sample) : Entities::ReactionEntity.represent(sample),
               sample_svg_file: sample.is_a?(Sample) ? sample.sample_svg_file : sample.reaction_svg_file,
               molecule: {

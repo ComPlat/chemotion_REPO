@@ -13,24 +13,46 @@ module Users
     end
 
     def create
+      # Extract ORCID value first to prevent "unknown attribute" error
+      orcid_value = params[:user] && params[:user].delete(:orcid)
+      
+      # Normal resource building
       build_resource(sign_up_params)
       find_affiliation
       default_password
-      providers
+      
+      # Set up providers with ORCID if provided
+      setup_providers(orcid_value)
 
       yield resource if block_given?
-      if resource.save
-        resource_saved_handler
-      else
-        resource_not_saved_handler
+      begin
+        if resource.save
+          resource_saved_handler
+        else
+          resource_not_saved_handler
+        end
+      rescue Errno::ECONNREFUSED => e
+        # Handle email delivery error gracefully
+        Rails.logger.error "Mail delivery failed: #{e.message}"
+        
+        # Still create the user but inform about mail delivery failure
+        if resource.persisted?
+          set_flash_message :notice, :signed_up_mail_error if is_flashing_format?
+          sign_up(resource_name, resource)
+          respond_with resource, location: after_sign_up_path_for(resource)
+        else
+          resource_not_saved_handler
+        end
       end
     end
 
     protected
 
     def providers
-      provider = {}
-      provider[resource.provider] = resource.uid
+      provider = resource.providers || {}
+      if resource.provider.present?
+        provider[resource.provider] = resource.uid
+      end
       resource.providers = provider
     end
 
@@ -98,10 +120,26 @@ module Users
     end
 
     def affiliation_handler
-      return if session['devise.omniauth.data']['affiliation'].blank?
+      # First try to get affiliation from session if available
+      if session['devise.omniauth.data'] && session['devise.omniauth.data']['affiliation'].present?
+        aff = assign_affiliation(resource.affiliations[0]) if resource.affiliations&.length.positive?
+        resource.affiliations[0] = aff if aff.present?
+      end
+    end
 
-      aff = assign_affiliation(resource.affiliations[0]) if resource.affiliations&.length.positive? # rubocop: disable Lint/SafeNavigationChain
-      resource.affiliations[0] = aff if aff.present?
+    def setup_providers(orcid_value = nil)
+      # Initialize providers hash if needed
+      resource.providers ||= {}
+      
+      # Add OAuth provider/uid if present
+      if resource.provider.present? && resource.uid.present?
+        resource.providers[resource.provider] = resource.uid
+      end
+      
+      # Add ORCID if provided
+      if orcid_value.present?
+        resource.providers['orcid'] = orcid_value
+      end
     end
 
     # GET /resource/edit
