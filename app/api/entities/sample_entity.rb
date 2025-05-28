@@ -78,6 +78,9 @@ module Entities
       ## Repo
       expose! :doi,                     unless: :displayed_in_list, anonymize_with: nil, using: Entities::DoiEntity
       expose! :publication,             unless: :displayed_in_list
+      expose! :links if ENV['REPO_VERSIONING'] == 'true'
+      expose! :concept, unless: :displayed_in_list, anonymize_with: nil, using: Entities::ConceptEntity if ENV['REPO_VERSIONING'] == 'true'
+      ## expose :concept, using: Entities::ConceptEntity
     end
     # rubocop:enable Layout/LineLength, Layout/ExtraSpacing, Metrics/BlockLength
 

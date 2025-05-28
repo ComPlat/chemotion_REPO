@@ -7,6 +7,7 @@ module Repo
       @author_ids = args[:author_ids]
       @group_reviewers = args[:group_leaders]
       @analyses_ids = args[:analyses_ids]
+      @init_comment = args[:init_comment]
       @literal_ids = args[:refs]
       @license = args[:license]
       @embargo_id = args[:embargo]
@@ -175,7 +176,8 @@ module Repo
         timestamp: Time.now.strftime('%d-%m-%Y %H:%M:%S'),
         username: @current_user.name,
         user_id: @current_user.id,
-        type: 'submit'
+        type: 'submit',
+        comment: @init_comment || '',
       }
       review = root.review || {}
       history = review['history'] || []
@@ -184,7 +186,7 @@ module Repo
       current_node = {
         action: 'reviewing',
         type: 'reviewed',
-        state: 'pending'
+        state: 'pending',
       }
       history << current_node
       review['history'] = history
@@ -229,6 +231,7 @@ module Repo
 
       new_reaction.save!
       new_reaction.copy_segments(segments: @element.segments, current_user_id: @user_id)
+      Repo::SubmissionApis.duplicate_fundings(new_reaction, @element, @current_user.id)
       unless @literals.nil?
         lits = @literals&.select { |lit| lit['element_type'] == 'Reaction' && lit['element_id'] == @element.id }
         duplicate_literals(new_reaction, lits)
@@ -256,23 +259,50 @@ module Repo
         d = Doi.create_for_element!(new_reaction, 'reaction/' + @element.products_short_rinchikey_trimmed)
       end
 
-      pub = Publication.create!(
-        state: Publication::STATE_PENDING,
-        element: new_reaction,
-        original_element: @element,
-        published_by: @user_id,
-        doi: d,
-        taggable_data: @publication_tag.merge(
-          author_ids: @author_ids,
-          original_analysis_ids: @analysis_set_ids,
-          products_rinchi: {
-            rinchi_string: princhi_string,
-            rinchi_long_key: princhi_long_key,
-            rinchi_short_key: princhi_short_key,
-            rinchi_web_key: princhi_web_key
-          }
+      # create concept and concept doi
+      if ENV['REPO_VERSIONING'] == 'true'
+        c = Concept.create_for_doi!(d)
+
+        pub = Publication.create!(
+          state: Publication::STATE_PENDING,
+          element: new_reaction,
+          original_element: @element,
+          published_by: @user_id,
+          doi: d,
+          concept: c,
+          taggable_data: @publication_tag.merge(
+            author_ids: @author_ids,
+            original_analysis_ids: @analysis_set_ids,
+            products_rinchi: {
+              rinchi_string: princhi_string,
+              rinchi_long_key: princhi_long_key,
+              rinchi_short_key: princhi_short_key,
+              rinchi_web_key: princhi_web_key
+            }
+          )
         )
-      )
+
+        # update the concept with the taggable_data from the publication
+        c.update_tag
+      else
+        pub = Publication.create!(
+          state: Publication::STATE_PENDING,
+          element: new_reaction,
+          original_element: @element,
+          published_by: @user_id,
+          doi: d,
+          taggable_data: @publication_tag.merge(
+            author_ids: @author_ids,
+            original_analysis_ids: @analysis_set_ids,
+            products_rinchi: {
+              rinchi_string: princhi_string,
+              rinchi_long_key: princhi_long_key,
+              rinchi_short_key: princhi_short_key,
+              rinchi_web_key: princhi_web_key
+            }
+          )
+        )
+      end
 
       duplicate_analyses(new_reaction, @reaction_analysis_set, 'reaction/' + @element.products_short_rinchikey_trimmed)
       @element.reactions_samples.each  do |rs|
@@ -312,6 +342,7 @@ module Repo
       duplicate_residues(new_sample, sample) if sample.residues
       duplicate_elemental_compositions(new_sample, sample) if sample.elemental_compositions
       duplicate_user_labels(new_sample, sample, @current_user&.id)
+      Repo::SubmissionApis.duplicate_fundings(new_sample, sample, @current_user.id)
       unless @literals.nil?
         lits = @literals&.select { |lit| lit['element_type'] == 'Sample' && lit['element_id'] == sample.id }
         duplicate_literals(new_sample, lits)
@@ -324,20 +355,46 @@ module Repo
         else
           d = Doi.create_for_element!(new_sample)
         end
-        pub = Publication.create!(
-          state: Publication::STATE_PENDING,
-          element: new_sample,
-          original_element: sample,
-          published_by: @current_user.id,
-          doi: d,
-          parent_id: parent_publication_id,
-          taggable_data: @publication_tag.merge(
-            author_ids: @author_ids,
-            user_labels: sample.tag.taggable_data['user_labels'],
-            original_analysis_ids: analyses.pluck(:id),
-            analysis_ids: new_sample.analyses.pluck(:id)
+
+        if ENV['REPO_VERSIONING'] == 'true'
+          # create concept and concept doi
+          c = Concept.create_for_doi!(d)
+
+          pub = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: new_sample,
+            original_element: sample,
+            published_by: @current_user.id,
+            doi: d,
+            concept: c,
+            parent_id: parent_publication_id,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids,
+              user_labels: sample.tag.taggable_data['user_labels'],
+              original_analysis_ids: analyses.pluck(:id),
+              analysis_ids: new_sample.analyses.pluck(:id)
+            )
           )
-        )
+
+          # update the concept with the taggable_data from the publication
+          c.update_tag
+        else
+          pub = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: new_sample,
+            original_element: sample,
+            published_by: @current_user.id,
+            doi: d,
+            parent_id: parent_publication_id,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids,
+              user_labels: sample.tag.taggable_data['user_labels'],
+              original_analysis_ids: analyses.pluck(:id),
+              analysis_ids: new_sample.analyses.pluck(:id)
+            )
+          )
+        end
+
       end
       new_sample.analyses.each do |ana|
         Publication.find_by(element: ana).update(parent: pub)
@@ -424,17 +481,38 @@ module Repo
         else
           d = Doi.create_for_analysis!(new_ana, ik)
         end
-        Publication.create!(
-          state: Publication::STATE_PENDING,
-          element: new_ana,
-          original_element: ana,
-          published_by: @current_user.id,
-          doi: d,
-          parent: new_element.publication,
-          taggable_data: @publication_tag.merge(
-            author_ids: @author_ids
+        # create concept and concept doi
+        if ENV['REPO_VERSIONING'] == 'true'
+          c = Concept.create_for_doi!(d)
+          pub = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: new_ana,
+            original_element: ana,
+            published_by: @current_user.id,
+            doi: d,
+            concept: c,
+            parent: new_element.publication,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids
+            )
           )
-        )
+          # update the concept with the taggable_data from the publication
+          c.update_tag
+        else
+          pub = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: new_ana,
+            original_element: ana,
+            published_by: @current_user.id,
+            doi: d,
+            parent: new_element.publication,
+            taggable_data: @publication_tag.merge(
+              author_ids: @author_ids
+            )
+          )
+        end
+
+
         # duplicate datasets and copy attachments
         ana.children.where(container_type: 'dataset').each do |ds|
           new_dataset = new_ana.children.create(container_type: 'dataset')

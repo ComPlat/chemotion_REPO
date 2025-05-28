@@ -148,6 +148,7 @@ class Reaction < ApplicationRecord
 
   has_many :private_notes, as: :noteable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
+  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
   validates :creator, presence: true

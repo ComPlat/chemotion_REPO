@@ -56,6 +56,7 @@ module Chemotion
       get 'initialize' do
         {
           molecule_viewer: Matrice.molecule_viewer,
+          repo_versioning: ENV['REPO_VERSIONING'] == 'true' ? true : false,
           u: Rails.configuration.u || {},
         }
       end

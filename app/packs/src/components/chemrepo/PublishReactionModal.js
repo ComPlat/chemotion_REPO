@@ -40,7 +40,13 @@ import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
 import { CitationTypeMap, CitationTypeEOL } from 'src/components/CitationType';
 import SubmissionCheck from 'src/components/chemrepo/SubmissionCheck';
-import { doStValidation } from 'src/components/chemrepo/publication-utils';
+import {
+  doStValidation,
+  hasVersion,
+} from 'src/components/chemrepo/publication-utils';
+import OrcidIcon from 'src/components/chemrepo/common/Orcid';
+import UserAffInfo from 'src/components/chemrepo/publish-helper';
+import VersionComment from 'src/components/chemrepo/VersionComment';
 
 const AnalysisIdstoPublish = element => (
   element.analysisArray().filter(a => a.extended_metadata.publish && (a.extended_metadata.publish === true || a.extended_metadata.publish === 'true')).map(x => x.id)
@@ -110,6 +116,13 @@ export default class PublishReactionModal extends Component {
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
+      publishType: {
+        options: Object.values(publishOptions),
+        selected: publishOptions.f,
+        disabled: false
+      },
+      behalfAsAuthor: false,
+      newVersion: false,
       addMeAsAuthor: true,
       addGroupLeadAsAuthor: true,
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f },
@@ -141,6 +154,7 @@ export default class PublishReactionModal extends Component {
     this.handleYieldChange = this.handleYieldChange.bind(this);
     this.handlePropertiesChange = this.handlePropertiesChange.bind(this);
     this.handleUnitChange = this.handleUnitChange.bind(this);
+    this.handleVersionComment = this.handleVersionComment.bind(this);
     this.toggleAddMeAsAuthor = this.toggleAddMeAsAuthor.bind(this);
     this.toggleAddGroupLeadAsAuthor = this.toggleAddGroupLeadAsAuthor.bind(this);
   }
@@ -155,10 +169,45 @@ export default class PublishReactionModal extends Component {
     if (!nextProps.reaction) { return; }
     nextProps.reaction.convertDurationDisplay();
 
+    const { currentUser } = UserStore.getState();
+
+    const newVersion = !isUndefined(get(nextProps.reaction, 'tag.taggable_data.previous_version'));
+
+    const previousLicense = get(nextProps.reaction, 'tag.taggable_data.previous_version.license');
+    const previousSchemeOnly = get(nextProps.reaction, 'tag.taggable_data.previous_version.scheme_only');
+    const previousUsers = get(nextProps.reaction, 'tag.taggable_data.previous_version.users', []);
+
+    const publishType = { ...this.state.publishType };
+    if (previousSchemeOnly === true) {
+      publishType.selected = publishOptions.s;
+      publishType.disabled = true;
+    } else if (previousSchemeOnly === false) {
+      publishType.selected = publishOptions.f;
+      publishType.disabled = true;
+    }
+
+    let behalfAsAuthor = false
+    const selectedUsers = []
+    previousUsers.forEach((user) => {
+      if (user.id != currentUser.id) {
+        behalfAsAuthor = true
+        selectedUsers.push({
+          label: user.name,
+          value: user.id
+        })
+      }
+    })
+
     this.loadReferences();
     this.loadMyCollaborations();
     this.setState({
       reaction: nextProps.reaction,
+      selectedLicense: isUndefined(previousLicense) ? 'CC BY' : previousLicense,
+      disableLicense: !isUndefined(previousLicense),
+      publishType,
+      behalfAsAuthor,
+      selectedUsers,
+      newVersion
     });
   }
 
@@ -283,6 +332,12 @@ export default class PublishReactionModal extends Component {
 
   handleNoAmountYieldCheck() {
     this.setState({ noAmountYield: !this.state.noAmountYield });
+  }
+
+  handleVersionComment(value) {
+    const { reaction } = this.state;
+    reaction.versionComment = value;
+    this.setState({ reaction });
   }
 
   loadBundles() {
@@ -479,10 +534,8 @@ export default class PublishReactionModal extends Component {
   }
 
   selectUsers() {
-    const { selectedUsers, collaborations, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
-    const options = collaborations.map(c => (
-      { label: c.name, value: c.id }
-    ));
+    const { selectedUsers, collaborations, behalfAsAuthor, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
+    const options = collaborations.map(c => ({ label: c.name, value: c.id }));
     const authorCount = selectedUsers && selectedUsers.length;
     const authorInfo = selectedUsers && selectedUsers.map((a) => {
       const us = collaborations.filter(c => c.id === a.value);
@@ -539,8 +592,10 @@ export default class PublishReactionModal extends Component {
 
 
     return (
-      <div >
-        <h5><b>Group Lead / Additional Reviewers:</b></h5>
+      <div>
+        <h5>
+          <b>Group Lead / Additional Reviewers:</b>
+        </h5>
         <Select
           multi
           searchable
@@ -694,6 +749,9 @@ export default class PublishReactionModal extends Component {
           }
         });
       }
+    }
+    if (newVersion && !reaction.versionComment) {
+      validates.push({ name: 'version-comment', value: !!reaction.versionComment, message: 'New Version Details is missing' });
     }
     validates = this.state.noAmountYield ? validates : validates.concat(validateYield(reaction));
     return validates;
@@ -880,6 +938,7 @@ export default class PublishReactionModal extends Component {
               <div style={{ margin: '5px 0px' }}>
                 <SubmissionCheck validates={validateInfo} />
               </div>
+              {hasVersion(reaction) && <VersionComment element={reaction} onChange={this.handleVersionComment} />}
               {awareEmbargo}
               <Checkbox
                 onChange={() => { this.handleNoSolventCheck(); }}

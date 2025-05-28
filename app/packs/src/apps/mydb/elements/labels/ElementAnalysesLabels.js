@@ -5,14 +5,39 @@ export default class ElementAnalysesLabels extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      element: props.element
-    }
+      element: props.element,
+      placement: 'right',
+    };
+    this.nodeRef = React.createRef();
   }
+
+  componentDidMount() {
+    this.setDynamicPlacement();
+    window.addEventListener('resize', this.setDynamicPlacement);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.setDynamicPlacement);
+  }
+
+  setDynamicPlacement = () => {
+    const node = this.nodeRef.current;
+    if (!node) return;
+
+    const rect = node.getBoundingClientRect();
+    const margin = 150;
+    const placement =
+      rect.right > window.innerWidth - margin ? 'left' : 'right';
+
+    if (this.state.placement !== placement) {
+      this.setState({ placement });
+    }
+  };
 
   render() {
 
     return (
-      <div style={{ display: 'inline-block', marginTop: '-5px' }}
+      <div style={{ display: 'inline-block', marginTop: '-5px' }} ref={this.nodeRef}
         onClick={(e) => { e.stopPropagation() }}>
         {this.analysesLabels(this.state.element)}
       </div>
@@ -48,11 +73,11 @@ export default class ElementAnalysesLabels extends React.Component {
   labelWithPopover(title, labels) {
     if (!labels) return (<span />)
 
-    let { element } = this.state
+    let { element, placement } = this.state
     let experiment = <i className='fa fa-bar-chart' />
 
     let label_popover = (
-      <Popover title={title} id={'labelpop' + element.id}>
+      <Popover title={title} id={`labelpop-${element.id}-${title.replace(/\s+/g, '-').toLowerCase()}`}>
         {this.formatLabels(labels)}
       </Popover>
     )
@@ -63,7 +88,7 @@ export default class ElementAnalysesLabels extends React.Component {
     let total = Object.values(labels).reduce((a, b) => a + b, 0)
 
     return (
-      <OverlayTrigger trigger="click" rootClose placement="left" overlay={label_popover}>
+      <OverlayTrigger trigger={['hover', 'focus']} rootClose placement={placement} overlay={label_popover}>
         <span className="collection-label" key={element.id}>
           <Label>
             {experiment} {total} {status}

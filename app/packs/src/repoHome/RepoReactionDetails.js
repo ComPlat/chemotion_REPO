@@ -23,6 +23,7 @@ import {
 } from 'src/repoHome/RepoCommon';
 import ReactionTable from 'src/repoHome/RepoReactionTable';
 import UserStore from 'src/stores/alt/stores/UserStore';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import DateInfo from 'src/components/chemrepo/DateInfo';
@@ -47,7 +48,11 @@ import RepoSegment from 'src/repoHome/RepoSegment';
 import { getAuthorLabel } from 'src/components/chemrepo/publication-utils';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import NewVersionModal from 'src/components/chemrepo/NewVersionModal';
+import VersionDropdown from 'src/components/chemrepo/VersionDropdown';
 import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
+import { StateLabelDetail } from 'src/components/chemrepo/common/StateLabel';
+import FundingDisplay from 'src/components/chemrepo/funding/FundingDisplay';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
@@ -350,6 +355,7 @@ export default class RepoReactionDetails extends Component {
     element = null
   }) {
     if (typeof container === 'undefined' || !container) return <span />;
+    const { reaction } = this.props;
 
     const analyses = ArrayUtils.sortArrByIndex(
       head(filter(container.children, (o) => o.container_type === 'analyses'))
@@ -374,7 +380,7 @@ export default class RepoReactionDetails extends Component {
           isLogin={isLogin}
           isCI={isCI}
           isReviewer={isReviewer}
-          userInfo={pdInfos}
+          userInfo={product.pub_info || ''}
           updateRepoXvial={() => this.updateRepoXvial()}
           xvialCom={product.xvialCom}
           literatures={references}
@@ -386,16 +392,23 @@ export default class RepoReactionDetails extends Component {
       type === 'Sample' && typeof product !== 'undefined' && product
         ? new Sample(product)
         : new Reaction(element);
+    const extractAnaInfo = (elementType, analysisId) => {
+      if (elementType === 'Sample' && product) {
+        return product.ana_infos ? product.ana_infos[analysisId] || '' : '';
+      }
+      if (elementType === 'Reaction' && reaction) {
+        return reaction.infos.ana_infos
+          ? reaction.infos.ana_infos[analysisId] || ''
+          : '';
+      }
+      return '';
+    };
     const analysesView = analyses.map((analysis) => {
       const kind =
         analysis.extended_metadata &&
         analysis.extended_metadata.kind &&
         analysis.extended_metadata['kind'].split('|').pop().trim();
-      const anaInfo =
-        (this.props.reaction.infos &&
-          this.props.reaction.infos.ana_infos &&
-          this.props.reaction.infos.ana_infos[analysis.id]) ||
-        '';
+      const anaInfo = extractAnaInfo(type, analysis.id);
       return (
         <span key={`analysis_${analysis.id}`}>
           <CommentBtn
@@ -514,6 +527,7 @@ export default class RepoReactionDetails extends Component {
       return <div />;
     }
     const { currentUser } = UserStore.getState();
+    const { repoVersioning } = PublicStore.getState();
     const canComment =
       currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
         ? false
@@ -568,12 +582,27 @@ export default class RepoReactionDetails extends Component {
       false;
 
     let showDOI = (
-      <Doi
-        type="reaction"
-        id={reaction.id}
-        doi={isPublished ? taggData.doi : doi}
-        isPublished={isPublished}
-      />
+      <>
+        <Doi
+          type="reaction"
+          id={reaction.id}
+          doi={isPublished ? taggData.doi : doi}
+          isPublished={isPublished}
+          pid={pubData.id}
+        />
+        {
+          reaction.publication.concept && (
+            <Doi
+              type="reaction"
+              id={reaction.id}
+              doi={reaction.publication.concept.doi.full_doi}
+              isPublished={isPublished}
+              concept={true}
+              pid={pubData.id}
+            />
+          )
+        }
+      </>
     );
     if (schemeOnly) {
       buttons = ['Decline', 'Comments', 'Review', 'Submit', 'Accept'];
@@ -591,7 +620,9 @@ export default class RepoReactionDetails extends Component {
       typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview =
       typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
-      const isCI =
+    const idyPublisher =
+      typeof reaction.isPublisher === 'undefined' ? false : reaction.isPublisher;
+    const isCI =
       typeof reaction.isCI === 'undefined' ? false : reaction.isCI;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
@@ -629,27 +660,54 @@ export default class RepoReactionDetails extends Component {
       <div style={{ border: 'none' }}>
         <div>
           <Jumbotron key={`reaction-${reaction.id}`}>
-            <PublicAnchor doi={isPublished ? taggData.doi : doi?.full_doi} isPublished={isPublished} />
-            {canComment ? (
-              <RepoReviewButtonBar
-                element={{ id: reaction.id, elementType: 'Reaction', user_labels: userLabels}}
-                buttons={buttons}
-                buttonFunc={this.handleReviewBtn}
-                review_info={review_info}
-                showComment={showComment}
-                taggData={taggData}
-                schemeOnly={schemeOnly}
-                currComment={
-                  (review?.history &&
-                    review?.history.length > 0 &&
-                    review?.history.slice(-1).pop()) ||
-                  {}
-                }
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '10px',
+                marginBottom: '10px',
+              }}
+            >
+              <PublicAnchor
+                doi={isPublished ? taggData.doi : doi?.full_doi}
+                isPublished={isPublished}
               />
-            ) : (
-              ''
-            )}
-            {canClose ? <ClosePanel element={reaction} /> : ''}
+              {canComment ? (
+                <RepoReviewButtonBar
+                  element={{
+                    id: reaction.id,
+                    elementType: 'Reaction',
+                    user_labels: userLabels,
+                  }}
+                  buttons={buttons}
+                  buttonFunc={this.handleReviewBtn}
+                  review_info={review_info}
+                  showComment={showComment}
+                  taggData={taggData}
+                  schemeOnly={schemeOnly}
+                  currComment={
+                    (review?.history &&
+                      review?.history.length > 0 &&
+                      review?.history.slice(-1).pop()) ||
+                    {}
+                  }
+                />
+              ) : (
+                ''
+              )}
+              <div
+                style={{
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <StateLabelDetail state={pubData.state} />
+                {canClose ? <ClosePanel element={reaction} /> : ''}
+              </div>
+            </div>
             <h4>
               <IconToMyDB
                 isLogin={idyLogin}
@@ -673,13 +731,14 @@ export default class RepoReactionDetails extends Component {
                 }
               />
               <span className="repo-public-user-comment">
-              {PublicLabels(reaction.labels)}
+                {PublicLabels(reaction.labels)}
                 <PublicCommentModal
                   isReviewer={idyReview}
                   id={reaction.id}
                   type="Reaction"
                   title={`Reaction, CRR-${pubData.id}`}
                   userInfo={userInfo}
+                  pageId={reaction.id}
                 />
                 &nbsp;
                 <UserCommentModal
@@ -688,6 +747,15 @@ export default class RepoReactionDetails extends Component {
                   id={reaction.id}
                   type="Reaction"
                   title={`Reaction, CRR-${pubData.id}`}
+                />
+                &nbsp;
+                <NewVersionModal
+                  type="Reaction"
+                  element={reaction}
+                  repoVersioning={repoVersioning}
+                  isPublisher={idyPublisher}
+                  isLatestVersion={!reaction.new_version}
+                  schemeOnly={schemeOnly}
                 />
               </span>
             </h4>
@@ -724,6 +792,16 @@ export default class RepoReactionDetails extends Component {
               </b>
               <ul style={{ listStyle: 'none' }}>{references}</ul>
             </h5>
+            {reaction.fundingReferences &&
+              reaction.fundingReferences.length > 0 && (
+                <h5>
+                  <b>Funding References:</b>
+                  <FundingDisplay
+                    elementId={reaction.id}
+                    elementType="Reaction"
+                  />
+                </h5>
+              )}
             <br />
             <h5>{this.reactionInfo(reaction)}</h5>
             <RepoSegment segments={reaction.segments} isPublic={isPublished} />
@@ -736,7 +814,7 @@ export default class RepoReactionDetails extends Component {
                   isLogin: idyLogin,
                   isCI: isCI,
                   isReviewer: idyReview,
-                  element: reaction
+                  element: reaction,
                 })}
             {schemeOnly
               ? ''

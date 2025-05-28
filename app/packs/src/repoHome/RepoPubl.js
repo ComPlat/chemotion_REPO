@@ -23,6 +23,7 @@ import RepoMoleculeArchive from 'src/repoHome/RepoMoleculeArchive';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
 import { capitalizeFirstLetter } from 'src/components/chemrepo/format-utils';
 import { SearchUserLabels } from 'src/components/UserLabels';
+import PublicSearchBar from 'src/components/chemrepo/PublicSearchBar';
 
 const renderMoleculeArchive =
   (molecule, currentElement, isPubElement, advFlag, advType, advValue) => (
@@ -118,21 +119,18 @@ export default class RepoPubl extends Component {
       advValue: [],
       selectUsers: [],
       key: uuid.v4(),
-      showSearch: false,
     };
 
     this.onChange = this.onChange.bind(this);
     this.changeSort = this.changeSort.bind(this);
-    this.handleClearSearchSelection = this.handleClearSearchSelection.bind(this);
     this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
     this.handleSelectAdvValue = this.handleSelectAdvValue.bind(this);
-    this.showAdvancedSearch = this.showAdvancedSearch.bind(this);
     this.closeAdvancedSearch = this.closeAdvancedSearch.bind(this);
+    this.renderSearch = this.renderSearch.bind(this);
     this.renderAdvancedSearch = this.renderAdvancedSearch.bind(this);
     this.advSearchClick = this.advSearchClick.bind(this);
     this.loadAdvValuesByName = this.loadAdvValuesByName.bind(this);
     this.handleElementSelection = this.handleElementSelection.bind(this);
-    this.handleShowSearch = this.handleShowSearch.bind(this);
   }
 
   componentDidMount() {
@@ -145,16 +143,17 @@ export default class RepoPubl extends Component {
   }
 
   onChange(state) {
-    const { searchOptions, advFlag } = state;
+    const { searchOptions } = state;
     this.setState(prevState => ({
-      ...prevState, ...state, searchOptions: searchOptions || [], showSearch: (advFlag || false)
+      ...prevState,
+      ...state,
+      searchOptions: searchOptions || [],
     }));
   }
 
   handleSearchTypeChange(e) {
     this.setState({ searchType: e.target && e.target.value });
   }
-
   handleStructureEditorCancel() {
     this.setState({ isSearch: false });
     this.hideStructureEditor();
@@ -175,10 +174,6 @@ export default class RepoPubl extends Component {
         LoadingActions.stop();
       }
     );
-  }
-
-  showAdvancedSearch() {
-    this.setState({ advFlag: true });
   }
 
   onPerPageChange(e) {
@@ -268,13 +263,6 @@ export default class RepoPubl extends Component {
 
   handleElementSelection(event) {
     this.setState({ selectType: event.toLowerCase() });
-  }
-
-  handleShowSearch() {
-    const { showSearch, advFlag } = this.state;
-    PublicActions.setSearchParams({
-      showSearch: !showSearch, advFlag: !advFlag
-    });
   }
 
   closeAdvancedSearch() {
@@ -509,97 +497,92 @@ export default class RepoPubl extends Component {
   }
 
   renderAdvancedSearch() {
-    const {
-      advFlag, advType, advValue, searchOptions = []
-    } = this.state;
-    if (advFlag) {
-      this.listOptions = [
-        { value: 'Authors', label: 'by authors' },
-        { value: 'Ontologies', label: 'by analysis type' },
-        { value: 'Embargo', label: 'by Embargo Bundle#' },
-        { value: 'Label', label: 'by label' }
-      ];
-      // const userLabel = [];
-      const customClass = '.btn-unified';
-      let valSelect = '';
-      if (advType === 'Label') {
-        valSelect = (
-          <SearchUserLabels
-            userLabel={advValue}
-            isPublish
-            className={customClass}
-            fnCb={this.handleSelectAdvValue}
-          />
-        );
-      } else {
-        valSelect = (
-          <AsyncSelect
-            isMulti
-            backspaceRemovesValue
-            value={advValue}
-            valueKey="value"
-            labelKey="label"
-            defaultOptions={searchOptions}
-            loadOptions={this.loadAdvValuesByName}
-            onChange={this.handleSelectAdvValue}
-            styles={{
-              control: base => ({
-                ...base,
-                height: '36px',
-                minHeight: '36px',
-                minWidth: '200px',
-                borderRadius: 'unset',
-                border: '1px solid #ccc',
-              }),
-              multiValue: styles => ({
-                ...styles,
-                backgroundColor: '#00b8d91a',
-                opacity: '0.8',
-              }),
-              multiValueLabel: styles => ({
-                ...styles,
-                color: '#0052CC',
-              }),
-            }}
-          />
-        );
-      }
-      return (
-        <div className="home-adv-search">
-          <div>
-            <Select
-              simpleValue
-              searchable={false}
-              options={this.listOptions}
-              placeholder="Select search field"
-              clearable={false}
-              valueKey="value"
-              labelKey="label"
-              onChange={handleSelectAdvType}
-              defaultValue="Authors"
-              value={advType}
-              className="o-author"
-            />
-          </div>
-          <div>{valSelect}</div>
-          <div className="btns-grp">
-            <ButtonGroup>
-              <OverlayTrigger placement="bottom" overlay={<Tooltip id="advSearch">Advanced Search</Tooltip>}>
-                <Button onClick={this.advSearchClick}>
-                  <i className="fa fa-search" />
-                </Button>
-              </OverlayTrigger>
-              <OverlayTrigger placement="bottom" overlay={<Tooltip id="closeAdvSearch">Reset Advanced Search</Tooltip>}>
-                <Button onClick={this.closeAdvancedSearch}>
-                  <i className="fa fa-times" />
-                </Button>
-              </OverlayTrigger>
-            </ButtonGroup>
-          </div>
-        </div>
+    const { advType, advValue, searchOptions = [] } = this.state;
+    this.listOptions = [
+      { value: 'Authors', label: 'by authors' },
+      { value: 'Ontologies', label: 'by analysis type' },
+      { value: 'Embargo', label: 'by Embargo Bundle#' },
+      { value: 'Label', label: 'by label' }
+    ];
+    // const userLabel = [];
+    const customClass = '.btn-unified';
+    let valSelect = '';
+    if (advType === 'Label') {
+      valSelect = (
+        <SearchUserLabels
+          userLabel={advValue}
+          isPublish
+          className={customClass}
+          fnCb={this.handleSelectAdvValue}
+        />
+      );
+    } else {
+      valSelect = (
+        <AsyncSelect
+          isMulti
+          backspaceRemovesValue
+          value={advValue}
+          valueKey="value"
+          labelKey="label"
+          defaultOptions={searchOptions}
+          loadOptions={this.loadAdvValuesByName}
+          onChange={this.handleSelectAdvValue}
+          styles={{
+            control: base => ({
+              ...base,
+              height: '36px',
+              minHeight: '36px',
+              minWidth: '200px',
+              borderRadius: 'unset',
+              border: '1px solid #ccc',
+            }),
+            multiValue: styles => ({
+              ...styles,
+              backgroundColor: '#00b8d91a',
+              opacity: '0.8',
+            }),
+            multiValueLabel: styles => ({
+              ...styles,
+              color: '#0052CC',
+            }),
+          }}
+        />
       );
     }
-    return (<div />);
+    return (
+      <div className="home-adv-search">
+        <div style={{ flexGrow: 1 }}>
+          <Select
+            simpleValue
+            searchable={false}
+            options={this.listOptions}
+            placeholder="Select search field"
+            clearable={false}
+            valueKey="value"
+            labelKey="label"
+            onChange={handleSelectAdvType}
+            defaultValue="Authors"
+            value={advType}
+            className="o-author"
+          />
+        </div>
+        <div style={{ flexGrow: 1 }}>{valSelect}</div>
+        <div className="btns-grp">
+          <ButtonGroup>
+            <OverlayTrigger placement="bottom" overlay={<Tooltip id="advSearch">Click to search</Tooltip>}>
+              <Button onClick={this.advSearchClick}>
+                <i className="fa fa-search" />
+              </Button>
+            </OverlayTrigger>
+            <OverlayTrigger placement="bottom" overlay={<Tooltip id="closeAdvSearch">Reset Advanced Search</Tooltip>}>
+              <Button onClick={this.closeAdvancedSearch}>
+                <i className="fa fa-refresh" />
+              </Button>
+            </OverlayTrigger>
+          </ButtonGroup>
+        </div>
+      </div>
+    );
   }
 
   renderSearch() {
@@ -607,7 +590,7 @@ export default class RepoPubl extends Component {
     const customClass = '.btn-unified';
 
     const stSearchTooltip = <Tooltip id="search_tooltip">Draw Molecule Structure to query</Tooltip>;
-    const clearTooltip = <Tooltip id="search_tooltip">Clear search</Tooltip>;
+    const clearTooltip = <Tooltip id="search_tooltip">Reset Search</Tooltip>;
 
     const buttonAfter = (
       <ButtonGroup className="home-search">
@@ -616,9 +599,9 @@ export default class RepoPubl extends Component {
             <i className="fa fa-paint-brush" aria-hidden="true" />
           </Button>
         </OverlayTrigger>
-        <OverlayTrigger placement="right" delayShow={1000} overlay={clearTooltip}>
+        <OverlayTrigger placement="bottom" delayShow={1000} overlay={clearTooltip}>
           <Button bsStyle={customClass ? null : 'danger'} className={customClass} onClick={this.handleClearSearchSelection}>
-            <i className="fa fa-times" />
+            <i className="fa fa-refresh" />
           </Button>
         </OverlayTrigger>
       </ButtonGroup>
@@ -701,43 +684,28 @@ export default class RepoPubl extends Component {
             submitAddons={submitAddons}
           />
         </div>
-        {
-          this.state.showSearch ?
-          (
-            <span>
-              <Button bsStyle="primary" className="button-caret" onClick={this.handleShowSearch}>
-                <i className="fa fa-caret-left" aria-hidden="true" />&nbsp;<i className="fa fa-search" aria-hidden="true" />
-              </Button>
-              <div className="search-autocomplete">
-                <AutoCompleteInput
-                  key={this.state.key}
-                  inputAttributes={inputAttributes}
-                  inputDisabled={isSearch}
-                  defaultSearchValue={defaultSearchValue}
-                  suggestionsAttributes={suggestionsAttributes}
-                  suggestions={input => SuggestionsFetcher.fetchSuggestionsForCurrentUser(
-                    this.state.selectType.toLowerCase(), input, 'public', false)}
-                  ref={(input) => { this.autoComplete = input; }}
-                  onSelectionChange={selection => this.handleSelectionChange(selection)}
-                  buttonBefore={innerDropdown}
-                  buttonAfter={buttonAfter}
-                />
-              </div>
-            </span>
-          ) :
-          (
-            <Button bsStyle="primary" className="button-caret" onClick={this.handleShowSearch}>
-              <i className="fa fa-search" aria-hidden="true" />&nbsp;<i className="fa fa-caret-right" aria-hidden="true" />
-            </Button>
-          )
-        }
+        <div className="search-autocomplete">
+          <AutoCompleteInput
+            key={this.state.key}
+            inputAttributes={inputAttributes}
+            inputDisabled={isSearch}
+            defaultSearchValue={defaultSearchValue}
+            suggestionsAttributes={suggestionsAttributes}
+            suggestions={input => SuggestionsFetcher.fetchSuggestionsForCurrentUser(
+              this.state.selectType.toLowerCase(), input, 'public', false)}
+            ref={(input) => { this.autoComplete = input; }}
+            onSelectionChange={selection => this.handleSelectionChange(selection)}
+            buttonBefore={innerDropdown}
+            buttonAfter={buttonAfter}
+          />
+        </div>
       </div>
     );
   }
 
   render() {
     const {
-      molecules, listType, reactions, currentElement, showSearch, advFlag, advType, advValue
+      molecules, listType, reactions, currentElement, advFlag, advType, advValue
     } = this.state;
     const isPubElement = !!(((currentElement && this.state.currentElement.publication &&
       this.state.currentElement.publication.published_at) || (
@@ -745,7 +713,7 @@ export default class RepoPubl extends Component {
       && this.state.currentElement.published_samples.length > 0 &&
       this.state.currentElement.published_samples[0].published_at
     )));
-    const listClass = (showSearch && isPubElement) ? 'public-list-adv' : 'public-list';
+    const listClass = isPubElement ? 'public-list-adv' : 'public-list';
     const elementList = () => {
       switch (listType) {
         case RepoNavListTypes.MOLECULE_ARCHIVE:
@@ -762,40 +730,39 @@ export default class RepoPubl extends Component {
     };
 
     return (
-      <Row style={{ maxWidth: '2000px', margin: 'auto' }}>
-        <Col md={isPubElement === true ? 4 : 12}>
-          <Navbar fluid className="navbar-custom" style={{ marginBottom: '0px' }}>
-            <Navbar.Form pullLeft>
-              {this.renderSearch()}
-            </Navbar.Form>
-            <Navbar.Form pullLeft>
-              {this.renderAdvancedSearch()}
-            </Navbar.Form>
-            <Navbar.Form style={{ marginBottom: 'unset' }} pullRight>
-              {this.renderSwitch()}
-            </Navbar.Form>
-          </Navbar>
-
-          <div className={listClass} style={{ backgroundColor: '#efefef' }}>
-            <Table className="sample-entries">
-              <tbody>
-                {elementList()}
-              </tbody>
-            </Table>
-          </div>
-          <div className="list-container-bottom">
-            <Row>
-              <Col sm={8}>{this.pagination()}</Col>
-              <Col sm={4}>{this.perPageInput()}</Col>
-            </Row>
-          </div>
-        </Col>
-        <Col md={isPubElement === true ? 8 : 0}>
-          <div className="public-element">
-            <RepoElementDetails />
-          </div>
-        </Col>
-      </Row>
+      <div style={{ position: 'relative', maxWidth: '2000px', margin: 'auto' }}>
+        <PublicSearchBar
+          renderSearch={this.renderSearch}
+          renderAdvancedSearch={this.renderAdvancedSearch}
+        />
+        <Row>
+          <Col md={isPubElement === true ? 4 : 12}>
+            <Navbar fluid className="navbar-custom" style={{ marginBottom: '0px' }}>
+              <Navbar.Form style={{ marginBottom: 'unset' }} pullRight>
+                {this.renderSwitch()}
+              </Navbar.Form>
+            </Navbar>
+            <div className={listClass} style={{ backgroundColor: '#efefef' }}>
+              <Table className="sample-entries">
+                <tbody>
+                  {elementList()}
+                </tbody>
+              </Table>
+            </div>
+            <div className="list-container-bottom">
+              <Row>
+                <Col sm={8}>{this.pagination()}</Col>
+                <Col sm={4}>{this.perPageInput()}</Col>
+              </Row>
+            </div>
+          </Col>
+          <Col md={isPubElement === true ? 8 : 0}>
+            <div className="public-element">
+              <RepoElementDetails />
+            </div>
+          </Col>
+        </Row>
+      </div>
     );
   }
 }

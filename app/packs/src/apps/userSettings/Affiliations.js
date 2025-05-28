@@ -31,6 +31,13 @@ function Affiliations({ show, onHide }) {
         }));
         setOrgOptions(orgs);
 
+        // Set country options from all_data
+        const countries = (data.countries || []).map(country => ({
+          value: country,
+          label: country
+        }));
+        setCountryOptions(countries);
+
         // Set loaded flag
         setDataLoaded(true);
       })
@@ -88,15 +95,7 @@ function Affiliations({ show, onHide }) {
   };
 
   useEffect(() => {
-    // Load countries
-    UserSettingsFetcher.getAutoCompleteSuggestions('countries')
-      .then((data) => {
-        const options = data.map(item => ({ value: item, label: item }));
-        setCountryOptions(options);
-        setInputError({});
-      });
-
-    // Load all hierarchical data (organizations, departments, groups)
+    // Removed old countries fetch, now handled in loadAffiliationData
     loadAffiliationData();
 
     // Load user's affiliations
@@ -189,6 +188,7 @@ function Affiliations({ show, onHide }) {
         delete newInputErrors[index];
       }
     }
+
     setInputError(newInputErrors);
     setAffiliations(updatedAffiliations);
   };
