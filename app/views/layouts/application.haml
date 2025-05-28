@@ -4,6 +4,8 @@
     %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
     %title #{ENV['APPLICATION_TITLE'].presence || 'Chemotion'}
     = stylesheet_link_tag    'application', media: 'all'
+    :javascript
+      window.APP_VERSION = #{Chemotion::Application.config.version.to_json.html_safe};
     = javascript_pack_tag 'application'
     = csrf_meta_tags
   %body

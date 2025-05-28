@@ -2,11 +2,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
-import {
-  ClipboardCopyBtn,
-  DownloadMetadataBtn,
-  DownloadJsonBtn,
-} from 'src/repoHome/RepoCommon';
+import { ClipboardCopyBtn, DownloadMetadataBtn } from 'src/repoHome/RepoCommon';
+import RdfBtn from 'src/components/chemrepo/RdfBtn';
 
 /**
  * Component to render the Analysis DOI link section
@@ -34,7 +31,7 @@ const AnalysisDOILink = ({ analysis, isPublic }) => {
       </Button>
       <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
       <DownloadMetadataBtn type="container" id={analysis.id} />
-      <DownloadJsonBtn type="container" id={analysis.id} />
+      <RdfBtn type="container" id={analysis.id} info={{ pid: analysis.pub_id, doi: analysis.dataset_doi }} />
     </div>
   );
 };

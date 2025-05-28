@@ -170,7 +170,7 @@ module Repo
       logger(next_step, "pub_update_state(#{state})")
 
       @root_publication.update_state(state)
-      @root_publication.process_new_state_job(state)
+      @root_publication.process_new_state_job(state, @user_id)
       # @embargo_pub&.refresh_embargo_metadata
       ##################### CHI to check
     rescue StandardError => e
@@ -230,9 +230,11 @@ module Repo
         review_history[review_history.length - 1] = current
       end
       if his ## add next_node
-        next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if @root_publication.state == Publication::STATE_PENDING
-        next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if @root_publication.state == Publication::STATE_REVIEWED
-        review_history << next_node
+        next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if @action == 'reviewed'
+        next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if @action == 'submit'
+        unless next_node.nil?
+          review_history << next_node
+        end
         review['history'] = review_history
       else
 
@@ -277,14 +279,38 @@ module Repo
     end
 
     def accept_new_sample(root, sample)
-      pub_s = Publication.create!(
-        state: Publication::STATE_PENDING,
-        element: sample,
-        doi: sample&.doi,
-        published_by: root.published_by,
-        parent: root,
-        taggable_data: root.taggable_data
-      )
+      doi = sample&.doi
+
+      # create or update concept
+      previous_version = sample.tag.taggable_data['previous_version']['id']
+      previous_publication = Publication.find_by(element_type: 'Sample', element_id: previous_version)
+      if ENV['REPO_VERSIONING'] == 'true'
+        if previous_publication.nil?
+          concept = Concept.create_for_doi!(doi)
+        else
+          concept = previous_publication.concept
+          concept.update_for_doi!(doi)
+        end
+        pub_s = Publication.create!(
+          state: Publication::STATE_PENDING,
+          element: sample,
+          doi: doi,
+          concept: concept,
+          published_by: root.published_by,
+          parent: root,
+          taggable_data: root.taggable_data
+        )
+      else
+        pub_s = Publication.create!(
+          state: Publication::STATE_PENDING,
+          element: sample,
+          doi: doi,
+          published_by: root.published_by,
+          parent: root,
+          taggable_data: root.taggable_data
+        )
+      end
+
       sample.analyses.each do |sa|
         accept_new_analysis(pub_s, sa)
       end
@@ -295,14 +321,36 @@ module Repo
 
     def accept_new_analysis(root, analysis, nil_analysis = true)
       if nil_analysis
-        ap = Publication.create!(
-          state: Publication::STATE_PENDING,
-          element: analysis,
-          doi: analysis.doi,
-          published_by: root.published_by,
-          parent: root,
-          taggable_data: root.taggable_data
-        )
+        # create or update concept
+        previous_version = analysis.extended_metadata['previous_version_id']
+        previous_publication = Publication.find_by(element_type: 'Container', element_id: previous_version)
+        if ENV['REPO_VERSIONING'] == 'true'
+          if previous_publication.nil?
+            concept = Concept.create_for_doi!(analysis.doi)
+          else
+            concept = previous_publication.concept
+            concept.update_for_doi!(analysis.doi)
+          end
+          ap = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: analysis,
+            doi: analysis.doi,
+            concept: concept,
+            published_by: root.published_by,
+            parent: root,
+            taggable_data: root.taggable_data
+          )
+        else
+          ap = Publication.create!(
+            state: Publication::STATE_PENDING,
+            element: analysis,
+            doi: analysis.doi,
+            published_by: root.published_by,
+            parent: root,
+            taggable_data: root.taggable_data
+          )
+        end
+
         atag = ap.taggable_data
         aids = atag&.delete('analysis_ids')
         aoids = atag&.delete('original_analysis_ids')

@@ -103,6 +103,18 @@ class PublicStore {
       reactions, page, pages, perPage
     } = results;
     const listType = (reactions && reactions[0] && reactions[0].taggable_data.scheme_only ? 'scheme' : 'reaction') || 'reaction';
+
+    // update the currentElements versions if it was loaded before
+    if (this.currentElement !== null) {
+      const currentElement = { ...this.currentElement };
+      // eslint-disable-next-line no-param-reassign
+      // currentElement.versions =
+      //   (currentElement.versions || []).map(versionId => (
+      //     reactions.find(r => (r.id === versionId))
+      //   ));
+      this.setState({ currentElement });
+    }
+
     this.setState({
       reactions, page, pages, perPage, listType, guestPage: 'publications'
     });
@@ -210,6 +222,20 @@ class PublicStore {
         RepoNavListTypes.SCHEME : RepoNavListTypes.REACTION;
       let cb = () => PublicActions.getReactions();
       if (this.reactions.length > 0) {
+        this.reactions.forEach((reaction) => {
+          if (reaction.id == reactionList.id) {
+            reaction.show = true
+          } else if (reactionList.reactionData?.versions?.some(version => version.id === reaction.id)) {
+            reaction.show = false
+          }
+        })
+
+        // eslint-disable-next-line no-param-reassign
+        // reactionList.reactionData.versions =
+          // (reactionList.reactionData.versions || []).map(versionId => (
+          //   this.reactions.find(r => (r.id === versionId))
+          // ));
+
         cb = () => {};
         this.setState({ reactions: this.reactions });
       }
@@ -307,6 +333,33 @@ class PublicStore {
   // Use in REPO
   handleFetchOlsChmo(result) {
     this.setState({ chmos: result.ols_terms });
+  }
+
+  handleSelectSampleVersion(version) {
+    Aviator.navigate(`/publications/molecules/${version.molecule_id.to_s}#${version.suffix}`, { silent: true });
+    // const currentElement = { ...this.currentElement };
+
+    // find the selected sample
+    // const sample = currentElement.published_samples.find(ps => (
+    //   ps.sample_id === version.sample_id
+    // ));
+
+    // // find all versions of this sample
+    // console.log('sample', sample);
+    // console.log('version', version)
+    // console.log('currentElement.published_samples', currentElement.published_samples);
+    // const versions = currentElement.published_samples.filter(ps => (
+    //   sample.versions.some(version => version.id === ps.sample_id)
+    // ));
+    // console.log('versions', versions);
+
+    // hide all but the selected version
+    // versions.forEach((v) => {
+    //   // eslint-disable-next-line no-param-reassign
+    //   v.show = v.id === version.id;
+    // });
+
+    // this.setState({ currentElement });
   }
 }
 

@@ -41,8 +41,8 @@ function RepoNmriumBtn(props) {
         >
           <img
             alt="NMRium"
-            src="/images/repo/nmrium-favicon.ico"
-            style={{ maxHeight: '1.8vh' }}
+            src="/images/repo/nmrium-favicon.svg"
+            style={{ maxHeight: '1.4vh' }}
           />
         </Button>
       </OverlayTrigger>

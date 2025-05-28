@@ -103,7 +103,7 @@ function RepoReviewButtonBar(props) {
     );
   }
 
-  return (<ButtonToolbar style={{ marginBottom: '10px' }}>
+  return (<ButtonToolbar style={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center' }}>
       {
         props.showComment === true && props.buttons.filter(b => b === 'Comments').map(b =>
           showCommentButton(b, props.buttonFunc, (props.currComment)))
@@ -112,11 +112,11 @@ function RepoReviewButtonBar(props) {
         props.showComment === true && props.buttons.filter(b => b !== 'Comments').map(b =>
           showButton(b, props.buttonFunc, props.currComment.state, props.review_info))
       }
+      {authorModel}
       <RepoMetadataModal
         elementId={props.element.id}
         elementType={props.element.elementType.toLowerCase()}
       />
-      {authorModel}
       <RepoUserLabelModal element={props.element} />
     </ButtonToolbar>)
 };

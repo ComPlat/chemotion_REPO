@@ -33,6 +33,7 @@ import Affiliations from '../../apps/userSettings/Affiliations';
 
 import Functions from 'src/utilities/Functions';
 import AuthorModal from 'src/components/users/AuthorModal';
+import ExternalTokensModal from 'src/components/navigation/ExternalTokensModal';
 
 export default class UserAuth extends Component {
   constructor(props) {
@@ -53,6 +54,7 @@ export default class UserAuth extends Component {
       deviceMetadata: {
         dates: [],
       },
+      showExternalTokensModal: false,
     };
 
     this.onChange = this.onChange.bind(this);
@@ -69,6 +71,8 @@ export default class UserAuth extends Component {
     this.handleAffiliationsShow = this.handleAffiliationsShow.bind(this);
     this.handleAffiliationsHide = this.handleAffiliationsHide.bind(this);
     this.renderAffiliations = this.renderAffiliations.bind(this);
+    this.handleExternalTokensShow = this.handleExternalTokensShow.bind(this);
+    this.handleExternalTokensClose = this.handleExternalTokensClose.bind(this);
 
     this.promptTextCreator = this.promptTextCreator.bind(this);
 
@@ -326,6 +330,15 @@ export default class UserAuth extends Component {
   handleAffiliationsHide = () => {
     this.setState({ showAffiliations: false });
   };
+
+  // External Tokens handlers
+  handleExternalTokensShow() {
+    this.setState({ showExternalTokensModal: true });
+  }
+
+  handleExternalTokensClose() {
+    this.setState({ showExternalTokensModal: false });
+  }
 
   renderAffiliations() {
     return this.state.showAffiliations ? (
@@ -715,6 +728,7 @@ export default class UserAuth extends Component {
               this.state.currentUser ?
                 <MenuItem eventKey="10" onClick={this.handleAuthorsShow}>My Collaboration</MenuItem> : null
             }
+            <MenuItem eventKey="11" onClick={this.handleExternalTokensShow}>External Tokens</MenuItem>
             {/* <MenuItem onClick={this.handleShow}>My Groups</MenuItem> */}
             {/* <MenuItem onClick={this.handleSubscriptionShow}>My Subscriptions</MenuItem>
                 Disable for now as there is no subsciption channel yet (Paggy) */}
@@ -749,6 +763,10 @@ export default class UserAuth extends Component {
         />
         {this.renderSubscribeModal()}
         {this.renderDeviceMetadataModal()}
+        <ExternalTokensModal
+          show={this.state.showExternalTokensModal}
+          onHide={this.handleExternalTokensClose}
+        />
       </div>
     );
   }
