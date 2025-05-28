@@ -38,6 +38,7 @@ module Chemotion
           structure_editors: Rails.configuration.structure_editors,
           has_sfn: sfn_config.present? && current_user.matrix_check_by_name('scifinderN'),
           has_converter: converter_config.present?,
+          repo_versioning: ENV['REPO_VERSIONING'] == 'true' ? true : false,
           has_radar: radar_config.present?,
           molecule_viewer: Matrice.molecule_viewer,
           collector_address: collector_address.presence,

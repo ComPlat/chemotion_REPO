@@ -356,7 +356,7 @@ const headerBtnGroup = (
     }
   }
 
-  const { hasChemSpectra, hasNmriumWrapper } = UIStore.getState();
+  const { hasChemSpectra, hasNmriumWrapper, repoVersioning } = UIStore.getState();
   const { chmos } = UserStore.getState();
   const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
@@ -373,6 +373,17 @@ const headerBtnGroup = (
       >
         <i className="fa fa-trash" />
       </Button>
+      {
+        container.link_id &&
+        <NewVersionModal
+          type="Analysis"
+          element={container}
+          repoVersioning={repoVersioning}
+          parent={sample}
+          bsSize="xsmall"
+          className="button-right"
+        />
+      }
       <PrintCodeButton
         element={sample}
         analyses={[container]}

@@ -90,25 +90,37 @@ export default class AuthorModal extends Component {
         }
       });
 
-    // Fetch country options
-    PublicFetcher.affiliations('countries').then((result) => {
-      const affOption = result?.map(a => ({ label: a, value: a }))
-        .filter(a => a.value && a.value.length > 1);
-      this.setState({ countries: affOption });
-    });
+    // Fetch all affiliation options from all_data
+    PublicFetcher.fetchAllAffiliationData().then((result) => {
+      // result is expected to have { countries, organizations, departments }
+      const countries = result?.countries?.map(a => ({ label: a, value: a }))
+        .filter(a => a.value && a.value.length > 1) || [];
 
-    // Fetch organization options
-    PublicFetcher.affiliations('organizations').then((result) => {
-      const affOption = result?.map(a => ({ label: a, value: a }))
-        .filter(a => a.value && a.value.length > 1);
-      this.setState({ organizations: affOption });
-    });
+      const organizationData = result?.organizations || {};
+      const organizations = Object.keys(organizationData)
+        .filter(org => org != null && org !== '')
+        .map(org => ({
+          label: org,
+          value: org,
+          ror_id: organizationData[org].ror_id,
+          country: organizationData[org].country
+        }));
 
-    // Fetch department options
-    PublicFetcher.affiliations('departments').then((result) => {
-      const affOption = result?.map(a => ({ label: a, value: a }))
-        .filter(a => a.value && a.value.length > 1);
-      this.setState({ departments: affOption });
+        const departments = [];
+        Object.keys(organizationData).forEach(org => {
+          const orgDepartments = organizationData[org].departments || {};
+          Object.keys(orgDepartments).forEach(dept => {
+            if (dept && dept.length > 1) {
+              departments.push({
+                label: dept,
+                value: dept,
+                organization: org
+              });
+            }
+          });
+        });
+
+      this.setState({ countries, organizations, departments });
     });
   }
 

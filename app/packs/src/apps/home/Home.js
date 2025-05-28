@@ -4,6 +4,7 @@ import { Grid, Row } from 'react-bootstrap';
 import Aviator from 'aviator';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+
 import initPublicRoutes from 'src/libHome/homeRoutes';
 import Navigation from 'src/libHome/Navigation';
 import Notifications from 'src/components/Notifications';
@@ -24,6 +25,8 @@ import RepoHowToEditor from 'src/repoHome/RepoHowToEditor';
 
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import RStore from 'src/stores/alt/repo/stores/RStore';
+import { RepoRootStore, RepoStoreContext } from 'src/stores/RepoRootStore';
+
 import RepoElementDetails from 'src/repoHome/RepoElementDetails';
 import LoadingModal from 'src/components/common/LoadingModal';
 
@@ -148,10 +151,13 @@ class Home extends Component {
 document.addEventListener('DOMContentLoaded', () => {
   const domElement = document.getElementById('Home');
   if (domElement) {
+    const repoRootStore = RepoRootStore.create({});
     ReactDOM.render(
-      <DndProvider backend={HTML5Backend}>
-        <Home />
-      </DndProvider>,
+      <RepoStoreContext.Provider value={repoRootStore}>
+        <DndProvider backend={HTML5Backend}>
+          <Home />
+        </DndProvider>
+      </RepoStoreContext.Provider>,
       domElement
     );
     initPublicRoutes();

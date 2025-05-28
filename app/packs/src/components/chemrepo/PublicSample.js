@@ -5,6 +5,7 @@ import { ChemotionId, CommentBtn, Doi } from 'src/repoHome/RepoCommon';
 import { formatPhysicalProps } from 'src/components/chemrepo/publication-utils';
 import RepoConst from 'src/components/chemrepo/common/RepoConst';
 import DecoupleInfo from 'src/repoHome/DecoupleInfo';
+import FundingDisplay from 'src/components/chemrepo/funding/FundingDisplay';
 
 const PublicSample = (_props) => {
   const {
@@ -69,7 +70,8 @@ const PublicSample = (_props) => {
       <b>Sample type: </b>{sampleTypeDescription}
       <DecoupleInfo sample={sample} molecule={element.molecule} />
       <br />
-      <Doi type="sample" id={sample.id} doi={sample.doi} isPublished={isPublished} />
+      <Doi type="sample" id={sample.id} doi={sample.doi} isPublished={isPublished} pid={pubData.id} />
+      {sample.concept && <Doi type="sample" id={sample.id} doi={sample.concept.doi.full_doi} isPublished={isPublished} concept={true} pid={pubData.id} />}
       <ChemotionId id={pubData.id} type="sample" />
       {embargo}
       <h5>
@@ -83,6 +85,14 @@ const PublicSample = (_props) => {
           <div><div>{references}</div></div>
         </span>
       </h5>
+      {sample.fundingReferences && sample.fundingReferences.length > 0 && (
+        <>
+          <h5>
+            <b>Funding References:</b>
+          </h5>
+          <FundingDisplay elementId={sample.id} elementType="Sample" />
+        </>
+      )}
       {
         (!isPublished || showPhysicalProps) && (
           <>

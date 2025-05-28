@@ -305,12 +305,6 @@ export default class RepoReviewAuthorsModal extends React.Component {
           });
         });
 
-        console.log('Processed affiliation data:', {
-          countriesCount: formattedCountries.length,
-          organizationsCount: organizations.length,
-          departmentsCount: departments.length
-        });
-
         this.setState({
           collaborations,
           countries: formattedCountries,

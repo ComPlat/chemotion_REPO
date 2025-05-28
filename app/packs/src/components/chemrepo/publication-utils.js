@@ -1,7 +1,7 @@
 import UIStore from 'src/stores/alt/stores/UIStore';
 import getFormattedRange from 'src/components/chemrepo/range-utils';
 
-export const getElementType = element => element?.tag?.taggable_type;
+export const getElementType = (element) => element?.tag?.taggable_type;
 
 export const getPublicationId = (element) => {
   const tag = element?.tag || {};
@@ -82,4 +82,13 @@ export const doStValidation = element => {
   });
 
   return exceptions;
+};
+
+export const hasVersion = (element) =>
+  Boolean(getTagDataByTag(element, 'previous_version'));
+
+export const getDoiVer = (doi) => {
+  if (!doi) return '';
+  const value = (doi || '').match(/\/V(\d+)/i);
+  return value ? value[1] : '';
 };

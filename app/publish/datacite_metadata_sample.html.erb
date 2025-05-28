@@ -102,7 +102,7 @@
       OBI - Ontology for Biomedical Investigations
     </description>
   </descriptions>
-
+  <%= render_funding_references(fundings) %>
   <relatedIdentifiers>
     <% dois[:analyses_dois].each do |_, ds| %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>

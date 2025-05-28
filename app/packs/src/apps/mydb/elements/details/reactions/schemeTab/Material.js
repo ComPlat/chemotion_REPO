@@ -24,6 +24,10 @@ import { permitCls, permitOn } from 'src/components/common/uis';
 import GasPhaseReactionStore from 'src/stores/alt/stores/GasPhaseReactionStore';
 import { calculateFeedstockMoles } from 'src/utilities/UnitsConversion';
 
+// For REPO
+import NewVersionModal from 'src/components/chemrepo/NewVersionModal';
+import UIStore from 'src/stores/alt/stores/UIStore';
+
 const matSource = {
   beginDrag(props) {
     return props;
@@ -158,7 +162,9 @@ class Material extends Component {
               metricPrefix={metric}
               metricPrefixes={metricPrefixes}
               precision={3}
-              disabled={!permitOn(this.props.reaction)
+              disabled={
+                // material.sealed || // REPO
+                !permitOn(this.props.reaction)
                 || ((this.props.materialGroup !== 'products')
                 && !material.reference && this.props.lockEquivColumn)
                 || material.gas_type === 'gas'}
@@ -190,7 +196,11 @@ class Material extends Component {
           metricPrefixes={['n']}
           bsStyle={material.error_loading ? 'error' : 'success'}
           precision={3}
-          disabled={!permitOn(this.props.reaction) || (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))}
+          disabled={
+            // material.sealed || // REPO
+            !permitOn(this.props.reaction) ||
+            (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
+          }
           onChange={loading => this.handleLoadingChange(loading)}
         />
       </td>
@@ -307,7 +317,10 @@ class Material extends Component {
         size="sm"
         precision={4}
         value={material.equivalent}
-        disabled={!permitOn(this.props.reaction) || ((((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn)}
+        disabled={
+          // material.sealed || // REPO
+          !permitOn(this.props.reaction) || ((((material.reference || false) && material.equivalent) !== false) || this.props.lockEquivColumn)
+        }
         onChange={e => this.handleEquivalentChange(e)}
       />
     );
@@ -673,6 +686,7 @@ class Material extends Component {
             metricPrefixes={metricPrefixes}
             precision={4}
             disabled={
+              // material.sealed || // REPO
               !permitOn(reaction)
               || (materialGroup !== 'products' && !material.reference && lockEquivColumn)
               || material.gas_type === 'feedstock' || material.gas_type === 'gas'
@@ -709,6 +723,8 @@ class Material extends Component {
       paddingLeft: 2,
     };
 
+    const { repoVersioning } = UIStore.getState();
+
     return (
       <tbody>
         <tr className="general-material">
@@ -743,6 +759,8 @@ class Material extends Component {
                   value={material.coefficient ?? 1}
                   onChange={this.handleCoefficientChange}
                   name="coefficient"
+                  // disabled={!permitOn(reaction) || material.sealed} // for REPO versioning
+                  disabled={!permitOn(reaction)} // for REPO versioning
                 />
               </div>
             </OverlayTrigger>
@@ -759,7 +777,11 @@ class Material extends Component {
               metricPrefix={metricMol}
               metricPrefixes={metricPrefixes}
               precision={4}
-              disabled={!permitOn(reaction) || (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))}
+              disabled={
+                // material.sealed || // REPO
+                !permitOn(reaction) ||
+                (this.props.materialGroup === 'products' || (!material.reference && this.props.lockEquivColumn))
+              }
               onChange={e => this.handleAmountUnitChange(e, material.amount_mol)}
               onMetricsChange={this.handleMetricsChange}
               bsStyle={material.amount_unit === 'mol' ? 'success' : 'default'}
@@ -785,8 +807,21 @@ class Material extends Component {
           <td style={{ minWidth: '35px' }}>
             {this.equivalentOrYield(material)}
           </td>
+          {permitOn(reaction) && reaction.previousVersion && (
+            <td>
+              <NewVersionModal
+                type="Sample"
+                element={material}
+                parent={reaction}
+                repoVersioning={repoVersioning}
+                isPublisher={material.sealed}
+                bsSize="small"
+              />
+            </td>
+          )}
           <td>
             <Button
+              // disabled={material.sealed || !permitOn(reaction)} // Added material.sealed for REPO
               disabled={!permitOn(reaction)}
               bsStyle="danger"
               bsSize="small"
@@ -857,6 +892,7 @@ class Material extends Component {
             >
               <div>
                 <FormControl
+                  // disabled={!permitOn(reaction) || material.sealed} // REPO versioning
                   disabled={!permitOn(reaction)}
                   type="text"
                   bsClass="bs-form--compact form-control"
@@ -894,6 +930,7 @@ class Material extends Component {
 
         <td>
           <Button
+            // disabled={!permitOn(reaction) || material.sealed} // REPO versioning
             disabled={!permitOn(reaction)}
             bsStyle="danger"
             bsSize="small"
@@ -905,6 +942,9 @@ class Material extends Component {
   }
 
   switchTargetReal(isTarget, style = { padding: '5px 4px', width: '16px' }) {
+    const { material, reaction } = this.props;
+    // const disableBtn = reaction.is_published === true || !permitOn(reaction) || material.sealed; // REPO versioning
+    const disableBtn = reaction.is_published === true || !permitOn(reaction);
     return (
       <Button
         disabled={!permitOn(this.props.reaction)}
@@ -1046,7 +1086,8 @@ class Material extends Component {
           {reaction.gaseous && materialGroup !== 'solvents'
             ? this.gasType(material) : null}
           <OverlayTrigger placement="top" overlay={AddtoDescToolTip}>
-            <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc} disabled={!permitOn(reaction)}>
+          {/* <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc} disabled={!permitOn(reaction) || material.sealed}>  REPO versioning */}
+          <Button bsStyle="primary" bsSize="xsmall" onClick={addToDesc} disabled={!permitOn(reaction)}>
               {serialCode}
             </Button>
           </OverlayTrigger>

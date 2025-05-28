@@ -27,7 +27,7 @@ module PublicHelpers
     end
 
     pub = Publication.find_by(element_type: 'Reaction', element_id: reaction.id)
-    pub_info = (pub.review.present? && pub.review['info'].present? && pub.review['info']['comment']) || ''
+    pub_info = Repo::FetchHandler.get_pub_info(pub)
     infos = {}
     ana_infos = {}
     pd_infos = {}
@@ -43,14 +43,19 @@ module PublicHelpers
       end
     end
 
-    schemeList = Repo::FetchHandler.get_reaction_table(reaction.id)
+    concept = Concept.find_by(id: pub.concept_id) if ENV['REPO_VERSIONING'] == 'true'
+
+    scheme_list = Repo::FetchHandler.get_reaction_table(reaction.id)
     entities = Entities::RepoReactionEntity.represent(reaction, serializable: true)
     entities[:products].each do |p|
-      label_ids = p[:tag]['taggable_data']['user_labels'] || [] unless p[:tag]['taggable_data'].nil?
+      label_ids = p[:tag][:taggable_data]['user_labels'] || [] unless p[:tag][:taggable_data].nil?
       p[:labels] = UserLabel.public_labels(label_ids, current_user, pub.state == Publication::STATE_COMPLETED) unless label_ids.nil?
+      product_publication = Publication.find_by(element_type: 'Sample', element_id: p[:id])
+      p[:pub_info] = Repo::FetchHandler.get_pub_info(product_publication)
+      p[:ana_infos] = Repo::FetchHandler.get_ana_info(product_publication)
       pub_product = p
       p[:xvialCom] = build_xvial_com(p[:molecule][:inchikey], current_user&.id)
-      pub_product_tag = pub_product[:tag]['taggable_data']
+      pub_product_tag = pub_product[:tag][:taggable_data]
       next if pub_product_tag.nil?
 
       xvial = pub_product_tag['xvial'] && pub_product_tag['xvial']['num']
@@ -64,6 +69,11 @@ module PublicHelpers
     label_ids = (pub.taggable_data && pub.taggable_data['user_labels']) || []
     labels = UserLabel.public_labels(label_ids, current_user, pub.state == Publication::STATE_COMPLETED) unless label_ids.nil?
 
+    reaction_versions = reaction.versions&.map do |version_id|
+      ver_re = Reaction.find_by(id: version_id)
+      { id: ver_re.id, name: ver_re.name, short_label: ver_re.short_label, doi: ver_re.doi&.full_doi } if ver_re.present?
+    end
+
     entities[:publication]['review']['history'] = []
     entities[:publication]['review'] = nil if pub.state === Publication::STATE_COMPLETED
     entities[:literatures] = literatures unless entities.nil? || literatures.nil? || literatures.length == 0
@@ -74,8 +84,14 @@ module PublicHelpers
     entities[:labels] = labels
     entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
     entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
+    entities[:isPublisher] = (current_user.present? && current_user.id == pub.published_by)
+    entities[:new_version] = reaction.new_version
+    entities[:versions] = reaction_versions
     entities[:elementType] = 'reaction'
     entities[:segments] = Labimotion::SegmentEntity.represent(reaction.segments)
+    entities[:publication][:concept] = Entities::ConceptEntity.represent(concept) if ENV['REPO_VERSIONING'] == 'true'
+    fundings = Repo::FetchHandler.get_funding_references(reaction)
+    entities[:fundingReferences] = fundings if fundings.present?
     entities
   end
 
@@ -140,20 +156,30 @@ module PublicHelpers
         end
       end
       comp_num = s.tag.taggable_data['xvial'] && s.tag.taggable_data['xvial']['comp_num'] unless s.tag.taggable_data.nil?
-      pub_info = (pub.review.present? && pub.review['info'].present? && pub.review['info']['comment']) || ''
-      ana_infos = {}
-      pub.descendants.each do |pp|
-        review = pp.review || {}
-        info = review['info'] || {}
-        next if info.empty?
-        ana_infos[pp.element_id] = info['comment']
-      end
+      pub_info = Repo::FetchHandler.get_pub_info(pub)
+      ana_infos = Repo::FetchHandler.get_ana_info(pub)
       embargo = PublicationCollections.where("(elobj ->> 'element_type')::text = 'Sample' and (elobj ->> 'element_id')::integer = #{s.id}")&.first&.label
       segments = Labimotion::SegmentEntity.represent(s.segments)
-      tag.merge(container: container, literatures: literatures, sample_svg_file: s.sample_svg_file, short_label: s.short_label, melting_point: s.melting_point, boiling_point: s.boiling_point,
-        sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num, embargo: embargo, labels: user_labels,
-        showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos, pub_info: pub_info, segments: segments, published_at: pub.published_at,
-        molecular_mass: s.molecular_mass, sum_formula: s.sum_formula, decoupled: s.decoupled, molfile: s.molfile)
+      concept = Entities::ConceptEntity.represent(pub.concept) if ENV['REPO_VERSIONING'] == 'true'
+      isPublisher = (current_user.present? && current_user.id == pub.published_by)
+
+      sample_versions = s.versions&.map do |version_id|
+        ver_s = Sample.find_by(id: version_id)
+        { id: ver_s.id, name: ver_s.name, short_label: ver_s.short_label, doi: ver_s.doi&.full_doi, molecule_id: ver_s.molecule_id, suffix: ver_s.doi&.suffix } if ver_s.present?
+      end
+
+      # Build the fundingReferences tag
+      fundings = Repo::FetchHandler.get_funding_references(s)
+      tag[:fundingReferences] = fundings if fundings.present?
+
+      tag.merge(container: container, literatures: literatures,
+                sample_svg_file: s.sample_svg_file, short_label: s.short_label,
+                melting_point: s.melting_point, boiling_point: s.boiling_point,
+                sample_id: s.id, reaction_ids: reaction_ids, sid: sid, xvial: xvial, comp_num: comp_num,
+                embargo: embargo, labels: user_labels, showed_name: s.showed_name, pub_id: pub.id, ana_infos: ana_infos,
+                pub_info: pub_info, segments: segments, published_at: pub.published_at,
+                molecular_mass: s.molecular_mass, sum_formula: s.sum_formula, decoupled: s.decoupled, molfile: s.molfile,
+                isPublisher: isPublisher, new_version: s.new_version, versions: sample_versions, concept: concept)
     end
     x = published_samples.select { |s| s[:xvial].present? }
     xvial_com[:hasSample] = x.length.positive?

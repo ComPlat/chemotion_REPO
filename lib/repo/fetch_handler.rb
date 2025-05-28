@@ -11,6 +11,20 @@
 module Repo
   class FetchHandler
 
+    def self.publication_collection_by_element(element_type, element_id)
+      col = PublicationCollections.where("elobj ->> 'element_type' = ? AND (elobj ->> 'element_id')::integer = ?", element_type, element_id).first
+      return nil unless col.present?
+
+      Collection.find(col.element_id)
+    rescue ActiveRecord::RecordNotFound
+      Rails.logger.error("Publication collection not found for element_type: #{element_type}, element_id: #{element_id}")
+      nil
+    rescue StandardError => e
+      Rails.logger.error(e.message)
+      Rails.logger.error(e.backtrace.join("\n"))
+      nil
+    end
+
     def self.find_embargo_collection(root_publication)
       has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.with_deleted.find(root_publication.published_by).publication_embargo_collection.id }
       has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first : OpenStruct.new(label: '')
@@ -147,6 +161,51 @@ module Repo
         r
       end
       schemeList
+    end
+
+    def self.transform_funding_references(element)
+      fundings = element.fundings&.order(:created_at)
+      return [] if fundings.blank?
+
+      fundings.map(&:metadata)
+    rescue StandardError => e
+      Rails.logger.error(e.message)
+      Rails.logger.error(e.backtrace.join("\n"))
+      []
+    end
+
+    def self.get_funding_references(element)
+      fundings = transform_funding_references(element)
+
+      embargo_collection = publication_collection_by_element(element.class.name, element.id)
+      embargo_fundings = transform_funding_references(embargo_collection) if embargo_collection.present?
+
+      fundings = embargo_fundings + fundings if embargo_fundings.present?
+      fundings
+    rescue StandardError => e
+      Rails.logger.error(e.message)
+      Rails.logger.error(e.backtrace.join("\n"))
+      []
+    end
+
+    def self.get_pub_info(publication)
+      return '' if publication.nil?
+
+      (publication.review.present? && publication.review['info'].present? && publication.review['info']['comment']) || ''
+    end
+
+    def self.get_ana_info(publication)
+      return {} if publication.nil?
+
+      ana_infos = {}
+      publication.descendants.each do |p|
+        review = p.review || {}
+        info = review['info'] || {}
+        next if info.empty?
+
+        ana_infos[p.element_id] = info['comment']
+      end
+      ana_infos
     end
   end
 end

@@ -148,7 +148,7 @@ export default class Navigation extends React.Component {
               href="https://www.chemotion.net/docs/repo"
               className="white-nav-item"
             >
-              <b style={{ color: '#1890ff' }}>How-To</b>
+              <b style={{ color: '#1976d2' }}>How-To</b>
             </NavItem>
             <NavItem
               eventKey={8}

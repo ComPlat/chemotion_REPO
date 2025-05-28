@@ -1,5 +1,31 @@
 # Chemotion_Repository Changelog
 
+## [2.5.0]
+> 2025-08-01
+
+* Features and Enhancements:
+  * Enhanced search behavior on the Review and Data Publications pages for improved user experience.
+  * Introduced the `Important Note` feature during the review process.
+  * Introduced a new feature, `Fundings & Awards`, allowing scientists to provide funding details, including funder and award information.
+  * Added display of application information.
+  * Provided APIs for `Bagit` download by analysis type.
+  * Implemented `RDF` support, including functionality for Turtle, N-Triples, TriG, and N-Quads formats, with viewer, download options, and public APIs.
+  * Provided analysis description information on the `Data Publications` page.
+  * Displayed submission status on the individual submission review page to improve reviewer usability.
+  * Introduced a versioning feature with release toggles.
+  * Improved comment functionality styling for better visibility and usability.
+
+* Bug Fixes:
+  * Fixed the issue where exact mass was displayed instead of theoretical mass.
+  * Resolved layout issue with the analysis info modal positioning.
+  * Resolved the issue where `e-Chemistry` information was not displaying properly on the Review page.
+  * Resolved the issue causing a blank page in the spectra viewer when using comparison mode.
+  * Fixed the issue preventing submitters from editing their work for resubmission.
+  * Fixed the issue where the NMRium viewer went blank on the comparison page.
+  * Corrected the routing logic for versioned publications.
+
+* Chores:
+  * Updated library dependencies.
 
 ## [2.4.0]
 > 2025-05-23

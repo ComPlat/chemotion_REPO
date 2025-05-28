@@ -27,6 +27,11 @@ class Container < ApplicationRecord
   include Labimotion::Datasetable
   include Taggable
   include Publishing
+  if ENV['REPO_VERSIONING'] == 'true'
+    include Versioning
+  end
+
+  attr_accessor :dataset_doi, :pub_id, :preview_img, :link_id # decide if we need to expose these conditionally <--- ASK PAGGY
 
   belongs_to :containable, polymorphic: true, optional: true
   has_many :attachments, as: :attachable

@@ -8,6 +8,7 @@ import {
 import CalendarActions from 'src/stores/alt/actions/CalendarActions';
 import CalendarStore from 'src/stores/alt/stores/CalendarStore';
 import PropTypes from 'prop-types';
+import InfoSupportDropdown from 'src/components/chemrepo/InfoSupportDropdown';
 
 function getDefaultDateTimeRange() {
   const date = new Date();
@@ -67,6 +68,7 @@ export default class OpenCalendarButton extends Component {
               <i className="fa fa-calendar indicator" />
             </Button>
           </ButtonGroup>
+          <InfoSupportDropdown />
         </NavItem>
       </Nav>
     );

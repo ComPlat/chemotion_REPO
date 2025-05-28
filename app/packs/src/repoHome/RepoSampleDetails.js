@@ -134,9 +134,12 @@ export default class RepoSampleDetails extends Component {
         labels: (isPublished ? s.labels : labels) || [],
         molecular_mass: s.molecular_mass || '',
         sum_formula: s.sum_formula || '',
+        new_version: s.new_version,
+        versions: (s.versions || []),
         molecule: s.molecule || '',
         sample_svg_file: s.sample_svg_file || '',
         molfile: s.molfile || '',
+        fundingReferences: s.fundingReferences || [],
       };
 
       return (

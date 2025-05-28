@@ -7,6 +7,7 @@ import { Popover, OverlayTrigger, Row, Col, Tooltip } from 'react-bootstrap';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
+import { getDoiVer } from 'src/components/chemrepo/publication-utils';
 
 const xvialTag = (element, hasXvial = null) => {
   const hasX = hasXvial || (element.xvial_count && element.xvial_count > 0);
@@ -62,9 +63,9 @@ const infoTag = (reaction, schemeOnly) => {
       <div className="home_wrapper_item">
         <div>Published on</div><div className="item_xvial">{getFormattedISODate(reaction.published_at)}</div>
       </div>
-      <div className="home_wrapper_item">
-        <div>Analyses</div><div className="item_xvial">{reaction.ana_cnt || 0}</div>
-      </div>
+      {/* <div className="home_wrapper_item">
+        <div>Version</div><div className="item_xvial">{getDoiVer(taggData?.doi)}</div>
+      </div> */}
       <OverlayTrigger placement="top" overlay={<Tooltip id={uuid.v4()} className="left_tooltip bs_tooltip">When the X-Vial icon available, a physical sample of this molecule was registered to the Molecule Archive of the Compound Platform and can be requested from there</Tooltip>}>
         <div className="home_wrapper_item">
           <div>Sample</div><div className="item_xvial">{xvialTag(reaction)}</div>

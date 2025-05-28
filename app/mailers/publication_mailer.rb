@@ -241,6 +241,8 @@ class PublicationMailer < ActionMailer::Base
   end
 
   def mail_job_error(job_name, id, msg)
+    return if ENV['HELPDESK'].nil? || ENV['HELPDESK'].empty?
+
     @job_name = job_name
     @id = id.to_s
     @msg = msg
@@ -253,6 +255,8 @@ class PublicationMailer < ActionMailer::Base
       format.html
       format.text { render plain: "mail_job_error" }
     end
+  rescue => e
+    Rails.logger.error e.backtrace.join("\n")
   end
 
   def mail_external_review(current_user, collection_label, email, pwd)
@@ -390,6 +394,7 @@ class PublicationMailer < ActionMailer::Base
   end
 
   def compound_request
+    return if ENV['COMPOUND_TEAM'].nil? || ENV['COMPOUND_TEAM'].empty?
     compound_request_content
     mail(
       to: ENV['COMPOUND_TEAM'].presence.split(/,/)&.map(&:strip),

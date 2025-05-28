@@ -40,13 +40,13 @@ export default class RepoUserLabelModal extends React.Component {
       <div>
         <OverlayTrigger
           placement="top"
-          overlay={<Tooltip id="tt_metadata">add/remove user labels</Tooltip>}
+          overlay={<Tooltip id="tt_metadata">Add/Remove user labels</Tooltip>}
         >
           <Button
             onClick={() => this.setState({ modalShow: true })}
             style={{ marginLeft: '5px' }}
           >
-            <i className="fa fa-tags" />&nbsp;Labels
+            <i className="fa fa-tags" />
           </Button>
         </OverlayTrigger>
         <Modal

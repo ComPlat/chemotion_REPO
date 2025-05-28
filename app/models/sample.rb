@@ -217,6 +217,7 @@ class Sample < ApplicationRecord
   has_many :wellplates, through: :wells
   has_many :residues, dependent: :destroy
   has_many :elemental_compositions, dependent: :destroy
+  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   has_many :sync_collections_users, through: :collections
   composed_of :amount, mapping: %w[amount_value amount_unit]

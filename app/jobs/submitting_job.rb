@@ -30,6 +30,7 @@ class SubmittingJob < ApplicationJob
       refs: params[:refs],
       license: params[:license],
       embargo: params[:embargo],
+      init_comment: params[:init_comment],
       scheme_only: params[:scheme_only] || false,
       scheme_params: scheme_params,
       user_id: current_user_id

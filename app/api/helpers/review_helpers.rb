@@ -85,18 +85,47 @@ module ReviewHelpers
     end
     schemeList = Repo::FetchHandler.get_reaction_table(reaction.id)
     review_info = Repo::FetchHandler.repo_review_info(publication, current_user&.id)
+    pub_info = Repo::FetchHandler.get_pub_info(publication)
     publication.review&.slice!('history') unless User.reviewer_ids.include?(current_user.id) || review_info[:groupleader] == true
     published_user = User.with_deleted.find(publication.published_by) unless publication.nil?
     entities = Entities::RepoReactionEntity.represent(reaction, serializable: true)
     entities[:literatures] = literatures unless entities.nil? || literatures.blank?
+    entities[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     entities[:schemes] = schemeList unless entities.nil? || schemeList.blank?
     entities[:segments] = Labimotion::SegmentEntity.represent(reaction.segments)
+
+    infos = {}
+    ana_infos = {}
+    pd_infos = {}
+
+    publication.state != Publication::STATE_COMPLETED && publication.descendants.each do |pp|
+      review = pp.review || {}
+      info = review['info'] || {}
+      next if info.empty?
+      if pp.element_type == 'Sample'
+        pd_infos[pp.element_id] = info['comment']
+      else
+        ana_infos[pp.element_id] = info['comment']
+      end
+    end
+    entities[:infos] = { pub_info: pub_info, pd_infos: pd_infos, ana_infos: ana_infos }
+
+    entities[:products].each do |p|
+      product_publication = Publication.find_by(element_type: 'Sample', element_id: p[:id])
+      p[:pub_info] = Repo::FetchHandler.get_pub_info(product_publication)
+      p[:ana_infos] = Repo::FetchHandler.get_ana_info(product_publication)
+    end
+
     embargo = Repo::FetchHandler.find_embargo_collection(publication)
     entities[:embargo] = embargo&.label
     entities[:embargoId] = embargo&.id
     label_ids = publication.taggable_data['user_labels'] || [] unless publication.taggable_data.nil?
     user_labels = UserLabel.public_labels(label_ids, current_user, publication.state == Publication::STATE_COMPLETED) unless label_ids.nil?
     entities[:labels] = user_labels
+    embargo_fundings = Repo::FetchHandler.transform_funding_references(embargo) if embargo.present?
+    fundings = Repo::FetchHandler.transform_funding_references(reaction)
+    fundings = embargo_fundings + fundings if embargo_fundings.present?
+    entities[:fundingReferences] = fundings if fundings.present?
     {
     reaction: entities,
     selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
@@ -110,9 +139,12 @@ module ReviewHelpers
 
   def fetch_reviewing_sample(sample, publication, current_user)
     review_sample = { **sample.serializable_hash.deep_symbolize_keys }
+    review_sample[:isReviewer] = current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     review_sample[:segments] = sample.segments.present? ? Labimotion::SegmentEntity.represent(sample.segments) : []
+    review_sample[:pub_info] = Repo::FetchHandler.get_pub_info(publication)
+    review_sample[:ana_infos] = Repo::FetchHandler.get_ana_info(publication)
     containers = Entities::ContainerEntity.represent(sample.container)
-    publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
+    # publication = Publication.find_by(element_id: params[:id], element_type: 'Sample')
     review_info = review_info = Repo::FetchHandler.repo_review_info(publication, current_user&.id)
     # preapproved = publication.review.dig('checklist', 'glr', 'status') == true
     # is_leader = publication.review.dig('reviewers')&.include?(current_user&.id)
@@ -127,6 +159,10 @@ module ReviewHelpers
     review_sample[:showed_name] = sample.showed_name
     label_ids = publication.taggable_data['user_labels'] || [] unless publication.taggable_data.nil?
     user_labels = UserLabel.public_labels(label_ids, current_user, publication.state == Publication::STATE_COMPLETED) unless label_ids.nil?
+    embargo_fundings = Repo::FetchHandler.transform_funding_references(embargo) if embargo.present?
+    fundings = Repo::FetchHandler.transform_funding_references(sample)
+    fundings = embargo_fundings + fundings if embargo_fundings.present?
+    review_sample[:fundingReferences] = fundings if fundings.present?
     {
       molecule: MoleculeGuestSerializer.new(sample.molecule).serializable_hash.deep_symbolize_keys,
       sample: review_sample,
@@ -137,7 +173,8 @@ module ReviewHelpers
       selectEmbargo: Publication.find_by(element_type: 'Collection', element_id: embargo&.id),
       doi: Entities::DoiEntity.represent(sample.doi, serializable: true),
       pub_name: published_user&.name,
-      review_info: review_info
+      review_info: review_info,
+      isReviewer: current_user.present? && User.reviewer_ids.include?(current_user.id) ? true : false
     }
   rescue StandardError => e
     Publication.repo_log_exception(e, { sample: sample&.id, publication: publication&.id, current_user: current_user&.id })
@@ -237,6 +274,7 @@ module ReviewHelpers
       et_taggable_data['publication'] = pub_tag
       et.update(taggable_data: et_taggable_data)
     end
+
     if !leaders.nil?
       review = pub.review || {}
       orig_leaders = review['reviewers'] || []

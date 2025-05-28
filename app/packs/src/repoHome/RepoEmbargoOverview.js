@@ -156,7 +156,7 @@ const renderRecord = (rec, index, currentUser) => {
               {taggableData.contributors?.affiliations?.map((e, i) => (
                 <React.Fragment key={uuid.v4()}>
                   <span style={{ wordWrap: 'break-word' }}>
-                    {i + 1}. {e.replace(/,/g, ',\u00A0')}
+                    {i + 1}. {e?.replace(/,/g, ',\u00A0')}
                   </span>
                   <br />
                 </React.Fragment>

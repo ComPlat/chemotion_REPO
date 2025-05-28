@@ -4,6 +4,7 @@
 module Entities
   class ReactionPublicationListEntity < Grape::Entity
     expose :id, :reaction_svg_file, :name
+    expose :new_version if ENV['REPO_VERSIONING'] == 'true'
 
     expose :embargo do |obj|
       obj[:embargo] || ''

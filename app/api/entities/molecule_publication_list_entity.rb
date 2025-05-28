@@ -14,21 +14,12 @@ module Entities
     #   obj[:tag] || {}
     # end
 
-    expose :author_name do |obj|
-      obj[:author_name] || ''
-    end
-
-    expose :pub_id do |obj|
-      obj[:pub_id] || ''
-    end
-
-    expose :published_at do |obj|
-      obj[:published_at] || ''
-    end
-
     expose :ana_cnt do |obj|
       obj[:ana_cnt] || ''
     end
 
+    expose :publication do |obj|
+      obj[:publication] || {}
+    end
   end
 end

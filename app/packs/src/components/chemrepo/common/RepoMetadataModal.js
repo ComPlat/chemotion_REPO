@@ -37,8 +37,7 @@ export default class RepoMetadataModal extends React.Component {
             onClick={() => this.setState({ modalShow: true })}
             style={{ marginLeft: '5px' }}
           >
-            <i className="fa fa-file-code-o" />&nbsp;
-            Metadata
+            <i className="fa fa-file-code-o" />
           </Button>
         </OverlayTrigger>
         <Modal

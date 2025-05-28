@@ -1121,11 +1121,11 @@ $bs-successcolor: #5cb85c;
   &:hover a,
   &:hover b {
     text-decoration: underline !important;
-    text-decoration-color: #2e6da4 !important;
+    text-decoration-color: #1976d2 !important;
     text-decoration-style: solid !important;
     text-decoration-thickness: 4px !important;
     text-underline-offset: 20% !important;
-    color: #2e6da4 !important;
+    color: #1976d2 !important;
     font-weight: bolder !important;
   }
 }
@@ -1157,7 +1157,8 @@ $bs-successcolor: #5cb85c;
   padding: 8px;
   border: 2px solid #eaf0f6;
   background-color: #f9fcff;
-  display: inline-flex;
+  width: 100%;
+  display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;

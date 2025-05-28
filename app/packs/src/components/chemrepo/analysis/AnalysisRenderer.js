@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-prop-types */
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { contentToText } from 'src/utilities/quillFormat';
@@ -13,6 +13,93 @@ import RepoContainerDatasets from 'src/repoHome/RepoContainerDatasets';
 import RepoPreviewImage from 'src/components/chemrepo/common/RepoPreviewImage';
 import RepoPublicComment from 'src/components/chemrepo/common/RepoPublicComment';
 import RepoUserComment from 'src/components/chemrepo/common/RepoUserComment';
+
+// Constants
+const TOOLTIP_IDS = {
+  DESCRIPTION: '_tip_dataset_description',
+  QUILL_VIEWER: '_tip_dataset_quill_viewer',
+};
+
+/**
+ * Reusable component for clickable content with clipboard functionality
+ * @param {Object} props - Component properties
+ * @param {string} props.tooltipId - ID for the tooltip
+ * @param {Function} props.getClipboardText - Function that returns text to copy
+ * @param {React.ReactNode} props.children - Content to display
+ * @param {string} props.className - Additional CSS class
+ * @param {Object} props.style - Additional inline styles
+ * @returns {React.ReactElement} Clickable component
+ */
+const ClickableClipboardContent = ({
+  tooltipId,
+  getClipboardText,
+  children,
+  className = '',
+  style = {},
+}) => {
+  const handleCopy = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(getClipboardText());
+    }
+  };
+
+  const handleKeyDown = e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(getClipboardText());
+      }
+    }
+  };
+
+  return (
+    <OverlayTrigger
+      placement="bottom"
+      overlay={<Tooltip id={tooltipId}>copy to clipboard</Tooltip>}
+    >
+      <div
+        className={className}
+        tabIndex={0}
+        role="button"
+        onClick={handleCopy}
+        onKeyDown={handleKeyDown}
+        style={style}
+      >
+        {children}
+      </div>
+    </OverlayTrigger>
+  );
+};
+
+ClickableClipboardContent.propTypes = {
+  tooltipId: PropTypes.string.isRequired,
+  getClipboardText: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+  style: PropTypes.object,
+};
+
+ClickableClipboardContent.defaultProps = {
+  className: '',
+  style: {},
+};
+
+const descriptionSection = val => {
+  return !val || val === '' ? null : (
+    <div>
+      <b style={{ fontSize: '14px' }}>Description</b>
+      <div className="desc small-p expand-p">
+        <ClickableClipboardContent
+          tooltipId={TOOLTIP_IDS.DESCRIPTION}
+          getClipboardText={() => val}
+          style={{ whiteSpace: 'pre-wrap' }}
+        >
+          {val}
+        </ClickableClipboardContent>
+      </div>
+    </div>
+  );
+};
 
 /**
  * Reusable component to render published analysis panel
@@ -36,15 +123,30 @@ const AnalysisRenderer = ({
    * @returns {React.ReactElement} Header section
    */
   const renderHeader = () => {
-    const content = analysis?.extended_metadata?.content || [];
-    const previewImg = previewContainerImage(analysis);
-    const kind = (analysis.extended_metadata?.kind || '')
-      .split('|')
-      .pop()
-      .trim();
+    const memoizedData = useMemo(() => {
+      const content = analysis?.extended_metadata?.content || [];
+      const kind = (analysis.extended_metadata?.kind || '')
+        .split('|')
+        .pop()
+        .trim();
+      const previewImg = previewContainerImage(analysis);
+      const insText = instrumentText(analysis);
+      const anaDescription = analysis?.description || '';
+
+      return { content, kind, previewImg, insText, anaDescription };
+    }, [analysis]);
+
+    const { content, kind, previewImg, insText, anaDescription } = memoizedData;
+
+    // Common props for comment components
+    const commentProps = {
+      id: analysis.id,
+      type,
+      pageId,
+      pageType,
+    };
 
     const doiLink = <AnalysisDOILink analysis={analysis} isPublic={isPublic} />;
-    const insText = instrumentText(analysis);
     const crdLink = (
       <AnalysisIDLink
         analysis={analysis}
@@ -76,20 +178,21 @@ const AnalysisRenderer = ({
               />
               <RepoPublicComment
                 isReviewer={isReviewer}
-                id={analysis.id}
-                type={type}
-                pageId={pageId}
-                pageType={pageType}
+                id={commentProps.id}
+                type={commentProps.type}
+                pageId={commentProps.pageId}
+                pageType={commentProps.pageType}
                 userInfo={userInfo}
                 title={kind}
+                element={element}
               />
               &nbsp;
               <RepoUserComment
                 isLogin={isLogin}
-                id={analysis.id}
-                type={type}
-                pageId={pageId}
-                pageType={pageType}
+                id={commentProps.id}
+                type={commentProps.type}
+                pageId={commentProps.pageId}
+                pageType={commentProps.pageType}
                 isPublished={isPublic}
               />
             </div>
@@ -97,26 +200,15 @@ const AnalysisRenderer = ({
             {crdLink}
           </div>
           <div className="desc small-p expand-p">
-            <OverlayTrigger
-              placement="bottom"
-              overlay={
-                <Tooltip id="_tip_dataset_quill_viewer">
-                  copy to clipboard
-                </Tooltip>
-              }
+            <ClickableClipboardContent
+              tooltipId={TOOLTIP_IDS.QUILL_VIEWER}
+              getClipboardText={() => contentToText(content)}
+              className="repo-quill-viewer"
             >
-              <div
-                className="repo-quill-viewer"
-                tabIndex={0}
-                role="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(contentToText(content));
-                }}
-              >
-                <Quill2Viewer value={content} />
-              </div>
-            </OverlayTrigger>
+              <Quill2Viewer value={content} />
+            </ClickableClipboardContent>
           </div>
+          {descriptionSection(anaDescription)}
         </div>
       </div>
     );

@@ -175,6 +175,7 @@ class API < Grape::API
   mount Chemotion::AttachmentAPI
   mount Chemotion::PublicAPI
   mount Chemotion::ProfileAPI
+  mount Chemotion::CrossrefAPI
   mount Chemotion::CodeLogAPI
   mount Chemotion::DeviceAPI
   mount Chemotion::InboxAPI

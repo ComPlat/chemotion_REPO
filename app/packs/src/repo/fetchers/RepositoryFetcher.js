@@ -77,6 +77,7 @@ export default class RepositoryFetcher {
         refs,
         embargo,
         license,
+        init_comment: sample.versionComment,
         addMe,
         addGroupLead,
       }),
@@ -133,6 +134,7 @@ export default class RepositoryFetcher {
         reviewers,
         embargo,
         license,
+        init_comment: reaction.versionComment,
         addMe,
         addGroupLead,
       }),
@@ -208,6 +210,7 @@ export default class RepositoryFetcher {
         refs,
         embargo,
         license,
+        init_comment: reaction.versionComment,
         addMe,
         addGroupLead,
       })

@@ -78,6 +78,8 @@ class ElementPolicy
 
   # TODO move to appropriate class
   def any_unshared_collection?(collections)
+    return false if collections.nil?
+
     collections.pluck(:is_shared).map(&:!).any?
   end
 end

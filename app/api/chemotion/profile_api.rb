@@ -108,6 +108,7 @@ module Chemotion
           end
           optional :default_structure_editor, type: String
           optional :filters, type: Hash
+          optional :nmrxiv_sync_enabled, type: Boolean
         end
         optional :show_external_name, type: Boolean
         optional :show_sample_name, type: Boolean

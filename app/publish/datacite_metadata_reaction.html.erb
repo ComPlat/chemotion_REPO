@@ -74,7 +74,7 @@
       <%= REXML::Text.new(Nokogiri::HTML( Chemotion::QuillToHtml.new.convert(element.description.to_json)).text, false, nil, false).to_s %>
     </description>
   </descriptions>
-
+  <%= render_funding_references(fundings) %>
   <relatedIdentifiers>
     <% dois[:analyses_dois].each do |_, ds| %>
       <relatedIdentifier relatedIdentifierType="DOI" relationType="HasPart">https://dx.doi.org/<%= "#{ds[:DOI]}" %></relatedIdentifier>

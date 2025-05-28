@@ -53,6 +53,7 @@ import ToggleButton from 'src/components/common/ToggleButton';
 import GasPhaseReactionActions from 'src/stores/alt/actions/GasPhaseReactionActions';
 import { ShowUserLabels } from 'src/components/UserLabels';
 
+// For REPO
 import {
   PublishedTag,
   OrigElnTag,
@@ -66,6 +67,7 @@ import ReactionDetailsRepoComment from 'src/components/chemrepo/ReactionDetailsR
 import { contentToText } from 'src/utilities/quillFormat';
 import HelpInfo from 'src/components/common/HelpInfo';
 import uuid from 'uuid';
+import FundingReferences from 'src/components/chemrepo/funding/FundingReferences';
 
 export default class ReactionDetails extends Component {
   constructor(props) {
@@ -707,7 +709,7 @@ export default class ReactionDetails extends Component {
       green_chemistry: (
         <Tab eventKey="green_chemistry" title="Green Chemistry" key={`green_chem_${reaction.id}`}>
           {
-            !reaction.isNew && <CommentSection section="reaction_green_chemistry" element={reaction}/>
+            !reaction.isNew && <CommentSection section="reaction_green_chemistry" element={reaction} />
           }
           <GreenChemistry
             reaction={reaction}
@@ -722,7 +724,21 @@ export default class ReactionDetails extends Component {
             onReactionChange={this.handleReactionChange}
           />
         </Tab>
-      )
+      ),
+      fundings: (
+        <Tab
+          eventKey="fundings"
+          title="Fundings & Awards"
+          key={`fundings_${reaction.id}`}
+        >
+          <FundingReferences
+            elementId={reaction.id}
+            elementType="Reaction"
+            isNew={reaction.isNew}
+            readOnly={reaction.isNew || !permitOn(reaction)}
+          />
+        </Tab>
+      ),
     };
 
     const tabTitlesMap = {

@@ -1,6 +1,6 @@
 import { FlowViewerModal } from 'chem-generic-ui';
 import React, { Component } from 'react';
-import { Button, Col, Grid, Row } from 'react-bootstrap';
+import { Col, Grid, Row } from 'react-bootstrap';
 import CollectionManagement from 'src/apps/mydb/collections/CollectionManagement';
 import CollectionTree from 'src/apps/mydb/collections/CollectionTree';
 import Elements from 'src/apps/mydb/elements/Elements';
@@ -17,13 +17,11 @@ import UserActions from 'src/stores/alt/actions/UserActions';
 import UIStore from 'src/stores/alt/stores/UIStore';
 import OnEventListen from 'src/utilities/UserTemplatesHelpers';
 
-
 // For REPO
 import { RepoReviewModal, RepoCommentModal } from 'repo-review-ui';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import ReviewStore from 'src/stores/alt/repo/stores/ReviewStore';
-import ContactEmail from 'src/components/chemrepo/core/ContactEmail';
-
+import AppInfo from 'src/components/chemrepo/AppInfo';
 
 class App extends Component {
   constructor(_props) {
@@ -174,24 +172,8 @@ class App extends Component {
     return (
       <Col className="small-col collec-tree">
         <CollectionTree />
-        <div className="news-box">
-          <p>New to the Repository? Explore the <a href="https://chemotion.net/docs/repo/settings_preparation" target="_blank" rel="noreferrer">Preparation</a> & <a href="https://chemotion.net/docs/repo/workflow" target="_blank" rel="noreferrer">Workflow</a> guide.</p>
-          <p>Guidelines: Discover <a href="https://chemotion.net/docs/repo/details_standards/reactions" target="_blank" rel="noreferrer">Details and Standards</a></p>
-          <p>Learn More: Refer to our <a href="https://chemotion.net/docs/repo/references" target="_blank" rel="noreferrer">Documentation</a></p>
-          <div>
-            {'Questions? Contact us via '}
-            <Button bsSize="small" onClick={() => window.open('https://github.com/ComPlat/chemotion_REPO', '_blank')}>
-              <img
-                src="/images/repo/github-mark.svg"
-                className="pubchem-logo"
-                alt="Chemotion Repository at GitHub"
-                title="Chemotion Repository at GitHub"
-              />
-            </Button>
-            {' or '}
-            <ContactEmail label="" />
-          </div>
-        </div>
+        {/* For REPO */}
+        <AppInfo />
       </Col>
     );
   }

@@ -9,6 +9,7 @@ import Formula from 'src/components/common/Formula';
 import PubchemLabels from 'src/components/pubchem/PubchemLabels';
 import { xvialTag, svgTag } from 'src/repoHome/RepoPubCommon';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
+import { getDoiVer } from 'src/components/chemrepo/publication-utils';
 import { ExtIcon } from 'src/components/chemrepo/ExtIcon';
 
 const pubchemTag = molecule => {
@@ -21,7 +22,7 @@ const pubchemTag = molecule => {
 };
 
 const infoTag = molecule => {
-  const pubData = (molecule && molecule.pub_id) || '';
+  const { publication } = molecule;
   return (
     <Row key={`list-reaction-info-${molecule.id}`} className="home_wrapper">
       <OverlayTrigger
@@ -34,7 +35,7 @@ const infoTag = molecule => {
       >
         <div className="home_wrapper_item">
           <div>ID</div>
-          <div className="item_xvial">{`CRS-${pubData}`}</div>
+          <div className="item_xvial">{`CRS-${publication?.id}`}</div>
         </div>
       </OverlayTrigger>
       <OverlayTrigger
@@ -53,18 +54,18 @@ const infoTag = molecule => {
       </OverlayTrigger>
       <div className="home_wrapper_item">
         <div>Author</div>
-        <div className="item_xvial">{molecule.author_name}</div>
+        <div className="item_xvial">{publication?.author_name}</div>
       </div>
       <div className="home_wrapper_item">
         <div>Published on</div>
         <div className="item_xvial">
-          {getFormattedISODate(molecule.published_at)}
+          {getFormattedISODate(publication?.published_at)}
         </div>
       </div>
-      <div className="home_wrapper_item">
-        <div>Analyses</div>
-        <div className="item_xvial">{molecule.ana_cnt || 0}</div>
-      </div>
+      {/* <div className="home_wrapper_item">
+        <div>Version</div>
+        <div className="item_xvial">{getDoiVer(publication?.doi)}</div>
+      </div> */}
       <OverlayTrigger
         placement="top"
         overlay={

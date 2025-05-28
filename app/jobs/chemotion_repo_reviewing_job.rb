@@ -79,5 +79,17 @@ class ChemotionRepoReviewingJob < ActiveJob::Base
       --------------------------------------------------------------------
     TXT
 
+  def remove_new_version_if_declined
+    case publication.state
+    when Publication::STATE_DECLINED
+      unless publication.element&.tag&.taggable_data&.dig('previous_version').nil?
+        @publications.each do |publication|
+          publication.element.destroy
+          publication.doi.destroy
+        end
+      end
+    else
+      return
+    end
   end
 end

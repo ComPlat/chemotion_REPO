@@ -79,7 +79,12 @@ class ViewSpectra extends React.Component {
   onChangeElement() {
     const { sample } = this.props;
     const { updatedElement } = this.state;
-    return updatedElement || sample;
+    let targetSample = updatedElement || sample;
+    if (targetSample && !(targetSample instanceof Sample)) {
+      targetSample = new Sample(targetSample);
+    }
+
+    return targetSample;
   }
 
   opsSolvent(shift) {
@@ -132,12 +137,9 @@ class ViewSpectra extends React.Component {
   }
 
   getDSList() {
-    let sample = this.onChangeElement(); // REPO multiple samples
+    const sample = this.onChangeElement(); // REPO multiple samples
     const { spcInfos } = this.state;
     const spcDts = spcInfos.map(e => e.idDt);
-    if (sample && !(sample instanceof Sample)) {
-      sample = new Sample(sample);
-    }
     const dcs = sample?.datasetContainers();
     const dcss = dcs?.filter(e => spcDts.includes(e.id));
     return dcss;
@@ -751,7 +753,7 @@ class ViewSpectra extends React.Component {
                 operations={operations}
                 forecast={forecast}
                 molSvg={sample.svgPath}
-                theoryMass={sample.molecule_molecular_weight}
+                exactMass={sample.molecule_exact_molecular_weight}
                 descriptions={descriptions}
                 canChangeDescription
                 onDescriptionChanged={this.onSpectraDescriptionChanged}
