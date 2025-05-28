@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button, ButtonGroup, Col, Row } from 'react-bootstrap';
-import { GenGridBase } from 'chem-generic-ui';
+import { GenGridBase } from 'chem-generic-ui-viewer';
 import GenericBaseFetcher from 'src/fetchers/GenericBaseFetcher';
 import Utils from 'src/utilities/Functions';
 import RepoGenericHubDesc from 'src/repoHome/RepoGenericHubDesc';
-import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import { capitalizeFirstLetter } from 'src/components/chemrepo/format-utils';
 
 const getCurrentDateTimeString = () => {
   const now = new Date();
@@ -174,7 +174,7 @@ const RepoGenericHub = () => {
                   <div style={{ flex: '1', margin: '0px 15px 15px 15px' }}>
                     <h3>{menuSelected ? `Generic ${capitalizeFirstLetter(menuSelected)} Template` : ''}</h3>
                     <div>
-                      <GenGridBase gridColumn={columnDefs[menuSelected]} gridData={gridData} />
+                      <GenGridBase columnDefs={columnDefs[menuSelected]} rowData={gridData} />
                     </div>
                   </div>
                 )

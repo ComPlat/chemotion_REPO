@@ -6,7 +6,7 @@ class SpectraActions {
     return null;
   }
 
-  LoadSpectra(spcInfos) {
+  LoadSpectra(spcInfos, element = null) {
     const idxs = spcInfos && spcInfos.map(si => si.idx);
     if (idxs.length === 0) {
       return null;
@@ -15,7 +15,7 @@ class SpectraActions {
     return (dispatch) => {
       AttachmentFetcher.fetchFiles(idxs)
         .then((fetchedFiles) => {
-          dispatch({ fetchedFiles, spcInfos });
+          dispatch({ fetchedFiles, spcInfos, element });
         }).catch((errorMessage) => {
           console.log(errorMessage); // eslint-disable-line
         });
@@ -34,9 +34,9 @@ class SpectraActions {
     };
   }
 
-  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr, cyclicvolta, curveIdx = 0, simulatenmr = false, previousSpcInfos, isSaveCombined = false, axesUnitsStr, detector) {
+  SaveToFile(spcInfo, peaksStr, shift, scan, thres, integration, multiplicity, predict, cb, keepPred = false, waveLengthStr, cyclicvolta, curveIdx = 0, simulatenmr = false, previousSpcInfos, isSaveCombined = false, axesUnitsStr, detector, dscMetaData) {
     return (dispatch) => {
-      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr, cyclicvolta, curveIdx, simulatenmr, previousSpcInfos, isSaveCombined, axesUnitsStr, detector)
+      AttachmentFetcher.saveSpectrum(spcInfo.idx, peaksStr, shift, scan, thres, integration, multiplicity, predict, keepPred, waveLengthStr, cyclicvolta, curveIdx, simulatenmr, previousSpcInfos, isSaveCombined, axesUnitsStr, detector, dscMetaData)
         .then((fetchedFiles) => {
           dispatch({ fetchedFiles, spcInfo });
           cb();
@@ -109,7 +109,7 @@ class SpectraActions {
     return null;
   }
 
-  LoadSpectraForNMRDisplayer(spcInfos) {
+  LoadSpectraForNMRDisplayer(spcInfos, element = null) {
     const idxs = spcInfos && spcInfos.map(si => si.idx);
     if (idxs.length === 0) {
       return null;
@@ -118,7 +118,7 @@ class SpectraActions {
     return (dispatch) => {
       AttachmentFetcher.fetchFiles(idxs)
         .then((fetchedFiles) => {
-          dispatch({ fetchedFiles, spcInfos });
+          dispatch({ fetchedFiles, spcInfos, element });
         }).catch((errorMessage) => {
           console.log(errorMessage); // eslint-disable-line
         });

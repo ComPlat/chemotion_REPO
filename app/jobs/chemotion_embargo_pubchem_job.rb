@@ -128,7 +128,8 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
     )
 
     if Rails.env.production? && ENV['PUBLISH_MODE'] == 'production'
-      ftp = Net::FTP.new('ftp-private.ncbi.nlm.nih.gov')
+      ftp = Net::FTP.new
+      ftp.connect('ftp-private.ncbi.nlm.nih.gov')
       ftp.passive = true
       ftp.login(ENV['PUBCHEM_LOGIN'], ENV['PUBCHEM_PASSWORD'])
       ftp.puttextcontent(sdf, @embargo_collection.id.to_s + '.sdf.in')

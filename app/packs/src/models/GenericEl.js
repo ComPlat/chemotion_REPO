@@ -1,4 +1,4 @@
-import { isEmpty, filter } from 'lodash';
+import { cloneDeep, isEmpty, filter } from 'lodash';
 import { buildInitWF, resetProperties } from 'chem-generic-ui';
 import Element from 'src/models/Element';
 import Container from 'src/models/Container';
@@ -121,16 +121,16 @@ export default class GenericEl extends Element {
 
   buildCopy(params = {}) {
     const copy = super.buildCopy();
-    Object.assign(copy, params);
-    copy.short_label = GenericEl.buildNewShortLabel(copy.element_klass);
-    copy.container = Container.init();
-    copy.can_update = true;
-    copy.can_copy = false;
-    return copy;
+    const newEl = Object.assign(copy, params);
+    newEl.short_label = GenericEl.buildNewShortLabel(newEl.element_klass);
+    newEl.container = Container.init();
+    newEl.can_update = true;
+    newEl.can_copy = false;
+    return newEl;
   }
 
   static copyFromCollectionId(element, collection_id) {
-    const target = Object.assign({}, element.properties);
+    const target = cloneDeep(element.properties);
     const params = {
       collection_id,
       properties: resetProperties(target),

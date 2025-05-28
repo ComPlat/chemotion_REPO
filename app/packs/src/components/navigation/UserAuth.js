@@ -27,9 +27,9 @@ import UsersFetcher from 'src/fetchers/UsersFetcher';
 import MessagesFetcher from 'src/fetchers/MessagesFetcher';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 import { UserLabelModal } from 'src/components/UserLabels';
-import MatrixCheck from 'src/components/common/MatrixCheck';
 import GroupElement from 'src/components/navigation/GroupElement';
 import { formatDate } from 'src/utilities/timezoneHelper';
+import Affiliations from '../../apps/userSettings/Affiliations';
 
 import Functions from 'src/utilities/Functions';
 import AuthorModal from 'src/components/users/AuthorModal';
@@ -46,6 +46,7 @@ export default class UserAuth extends Component {
       currentDevices: [],
       selectedUsers: null,
       showSubscription: false,
+      showAffiliations: false,
       currentSubscriptions: [],
       showDeviceMetadataModal: false,
       device: {},
@@ -65,6 +66,9 @@ export default class UserAuth extends Component {
     this.handleSubscriptionClose = this.handleSubscriptionClose.bind(this);
     this.handleDeviceMetadataModalShow = this.handleDeviceMetadataModalShow.bind(this);
     this.handleDeviceMetadataModalClose = this.handleDeviceMetadataModalClose.bind(this);
+    this.handleAffiliationsShow = this.handleAffiliationsShow.bind(this);
+    this.handleAffiliationsHide = this.handleAffiliationsHide.bind(this);
+    this.renderAffiliations = this.renderAffiliations.bind(this);
 
     this.promptTextCreator = this.promptTextCreator.bind(this);
 
@@ -315,6 +319,22 @@ export default class UserAuth extends Component {
       this.setState({ currentGroups });
     });
   };
+
+  handleAffiliationsShow() {
+    this.setState({ showAffiliations: true });
+  }
+  handleAffiliationsHide = () => {
+    this.setState({ showAffiliations: false });
+  };
+
+  renderAffiliations() {
+    return this.state.showAffiliations ? (
+      <Affiliations
+        show={this.state.showAffiliations}
+        onHide={this.handleAffiliationsHide} />
+    ) : null;
+
+  }
 
   // render modal
   renderModal() {
@@ -682,7 +702,11 @@ export default class UserAuth extends Component {
             <MenuItem eventKey="3" href="/users/edit">
               Change Password
             </MenuItem>
-            <MenuItem eventKey="5" href="/pages/affiliations">
+            {/* <MenuItem eventKey="5" href="/pages/affiliations">
+              My Affiliations
+            </MenuItem> */}
+            <MenuItem
+              onClick={this.handleAffiliationsShow}>
               My Affiliations
             </MenuItem>
             <MenuItem onClick={this.handleShow}>My Groups & Devices</MenuItem>
@@ -717,8 +741,12 @@ export default class UserAuth extends Component {
           </NavItem>
         </Nav>
         <AuthorModal show={this.state.showAuthorsModal} currentUser={this.state.currentUser} onHide={this.handleAuthorsClose} />
-        { this.renderModal() }
-        <UserLabelModal showLabelModal={this.state.showLabelModal} onHide={() => this.handleLabelClose()} />
+        {this.renderModal()}
+        {this.renderAffiliations()}
+        <UserLabelModal
+          showLabelModal={this.state.showLabelModal}
+          onHide={() => this.handleLabelClose()}
+        />
         {this.renderSubscribeModal()}
         {this.renderDeviceMetadataModal()}
       </div>

@@ -25,11 +25,11 @@
 #  name_abbreviation      :string(12)
 #  type                   :string           default("Person")
 #  reaction_name_prefix   :string(3)        default("R")
-#  layout                 :hstore           not null
 #  confirmation_token     :string
 #  confirmed_at           :datetime
 #  confirmation_sent_at   :datetime
 #  unconfirmed_email      :string
+#  layout                 :hstore           not null
 #  selected_device_id     :integer
 #  failed_attempts        :integer          default(0), not null
 #  unlock_token           :string
@@ -37,6 +37,7 @@
 #  account_active         :boolean
 #  matrix                 :integer          default(0)
 #  providers              :jsonb
+#  inventory_labels       :jsonb
 #
 # Indexes
 #
@@ -105,6 +106,8 @@ class User < ApplicationRecord
   has_many :element_text_templates, dependent: :destroy
   has_many :calendar_entries, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
   has_many :comments, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
+  has_many :users_collaborators, foreign_key: :user_id
+  has_many :collaborators, through: :users_collaborators, source: :user
 
   accepts_nested_attributes_for :affiliations, :profile
 
@@ -130,8 +133,7 @@ class User < ApplicationRecord
   before_create :set_account_active, if: proc { |user| %w[Person Anonymous].include?(user.type) }
 
   after_create :create_chemotion_public_collection
-  after_create :create_all_collection, :has_profile
-  after_create :new_user_text_template
+  after_create :create_all_collection
   after_create :update_matrix
   before_destroy :delete_data
 
@@ -149,6 +151,13 @@ class User < ApplicationRecord
     else
       where(name_abbreviation: query)
     end
+  }
+
+  # Find user by an email address in a case insensitive way
+  # @param [String] email
+  # @return [ActiveRecord::Relation]
+  scope :by_email, lambda { |query|
+    where('LOWER(email) = ?', sanitize_sql_like(query.downcase.strip))
   }
 
   # try to find a user by exact match of name_abbreviation
@@ -227,6 +236,12 @@ class User < ApplicationRecord
     errors.add(:name_abbreviation, "has to be #{min_val} to #{max_val} characters long")
   end
 
+
+  def group_leads
+    User.joins("INNER JOIN users_collaborators ON users_collaborators.collaborator_id = users.id")
+    .where(users_collaborators: { user_id: id, is_group_lead: true }).distinct
+  end
+
   def orcid_checker
     return if orcid.nil?
 
@@ -236,7 +251,7 @@ class User < ApplicationRecord
 
     if result.nil?
       errors.add(:orcid, ' does not exist! Please check.')
-    elsif oc_given_names&.casecmp(first_name) != 0 || oc_family_name&.casecmp(last_name) != 0
+    elsif oc_given_names&.casecmp(first_name.strip) != 0 || oc_family_name&.casecmp(last_name.strip) != 0
       errors.add(:orcid, " #{orcid} belongs to #{oc_given_names} #{oc_family_name} (first name: #{oc_given_names}, last_name: #{oc_family_name})! Please check.")
     end
   end
@@ -301,31 +316,8 @@ class User < ApplicationRecord
     counters[key]
   end
 
-  def has_profile
-    create_profile unless profile
-    return unless type == 'Person'
-
-    profile = self.profile
-    data = profile.data || {}
-    file = Rails.root.join('db', 'chmo.default.profile.json')
-    result = JSON.parse(File.read(file, encoding: 'bom|utf-8')) if File.file?(file)
-    return if result.nil? || result['ols_terms'].nil?
-
-    data['chmo'] = result['ols_terms']
-    data['is_templates_moderator'] = false
-    data['molecule_editor'] = false
-    data['converter_admin'] = false
-    if data['layout'].nil?
-      data.merge!(layout: {
-                    'sample' => 1,
-                    'reaction' => 2,
-                    'wellplate' => 3,
-                    'screen' => 4,
-                    'research_plan' => 5,
-                    'cell_line' => -1000,
-                  })
-    end
-    self.profile.update_columns(data: data)
+  def profile
+    super || create_profile
   end
 
   has_many :users_groups, dependent: :destroy
@@ -544,30 +536,34 @@ class User < ApplicationRecord
     log_error 'Error on update_matrix'
   end
 
-  def create_text_template
-    API::TEXT_TEMPLATE.each do |type|
-      klass = type.to_s.constantize
-      template = klass.new
-      template.user_id = id
-      template.data = klass.default_templates
-      template.save!
-    end
+  def text_templates
+    super.presence || TextTemplate.create_default_text_templates_for_user(id)
   end
 
-  def self.from_omniauth(provider, uid, email, first_name, last_name)
-    user = find_by(email: email&.downcase)
+  def self.from_omniauth(params)
+    user = find_by(email: params[:email]&.downcase)
     if user.present?
       providers = user.providers || {}
-      providers[provider] = uid
+      providers[params[:provider]] = params[:uid]
       user.providers = providers
       user.save!
     else
       user = User.new(
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
+        email: params[:email]&.downcase,
+        first_name: params[:first_name],
+        last_name: params[:last_name],
         password: Devise.friendly_token[0, 20],
       )
+    end
+
+    if (params[:groups] || []).length&.positive?
+      (params[:groups] || []).each do |group|
+        name = group.split(':')
+        if name.size == 3
+          group = Group.find_by(first_name: name[2], last_name: name[1])
+          user.groups << group if group.present? && user.groups.exclude?(group)
+        end
+      end
     end
     user
   end
@@ -604,10 +600,6 @@ class User < ApplicationRecord
   def create_all_collection
     return if self.type == 'Anonymous'
     Collection.create(user: self, label: 'All', is_locked: true, position: 0)
-  end
-
-  def new_user_text_template
-    create_text_template
   end
 
   def create_chemotion_public_collection
@@ -651,16 +643,7 @@ class User < ApplicationRecord
   end
 
   def send_welcome_email
-    file_path = Rails.public_path.join('welcome-message.md')
-    if File.exist?(file_path)
-      if Rails.env.production?
-        SendWelcomeEmailJob.perform_later(id)
-      else
-        SendWelcomeEmailJob.perform_now(id)
-      end
-    else
-      # do nothing
-    end
+    WelcomeMailer.delay.mail_welcome_message(id)
   end
 
   def delete_data
@@ -686,23 +669,6 @@ class Person < User
 
   has_many :users_admins, dependent: :destroy, foreign_key: :admin_id
   has_many :administrated_accounts,  through: :users_admins, source: :user
-end
-
-class Device < User
-  has_many :users_devices, dependent: :destroy
-  has_many :users, class_name: 'User', through: :users_devices
-
-  has_many :users_admins, dependent: :destroy, foreign_key: :user_id
-  has_many :admins, through: :users_admins, source: :admin
-
-  has_one :device_metadata, dependent: :destroy
-
-  scope :by_user_ids, ->(ids) { joins(:users_devices).merge(UsersDevice.by_user_ids(ids)) }
-  scope :novnc, -> { joins(:profile).merge(Profile.novnc) }
-
-  def info
-    "Device ID: #{id}, Name: #{first_name} #{last_name}"
-  end
 end
 
 class Group < User

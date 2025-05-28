@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module UserLabelHelpers
   extend Grape::API::Helpers
 
@@ -16,5 +18,4 @@ module UserLabelHelpers
       pub.update_user_labels(data['user_labels'], current_user_id) if pub.present?
     end
   end
-
 end

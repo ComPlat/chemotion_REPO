@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RepositoryHelpers
   extend Grape::API::Helpers
 
@@ -65,7 +67,4 @@ module RepositoryHelpers
     Publication.repo_log_exception(e, { root_publication: root_publication&.id, user_id: current_user&.id })
     raise
   end
-
-  private
-
 end

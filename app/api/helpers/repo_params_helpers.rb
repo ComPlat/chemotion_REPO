@@ -21,6 +21,7 @@ module RepoParamsHelpers
     optional :embargo, type: Integer, desc: 'Embargo collection'
     requires :license, type: String, desc: 'Creative Common License'
     requires :addMe, type: Boolean, desc: 'add me as author'
+    requires :addGroupLead, type: Boolean, desc: 'add group lead as author'
   end
 
   params :publish_reaction_params do
@@ -32,6 +33,7 @@ module RepoParamsHelpers
     optional :embargo, type: Integer, desc: 'Embargo collection'
     requires :license, type: String, desc: 'Creative Common License'
     requires :addMe, type: Boolean, desc: 'add me as author'
+    requires :addGroupLead, type: Boolean, desc: 'add group lead as author'
   end
 
   params :publish_reaction_scheme_params do
@@ -44,6 +46,7 @@ module RepoParamsHelpers
     optional :reviewers, type: Array[Integer], default: [], desc: 'reviewers (User)'
     requires :license, type: String, desc: 'Creative Common License'
     requires :addMe, type: Boolean, desc: 'add me as author'
+    requires :addGroupLead, type: Boolean, desc: 'add group lead as author'
     requires :schemeDesc, type: Boolean, desc: 'publish scheme'
   end
 

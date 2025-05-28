@@ -110,6 +110,8 @@ export default class PublishReactionModal extends Component {
       noAmountYield: false,
       noEmbargo: false,
       schemeDesc: true,
+      addMeAsAuthor: true,
+      addGroupLeadAsAuthor: true,
       publishType: { options: Object.values(publishOptions), selected: publishOptions.f },
     };
 
@@ -139,6 +141,8 @@ export default class PublishReactionModal extends Component {
     this.handleYieldChange = this.handleYieldChange.bind(this);
     this.handlePropertiesChange = this.handlePropertiesChange.bind(this);
     this.handleUnitChange = this.handleUnitChange.bind(this);
+    this.toggleAddMeAsAuthor = this.toggleAddMeAsAuthor.bind(this);
+    this.toggleAddGroupLeadAsAuthor = this.toggleAddGroupLeadAsAuthor.bind(this);
   }
 
   componentDidMount() {
@@ -288,6 +292,14 @@ export default class PublishReactionModal extends Component {
     });
   }
 
+  toggleAddMeAsAuthor() {
+    this.setState(prevState => ({ addMeAsAuthor: !prevState.addMeAsAuthor }));
+  }
+
+  toggleAddGroupLeadAsAuthor() {
+    this.setState(prevState => ({ addGroupLeadAsAuthor: !prevState.addGroupLeadAsAuthor }));
+  }
+
   loadReferences() {
     let { selectedRefs } = this.state;
     LiteraturesFetcher.fetchElementReferences(this.state.reaction, true).then((literatures) => {
@@ -299,7 +311,23 @@ export default class PublishReactionModal extends Component {
 
   loadMyCollaborations() {
     CollaboratorFetcher.fetchMyCollaborations()
-      .then((result) => { this.setState({ collaborations: result.authors }); });
+      .then((result) => {
+        const collaborations = result.authors || [];
+
+        // Find collaborators that are group leads
+        const groupLeads = collaborations.filter(c => c.is_group_lead);
+
+        // Pre-select group leads in the reviewers dropdown
+        const selectedReviewers = groupLeads.map(lead => ({
+          label: lead.name,
+          value: lead.id
+        }));
+
+        this.setState({
+          collaborations,
+        selectedReviewers,
+        });
+      });
   }
 
   contributor() {
@@ -427,7 +455,8 @@ export default class PublishReactionModal extends Component {
       embargo: this.state.selectedEmbargo,
       license: this.state.selectedLicense,
       schemeDesc: this.state.schemeDesc,
-      addMe: this.refMeAsAuthor.checked
+      addMe: this.refMeAsAuthor.checked,
+      addGroupLead: this.refGroupLeadAsAuthor.checked
     }, true);
     this.props.onHide(false);
   }
@@ -450,7 +479,7 @@ export default class PublishReactionModal extends Component {
   }
 
   selectUsers() {
-    const { selectedUsers, collaborations } = this.state;
+    const { selectedUsers, collaborations, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
     const options = collaborations.map(c => (
       { label: c.name, value: c.id }
     ));
@@ -467,7 +496,8 @@ export default class PublishReactionModal extends Component {
 
     return (
       <div >
-        <Checkbox inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
+        <Checkbox checked={addMeAsAuthor} onChange={() => this.toggleAddMeAsAuthor()} inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
+        <Checkbox checked={addGroupLeadAsAuthor} onChange={() => this.toggleAddGroupLeadAsAuthor()} inputRef={(ref) => { this.refGroupLeadAsAuthor = ref; }}>add group leads as authors</Checkbox>
         <Checkbox inputRef={(ref) => { this.refBehalfAsAuthor = ref; }}>
           I am contributing on behalf of the author{authorCount > 0 ? 's' : '' }
         </Checkbox>
@@ -510,7 +540,7 @@ export default class PublishReactionModal extends Component {
 
     return (
       <div >
-        <h5><b>Additional Reviewers:</b></h5>
+        <h5><b>Group Lead / Additional Reviewers:</b></h5>
         <Select
           multi
           searchable
@@ -926,7 +956,7 @@ export default class PublishReactionModal extends Component {
                 <Panel eventKey="6">
                   <Panel.Heading>
                     <Panel.Title toggle>
-                      <h4> Additional Reviewers ({selectedReviewers.length})</h4>
+                      <h4> Group Lead / Additional Reviewers ({selectedReviewers.length})</h4>
                     </Panel.Title>
                   </Panel.Heading>
                   <Panel.Body collapsible>

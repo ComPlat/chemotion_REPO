@@ -8,6 +8,7 @@ import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import RepoReviewButtonBar from 'src/repoHome/RepoReviewButtonBar';
 import RepoSample from 'src/repoHome/RepoSample';
 import RepoConst from 'src/components/chemrepo/common/RepoConst';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
 
 export default class RepoSampleDetails extends Component {
   constructor(props) {
@@ -66,7 +67,7 @@ export default class RepoSampleDetails extends Component {
     }
 
     const {
-      molecule, isLogin, isReviewer, xvialCom, labels
+      molecule, isLogin, isCI, isReviewer, xvialCom, labels
     } = element;
 
     const idyLogin = typeof isLogin === 'undefined' ? true : isLogin;
@@ -114,6 +115,7 @@ export default class RepoSampleDetails extends Component {
         pub_info: s.pub_info,
         ana_infos: s.ana_infos,
         affiliation_ids: s.affiliation_ids || tagData.affiliation_ids,
+        ror_ids: s.rors || tagData.rors,
         affiliations: s.affiliations || tagData.affiliations,
         literatures: s.literatures || element.literatures,
         license: s.license || tagData.license || 'CC BY-SA',
@@ -132,6 +134,9 @@ export default class RepoSampleDetails extends Component {
         labels: (isPublished ? s.labels : labels) || [],
         molecular_mass: s.molecular_mass || '',
         sum_formula: s.sum_formula || '',
+        molecule: s.molecule || '',
+        sample_svg_file: s.sample_svg_file || '',
+        molfile: s.molfile || '',
       };
 
       return (
@@ -142,6 +147,7 @@ export default class RepoSampleDetails extends Component {
           tagData={tagData}
           handleCommentBtn={this.handleCommentBtn}
           isLogin={idyLogin}
+          isCI={!!isCI}
           isReviewer={idyReview}
           {...this.props}
         />
@@ -185,7 +191,12 @@ export default class RepoSampleDetails extends Component {
                 />
               </div> : ''
           } */}
-
+          <NMRiumDisplayer
+            sample={element}
+            handleSampleChanged={() => {}}
+            handleSubmit={() => {}}
+            readOnly
+          />
         </Panel.Body>
       </Panel>
     );

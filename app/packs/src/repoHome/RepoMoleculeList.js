@@ -76,7 +76,7 @@ const infoTag = molecule => {
         }
       >
         <div className="home_wrapper_item">
-          <div>X-Vial</div>
+          <div>Sample</div>
           <div className="item_xvial">{xvialTag(molecule)}</div>
         </div>
       </OverlayTrigger>

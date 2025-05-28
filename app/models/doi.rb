@@ -72,7 +72,7 @@ class Doi < ApplicationRecord
         (rt.is_a?(Reaction) && rt.products_short_rinchikey_trimmed)
       raise "only works with sample/reaction analysis" unless ik
     end
-    type = analysis.extended_metadata['kind'].delete(' ')
+    type = analysis.extended_metadata['kind']&.delete(' ') || analysis.extended_metadata['kind']
     type = type.presence || 'nd'
     ds = Doi.select("*, coalesce(analysis_count, 0) as real_count")
             .where(inchikey: ik, analysis_type: type)

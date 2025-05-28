@@ -11,3 +11,70 @@
     }
   }
 }
+
+@mixin zoom_svg_base {
+  border-radius: 5px;
+  padding: 10px;
+}
+
+@mixin zoom_svg_text {
+  text-align: center;
+  font-size: 12px !important;
+  margin-top: 5px;
+}
+
+.zoom_svg_on {
+  @include zoom_svg_base;
+  cursor: row-resize;
+  border: 2px solid #5bc0de;
+
+  &:hover {
+    border-color: #3e9eb2; /* Change border color on hover, adjust as needed */
+    box-shadow: 0 0 5px rgba(91, 192, 222, 0.5); /* Optional: Add shadow on hover */
+  }
+
+  > div > .svg-file-zoom-pan {
+    pointer-events: auto; /* Allow interaction on the zooming area */
+  }
+
+  > p {
+    @include zoom_svg_text;
+  }
+}
+
+.zoom_svg_off {
+  @include zoom_svg_base;
+  cursor: pointer;
+  border: none;
+
+  &:hover {
+    border: 1px solid #3e9eb2; /* Add a border on hover */
+    // border-color: none; /* No border change when hover */
+    box-shadow: none; /* Ensure no shadow on hover */
+  }
+
+  > div > .svg-file-zoom-pan {
+    pointer-events: none;
+  }
+
+  > p {
+    @include zoom_svg_text;
+  }
+}
+
+// .zoom_svg_on:hover,
+// .zoom_svg_off:hover {
+//   /* Add a base hover effect that does not interfere with pointer-events */
+//   transition: all 0.2s ease;
+// }
+
+.btn-product {
+  .off {
+    font-weight: bold;
+    color: #999;
+  }
+  .on {
+    font-weight: bold;
+    color: black;
+  }
+}

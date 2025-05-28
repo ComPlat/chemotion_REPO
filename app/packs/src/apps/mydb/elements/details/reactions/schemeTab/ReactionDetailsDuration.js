@@ -72,12 +72,12 @@ export default class ReactionDetailsDuration extends Component {
               <FormControl
                 type="text"
                 value={reaction.timestamp_start || ''}
-                disabled={!permitOn(reaction) || reaction.isMethodDisabled('timestamp_start')}
+                disabled={!permitOn(reaction) || reaction.isMethodDisabled('timestamp_start') || reaction.gaseous}
                 placeholder={timePlaceholder}
                 onChange={event => this.props.onInputChange('timestampStart', event)}
               />
               <InputGroup.Button>
-                <Button disabled={!permitOn(reaction)} active style={{ padding: '6px' }} onClick={() => this.setCurrentTime('timestampStart')}>
+                <Button disabled={!permitOn(reaction) || reaction.gaseous} active style={{ padding: '6px' }} onClick={() => this.setCurrentTime('timestampStart')}>
                   <i className="fa fa-clock-o" aria-hidden="true" />
                 </Button>
               </InputGroup.Button>
@@ -91,12 +91,12 @@ export default class ReactionDetailsDuration extends Component {
               <FormControl
                 type="text"
                 value={reaction.timestamp_stop || ''}
-                disabled={!permitOn(reaction) || reaction.isMethodDisabled('timestamp_stop')}
+                disabled={!permitOn(reaction) || reaction.isMethodDisabled('timestamp_stop') || reaction.gaseous}
                 placeholder={timePlaceholder}
                 onChange={event => this.props.onInputChange('timestampStop', event)}
               />
               <InputGroup.Button>
-                <Button disabled={!permitOn(reaction)} active style={{ padding: '6px' }} onClick={() => this.setCurrentTime('timestampStop')}>
+                <Button disabled={!permitOn(reaction) || reaction.gaseous} active style={{ padding: '6px' }} onClick={() => this.setCurrentTime('timestampStop')}>
                   <i className="fa fa-clock-o" aria-hidden="true" />
                 </Button>
               </InputGroup.Button>
@@ -113,7 +113,7 @@ export default class ReactionDetailsDuration extends Component {
                   placement="bottom"
                   overlay={<Tooltip id="copy_duration_to_clipboard">copy to clipboard</Tooltip>}
                 >
-                  <Button disabled={!permitOn(reaction)} active className="clipboardBtn" data-clipboard-text={durationCalc || ' '}>
+                  <Button disabled={!permitOn(reaction) || reaction.gaseous} active className="clipboardBtn" data-clipboard-text={durationCalc || ' '}>
                     <i className="fa fa-clipboard" aria-hidden="true" />
                   </Button>
                 </OverlayTrigger>
@@ -121,7 +121,7 @@ export default class ReactionDetailsDuration extends Component {
                   placement="bottom"
                   overlay={<Tooltip id="copy_durationCalc_to_duration">use this duration<br />(rounded to precision 1)</Tooltip>}
                 >
-                  <Button disabled={!permitOn(reaction)} active className="clipboardBtn" onClick={() => this.copyToDuration()}>
+                  <Button disabled={!permitOn(reaction) || reaction.gaseous} active className="clipboardBtn" onClick={() => this.copyToDuration()}>
                     <i className="fa fa-arrow-right" aria-hidden="true" />
                   </Button>
                 </OverlayTrigger>
@@ -134,7 +134,7 @@ export default class ReactionDetailsDuration extends Component {
             <ControlLabel>&nbsp;</ControlLabel>
             <InputGroup>
               <FormControl
-                disabled={!permitOn(reaction)}
+                disabled={!permitOn(reaction) || reaction.gaseous}
                 type="text"
                 value={reaction.durationDisplay.dispValue || ''}
                 inputRef={this.refDuration}
@@ -143,7 +143,7 @@ export default class ReactionDetailsDuration extends Component {
               />
               <InputGroup.Button>
                 <OverlayTrigger placement="bottom" overlay={<Tooltip id="switch_duration_unit">switch duration unit</Tooltip>}>
-                  <Button disabled={!permitOn(reaction)} bsStyle="success" onClick={() => this.changeDurationUnit()}>
+                  <Button disabled={!permitOn(reaction) || reaction.gaseous} bsStyle="success" onClick={() => this.changeDurationUnit()}>
                     {reaction.durationUnit}
                   </Button>
                 </OverlayTrigger>

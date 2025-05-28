@@ -359,7 +359,6 @@ const headerBtnGroup = (
   const { hasChemSpectra, hasNmriumWrapper } = UIStore.getState();
   const { chmos } = UserStore.getState();
   const hasNMRium = isNMRKind(container, chmos) && hasNmriumWrapper;
-
   const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
   const enableMoleculeViewer = MatrixCheck(currentUser.matrix, MolViewerSet.PK);
 

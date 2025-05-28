@@ -50,6 +50,8 @@ module Entities
       expose! :variations,            anonymize_with: [],                               using: 'Entities::ReactionVariationEntity'
       ## For repo
       expose! :doi,                                         unless: :displayed_in_list, using: Entities::DoiEntity
+      expose! :vessel_size
+      expose! :gaseous
     end
 
     expose_timestamps

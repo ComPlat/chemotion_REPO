@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength
-
 # module API
 require 'grape-entity'
 require 'grape-swagger'
@@ -13,7 +11,7 @@ class API < Grape::API
 
   # TODO: needs to be tested,
   # source: http://funonrails.com/2014/03/api-authentication-using-devise-token/
-  helpers do
+  helpers do # rubocop:disable Metrics/BlockLength
     def present(*args)
       options = args.count > 1 ? args.extract_options! : {}
 
@@ -59,11 +57,10 @@ class API < Grape::API
       error!('401 Unauthorized', 401) unless current_user
     end
 
-    def is_public_request?
+    def public_request?
       request.path.start_with?(
         '/api/v1/public/',
         '/api/v1/labimotion_hub/',
-        '/api/v1/public_chemscanner/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
@@ -91,8 +88,8 @@ class API < Grape::API
       ]
     end
 
-    def to_snake_case_key(k)
-      k.to_s.underscore.to_sym
+    def to_snake_case_key(key)
+      key.to_s.underscore.to_sym
     end
 
     def to_rails_snake_case(val)
@@ -106,8 +103,8 @@ class API < Grape::API
       end
     end
 
-    def to_camelcase_key(k)
-      k.to_s.camelcase(:lower).to_sym
+    def to_camelcase_key(key)
+      key.to_s.camelcase(:lower).to_sym
     end
 
     def to_json_camel_case(val)
@@ -123,7 +120,7 @@ class API < Grape::API
   end
 
   before do
-    authenticate! unless is_public_request?
+    authenticate! unless public_request?
   end
 
   # desc: whitelisted tables and columns for advanced_search
@@ -149,8 +146,14 @@ class API < Grape::API
 
   ELEMENTS = %w[research_plan reaction sample].freeze
 
-  TEXT_TEMPLATE = %w[SampleTextTemplate ReactionTextTemplate WellplateTextTemplate ScreenTextTemplate
-                     ResearchPlanTextTemplate ReactionDescriptionTextTemplate ElementTextTemplate].freeze
+  ELEMENT_CLASS = {
+    'research_plan' => ResearchPlan,
+    'screen' => Screen,
+    'wellplate' => Wellplate,
+    'reaction' => Reaction,
+    'sample' => Sample,
+    'cell_line' => CelllineSample,
+  }.freeze
 
   mount Chemotion::LiteratureAPI
   mount Chemotion::ContainerAPI
@@ -179,8 +182,6 @@ class API < Grape::API
   mount Chemotion::DevicesAnalysisAPI
   mount Chemotion::GateAPI
   mount Chemotion::ElementAPI
-  mount Chemotion::PublicChemscannerAPI
-  mount Chemotion::ChemscannerAPI
   mount Chemotion::ChemSpectraAPI
   mount Chemotion::InstrumentAPI
   mount Chemotion::MessageAPI
@@ -198,26 +199,26 @@ class API < Grape::API
   mount Chemotion::MeasurementsAPI
   mount Chemotion::AttachableAPI
   mount Chemotion::SampleTaskAPI
-  mount Chemotion::ChemicalAPI
+  mount Chemotion::ThirdPartyAppAPI
   mount Chemotion::CalendarEntryAPI
   mount Chemotion::CommentAPI
   mount Chemotion::CellLineAPI
-  mount Labimotion::ConverterAPI
-  mount Labimotion::GenericKlassAPI
-  mount Labimotion::GenericElementAPI
-  mount Labimotion::GenericDatasetAPI
-  mount Labimotion::SegmentAPI
-  mount Labimotion::LabimotionHubAPI
+  mount Labimotion::LabimotionAPI
   mount Chemotion::InventoryAPI
+  mount Chemotion::AffiliationAPI
+  mount Chemotion::AdminDeviceAPI
+  mount Chemotion::AdminDeviceMetadataAPI
+  mount Chemotion::ChemicalAPI
+
 
   ## For REPO
   mount Chemotion::RepositoryAPI
   mount Chemotion::ArticleAPI
   mount Chemotion::CollaborationAPI
+  mount Chemotion::PublicRepoAPI
 
   add_swagger_documentation(info: {
     "title": "Chemotion Repository",
     "version": "1.0"
   }) if Rails.env.development?
 end
-# rubocop:enable Metrics/ClassLength

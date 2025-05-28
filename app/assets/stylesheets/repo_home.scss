@@ -283,7 +283,7 @@ $bs-successcolor: #5cb85c;
 }
 
 .icon-molecule-archive2 {
-  width: 3vw;
+  width: 8vw;
   height: auto;
   background-color: rgb(12, 61, 118);
 }
@@ -707,6 +707,7 @@ $bs-successcolor: #5cb85c;
 }
 
 @mixin preview-btn {
+  z-index: 100;
   position: absolute;
   top: 80%;
 }
@@ -1161,13 +1162,4 @@ $bs-successcolor: #5cb85c;
   align-items: stretch;
   justify-content: center;
   margin-top: 8px;
-}
-
-.repo-nfdi-award {
-  display: inline-flex;;
-  align-items: center;
-  justify-content: center;
-  > img {
-    width: 80%;
-  }
 }

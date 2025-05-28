@@ -6,6 +6,9 @@
 
 # vscode settings
 .vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
 
 # Ignore bundler config.
 /.bundle
@@ -20,6 +23,8 @@
 /tmp/*
 /tmp/novnc_devices/*
 !/tmp/novnc_devices/.keep
+
+/.yardoc/
 
 .ruby-gemset
 .ruby-version
@@ -106,6 +111,8 @@
 !/public/editors/.keep
 /public/favicon.ico
 
+/public/klasses.json
+
 /public/ontologies/*
 !/public/ontologies/.keep
 !/public/ontologies/chmo.default.edited.json
@@ -117,7 +124,12 @@
 /public/directives/*
 !/public/images/directives/.keep
 !/public/images/directives/directives.html
+/public/jsmol
+/public/jsmol/*
+!/public/jsmol/.keep
+
 /public/data_type.json
+/public/default_editors
 
 /uploads/*
 !/public/attachments/.keep
@@ -222,8 +234,17 @@ public/sprite.png
 
 #svgeditor
 /public/svgedit
+# pdf worker
+/public/pdf.worker.min.js
 
 !spec/fixtures/import/sample_import_template.xlsx
 
 # generic elements
 data/klasses.json
+
+# pdf worker
+public/pdf.worker.min.js
+
+# Sentry Config File
+.env.sentry-build-plugin*
+

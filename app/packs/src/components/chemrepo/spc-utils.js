@@ -1,7 +1,9 @@
 import {
   BuildSpcInfos,
   BuildSpcInfosForNMRDisplayer,
+  isNMRKind,
 } from 'src/utilities/SpectraHelper';
+import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 
 const spcChemSpectra = (element, analysis) => {
   if (element == null || analysis == null) return [];
@@ -13,18 +15,15 @@ const spcChemSpectra = (element, analysis) => {
 const spcNmrium = (element, analysis) => {
   if (element == null || analysis == null) return [];
   const container = analysis;
+  const { chmos } = PublicStore.getState();
+  const hasNMRium = isNMRKind(container, chmos);
+  if (!hasNMRium) return [];
   const spcInfosForNMRDisplayer = BuildSpcInfosForNMRDisplayer(
     element,
     container
   );
   if (spcInfosForNMRDisplayer.length < 1) return [];
-  const arrNMRiumSpecs = spcInfosForNMRDisplayer.filter(spc =>
-    spc.label.includes('.nmrium')
-  );
-  if (!arrNMRiumSpecs || arrNMRiumSpecs.length === 0) {
-    return [];
-  }
-  return arrNMRiumSpecs;
+  return spcInfosForNMRDisplayer;
 };
 
 const spc = (element, analysis) => {

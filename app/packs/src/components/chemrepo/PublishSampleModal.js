@@ -45,7 +45,9 @@ export default class PublishSampleModal extends Component {
       selectedLicense: 'CC BY',
       cc0Consent: { consent1: false, consent2: false },
       bundles: [],
-      noEmbargo: false
+      noEmbargo: false,
+      addMeAsAuthor: true,
+      addGroupLeadAsAuthor: true
     };
     this.onUserChange = this.onUserChange.bind(this);
     this.handleSampleChanged = this.handleSampleChanged.bind(this);
@@ -61,6 +63,8 @@ export default class PublishSampleModal extends Component {
     this.handleEmbargoChange = this.handleEmbargoChange.bind(this);
     this.handleLicenseChange = this.handleLicenseChange.bind(this);
     this.handleCC0ConsentChange = this.handleCC0ConsentChange.bind(this);
+    this.toggleAddMeAsAuthor = this.toggleAddMeAsAuthor.bind(this);
+    this.toggleAddGroupLeadAsAuthor = this.toggleAddGroupLeadAsAuthor.bind(this);
   }
 
   componentDidMount() {
@@ -105,8 +109,20 @@ export default class PublishSampleModal extends Component {
   loadMyCollaborations() {
     CollaboratorFetcher.fetchMyCollaborations().then(result => {
       if (result) {
+        const collaborations = result.authors || [];
+
+        // Find collaborators that are group leads
+        const groupLeads = collaborations.filter(c => c.is_group_lead);
+
+        // Pre-select group leads as reviewers
+        const selectedReviewers = groupLeads.map(lead => ({
+          label: lead.name,
+          value: lead.id
+        }));
+
         this.setState({
-          collaborations: result.authors,
+          collaborations,
+          selectedReviewers  // Auto-select group leads as reviewers
         });
       }
     });
@@ -217,7 +233,8 @@ export default class PublishSampleModal extends Component {
       refs: this.state.selectedRefs,
       embargo: this.state.selectedEmbargo,
       license: this.state.selectedLicense,
-      addMe: this.refMeAsAuthor.checked
+      addMe: this.refMeAsAuthor.checked,
+      addGroupLead: this.refGroupLeadAsAuthor.checked
     }, true);
     this.props.onHide();
   }
@@ -249,7 +266,7 @@ export default class PublishSampleModal extends Component {
   }
 
   selectUsers() {
-    const { selectedUsers, collaborations } = this.state;
+    const { selectedUsers, collaborations, addMeAsAuthor, addGroupLeadAsAuthor } = this.state;
     const options = collaborations.map(c => (
       { label: c.name, value: c.id }
     ));
@@ -268,7 +285,8 @@ export default class PublishSampleModal extends Component {
 
     return (
       <div >
-        <Checkbox inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
+        <Checkbox checked={addMeAsAuthor} onChange={() => this.toggleAddMeAsAuthor()} inputRef={(ref) => { this.refMeAsAuthor = ref; }}>add me as author</Checkbox>
+        <Checkbox checked={addGroupLeadAsAuthor} onChange={() => this.toggleAddGroupLeadAsAuthor()} inputRef={(ref) => { this.refGroupLeadAsAuthor = ref; }}>add group leads as authors</Checkbox>
         <Checkbox inputRef={(ref) => { this.refBehalfAsAuthor = ref; }}>
           I am contributing on behalf of the author{authorCount > 0 ? 's' : ''}
         </Checkbox>
@@ -311,7 +329,7 @@ export default class PublishSampleModal extends Component {
 
     return (
       <div >
-        <h5><b>Additional Reviewers:</b></h5>
+        <h5><b>Group Lead / Additional Reviewers:</b></h5>
         <Select
           multi
           searchable
@@ -427,6 +445,14 @@ export default class PublishSampleModal extends Component {
       cc0Consent.consent2 = selectedValue;
     }
     this.setState({ cc0Consent });
+  }
+
+  toggleAddMeAsAuthor() {
+    this.setState(prevState => ({ addMeAsAuthor: !prevState.addMeAsAuthor }));
+  }
+
+  toggleAddGroupLeadAsAuthor() {
+    this.setState(prevState => ({ addGroupLeadAsAuthor: !prevState.addGroupLeadAsAuthor }));
   }
 
   handleNoEmbargoCheck() {
@@ -545,7 +571,7 @@ export default class PublishSampleModal extends Component {
                     <Panel.Title toggle>
                       <h4>
                         {' '}
-                        Additional Reviewers ({selectedReviewers.length})
+                        Group Lead / Additional Reviewers ({selectedReviewers.length})
                       </h4>
                     </Panel.Title>
                   </Panel.Heading>

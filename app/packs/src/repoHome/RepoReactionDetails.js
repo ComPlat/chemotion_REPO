@@ -14,15 +14,14 @@ import {
   ContributorInfo,
   ClipboardCopyBtn,
   Doi,
-  ReactionTable,
   ReactionRinChiKey,
   RenderAnalysisHeader,
-  RenderPublishAnalysesPanel,
   IconToMyDB,
   AnalysesTypeJoinLabel,
   SchemeWord,
-  resizableSvg,
+  zoomSvg,
 } from 'src/repoHome/RepoCommon';
+import ReactionTable from 'src/repoHome/RepoReactionTable';
 import UserStore from 'src/stores/alt/stores/UserStore';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
@@ -43,9 +42,12 @@ import {
 import RepoReactionSchemeInfo from 'src/repoHome/RepoReactionSchemeInfo';
 import RepoReviewButtonBar from 'src/repoHome/RepoReviewButtonBar';
 import Sample from 'src/models/Sample';
+import Reaction from 'src/models/Reaction';
 import RepoSegment from 'src/repoHome/RepoSegment';
 import { getAuthorLabel } from 'src/components/chemrepo/publication-utils';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
 
 export default class RepoReactionDetails extends Component {
   constructor(props) {
@@ -246,7 +248,7 @@ export default class RepoReactionDetails extends Component {
         <Panel.Body style={{ paddingBottom: '1px' }}>
           <Row>
             <Col sm={12} md={12} lg={12}>
-              {resizableSvg(svgPath)}
+              {zoomSvg(svgPath)}
             </Col>
           </Row>
           <Row>
@@ -263,7 +265,6 @@ export default class RepoReactionDetails extends Component {
                 show={showScheme}
                 isPublic
                 isReview={this.props.isReview}
-                bodyAttrs={bodyAttrs}
                 canComment={canComment}
               />
             </Col>
@@ -337,15 +338,17 @@ export default class RepoReactionDetails extends Component {
     );
   }
 
-  renderAnalysisView(
+  renderAnalysisView({
     container,
     type,
     product = null,
     idx = -1,
     isLogin = false,
+    isCI = false,
     isReviewer = false,
-    references = []
-  ) {
+    references = [],
+    element = null
+  }) {
     if (typeof container === 'undefined' || !container) return <span />;
 
     const analyses = ArrayUtils.sortArrByIndex(
@@ -369,6 +372,7 @@ export default class RepoReactionDetails extends Component {
           element={product}
           isPublic={this.props.isPublished}
           isLogin={isLogin}
+          isCI={isCI}
           isReviewer={isReviewer}
           userInfo={pdInfos}
           updateRepoXvial={() => this.updateRepoXvial()}
@@ -378,10 +382,10 @@ export default class RepoReactionDetails extends Component {
       ) : (
         <span />
       );
-    const specSample =
+    const analysisElement =
       type === 'Sample' && typeof product !== 'undefined' && product
         ? new Sample(product)
-        : null;
+        : new Reaction(element);
     const analysesView = analyses.map((analysis) => {
       const kind =
         analysis.extended_metadata &&
@@ -400,7 +404,7 @@ export default class RepoReactionDetails extends Component {
             orgInfo={kind}
             onShow={this.handleCommentBtn}
           />
-          <RenderPublishAnalysesPanel
+          <AnalysisRenderer
             key={`${type}_${analysis.id}`}
             userInfo={anaInfo}
             analysis={analysis}
@@ -410,7 +414,7 @@ export default class RepoReactionDetails extends Component {
             isPublic={this.props.isPublished}
             isLogin={isLogin}
             isReviewer={isReviewer}
-            element={specSample}
+            element={analysisElement}
           />
         </span>
       );
@@ -481,15 +485,16 @@ export default class RepoReactionDetails extends Component {
         : [];
     return products.map((product, idx) => (
       <div key={`product-${product.id}`}>
-        {this.renderAnalysisView(
-          product.container,
-          'Sample',
+        {this.renderAnalysisView({
+          container: product.container,
+          type: 'Sample',
           product,
           idx,
           isLogin,
           isReviewer,
-          prdReferences(product.id, references)
-        )}
+          references: prdReferences(product.id, references),
+          element: product
+        })}
       </div>
     ));
   }
@@ -586,6 +591,8 @@ export default class RepoReactionDetails extends Component {
       typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
     const idyReview =
       typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
+      const isCI =
+      typeof reaction.isCI === 'undefined' ? false : reaction.isCI;
     const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
 
     let embargo = <span />;
@@ -646,6 +653,7 @@ export default class RepoReactionDetails extends Component {
             <h4>
               <IconToMyDB
                 isLogin={idyLogin}
+                isCI={isCI}
                 isPublished={isPublished}
                 id={reaction.id}
                 type="reaction"
@@ -686,6 +694,7 @@ export default class RepoReactionDetails extends Component {
             <br />
             <ContributorInfo
               contributor={taggData.contributors}
+              affiliationMap={affiliationMap}
               showHelp={schemeOnly}
             />
             <h5>
@@ -698,6 +707,7 @@ export default class RepoReactionDetails extends Component {
             <AffiliationList
               affiliations={taggData.affiliations}
               affiliationMap={affiliationMap}
+              rorMap={taggData.rors}
             />
             {showDOI}
             <ChemotionId id={pubData.id} type="reaction" />
@@ -719,14 +729,15 @@ export default class RepoReactionDetails extends Component {
             <RepoSegment segments={reaction.segments} isPublic={isPublished} />
             {schemeOnly
               ? ''
-              : this.renderAnalysisView(
-                  reaction.container,
-                  'Reaction',
-                  null,
-                  -1,
-                  idyLogin,
-                  idyReview
-                )}
+              : this.renderAnalysisView({
+                  container: reaction.container,
+                  type: 'Reaction',
+                  idx: -1,
+                  isLogin: idyLogin,
+                  isCI: isCI,
+                  isReviewer: idyReview,
+                  element: reaction
+                })}
             {schemeOnly
               ? ''
               : this.renderProductAnalysisView(
@@ -736,6 +747,12 @@ export default class RepoReactionDetails extends Component {
                   literatures
                 )}
           </Jumbotron>
+          <NMRiumDisplayer
+            sample={reaction}
+            handleSampleChanged={() => {}}
+            handleSubmit={() => {}}
+            readOnly
+          />
         </div>
       </div>
     );

@@ -28,6 +28,12 @@ function NavHead() {
         <MenuItem eventKey="25" href="/home/preservation">
           Preservation Strategy
         </MenuItem>
+        <MenuItem eventKey="26" href="/home/imprint">
+          Imprint
+        </MenuItem>
+        <MenuItem eventKey="26" href="/home/privacy">
+          Privacy
+        </MenuItem>
       </NavDropdown>
     </Navbar.Brand>
   );

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Button, Checkbox, FormControl, FormGroup, ControlLabel, InputGroup, Tabs, Tab, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Select from 'react-select3';
 import TreeSelect from 'antd/lib/tree-select';
+import { getGenSI } from 'chem-generic-ui';
 import SelectFieldData from './SelectFieldData';
 import SampleInventoryFieldData from './SampleInventoryFieldData';
 import AnalysesFieldData from './AnalysesFieldData';
@@ -17,7 +18,7 @@ const DetailSearch = () => {
   const searchStore = useContext(StoreContext).search;
   let selection = searchStore.searchElement;
   let fieldOptions = SelectFieldData.fields[selection.table];
-  const { rxnos, chmos, unitsSystem, segmentKlasses, genericEls, profile } = UserStore.getState();
+  const { rxnos, chmos, segmentKlasses, genericEls, dsKlasses, profile } = UserStore.getState();
   const layoutTabs = profile.data[`layout_detail_${selection.table.slice(0, -1)}`];
   const currentCollection = UIStore.getState().currentCollection;
   let tabSegment = currentCollection?.tabs_segment;
@@ -25,6 +26,8 @@ const DetailSearch = () => {
   let genericFields = [];
   let genericSelectOptions = [];
   let fieldsByTab = [];
+  let datasetOptions = [];
+  let datasetSelectOptions = [];
   let inventoryData = SampleInventoryFieldData.chemicals;
   let analysesData = AnalysesFieldData.containers;
   let measurementData = MeasurementFieldData.measurements;
@@ -68,6 +71,40 @@ const DetailSearch = () => {
       });
   }
 
+  const addGenericDatasetFieldsByLayers = (layers, fields, dataset) => {
+    Object.entries(layers)
+      .sort((a, b) => a[1].position - b[1].position)
+      .map((value) => {
+        let label = value[1].label || '';
+        let values = value[1].fields.filter((f) => { return validFieldTypes.includes(f.type) });
+        let mappedValues = [];
+        if (values.length >= 1) {
+          values.map((v) => {
+            if (v.key == undefined) {
+              Object.assign(v, { key: value[1].key });
+            }
+            if (v.table === undefined) {
+              Object.assign(v, { table: 'datasets', column: `datasets_${v.field}`, term_id: dataset.ols_term_id });
+            }
+            mappedValues.push(v);
+          });
+
+          const valueExists = fields.filter((f) => {
+            return f.value.length === mappedValues.length && f.label === label && f.term_id === dataset.ols_term_id
+          });
+
+          if (valueExists.length < 1) {
+            fields.push(
+              {
+                label: label, value: mappedValues, term_id: dataset.ols_term_id,
+                cond_fields: [{ field: 'datasets_type', value: dataset.ols_term_id }],
+              }
+            );
+          }
+        }
+      });
+  }
+
   const pushSegmentToSegmentField = (segment) => {
     let layers = segment.properties_template.layers;
     let options = segment.properties_template.select_options;
@@ -79,6 +116,57 @@ const DetailSearch = () => {
       addGenericFieldsByLayers(layers, segments, segment);
       fieldsByTab.push({ label: segment.label, value: segments });
     }
+  }
+
+  const pushDatasetsToAnalysesFields = () => {
+    if (!dsKlasses) { return; }
+
+    let analysesTab = fieldsByTab.find((tabs) => tabs.label === 'Analyses');
+    const headlineExists = analysesTab.value.filter((t) => { return t.value.type === 'headline' })
+
+    if (headlineExists.length < 1) {
+      analysesTab.value.push(
+        {
+          value: {
+            type: 'headline',
+            label: 'Dataset metadata',
+          },
+          label: 'Dataset metadata',
+        },
+        {
+          label: 'Datasets',
+          value: {
+            column: 'datasets_type',
+            label: 'Dataset type',
+            type: 'select',
+            option_layers: 'datasets',
+            table: 'datasets',
+          },
+        }
+      );
+    }
+
+    dsKlasses.forEach((dataset) => {
+      addGenericDatasetFieldsByLayers(dataset.properties_template.layers, analysesTab.value, dataset);
+    });
+  }
+
+  if (dsKlasses) {
+    dsKlasses.forEach((dataset) => {
+      datasetOptions.push({ key: dataset.ols_term_id, label: dataset.label, value: dataset.ols_term_id });
+      if (dataset.properties_template.select_options) {
+        Object.entries(dataset.properties_template.select_options).map((options) => {
+          datasetSelectOptions[`${options[0]}_${dataset.ols_term_id.replace(':', '_')}`] = options[1];
+        });
+      }
+    });
+    Object.assign(
+      genericSelectOptions,
+      {
+        datasets: { options: datasetOptions },
+        dataset_select: { options: datasetSelectOptions }
+      }
+    );
   }
 
   if (genericEls) {
@@ -107,6 +195,7 @@ const DetailSearch = () => {
         }
         if (value[0] === 'analyses') {
           fieldsByTab.push(...analysesData);
+          // pushDatasetsToAnalysesFields();
         }
         if (value[0] === 'inventory') {
           fieldsByTab.push(...inventoryData);
@@ -175,25 +264,35 @@ const DetailSearch = () => {
   const optionsForSelect = (option) => {
     let options = [];
     let genericOptions = [];
+    let optionKey = '';
+    let datasetOptionsByKey = [];
 
     if (option.field !== undefined) {
       genericOptions = genericFields.length >= 1 ? genericFields : fieldsByTab;
     }
+    if (option.term_id && genericSelectOptions['dataset_select']) {
+      optionKey = `${option.option_layers}_${option.term_id.replace(':', '_')}`;
+      datasetOptionsByKey = genericSelectOptions['dataset_select'].options[optionKey];
+    }
 
     if (option.type == 'system-defined') {
-      let systemOptions = unitsSystem.fields.find((u) => { return u.field === option.option_layers });
-
       if (option.column && option.column == 'duration') {
         options = FieldOptions.durationOptions;
       } else if (option.column && option.column == 'target_amount_value') {
         options = FieldOptions.amountSearchOptions;
       } else {
-        options = systemOptions.units;
+        options = getGenSI(option.option_layers);
       }
-    } else if (genericOptions.length >= 1 && genericSelectOptions[option.option_layers]) {
-      Object.values(genericSelectOptions[option.option_layers].options).forEach((option) => {
-        option.value = option.label;
-        options.push(option);
+    } else if (option.term_id && optionKey && datasetOptionsByKey) {
+      Object.values(datasetOptionsByKey.options).forEach((selectOption) => {
+        selectOption.value = selectOption.value ? selectOption.value : selectOption.label;
+        options.push(selectOption);
+      });
+    } else if ((genericOptions.length >= 1 || option.column === 'datasets_type')
+      && genericSelectOptions[option.option_layers]) {
+      Object.values(genericSelectOptions[option.option_layers].options).forEach((selectOption) => {
+        selectOption.value = selectOption.value ? selectOption.value : selectOption.label;
+        options.push(selectOption);
       });
     } else {
       options = FieldOptions[option.option_layers];
@@ -338,7 +437,7 @@ const DetailSearch = () => {
         let subValue = selectedValue && selectedValue[column].sub_values[0][field.id] !== undefined ? selectedValue[column].sub_values[0][field.id] : '';
         subFields.push(
           <FormControl
-            className="g_input_group" 
+            className="g_input_group"
             key={field.id}
             type={field.type}
             name={field.id}
@@ -367,7 +466,7 @@ const DetailSearch = () => {
         selectedValue && selectedValue[column].sub_values !== undefined
         && selectedValue[column].sub_values[0][field.id] !== undefined;
       let selectedFieldValue = condition ? selectedValue[column].sub_values[0][field.id] : '';
-      let selectedUnitValue = typeof selectedFieldValue === 'object' ? selectedFieldValue.value_system : field.value_system;      
+      let selectedUnitValue = typeof selectedFieldValue === 'object' ? selectedFieldValue.value_system : field.value_system;
       selectedFieldValue = typeof selectedFieldValue === 'object' ? selectedFieldValue.value : selectedFieldValue;
       let validationState = selectedValue !== undefined ? selectedValue[column].validationState : null;
       let units = optionsForSelect(field);
@@ -545,6 +644,15 @@ const DetailSearch = () => {
     let value = valueByType(type, e);
     let smiles = column == 'solvent_smiles' ? e.value.smiles : '';
 
+    if (column === 'datasets_type') {
+      let datasetValues = searchStore.detailSearchValues.filter((f) => {
+        return Object.keys(f)[0].startsWith('datasets_') && Object.keys(f)[0] !== 'datasets_type'
+      });
+      datasetValues.map((d) => {
+        searchStore.removeDetailSearchValue(Object.keys(d)[0]);
+      });
+    }
+
     setSearchStoreValues(value, option, column, type, {}, smiles);
   }
 
@@ -668,6 +776,14 @@ const DetailSearch = () => {
 
   const mapOptions = (options, fields) => {
     options.map((field, i) => {
+      if (field.cond_fields && field.cond_fields.length >= 1) {
+        let key = field.cond_fields[0].field;
+        const valueFulfilled = searchStore.detailSearchValues.filter((value) => {
+          return value[key] && value[key].value === field.cond_fields[0].value;
+        });
+        if (valueFulfilled.length === 0) { return }
+      }
+
       if (Array.isArray(field.value)) {
         if (field.label) {
           fields.push(componentHeadline(field.label, i, 'detail-search-headline'));

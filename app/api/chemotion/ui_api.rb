@@ -43,6 +43,7 @@ module Chemotion
           collector_address: collector_address.presence,
           u: Rails.configuration.u || {},
           x: load_x_config,
+          third_party_apps: Entities::ThirdPartyAppEntity.represent(ThirdPartyApp.all),
         }
       end
     end

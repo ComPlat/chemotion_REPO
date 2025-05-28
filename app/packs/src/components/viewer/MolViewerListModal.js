@@ -1,7 +1,9 @@
 /* eslint-disable react/forbid-prop-types */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Col, Modal, PanelGroup, Panel, Nav, NavItem } from 'react-bootstrap';
+import {
+  Col, Modal, PanelGroup, Panel, Nav, NavItem
+} from 'react-bootstrap';
 import { MolViewer } from 'react-molviewer';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import UIStore from 'src/stores/alt/stores/UIStore';
@@ -13,7 +15,9 @@ function MolViewerListModal(props) {
     UIStore.getState().moleculeViewer || PublicStore.getState().moleculeViewer;
   if (!config?.featureEnabled) return <span />;
 
-  const { datasetContainer, handleModalOpen, isPublic, show } = props;
+  const {
+    datasetContainer, handleModalOpen, isPublic, show
+  } = props;
   const [molContent, setMolContent] = useState(null);
   const [activeKey, setActiveKey] = useState(1);
   const [selected, setSelected] = useState(() => {
@@ -73,25 +77,25 @@ function MolViewerListModal(props) {
           overflow: 'auto',
         }}
       >
-        {datasetContainer.map(ds => {
+        {datasetContainer.map((ds) => {
           const { attachments } = ds;
           return (
             <Panel
               key={ds.id}
               eventKey={ds.id}
-              onClick={e => handleSelect(e, ds.id)}
+              onClick={(e) => handleSelect(e, ds.id)}
             >
               <Panel.Heading>
                 <Panel.Title toggle>{`Dataset: ${ds.name}`}</Panel.Title>
               </Panel.Heading>
               <Panel.Body style={{ padding: '0px' }} collapsible>
                 <Nav bsStyle="pills" stacked activeKey={activeKey}>
-                  {attachments.map(attachment => (
+                  {attachments.map((attachment) => (
                     <NavItem
                       key={attachment.id}
                       eventKey={attachment.id}
                       active={attachment.id === selected?.id}
-                      onClick={e => handleFile(e, attachment, ds)}
+                      onClick={(e) => handleFile(e, attachment, ds)}
                     >
                       <i className="fa fa-file" aria-hidden="true" />
                       &nbsp;
@@ -116,13 +120,13 @@ function MolViewerListModal(props) {
         show={show}
         onHide={handleModalOpen}
       >
-        <Modal.Header onClick={e => e.stopPropagation()} closeButton>
+        <Modal.Header onClick={(e) => e.stopPropagation()} closeButton>
           <Modal.Title>
             {`Dataset: ${selected.dsName} / File: ${selected?.filename}`}
             {MolViewerSet.INFO}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body onClick={e => e.stopPropagation()}>
+        <Modal.Body onClick={(e) => e.stopPropagation()}>
           <Col md={2} sm={2} lg={2}>
             {list()}
           </Col>

@@ -23,6 +23,8 @@ module Entities
       expose :comment_count
       expose :dry_solvent
       expose! :created_by
+      expose! :gas_type
+      expose! :gas_phase_data
     end
 
     # Level 1 attributes
@@ -149,6 +151,14 @@ module Entities
 
     def comment_count
       0 # object.comments.count
+    end
+
+    def gas_type
+      object.reactions_samples.pick(:gas_type)
+    end
+
+    def gas_phase_data
+      object.reactions_samples.pick(:gas_phase_data)
     end
   end
 end

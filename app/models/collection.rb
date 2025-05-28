@@ -6,32 +6,39 @@
 #
 # Table name: collections
 #
-#  id                        :integer          not null, primary key
-#  user_id                   :integer          not null
-#  ancestry                  :string
-#  label                     :text             not null
-#  shared_by_id              :integer
-#  is_shared                 :boolean          default(FALSE)
-#  permission_level          :integer          default(0)
-#  sample_detail_level       :integer          default(10)
-#  reaction_detail_level     :integer          default(10)
-#  wellplate_detail_level    :integer          default(10)
-#  created_at                :datetime         not null
-#  updated_at                :datetime         not null
-#  position                  :integer
-#  screen_detail_level       :integer          default(10)
-#  is_locked                 :boolean          default(FALSE)
-#  deleted_at                :datetime
-#  is_synchronized           :boolean          default(FALSE), not null
-#  researchplan_detail_level :integer          default(10)
-#  element_detail_level      :integer          default(10)
-#  tabs_segment              :jsonb
+#  id                          :integer          not null, primary key
+#  user_id                     :integer          not null
+#  ancestry                    :string
+#  label                       :text             not null
+#  shared_by_id                :integer
+#  is_shared                   :boolean          default(FALSE)
+#  permission_level            :integer          default(0)
+#  sample_detail_level         :integer          default(10)
+#  reaction_detail_level       :integer          default(10)
+#  wellplate_detail_level      :integer          default(10)
+#  created_at                  :datetime         not null
+#  updated_at                  :datetime         not null
+#  position                    :integer
+#  screen_detail_level         :integer          default(10)
+#  is_locked                   :boolean          default(FALSE)
+#  deleted_at                  :datetime
+#  is_synchronized             :boolean          default(FALSE), not null
+#  researchplan_detail_level   :integer          default(10)
+#  element_detail_level        :integer          default(10)
+#  tabs_segment                :jsonb
+#  celllinesample_detail_level :integer          default(10)
+#  inventory_id                :bigint
 #
 # Indexes
 #
-#  index_collections_on_ancestry    (ancestry)
-#  index_collections_on_deleted_at  (deleted_at)
-#  index_collections_on_user_id     (user_id)
+#  index_collections_on_ancestry      (ancestry)
+#  index_collections_on_deleted_at    (deleted_at)
+#  index_collections_on_inventory_id  (inventory_id)
+#  index_collections_on_user_id       (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (inventory_id => inventories.id)
 #
 
 class Collection < ApplicationRecord
@@ -63,6 +70,8 @@ class Collection < ApplicationRecord
 
   has_one :metadata
 
+  delegate :prefix, :name, to: :inventory, allow_nil: true, prefix: :inventory
+
   # A collection is locked if it is not allowed to rename or rearrange it
   scope :unlocked, -> { where(is_locked: false) }
   scope :locked, -> { where(is_locked: true) }
@@ -84,6 +93,25 @@ class Collection < ApplicationRecord
   }
 
   default_scope { ordered }
+  SQL_INVENT_JOIN = 'LEFT JOIN ' \
+                    'inventories  ' \
+                    'ON collections.inventory_id = inventories.id'
+  SQL_INVENT_SELECT = 'inventory_id,' \
+                      'row_to_json(inventories) AS inventory,' \
+                      'JSON_AGG(collections) AS collections'
+  SQL_INVENT_FROM = '(select c.id,c."label",c.inventory_id,c.deleted_at,' \
+                    'c.is_locked,c.is_shared,c.user_id from collections c) collections'
+
+  # group by inventory_id for collections owned by user_id
+  # @param user_id [Integer] user id
+  # @return [ActiveRecord()] array of {inventory_id, inventory, collections: []}
+  scope :inventory_collections, lambda { |user_id|
+    unscoped.unlocked.unshared.where(user_id: user_id, deleted_at: nil)
+            .joins(SQL_INVENT_JOIN)
+            .select(SQL_INVENT_SELECT)
+            .from(SQL_INVENT_FROM)
+            .group(:inventory_id, :inventories)
+  }
 
   def self.public_collection_id
     ENV['PUBLIC_COLL_ID']&.to_i
@@ -148,7 +176,7 @@ class Collection < ApplicationRecord
 
   def self.filter_collection_attributes(user_id, collection_attributes)
     c_ids = collection_attributes.filter_map { |ca| (!ca['isNew'] && ca['id'].to_i) || nil }
-    filtered_cids = Collection.where(id: c_ids).filter_map do |c|
+    filtered_cids = Collection.where(id: c_ids, is_locked: false).filter_map do |c|
       if (c.user_id == user_id && !c.is_shared) ||
          (c.is_shared && (c.shared_by_id == user_id || (c.user_id == user_id && c.permission_level == 10)))
         c.id
@@ -176,15 +204,15 @@ class Collection < ApplicationRecord
     return unless collection_attributes && user_id.is_a?(Integer)
 
     filter_collection_attributes(user_id, collection_attributes).each do |attr|
-      parent = Collection.find(attr['id'])
+      parent = Collection.find_by(id: attr['id'])
+      next if parent.nil?
 
       # collection is a new root collection
       parent.update(parent: nil) unless grand_parent
 
       if attr['children']
         filter_collection_attributes(user_id, attr['children']).each do |attr_child|
-          child = Collection.find(attr_child['id'])
-          child.update(parent: parent)
+          Collection.find_by(id: attr_child['id'])&.update(parent: parent)
         end
       end
 
@@ -194,7 +222,7 @@ class Collection < ApplicationRecord
 
   def self.delete_set(user_id, deleted_ids)
     (
-      Collection.where(id: deleted_ids, user_id: user_id) |
+      Collection.where(id: deleted_ids, user_id: user_id, is_shared: false, is_locked: false) |
       Collection.where(id: deleted_ids, shared_by_id: user_id)
     ).each(&:destroy)
   end
@@ -223,30 +251,5 @@ class Collection < ApplicationRecord
     end
   end
 
-  def self.collections_for_user(user_id)
-    Collection.where(user_id: user_id, shared_by_id: nil)
-  end
-
-  def self.collections_group_by_inventory(collections, inventory)
-    {
-      collections: collections,
-      inventory: {
-        id: inventory&.id,
-        prefix: inventory&.prefix,
-        name: inventory&.name,
-        counter: inventory&.counter,
-      },
-    }
-  end
-
-  def self.inventory_collections(user_id)
-    collections = collections_for_user(user_id).reject { |c| c.label == 'All' }
-    grouped_collections = collections.group_by { |c| c.inventory&.id }
-    grouped_collections.values.map do |collections_group|
-      collections = collections_group.map { |c| { id: c.id, label: c.label } }
-      inventory = collections_group.first&.inventory
-      collections_group_by_inventory(collections, inventory)
-    end
-  end
 end
 # rubocop:enable Metrics/AbcSize, Rails/HasManyOrHasOneDependent,Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity

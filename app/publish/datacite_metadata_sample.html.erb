@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.4/metadata.xsd">
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 https://schema.datacite.org/meta/kernel-4/metadata.xsd">
   <identifier identifierType="DOI">https://dx.doi.org/<%= "#{dois[:sample][:DOI]}" %></identifier>
   <creators>
     <% pub_tag['creators'].each do |creator| %>
@@ -8,11 +8,16 @@
       <givenName><%= creator['givenName'] %></givenName>
       <familyName><%= creator['familyName'] %></familyName>
       <% if creator['ORCID'].present? %>
-      <nameIdentifier schemeURI="https://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
+        <nameIdentifier schemeURI="https://orcid.org/" nameIdentifierScheme="ORCID"><%=creator['ORCID']%></nameIdentifier>
       <% end %>
-      <% if (aff_ids = creator['affiliationIds']).present? then aff_ids.each do |aff_id| %>
-      <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
-      <% end %>
+      <% if (aff_ids = creator['affiliationIds']).present? %>
+        <% aff_ids.each do |aff_id| %>
+          <% if pub_tag['rors'].present? && pub_tag['rors'][aff_id.to_s].present? %>
+            <affiliation affiliationIdentifier="https://ror.org/<%= pub_tag['rors'][aff_id.to_s] %>" affiliationIdentifierScheme="ROR" schemeURI="https://ror.org"><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+          <% else %>
+            <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+          <% end %>
+        <% end %>
       <% end %>
     </creator>
     <% end %>
@@ -21,7 +26,8 @@
     <title xml:lang="en-US"><%= element.molecule_name&.name %></title>
     <title titleType="AlternativeTitle"><%= element.molecule.inchistring %></title>
   </titles>
-  <publisher>chemotion-repository</publisher>
+  <% config = publisher_config %>
+  <%= render_publisher(config) %>
   <publicationYear><%= pub.published_at&.strftime("%Y") || Time.now.strftime("%Y") %></publicationYear>
   <% if pub_tag['contributors'].present? %>
   <contributors>
@@ -32,9 +38,18 @@
       <% if pub_tag['contributors']['ORCID'].present? %>
       <nameIdentifier schemeURI="https://orcid.org/" nameIdentifierScheme="ORCID"><%=pub_tag['contributors']['ORCID']%></nameIdentifier>
       <% end %>
-      <% if pub_tag['contributors'] && pub_tag['contributors']['affiliations'].present? then pub_tag['contributors']['affiliations'].each do |aff| %>
-      <affiliation><%= aff %></affiliation>
-      <% end %>
+      <% if pub_tag['contributors'] && pub_tag['contributors']['affiliationIds'].present? && pub_tag['rors'].present? %>
+        <% pub_tag['contributors']['affiliationIds'].each do |aff_id| %>
+          <% if pub_tag['rors'].present? && pub_tag['rors'][aff_id.to_s].present? %>
+            <affiliation affiliationIdentifier="https://ror.org/<%= pub_tag['rors'][aff_id.to_s] %>" affiliationIdentifierScheme="ROR" schemeURI="https://ror.org"><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+          <% else %>
+            <affiliation><%=pub_tag['affiliations'][aff_id.to_s]%></affiliation>
+          <% end %>
+        <% end %>
+      <% elsif pub_tag['contributors'] && pub_tag['contributors']['affiliations'].present? %>
+        <% pub_tag['contributors']['affiliations'].each do |aff| %>
+          <affiliation><%= aff %></affiliation>
+        <% end %>
       <% end %>
     </contributor>
   </contributors>

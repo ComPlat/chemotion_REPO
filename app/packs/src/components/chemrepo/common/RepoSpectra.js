@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import { Tooltip, Button, OverlayTrigger } from 'react-bootstrap';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import SpectraActions from 'src/stores/alt/actions/SpectraActions';
-import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
 function RepoSpectraBtn(props) {
@@ -19,13 +18,12 @@ function RepoSpectraBtn(props) {
         level: 'warning',
         position: 'tc',
       });
+    } else if (isPublic) {
+      PublicActions.loadSpectra.defer(spc, element);
+      SpectraActions.ToggleModal.defer();
     } else {
-      SpectraActions.ToggleModal();
-      if (isPublic) {
-        PublicActions.loadSpectra.defer(spc);
-      } else {
-        SpectraActions.LoadSpectra.defer(spc);
-      }
+      SpectraActions.LoadSpectra.defer(spc, element);
+      SpectraActions.ToggleModal.defer();
     }
   };
   return (
@@ -49,12 +47,6 @@ function RepoSpectraBtn(props) {
           <i className="fa fa-area-chart" aria-hidden="true" />
         </Button>
       </OverlayTrigger>
-      <ViewSpectra
-        sample={element}
-        handleSampleChanged={() => {}}
-        handleSubmit={() => {}}
-        isPublic={isPublic}
-      />
     </span>
   );
 }

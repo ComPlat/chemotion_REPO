@@ -1,13 +1,15 @@
 class PagesController < ApplicationController
-  skip_before_action :authenticate_user!, only: [
-    :home, :about, :directive, :root_page
+  skip_before_action :authenticate_user!, only: %i[
+    home about chemspectra chemspectra_editor directive root_page
   ]
-  before_action :fetch_affiliations, only: [:affiliations, :update_affiliations]
-  before_action :build_affiliation, only: [:affiliations, :update_affiliations]
 
   def home; end
 
   def about; end
+
+  def chemspectra; end
+
+  def chemspectra_editor; end
 
   def docx; end
 
@@ -61,8 +63,7 @@ class PagesController < ApplicationController
   end
 
   def profiles
-    current_user.has_profile
-    @profile = current_user.profile
+    @profile = current_user&.profile
   end
 
   def update_profiles
@@ -79,127 +80,44 @@ class PagesController < ApplicationController
   end
 
   def update_orcid
-    @profile = current_user.profile
-    orcid = params['data_orcid']
-    result = Chemotion::OrcidService.record_person(orcid)
+    orcid = params[:data_orcid]
+    flash.clear
 
-    if result.nil?
-      flash.now['danger'] = 'ORCID iD does not exist! Please check.'
+    # Validate ORCID format first
+    unless Chemotion::OrcidService.valid_format?(orcid)
+      flash[:danger] = 'Invalid ORCID format. Please use the format: 0000-0000-0000-0000'
       return render 'settings'
-    elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
-          result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
-      data = @profile.data || {}
-      data['ORCID'] = orcid
-      if @profile.update(data: data)
-        flash['success'] = 'ORCID iD is successfully saved!'
-        redirect_to root_path
+    end
+    
+    # Fetch ORCID data from API
+    orcid_data = Chemotion::OrcidService.record_person(orcid)
+    
+    if orcid_data.nil?
+      flash[:danger] = 'Could not retrieve information for this ORCID iD. Please check the ID and try again.'
+      return render 'settings'
+    end
+    
+    # Check if names match
+    if Chemotion::OrcidService.names_match?(current_user, orcid_data)
+      # Update the user's providers hash with the ORCID
+      providers = current_user.providers || {}
+      providers['orcid'] = orcid
+      
+      if current_user.update(providers: providers)
+        flash[:success] = 'ORCID iD successfully validated and saved!'
+        return render 'settings'
       else
-        flash.now['danger'] = 'Not saved! Please check input fields.'
+        flash[:danger] = 'Failed to save ORCID iD. Please try again.'
         return render 'settings'
       end
     else
-      flash.now['danger'] = 'Name could not be matched to the name of this ORCID iD ' + orcid + ' (family_name: ' + result&.person&.family_name + ', given_name: ' + result&.person&.given_names + '). Please check.'
+      flash[:danger] = "Name mismatch! The ORCID record shows: #{orcid_data.person.given_names} #{orcid_data.person.family_name}. Your account has: #{current_user.first_name} #{current_user.last_name}."
       return render 'settings'
     end
   end
 
-  def affiliations
-  end
-
-  def create_affiliation
-    @affiliation = Affiliation.find_or_create_by(sliced_affiliation_params)
-    current_user.user_affiliations.build(
-      from: affiliation_params[:from_month], affiliation_id: @affiliation.id
-    )
-    if current_user.save!
-      flash['success'] = 'New affiliation added!'
-      redirect_to pages_affiliations_path
-    else
-      flash.now['danger'] = 'Not saved! Please check input fields.'
-      render 'affiliations'
-    end
-    # redirect_to pages_affiliations_path
-  end
-
-  def update_affiliations
-    affiliations_params[:affiliations].presence&.each do |affiliation|
-      u_affiliation = @affiliations.find_by(id: affiliation[:id])
-      next unless u_affiliation
-
-      if affiliation.delete(:_destroy).blank?
-        unless u_affiliation.update(affiliation)
-          messages = u_affiliation.errors.messages[:to]
-          flash.now['danger'] = messages && messages[0]
-          return render 'affiliations'
-        end
-      else
-        u_affiliation.destroy!
-      end
-    end
-    redirect_to pages_affiliations_path
-  end
-
-  def update_orcid
-    @profile = current_user.profile
-    orcid = params['data_orcid']
-    result = Chemotion::OrcidService.record_person(orcid)
-
-    if result.nil?
-      flash.now['danger'] = 'ORCID iD does not exist! Please check.'
-      return render 'settings'
-    elsif result&.person&.given_names&.casecmp(current_user.first_name)&.zero? &&
-          result&.person&.family_name&.casecmp(current_user.last_name)&.zero?
-      data = @profile.data || {}
-      data['ORCID'] = orcid
-      if @profile.update(data: data)
-        flash['success'] = 'ORCID iD is successfully saved!'
-        redirect_to root_path
-      else
-        flash.now['danger'] = 'Not saved! Please check input fields.'
-        return render 'settings'
-      end
-    else
-      flash.now['danger'] = 'Name could not be matched to the name of this ORCID iD ' + orcid + ' (family_name: ' + result.person.family_name + ', given_name: ' + result.person.given_names + '). Please check.'
-      return render 'settings'
-    end
-  end
 
   private
-
-  def build_affiliation
-    @new_aff = current_user.affiliations.build
-    # TODO: process this in FE
-    # @new_aff.organization = Swot::school_name(current_user.email)
-  end
-
-  def fetch_affiliations
-    @affiliations = current_user.user_affiliations.includes(:affiliation).order(
-      to: :desc, from: :desc, created_at: :desc
-    )
-  end
-
-  def affiliation_params
-    params.require(:affiliation).permit(
-      :id, :_destroy,
-      :country, :organization, :department,
-      :from, :to, :from_month, :to_month
-    )
-  end
-
-  def sliced_affiliation_params
-     affiliation_params.slice(:country, :organization, :department)
-  end
-
-  def affiliations_params
-    params.permit(
-      :utf8, :_method, :authenticity_token, :commit,
-      affiliations: [
-        :id, :_destroy,
-        # :country, :organization, :department,
-        :from, :to, :from_month, :to_month
-      ]
-    )
-  end
 
   def profile_params
     params.require(:profile).permit(:show_external_name, :show_sample_name, :show_sample_short_label, :curation, :data_orcid)

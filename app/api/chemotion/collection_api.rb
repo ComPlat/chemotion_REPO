@@ -113,46 +113,44 @@ module Chemotion
 
       desc "Return all unlocked unshared serialized collection roots of current user"
       get :roots do
-        collects = Collection.where(user_id: current_user.id).unlocked.unshared.order('id')
-        .select(
+        collects = Collection.includes(:inventory).where(user_id: current_user.id).unlocked.unshared
+                             .order('id').select(
           <<~SQL
-            id, label, ancestry, is_synchronized, permission_level, tabs_segment, position, collection_shared_names(user_id, id) as shared_names,
-            reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, element_detail_level, is_locked,is_shared,
-            case when (ancestry is null) then cast(id as text) else concat(ancestry, chr(47), id) end as ancestry_root
+            collections.id, label, ancestry, is_synchronized, permission_level, tabs_segment, position, collection_shared_names(user_id, collections.id) as shared_names,
+            reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, element_detail_level, is_locked, is_shared, inventory_id,
+            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, chr(47), collections.id) end as ancestry_root
           SQL
-        )
-        .as_json
-        build_tree.call(collects,false)
+        ).as_json(methods: %i[inventory_name inventory_prefix])
+        build_tree.call(collects, false)
       end
 
       desc "Return all shared serialized collections"
       get :shared_roots do
-        collects = Collection.shared(current_user.id).order("id")
-        .select(
+        collects = Collection.includes(:inventory).shared(current_user.id)
+                             .order('id').select(
           <<~SQL
-            id, user_id, label,ancestry, permission_level, user_as_json(collections.user_id) as shared_to,
-            is_shared, is_locked, is_synchronized, false as is_remoted, tabs_segment,
+            collections.id, user_id, label, ancestry, permission_level, user_as_json(user_id) as shared_to,
+            is_shared, is_locked, is_synchronized, false as is_remoted, tabs_segment, inventory_id,
             reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, element_detail_level,
-            case when (ancestry is null) then cast(id as text) else concat(ancestry, chr(47), id) end as ancestry_root
+            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, chr(47), collections.id) end as ancestry_root
           SQL
-        )
-        .as_json
-        build_tree.call(collects,true)
+        ).as_json(methods: %i[inventory_name inventory_prefix])
+        build_tree.call(collects, true)
       end
 
       desc "Return all remote serialized collections"
       get :remote_roots do
-        collects = Collection.remote(current_user.id).where([" user_id in (select user_ids(?))",current_user.id]).order("id")
-        .select(
+        collects = Collection.includes(:inventory).remote(current_user.id)
+                             .where(user_id: current_user.id).order(:id).select(
           <<~SQL
-            id, user_id, label, ancestry, permission_level, user_as_json(collections.shared_by_id) as shared_by, tabs_segment,
-            case when (ancestry is null) then cast(id as text) else concat(ancestry, chr(47), id) end as ancestry_root,
-            reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, is_locked, is_shared,
-            shared_user_as_json(collections.user_id, #{current_user.id}) as shared_to,position
+            collections.id, user_id, label, ancestry, permission_level, user_as_json(shared_by_id) AS shared_by, tabs_segment,
+            CASE WHEN ancestry IS NULL THEN CAST(collections.id AS TEXT) ELSE CONCAT(ancestry, '/', collections.id) END AS ancestry_root,
+            reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, is_locked, is_shared, inventory_id,
+            shared_user_as_json(user_id, #{current_user.id}) AS shared_to,
+            position
           SQL
-        )
-        .as_json
-        build_tree.call(collects,true)
+        ).as_json(methods: %i[inventory_name inventory_prefix])
+        build_tree.call(collects, true)
       end
 
       # TODO: check if this endpoint is really obsolete
@@ -329,33 +327,26 @@ module Chemotion
             error!('401 Cannot remove elements from  \'All\' root collection', 401)
           end
           API::ELEMENTS.each do |element|
-            ui_state = params[:ui_state][element]
-            next unless ui_state
+            ui_state = params[:ui_state].delete(element)
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
+            ids = API::ELEMENT_CLASS[element].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
 
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
-
-            classes = create_classes_of_element(element)
-            ids = classes[0].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
-            classes[1].move_to_collection(ids, from_collection.id, to_collection_id)
-            classes[1].remove_in_collection(
+            collections_element_class = API::ELEMENT_CLASS[element].collections_element_class
+            collections_element_class.move_to_collection(ids, from_collection.id, to_collection_id)
+            collections_element_class.remove_in_collection(
               ids,
               Collection.get_all_collection_for_user(current_user.id)[:id]) if params[:is_sync_to_me]
           end
 
-          klasses = Labimotion::ElementKlass.find_each do |klass|
+          Labimotion::ElementKlass.where(name: params[:ui_state].keys).select(:name, :id).each do |klass|
             ui_state = params[:ui_state][klass.name]
-            next unless ui_state
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
+            ids = klass.elements.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
 
-            ids = Labimotion::Element.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
             Labimotion::CollectionsElement.move_to_collection(ids, from_collection.id, to_collection_id, klass.name)
             Labimotion::CollectionsElement.remove_in_collection(ids, Collection.get_all_collection_for_user(current_user.id)[:id]) if params[:is_sync_to_me]
           end
@@ -381,29 +372,24 @@ module Chemotion
           error!('401 Unauthorized assignment to collection', 401) unless to_collection_id
 
           API::ELEMENTS.each do |element|
-            ui_state = params[:ui_state][element]
-            next unless ui_state
+            ui_state = params[:ui_state].delete(element)
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
+            ids = API::ELEMENT_CLASS[element].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
 
-            classes = create_classes_of_element(element)
-            ids = classes[0].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
-            classes[1].create_in_collection(ids, to_collection_id)
+            collections_element_class = API::ELEMENT_CLASS[element].collections_element_class
+            collections_element_class.create_in_collection(ids, to_collection_id)
           end
 
-          klasses = Labimotion::ElementKlass.find_each do |klass|
+          Labimotion::ElementKlass.where(name: params[:ui_state].keys).select(:name, :id).each do |klass|
             ui_state = params[:ui_state][klass.name]
-            next unless ui_state
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
-            ids = Labimotion::Element.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
-            Labimotion::CollectionsElement.create_in_collection(ids, to_collection_id, klass.name)
+            ids = klass.elements.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
+
+            Labimotion::CollectionsElement.create_in_collection(ids, to_collection_id)
           end
 
           status 204
@@ -425,31 +411,23 @@ module Chemotion
           end
 
           API::ELEMENTS.each do |element|
-            ui_state = params[:ui_state][element]
-            next unless ui_state
+            ui_state = params[:ui_state].delete(element)
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
-            ui_state[:collection_ids] = from_collection.id
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
+            ids = API::ELEMENT_CLASS[element].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
 
-            classes = create_classes_of_element(element)
-            ids = classes[0].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
-            classes[1].remove_in_collection(ids, from_collection.id)
+            collections_element_class = API::ELEMENT_CLASS[element].collections_element_class
+            collections_element_class.remove_in_collection(ids, from_collection.id)
           end
 
-          klasses = Labimotion::ElementKlass.find_each do |klass|
+          Labimotion::ElementKlass.where(name: params[:ui_state].keys).select(:name, :id).each do |klass|
             ui_state = params[:ui_state][klass.name]
-            next unless ui_state
+            next if ui_state.blank?
 
-            ui_state[:checkedAll] = ui_state[:checkedAll] || ui_state[:all]
-            ui_state[:checkedIds] = ui_state[:checkedIds].presence || ui_state[:included_ids]
-            ui_state[:uncheckedIds] = ui_state[:uncheckedIds].presence || ui_state[:excluded_ids]
-            ui_state[:collection_ids] = from_collection.id
-            next unless ui_state[:checkedAll] || ui_state[:checkedIds].present?
+            ids = klass.elements.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
+            next if ids.empty?
 
-            ids = Labimotion::Element.by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
             Labimotion::CollectionsElement.remove_in_collection(ids, from_collection.id)
           end
 

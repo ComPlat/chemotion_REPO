@@ -49,7 +49,11 @@ const collectionShow = (e) => {
     UIActions.uncheckAllElements({ type: 'reaction', range: 'all' });
     UIActions.uncheckAllElements({ type: 'wellplate', range: 'all' });
     UIActions.uncheckAllElements({ type: 'screen', range: 'all' });
-    elementNames(false).forEach((klass) => { UIActions.uncheckAllElements({ type: klass, range: 'all' }); });
+    elementNames(false).then((klassArray) => {
+      klassArray.forEach((klass) => {
+        UIActions.uncheckAllElements({ type: klass, range: 'all' });
+      });
+    });
     // }
   });
 };
@@ -94,7 +98,11 @@ const scollectionShow = (e) => {
     UIActions.uncheckAllElements({ type: 'reaction', range: 'all' });
     UIActions.uncheckAllElements({ type: 'wellplate', range: 'all' });
     UIActions.uncheckAllElements({ type: 'screen', range: 'all' });
-    elementNames(false).forEach((klass) => { UIActions.uncheckAllElements({ type: klass, range: 'all' }); });
+    elementNames(false).then((klassArray) => {
+      klassArray.forEach((klass) => {
+        UIActions.uncheckAllElements({ type: klass, range: 'all' });
+      });
+    });
 
     // }
   });

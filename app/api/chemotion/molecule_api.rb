@@ -41,7 +41,7 @@ module Chemotion
             molfile = babel_info[:molfile] if babel_info
             begin
               rw_mol = RDKitChem::RWMol.mol_from_smiles(smiles)
-              rd_mol = rw_mol.mol_to_mol_block  unless rw_mol.nil?
+              rd_mol = rw_mol.mol_to_mol_block unless rw_mol.nil?
             rescue StandardError => e
               Rails.logger.error ["with smiles: #{smiles}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
               rd_mol = rw_mol.mol_to_mol_block(true, -1, false) unless rw_mol.nil?
@@ -167,6 +167,19 @@ module Chemotion
           molecule&.attributes&.merge(temp_svg: svg_name, ob_log: ob)
 
           present molecule, with: Entities::MoleculeEntity
+        end
+      end
+
+      namespace :molecular_weight do
+        desc 'Calculate the molecular mass from the molecular_formula for decoupled sample'
+        params do
+          requires :molecular_formula, type: String, desc: 'Molecular formula of decoupled sample'
+        end
+        get do
+          formula = params[:molecular_formula]
+          total_mass = Chemotion::Calculations.mw_from_formula(formula)
+
+          total_mass
         end
       end
 

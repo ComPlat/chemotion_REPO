@@ -171,7 +171,7 @@ describe Chemotion::CollectionAPI do
         end
         let!(:c6) do
           create(
-            :collection, user: g1, is_shared: true,
+            :collection, user: user, is_shared: true,
                          shared_by_id: p2.id, is_locked: false,
                          ancestry: root_g.id.to_s
           )
@@ -321,6 +321,9 @@ describe Chemotion::CollectionAPI do
             }
           end
 
+          before { Delayed::Worker.delay_jobs = false }
+          after  { Delayed::Worker.delay_jobs = true }
+
           context 'when try to move two of three cell line elements into empty collection' do
             let(:target_collection_id) { c_target.id }
             let(:cell_line_ids) { [cell_line_1.id, cell_line_2.id] }
@@ -403,6 +406,9 @@ describe Chemotion::CollectionAPI do
               },
             }
           end
+
+          before { Delayed::Worker.delay_jobs = false }
+          after  { Delayed::Worker.delay_jobs = true }
 
           context 'when assigning cellline to new collection' do
             before do

@@ -1,7 +1,24 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: inventories
+#
+#  id         :bigint           not null, primary key
+#  prefix     :string           not null
+#  name       :string           not null
+#  counter    :integer          default(0)
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_inventories_on_prefix  (prefix) UNIQUE
+#
 class Inventory < ApplicationRecord
   has_many :collections, dependent: :nullify
+
+  scope :by_collection_id, ->(collection_id) { joins(:collections).where(collections: { id: collection_id }) }
 
   def self.compare_associations(collection_ids)
     inventory_collection_ids = []
@@ -50,16 +67,24 @@ class Inventory < ApplicationRecord
     end
   end
 
-  def increment_inventory_label_counter(collection_ids)
-    inventory = Collection.find_by(id: collection_ids)&.inventory
-    return if inventory.nil? || inventory['counter'].nil?
-
-    inventory['counter'] = inventory['counter'].succ
-    inventory.save!
-    inventory
+  def update_incremented_counter
+    update(counter: counter + 1)
   end
 
   def self.fetch_inventories(user_id)
     joins(collections: :user).where(users: { id: user_id })
+  end
+
+  # compare the counter of a given label with the current counter+1
+  # @param [String] label
+  # @return [Boolean]
+  def match_inventory_counter(inventory_label)
+    # match the integer part of the label at the end of the string after the last '-'
+    # with the current counter + 1
+    inventory_label.split('-').last.to_i == counter + 1
+  end
+
+  def label
+    "#{prefix}-#{counter}"
   end
 end

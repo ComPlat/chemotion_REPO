@@ -3,49 +3,48 @@ import React from 'react';
 import { Nav, NavItem } from 'react-bootstrap';
 
 function NavFooter() {
+  const navItems = [
+    { key: 'home', label: 'Home', path: '/home', eventKey: '21' },
+    {
+      key: 'publications',
+      label: 'Publications',
+      path: '/home/publications',
+      eventKey: '22',
+    },
+    { key: 'about', label: 'About', path: '/home/about', eventKey: '23' },
+    {
+      key: 'directive',
+      label: 'Directive',
+      path: '/home/directive',
+      eventKey: '24',
+    },
+    {
+      key: 'preservation',
+      label: 'Preservation Strategy',
+      path: '/home/preservation',
+      eventKey: '25',
+    },
+    { key: 'imprint', label: 'Imprint', path: '/home/imprint', eventKey: '26' },
+    { key: 'privacy', label: 'Privacy', path: '/home/privacy', eventKey: '27' },
+  ];
+
+  const handleNavigation = path => {
+    Aviator.navigate(path);
+  };
+
   return (
-    <Nav justified>
-      <NavItem
-        eventKey="21"
-        role="button"
-        tabIndex={0}
-        onClick={() => Aviator.navigate('/home')}
-      >
-        Home
-      </NavItem>
-      <NavItem
-        eventKey="22"
-        role="button"
-        tabIndex={-1}
-        onClick={() => Aviator.navigate('/home/publications')}
-      >
-        Publications
-      </NavItem>
-      <NavItem
-        eventKey="23"
-        title="Item"
-        role="button"
-        tabIndex={-1}
-        onClick={() => Aviator.navigate('/home/about')}
-      >
-        About
-      </NavItem>
-      <NavItem
-        eventKey="24"
-        role="button"
-        tabIndex={-1}
-        onClick={() => Aviator.navigate('/home/directive')}
-      >
-        Directive
-      </NavItem>
-      <NavItem
-        eventKey="25"
-        role="button"
-        tabIndex={-1}
-        onClick={() => Aviator.navigate('/home/preservation')}
-      >
-        Preservation Strategy
-      </NavItem>
+    <Nav justified style={{ margin: 0 }}>
+      {navItems.map(item => (
+        <NavItem
+          key={item.key}
+          eventKey={item.eventKey}
+          role="button"
+          tabIndex={0}
+          onClick={() => handleNavigation(item.path)}
+        >
+          {item.label}
+        </NavItem>
+      ))}
     </Nav>
   );
 }

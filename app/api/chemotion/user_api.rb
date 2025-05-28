@@ -190,7 +190,7 @@ module Chemotion
 
         put ':id' do
           if @rm_current_user_id
-            @group.users.delete(User.where(id: rm_user_id))
+            @group.users.delete(User.where(id: @rm_current_user_id))
             User.gen_matrix([@rm_current_user_id])
             present @group, with: Entities::GroupEntity, root: 'group'
           elsif params[:destroy_group]
@@ -224,9 +224,9 @@ module Chemotion
 
       get :novnc do
         devices = if params[:id] == '0'
-                    Device.by_user_ids(user_ids).novnc.includes(:profile)
+                    Device.by_user_ids(user_ids).where.not(novnc_target: nil).group('devices.id').order('devices.name')
                   else
-                    Device.by_user_ids(user_ids).novnc.where(id: params[:id]).includes(:profile)
+                    Device.by_user_ids(user_ids).where(id: params[:id]).group('devices.id')
                   end
         present devices, with: Entities::DeviceNovncEntity, root: 'devices'
       end

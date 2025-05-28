@@ -75,7 +75,7 @@ const DurationDefault = {
 };
 
 export const convertDuration = (value, unit, newUnit) => moment.duration(Number.parseFloat(value), LegMomentUnit[unit])
-  .as(MomentUnit[newUnit]);
+.as(MomentUnit[newUnit]);
 
 const durationDiff = (startAt, stopAt, precise = false) => {
   if (startAt && stopAt) {
@@ -131,7 +131,9 @@ export default class Reaction extends Element {
       type: 'reaction',
       can_update: true,
       can_copy: false,
-      variations: []
+      variations: [],
+      vessel_size: { amount: null, unit: 'ml' },
+      gaseous: false
     })
 
     reaction.short_label = this.buildReactionShortLabel()
@@ -204,7 +206,9 @@ export default class Reaction extends Element {
       timestamp_start: this.timestamp_start,
       timestamp_stop: this.timestamp_stop,
       segments: this.segments.map(s => s.serialize()),
-      variations: this.variations
+      variations: this.variations,
+      vessel_size: this.vessel_size,
+      gaseous: this.gaseous
     });
   }
 
@@ -214,30 +218,71 @@ export default class Reaction extends Element {
     [
       {
         "id": <number>,
+        "notes": <string>,
         "properties": {
-            "temperature": {"value": <number>, "unit": <string>},
-            "duration": {"value": <number>, "unit": <string>}
+          "temperature": {"value": <number>, "unit": <string>},
+          "duration": {"value": <number>, "unit": <string>}
         },
         "analyses": [<id>, <id>, ...],
         "startingMaterials": {
-            <material_id: {"value": <number>, "unit": <string>, "aux": {...}},
-            <material_id>: {"value": <number>, "unit": <string>, "aux": {...}},
-            ...
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          ...
         },
         "reactants": {
-            <material_id: {"value": <number>, "unit": <string>, "aux": {...}},
-            <material_id>: {"value": <number>, "unit": <string>, "aux": {...}},
-            ...
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          ...
         },
         "products": {
-            <material_id: {"value": <number>, "unit": <string>, "aux": {...}},
-            <material_id>: {"value": <number>, "unit": <string>, "aux": {...}},
-            ...
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          ...
         },
         "solvents": {
-            <material_id: {"value": <number>, "unit": <string>, "aux": {...}},
-            <material_id>: {"value": <number>, "unit": <string>, "aux": {...}},
-            ...
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          <material_id>: {
+            "mass": {"value": <number>, "unit": <string>},
+            "amount": {"value": <number>, "unit": <string>},
+            "volume": {"value": <number>, "unit": <string>},
+            "aux": {...}
+          },
+          ...
         },
       },
       {
@@ -250,6 +295,9 @@ export default class Reaction extends Element {
     Units are to be treated as immutable. Units and corresponding values
     are changed (not mutated in the present data-structure!) only for display or export
     (i.e., at the boundaries of the application).
+    This is why there's a `standard` unit and a `display` unit.
+    The `standard` (available as `unit` attribute of each entry) is immutable,
+    whereas the value that corresponds to `display` is computed ad hoc at the boundaries.
     See https://softwareengineering.stackexchange.com/a/391480.
     */
     if (!Array.isArray(variations)) {
@@ -311,6 +359,9 @@ export default class Reaction extends Element {
         memValue
       };
       this._duration = `${dispValue} ${u}`;
+    }
+    else {
+      this._durationDisplay = DurationDefault;
     }
   }
 
@@ -466,6 +517,7 @@ export default class Reaction extends Element {
   set publication(publication) {
     this._publication = publication
   }
+
   get samples() {
     return [
       ...this.starting_materials || [],
@@ -499,8 +551,6 @@ export default class Reaction extends Element {
     copy.can_copy = false;
     return copy;
   }
-
-
   static copyFromReactionAndCollectionId(reaction, collection_id) {
     const target = Segment.buildCopy(reaction.segments);
     const params = {
@@ -597,6 +647,7 @@ export default class Reaction extends Element {
       Object.assign({}, m, { position: idx })
     ));
   }
+
 
   userLabels() {
     return this.user_labels;
@@ -787,7 +838,7 @@ export default class Reaction extends Element {
       }
     }
     else
-      return `images/wild_card/no_image_180.svg`
+    return `images/wild_card/no_image_180.svg`
   }
 
   SMGroupValid() {
@@ -833,6 +884,8 @@ export default class Reaction extends Element {
         if (index >= 0) {
           const mat = new Sample(material);
           mat.reference = group[index].reference;
+          mat.gas_type = group[index].gas_type;
+          mat.gas_phase_data = group[index].gas_phase_data;
           mat.updateChecksum();
           group[index] = mat;
           break;
@@ -858,8 +911,7 @@ export default class Reaction extends Element {
                 m.coefficient = refreshCoefficient.coefficient;
               }
             }
-
-            if (g === '_products') {
+            if (g === '_products' && m.gas_type !== 'gas') {
               const stoichiometryCoeff = (m.coefficient || 1.0) / (refMat?.coefficient || 1.0);
               m.equivalent = m.amount_mol / refMat.amount_mol / stoichiometryCoeff;
             } else {
@@ -879,8 +931,8 @@ export default class Reaction extends Element {
   }
 
   get research_plans() {
-      return this._research_plans || {};
-    }
+    return this._research_plans || {};
+  }
 
   set literatures(literatures) {
     this._literatures = literatures;
@@ -896,73 +948,138 @@ export default class Reaction extends Element {
       ...this.reactants,
       ...this.products,
       ...this.solvents];
-    materials.map(m => totalVolume += m.amount_l);
-    return totalVolume;
-  }
+      materials.map(m => totalVolume += m.amount_l);
+      return totalVolume;
+    }
 
-  get purificationSolventVolume() {
-    let purificationSolventVolume = 0.0;
-    const materials = [...this.purification_solvents];
-    materials.map(m => purificationSolventVolume += m.amount_l);
-    return purificationSolventVolume;
-  }
+    get purificationSolventVolume() {
+      let purificationSolventVolume = 0.0;
+      const materials = [...this.purification_solvents];
+      materials.map(m => purificationSolventVolume += m.amount_l);
+      return purificationSolventVolume;
+    }
 
-  get solventVolume() {
-    let solventVolume = 0.0;
-    const materials = [...this.solvents];
-    materials.map(m => solventVolume += m.amount_l);
-    return solventVolume;
-  }
+    get solventVolume() {
+      let solventVolume = 0.0;
+      const materials = [...this.solvents];
+      materials.map(m => solventVolume += m.amount_l);
+      return solventVolume;
+    }
 
-  // overwrite isPendingToSave method in models/Element.js
-  get isPendingToSave() {
-    return !isEmpty(this) && (this.isNew || this.changed);
-  }
+    // overwrite isPendingToSave method in models/Element.js
+    get isPendingToSave() {
+      return !isEmpty(this) && (this.isNew || this.changed);
+    }
 
-  extractNameFromOri(origin) {
-    const ori = origin || this.origin;
-    const oriSLabel = ori && ori.short_label;
-    const oriSLNum = oriSLabel ? oriSLabel.split('-').slice(-1)[0] : 'xx';
-    const name = `According to General Procedure ${oriSLNum}`;
-    return name;
-  }
+    extractNameFromOri(origin) {
+      const ori = origin || this.origin;
+      const oriSLabel = ori && ori.short_label;
+      const oriSLNum = oriSLabel ? oriSLabel.split('-').slice(-1)[0] : 'xx';
+      const name = `According to General Procedure ${oriSLNum}`;
+      return name;
+    }
 
-  nameFromRole(role) {
-    let name = this.name;
-    const sLabel = this.short_label;
-    const sLNum = sLabel ? sLabel.split('-').slice(-1)[0] : 'xx';
+    nameFromRole(role) {
+      let name = this.name;
+      const sLabel = this.short_label;
+      const sLNum = sLabel ? sLabel.split('-').slice(-1)[0] : 'xx';
 
-    switch (role) {
-      case 'gp':
+      switch (role) {
+        case 'gp':
         name = `General Procedure ${sLNum}`;
         break;
-      case 'parts':
+        case 'parts':
         name = this.extractNameFromOri();
         break;
-      case 'single':
+        case 'single':
         name = `Single ${sLNum}`;
         break;
-      default:
+        default:
         break;
+      }
+      return name;
     }
-    return name;
+
+    set segments(segments) {
+      this._segments = (segments && segments.map(s => new Segment(s))) || [];
+    }
+
+    get segments() {
+      return this._segments || [];
+    }
+
+    updateMaxAmountOfProducts() {
+      const startingMaterialsList = this.starting_materials.filter(sample => sample.reference);
+      if (startingMaterialsList.length == 0) { return; }
+      const referenceSample = startingMaterialsList[0];
+
+      this.products.forEach(product => product.calculateMaxAmount(referenceSample));
+
+    }
+
+  findReactionVesselSizeCatalystMaterialValues() {
+    const catalyst = this.findCatalystMaterial();
+    const result = {
+      catalystMoles: null,
+      vesselSize: null
+    };
+    result.catalystMoles = catalyst ? this.calculateCatalystMoles(catalyst) : null;
+    if (this.vessel_size) {
+      if (this.vessel_size.unit === 'l') {
+        result.vesselSize = this.vessel_size.amount;
+      } else {
+        result.vesselSize = this.vessel_size.amount * 0.001;
+      }
+    }
+    return result;
   }
 
-  set segments(segments) {
-    this._segments = (segments && segments.map(s => new Segment(s))) || [];
+  findCatalystMaterial() {
+    const materials = [...this.starting_materials, ...this.reactants];
+    const catalystMaterial = materials.find((material) => (material.gas_type === 'catalyst'));
+    return catalystMaterial;
   }
 
-  get segments() {
-    return this._segments || [];
+  calculateCatalystMoles(material) {
+    let moles;
+    let amount;
+    let unit;
+    const {
+      purity,
+      target_amount_unit,
+      target_amount_value,
+      real_amount_unit,
+      real_amount_value,
+      density
+    } = material;
+    if (real_amount_value && real_amount_unit) {
+      amount = real_amount_value;
+      unit = real_amount_unit;
+    } else {
+      amount = target_amount_value;
+      unit = target_amount_unit;
+    }
+    const molecularWeight = material.molecule.molecular_weight;
+    if (unit === 'mol') {
+      moles = amount;
+    } else if (unit === 'l') {
+      const amountInGram = amount * density * 1000;
+      moles = (amountInGram * purity) / molecularWeight;
+    } else if (unit === 'g') {
+      moles = (amount * purity) / molecularWeight;
+    }
+    return moles;
   }
 
-  updateMaxAmountOfProducts() {
-    const startingMaterialsList = this.starting_materials.filter(sample => sample.reference);
-    if (startingMaterialsList.length == 0) { return; }
-    const referenceSample = startingMaterialsList[0];
+  isFeedstockMaterialPresent() {
+    const materials = [...this.starting_materials, ...this.reactants];
+    return materials.some((material) => material.gas_type === 'feedstock');
+  }
 
-    this.products.forEach(product => product.calculateMaxAmount(referenceSample));
-
+  findFeedstockMaterial() {
+    const materials = [...this.starting_materials, ...this.reactants];
+    const feedstockMaterial = materials.find((material) => (material.gas_type === 'feedstock'));
+    return feedstockMaterial;
   }
 
   get notPublishable() {

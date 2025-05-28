@@ -76,12 +76,14 @@ import CommentActions from 'src/stores/alt/actions/CommentActions';
 import CommentModal from 'src/components/common/CommentModal';
 import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
 import { commentActivation } from 'src/utilities/CommentHelper';
+import PrivateNoteElement from 'src/apps/mydb/elements/details/PrivateNoteElement';
+import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
+import MolViewerSet from 'src/components/viewer/MolViewerSet';
+
 
 // For REPO
 import RepositoryActions from 'src/stores/alt/repo/actions/RepositoryActions';
 import PublishSampleModal from 'src/components/chemrepo/PublishSampleModal';
-import MolViewerBtn from 'src/components/viewer/MolViewerBtn';
-import MolViewerSet from 'src/components/viewer/MolViewerSet';
 // import RepoXvialButton from 'src/components/chemrepo/common/RepoXvialButton';
 import {
   PublishedTag,
@@ -182,6 +184,7 @@ export default class SampleDetails extends React.Component {
     this.handleSegmentsChange = this.handleSegmentsChange.bind(this);
     this.decoupleChanged = this.decoupleChanged.bind(this);
     this.handleFastInput = this.handleFastInput.bind(this);
+    this.matchSelectedCollection = this.matchSelectedCollection.bind(this);
 
     this.handleStructureEditorSave = this.handleStructureEditorSave.bind(this);
     this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
@@ -457,8 +460,12 @@ export default class SampleDetails extends React.Component {
   }
 
   handleSubmit(closeView = false) {
+    const { currentCollection } = UIStore.getState();
     LoadingActions.start.defer();
     const { sample, validCas } = this.state;
+    if (this.matchSelectedCollection(currentCollection) && sample.xref.inventory_label !== undefined) {
+      sample.collection_id = currentCollection.id;
+    }
     this.checkMolfileChange();
     if (!validCas) {
       sample.xref = { ...sample.xref, cas: '' };
@@ -560,6 +567,8 @@ export default class SampleDetails extends React.Component {
     }
   }
 
+  /* eslint-disable camelcase */
+
 
   sampleFooter() {
     const { sample, startExport } = this.state;
@@ -619,6 +628,16 @@ export default class SampleDetails extends React.Component {
   editChemical = (boolean) => {
     this.setState({ isChemicalEdited: boolean });
   };
+
+  matchSelectedCollection(currentCollection) {
+    const { sample } = this.props;
+    if (sample.isNew) {
+      return true;
+    }
+    const collection_labels = sample.tag?.taggable_data?.collection_labels || [];
+    const result = collection_labels.filter((object) => object.id === currentCollection.id).length > 0;
+    return result;
+  }
 
   sampleInventoryTab(ind) {
     const sample = this.state.sample || {};
@@ -959,9 +978,14 @@ export default class SampleDetails extends React.Component {
             decoupleMolecule={this.decoupleMolecule}
           />
         </ListGroupItem>
-        <EditUserLabels element={sample} fnCb={this.handleSampleChanged} />
-        {this.elementalPropertiesItem(sample)}
         {this.chemicalIdentifiersItem(sample)}
+        <div style={{ marginTop: '10px' }}>
+          <EditUserLabels element={sample} fnCb={this.handleSampleChanged} />
+        </div>
+        {this.elementalPropertiesItem(sample)}
+        <div style={{ marginTop: '10px' }}>
+          <PrivateNoteElement element={sample} disabled={!sample.can_update} />
+        </div>
       </Tab>
     );
   }
@@ -1647,6 +1671,7 @@ export default class SampleDetails extends React.Component {
     sample.decoupled = e.target.checked;
     if (!sample.decoupled) {
       sample.sum_formula = '';
+      sample.molecular_mass = null;
     } else {
       if (sample.sum_formula?.trim() === '') sample.sum_formula = 'undefined structure';
       if (sample.residues && sample.residues[0] && sample.residues[0].custom_info) {

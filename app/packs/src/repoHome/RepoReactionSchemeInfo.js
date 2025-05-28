@@ -1,18 +1,14 @@
 /* eslint-disable react/forbid-prop-types */
 import React from 'react';
-import {
-  Panel,
-  Row,
-  Col
-} from 'react-bootstrap';
+import { Panel, Row, Col } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import {
   CommentBtn,
-  ReactionTable,
   ReactionRinChiKey,
-  resizableSvg
+  zoomSvg,
 } from 'src/repoHome/RepoCommon';
 import Quill2Viewer from 'src/components/Quill2Viewer';
+import ReactionTable from 'src/repoHome/RepoReactionTable';
 
 const RepoReactionSchemeInfo = (props) => {
   const content = props.reaction.description;
@@ -25,7 +21,7 @@ const RepoReactionSchemeInfo = (props) => {
       <Panel.Body style={{ paddingBottom: '1px' }}>
         <Row>
           <Col sm={12} md={12} lg={12}>
-            {resizableSvg(props.svgPath)}
+            {zoomSvg(props.svgPath)}
           </Col>
         </Row>
         <Row>
@@ -36,7 +32,6 @@ const RepoReactionSchemeInfo = (props) => {
               toggle={() => props.onToggle('Scheme')}
               show={props.showScheme}
               isPublic
-              bodyAttrs={props.bodyAttrs}
             />
           </Col>
         </Row>
@@ -80,7 +75,7 @@ RepoReactionSchemeInfo.defaultProps = {
   review_info: 0,
   propInfo: '',
   onComment: () => {},
-  canComment: false
+  canComment: false,
 };
 
 export default RepoReactionSchemeInfo;

@@ -192,6 +192,7 @@ class ElementStore {
       handleCopyReaction: ElementActions.copyReaction,
       handleCopyResearchPlan: ElementActions.copyResearchPlan,
       handleCopyElement: ElementActions.copyElement,
+      handleCopyCellLine: ElementActions.copyCellLineFromId,
       handleOpenReactionDetails: ElementActions.openReactionDetails,
 
       handleBulkCreateWellplatesFromSamples:
@@ -248,6 +249,7 @@ class ElementStore {
       handleSplitAsSubsamples: ElementActions.splitAsSubsamples,
       handleSplitElements: ElementActions.splitElements,
       handleSplitAsSubwellplates: ElementActions.splitAsSubwellplates,
+      handleSplitAsSubCellLines: ElementActions.splitAsSubCellLines,
       // formerly from DetailStore
       handleSelect: DetailActions.select,
       handleClose: DetailActions.close,
@@ -755,8 +757,8 @@ class ElementStore {
     const { name, ui_state } = obj;
     const page = ui_state[name] ? ui_state[name].page : 1;
     const per_page = ui_state.number_of_results;
-    const { fromDate, toDate, productOnly } = ui_state;
-    const params = { page, per_page, fromDate, toDate, productOnly, name };
+    const { fromDate, toDate, userLabel, productOnly } = ui_state;
+    const params = { page, per_page, fromDate, toDate, userLabel, productOnly, name };
     ElementActions.fetchGenericElsByCollectionId(ui_state.currentCollection.id, params, ui_state.isSync, name);
   }
 
@@ -766,6 +768,10 @@ class ElementStore {
       ui_state.currentCollection.id, {},
       ui_state.isSync, this.state.moleculeSort
     );
+  }
+
+  handleSplitAsSubCellLines(ui_state) {
+    ElementActions.fetchCellLinesByCollectionId(ui_state.currentCollection.id);
   }
 
   // Molecules
@@ -1025,6 +1031,11 @@ class ElementStore {
     Aviator.navigate(`/collection/${result.colId}/${result.element.type}/copy`);
   }
 
+  handleCopyCellLine(result){
+    UserActions.fetchCurrentUser(); //Needed to update the cell line counter in frontend
+    Aviator.navigate(`/collection/${result.collectionId}/cell_line/${result.id}`);
+  }
+
   handleOpenReactionDetails(reaction) {
     this.changeCurrentElement(reaction);
     this.handleRefreshElements('sample')
@@ -1113,7 +1124,7 @@ class ElementStore {
     } else {
       const per_page = uiState.number_of_results;
       const { fromDate, toDate, userLabel, productOnly } = uiState;
-      const params = { page, per_page, fromDate, userLabel, toDate, productOnly, name: type };
+      const params = { page, per_page, fromDate, toDate, userLabel, productOnly, name: type };
       const fnName = type.split('_').map(x => x[0].toUpperCase() + x.slice(1)).join("") + 's';
       let fn = `fetch${fnName}ByCollectionId`;
       const allowedActions = [

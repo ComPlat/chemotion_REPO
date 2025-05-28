@@ -26,7 +26,6 @@ import Clipboard from 'clipboard';
 import moment from 'moment';
 import Select from 'react-select';
 import uuid from 'uuid';
-import SvgFileZoomPan from 'react-svg-file-zoom-pan-latest';
 import { RepoCommentBtn } from 'repo-review-ui';
 import ContainerComponent from 'src/components/chemrepo/reaction/ContainerComponent';
 import ExactMass from 'src/components/chemrepo/ExactMass';
@@ -65,8 +64,13 @@ import LdData from 'src/components/chemrepo/LdData';
 import PublicLabels from 'src/components/chemrepo/PublicLabels';
 import PublicReactionTlc from 'src/components/chemrepo/PublicReactionTlc';
 import PublicReactionProperties from 'src/components/chemrepo/PublicReactionProperties';
+import ReactionTable from 'src/repoHome/RepoReactionTable';
 import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
+import zoomSvg from 'src/components/chemrepo/svg-utils';
+import AnalysisRenderer from 'src/components/chemrepo/analysis/AnalysisRenderer';
 
 const hideInfo = _molecule => ((_molecule?.inchikey === RepoConst.INCHIKEY_DUMMY) ? { display: 'none' } : {});
 
@@ -100,13 +104,6 @@ const CollectionDesc = (props) => {
     </div>
   );
 };
-
-const resizableSvg = (path, extra = null) => (
-  <div className="preview-table" style={{ cursor: 'row-resize' }}>
-    {extra}
-    <SvgFileZoomPan svgPath={path} duration={300} resize />
-  </div>
-);
 
 const ChemotionId = props => (
   <h5>
@@ -553,18 +550,31 @@ const EditorTips = () => (
 );
 
 const IconToMyDB = ({
-  id, type, tooltipTitle = 'Link to My DB', isLogin = false, isPublished = true
+  id, type, tooltipTitle = 'Link to My DB', isLogin = false, isCI = false, isPublished = true
 }) => {
-  const dt = isPublished ? 'publication' : 'review';
-  if (isLogin) {
-    return (
-      <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">{tooltipTitle}</Tooltip>}>
-        <Button className="animation-ring" bsStyle="link" href={`/mydb/scollection/${dt}/${type}/${id}`} target="_blank">
-          <i className={`icon-${type}`} />
-        </Button>
-      </OverlayTrigger>
-    );
+
+  const createLinkButton = (baseUrl, dt) => (
+    <OverlayTrigger placement="bottom" overlay={<Tooltip id="id_icon_tip">{tooltipTitle}</Tooltip>}>
+      <Button
+        className="animation-ring"
+        bsStyle="link"
+        href={`${baseUrl}/${dt}/${type}/${id}`}
+        target="_blank"
+      >
+        <i className={`icon-${type}`} />
+      </Button>
+    </OverlayTrigger>
+  );
+
+  if (isCI) {
+    return createLinkButton('/mydb/collection', '103');
   }
+
+  if (isLogin) {
+    const dt = isPublished ? 'publication' : 'review';
+    return createLinkButton('/mydb/scollection', dt);
+  }
+
   return (<span className="wrap-ring"><i className={`icon-${type}`} /></span>);
 };
 
@@ -729,7 +739,24 @@ const CalcDuration = (reaction) => {
   return duration;
 };
 
-const AuthorList = ({ creators, affiliationMap }) => {
+const AuthorList = ({ creators, affiliationMap, contributor }) => {
+  // Process the contributor's affiliations if provided
+  let combinedAffiliationMap = { ...affiliationMap };
+
+  if (contributor && contributor.affiliationIds && contributor.affiliationIds.length > 0) {
+    // Get the highest existing index in the affiliationMap
+    const maxIndex = Object.values(combinedAffiliationMap).length > 0
+      ? Math.max(...Object.values(combinedAffiliationMap))
+      : 0;
+
+    // Add contributor affiliations to the map with new indices
+    contributor.affiliationIds.forEach((affId, idx) => {
+      if (!combinedAffiliationMap[affId]) {
+        combinedAffiliationMap[affId] = maxIndex + idx + 1;
+      }
+    });
+  }
+
   return (
     <span>
       {creators.map(
@@ -737,7 +764,7 @@ const AuthorList = ({ creators, affiliationMap }) => {
           <span key={`auth_${creator.id}_${uuid.v4()}`}>
             {i === 0 ? null : ' - '}<OrcidIcon orcid={creator.ORCID} />{creator.name}
             <sup>
-              {creator.affiliationIds && creator.affiliationIds.map(e => affiliationMap[e]).sort().join()}
+              {creator.affiliationIds && creator.affiliationIds.map(e => combinedAffiliationMap[e]).sort().join()}
             </sup>
           </span>
         )
@@ -749,67 +776,96 @@ const AuthorList = ({ creators, affiliationMap }) => {
 AuthorList.propTypes = {
   creators: PropTypes.array,
   affiliationMap: PropTypes.object,
+  contributor: PropTypes.object,
 };
 
 AuthorList.defaultProps = {
   creators: [],
   affiliationMap: {},
+  contributor: {},
 };
 
-const ContributorInfo = ({ contributor, showHelp }) => {
+const ContributorInfo = ({ contributor, showHelp, affiliationMap }) => {
   if (!contributor.name) {
     return <div />;
   }
+
+  // Get affiliation numbers directly from affiliationMap without separating by commas
+  // This will let them appear directly after the name like "Nicole Jung1,2"
+  const affiliationNumbers = contributor.affiliationIds && contributor.affiliationIds.length > 0 ?
+    <sup>{contributor.affiliationIds.map(id => affiliationMap[id]).sort().join(',')}</sup> : null;
+
   const contributorBlock = !showHelp ? (
-    <h5><b>Contributor: </b><OrcidIcon orcid={contributor.ORCID} />{contributor.name}</h5>
+    <h5>
+      <b>Contributor: </b>
+      <OrcidIcon orcid={contributor.ORCID} />
+      {contributor.name}
+      {affiliationNumbers}
+    </h5>
   ) : (
     <h5>
-      <b>Contributor&nbsp;<HelpInfo source="contributor" place="right" />: </b><OrcidIcon orcid={contributor.ORCID} />{contributor.name}
+      <b>Contributor&nbsp;<HelpInfo source="contributor" place="right" />: </b>
+      <OrcidIcon orcid={contributor.ORCID} />
+      {contributor.name}
+      {affiliationNumbers}
     </h5>
   );
+
   return (
     <div>
       {contributorBlock}
-      <div>
-        {contributor.affiliations && contributor.affiliations.map((e, i) => <p style={{ fontSize: 'small' }} key={uuid.v4()}>{i + 1}. {e}</p>)}
-      </div>
     </div>
   );
 };
 
 ContributorInfo.propTypes = {
   contributor: PropTypes.object,
-  showHelp: PropTypes.bool
+  showHelp: PropTypes.bool,
+  affiliationMap: PropTypes.object
 };
 
 ContributorInfo.defaultProps = {
   contributor: {},
-  showHelp: false
+  showHelp: false,
+  affiliationMap: {}
 };
 
-const AffiliationList = ({ affiliations, affiliationMap }) => {
+const AffiliationList = ({ affiliations, affiliationMap, rorMap }) => {
   const names = [];
   Object.keys(affiliationMap).map((affiliationId) => {
     const ind = affiliationMap[affiliationId];
-    names[ind] = affiliations[affiliationId];
+    names[ind] = { text: affiliations[affiliationId], rorId: rorMap && rorMap[affiliationId] };
     return null;
   });
+
   return (
     <div>
       {names.map(
-        (e, i) => (i === 0 ? null : <p style={{ fontSize: 'small' }} key={'affil_'+i}>{i}. {e}</p>)
+        (e, i) => {
+          if (i === 0) return null;
+
+          return (
+            <p style={{ fontSize: 'small' }} key={'affil_'+i}>
+              {i}. {e.text}
+              {e.rorId && <RorLink rorId={e.rorId} />}
+            </p>
+          );
+        }
       )}
     </div>
   );
-}
+};
+
 AffiliationList.propTypes = {
   affiliations: PropTypes.object,
   affiliationMap: PropTypes.object,
+  rorMap: PropTypes.object
 };
 
 AffiliationList.defaultProps = {
   affiliations: {},
-  affiliationIds: {},
+  affiliationMap: {},
+  rorMap: {}
 };
 
 class ClipboardCopyLink extends Component {
@@ -877,7 +933,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false, childr
   return (
     <Row>
       <Col sm={4} md={4} lg={4}>
-        {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
+        {zoomSvg(svgPath, <MolViewerBtn isPublic fileContent={molecule.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_mol_${molecule.id}`} />)}
       </Col>
       <Col sm={8} md={8} lg={8}>
       <div>
@@ -950,7 +1006,7 @@ const RenderAnalysisHeader = (props) => {
       <br />
       <Row style={rinchiStyle}>
         <Col sm={6} md={6} lg={6}>
-          {resizableSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_el_${element.id}`} />)}
+          {zoomSvg(svgPath, <MolViewerBtn isPublic fileContent={element.molfile || '\n  noname\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n'} disabled={false} viewType={`mol_el_${element.id}`} />)}
         </Col>
         <Col sm={6} md={6} lg={6}>
           <span className="repo-pub-sample-header">
@@ -1018,6 +1074,18 @@ const RenderAnalysisHeader = (props) => {
         )
       }
       <br />
+      <NMRiumDisplayer
+        sample={new Sample(element)}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        readOnly
+      />
+      <ViewSpectra
+        sample={new Sample(element)}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        isPublic
+      />
     </div>
   );
 };
@@ -1049,138 +1117,6 @@ ToggleIndicator.propTypes = {
 ToggleIndicator.defaultProps = {
   indicatorStyle: '',
   name: '',
-};
-
-
-const ReactionTable = ({
-  reaction, toggle, show, bodyAttrs, canComment, isPublic = true, isReview = false
-}) => {
-  let schemes = [];
-  let sumSolvents = 0.0;
-  const showIndicator = (show) ? 'down' : 'right';
-
-  const schemeOnly = (reaction && reaction.publication && reaction.publication.taggable_data &&
-    reaction.publication.taggable_data.scheme_only === true) || false;
-
-  if (isPublic) {
-    ({ schemes } = reaction);
-  } else {
-    reaction.starting_materials.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'starting_materials';
-      schemes.push(ns);
-    });
-    reaction.reactants.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'reactants';
-      schemes.push(ns);
-    });
-    reaction.products.map((s) => {
-      const ns = new Sample(s);
-      ns.mat_group = 'products';
-      schemes.push(ns);
-    });
-    reaction.solvents.map((s) => {
-      const ns = new Sample(s);
-      sumSolvents += ns.amount_l;
-      ns.mat_group = 'solvents';
-      schemes.push(ns);
-    });
-  }
-
-  const materialCalc = (target, multi, precision) => {
-    return (target ? (target * multi).toFixed(precision) : ' - ')
-  }
-
-  const equivYield = (s, sumSolvents=1.0, isPublic = true) => {
-    let val = 0;
-    switch (s.mat_group) {
-      case 'products':
-        if (schemeOnly === true) {
-          val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`;
-        } else {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
-        }
-        break;
-      case 'solvents':
-        if (isPublic) {
-          val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
-        } else {
-          val = `${materialCalc((s.amount_l / sumSolvents) * 100, 1, 1).toString()}%`;
-        }
-        break;
-      default:
-        val = materialCalc(s.equivalent, 1, 3)
-    }
-    return (
-      val
-    );
-  };
-
-  const rows = (samples, isReview = false) => {
-    let currentType = '';
-    return (
-      typeof samples !== 'undefined'
-        ? samples.map((sample, i) => {
-          const matType = sample.mat_group && sample.mat_group[0].toUpperCase() + sample.mat_group.replace('_', ' ').slice(1);
-          const rLabel = (sample.short_label || '').concat('   ', sample.name || '');
-          const useName = isPublic ? (sample.molecule_iupac_name || sample.iupac_name || sample.sum_formular) : (sample.molecule_iupac_name);
-          let label = isReview ? (<span>{rLabel}<br />{useName}</span>) : useName;
-          if (sample.mat_group === 'solvents') label = sample.external_label;
-          let title = null;
-          if (currentType !== sample.mat_group) {
-            currentType = sample.mat_group;
-            title = (currentType === 'products') ? (<tr><td colSpan="6"><b>{matType}</b></td><td style={{ fontWeight: 'bold', textAlign: 'center' }}>Yield</td></tr>) : (<tr><td colSpan="7"><b>{matType}</b></td></tr>);
-          }
-          return (
-            <tbody key={i}>
-              {title}
-              <tr>
-                <td style={{ width: '26%' }}>{label}</td>
-                <td style={{ width: '12%' }}>{isPublic ? sample.sum_formular : sample.molecule.sum_formular}</td>
-                <td style={{ width: '14%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' ' : isPublic ? sample.dmv: !sample.has_molarity && !sample.has_density ? '- / -' : sample.has_density ? + sample.density + ' / - ' : ' - / ' + sample.molarity_value + sample.molarity_unit}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_g, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{materialCalc(sample.amount_l, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{sample.mat_group === 'solvents' ? ' - ' : materialCalc(sample.amount_mol, 1000, 3)}</td>
-                <td style={{ width: '12%', textAlign: 'center' }}>{equivYield(sample, sumSolvents, isPublic)}</td>
-              </tr>
-            </tbody>
-          );
-        })
-        : null
-    );
-  };
-  const table = dataRows => (
-    <Table responsive>
-      <thead>
-        <tr>
-          <th>IUPAC</th>
-          <th>Formula</th>
-          <th style={{ textAlign: 'center' }}>Density/Molarity</th>
-          <th style={{ textAlign: 'center' }}>Amount [mg]</th>
-          <th style={{ textAlign: 'center' }}>Volume [mL]</th>
-          <th style={{ textAlign: 'center' }}>Amount [mmol]</th>
-          <th style={{ textAlign: 'center' }}>Equiv</th>
-        </tr>
-      </thead>
-      {dataRows}
-    </Table>
-  );
-
-  return (
-    <span>
-      <ToggleIndicator onClick={toggle} name="Reaction Table" indicatorStyle={showIndicator} />
-      <Panel style={{ border: 'none' }} id="collapsible-panel-scheme" expanded={show} defaultExpanded={show} onToggle={() => { }}>
-        <Panel.Collapse>
-          <Panel.Body {...bodyAttrs} >
-            <div>
-              {table(rows(schemes, isReview))}
-            </div>
-          </Panel.Body>
-        </Panel.Collapse>
-      </Panel>
-    </span>
-  );
 };
 
 const ReactionRinChiKey = ({
@@ -1531,7 +1467,6 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
               show={showScheme}
               isPublic={isPublic}
               isReview={false}
-              bodyAttrs={bodyAttrs}
             />
           </Col>
         </Row>
@@ -1580,101 +1515,6 @@ const ReactionInfo = ({ reaction, toggleScheme, showScheme, isPublic = true,
   );
 };
 
-class RenderPublishAnalysesPanel extends Component {
-  header() {
-    const {
-      analysis, isPublic, userInfo, isLogin, isReviewer, pageId, type, pageType, element
-    } = this.props;
-    const content = analysis.extended_metadata['content'];
-    const previewImg = previewContainerImage(analysis);
-    const kind = (analysis.extended_metadata['kind'] || '').split('|').pop().trim();
-
-    const doiLink = (isPublic === false) ? (
-      <div className="sub-title" inline="true">
-        <b>Analysis DOI: </b>
-        {analysis.dataset_doi}&nbsp;<ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
-      </div>
-    ) : (
-      <div className="sub-title" inline="true">
-        <b>Analysis DOI: </b>
-        <Button bsStyle="link" onClick={() => { window.location = `https://dx.doi.org/${analysis.dataset_doi}`; }}>
-          {analysis.dataset_doi}
-        </Button>
-        <ClipboardCopyBtn text={`https://dx.doi.org/${analysis.dataset_doi}`} />
-        <DownloadMetadataBtn type="container" id={analysis.id} />
-        <DownloadJsonBtn type="container" id={analysis.id} />
-      </div>
-    );
-
-    const insText = instrumentText(analysis);
-    const crdLink = (isPublic === false) ? (
-      <div className="sub-title" inline="true">
-        <b>Analysis ID: </b>
-        <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
-          CRD-{analysis.pub_id}
-        </Button>
-        <ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${analysis.pub_id}`} />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{insText}
-
-      </div >
-    ) : (
-      <div className="sub-title" inline="true">
-        <b>Analysis ID: </b>
-        <Button bsStyle="link" bsSize="small" onClick={() => { window.location = `/pid/${analysis.pub_id}`; }}>
-          CRD-{analysis.pub_id}
-        </Button>
-        <ClipboardCopyBtn text={`https://www.chemotion-repository.net/pid/${analysis.pub_id}`} />
-      </div >
-    );
-
-    return (
-      <div className="repo-analysis-header">
-        <RepoPreviewImage
-          element={element}
-          analysis={analysis}
-          isLogin={isLogin}
-          isPublic={isPublic}
-          previewImg={previewImg}
-          title={kind}
-        />
-        <div className="abstract">
-          <div className="lower-text">
-            <div className="sub-title">
-              <b>{kind}</b>&nbsp;<MolViewerListBtn el={element} container={analysis} isPublic={isPublic} disabled={false} />
-              <RepoPublicComment isReviewer={isReviewer} id={analysis.id} type={type} pageId={pageId} pageType={pageType} userInfo={userInfo} title={kind} />&nbsp;
-              <RepoUserComment isLogin={isLogin} id={analysis.id} type={type} pageId={pageId} pageType={pageType} isPublished={isPublic} />
-            </div>
-            {doiLink}
-            {crdLink}
-          </div>
-          <div className="desc small-p expand-p">
-            <OverlayTrigger placement="bottom" overlay={<Tooltip id="_tip_dataset_quill_viewer">copy to clipboard</Tooltip>}>
-              <div className="repo-quill-viewer" tabIndex={0} role="button" onClick={() => { navigator.clipboard.writeText(contentToText(content)); }}>
-                <Quill2Viewer value={content} />
-              </div>
-            </OverlayTrigger>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  render() {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {this.header()}
-        <div>
-          <b>Datasets</b>
-          <RepoContainerDatasets
-            container={this.props.analysis}
-            isPublic={this.props.isPublic}
-          />
-        </div>
-      </div>
-    );
-  }
-}
-
 class RenderPublishAnalyses extends Component {
   constructor(props) {
     super(props);
@@ -1706,6 +1546,7 @@ class RenderPublishAnalyses extends Component {
         className="repo-analysis-header"
       >
         <RepoPreviewImage
+          key={`preview-${analysis.id}`}
           element={element}
           analysis={analysis}
           isLogin={idyLogin}
@@ -1778,11 +1619,17 @@ class RenderPublishAnalyses extends Component {
             <AuthorList
               creators={this.props.publication.creators}
               affiliationMap={affiliationMap}
+              contributor={this.props.publication.contributor}
             />
           </h5>
+          <ContributorInfo
+            contributor={this.props.publication.contributor}
+            affiliationMap={affiliationMap}
+          />
           <AffiliationList
             affiliations={this.props.publication.affiliations}
             affiliationMap={affiliationMap}
+            rorMap={this.props.publication.rors}
           />
         </Panel.Heading>
         <Panel.Collapse>
@@ -1996,26 +1843,6 @@ PublishAnalysesTag.defaultProps = {
   product: null
 };
 
-RenderPublishAnalysesPanel.propTypes = {
-  analysis: PropTypes.object.isRequired,
-  type: PropTypes.string.isRequired,
-  userInfo: PropTypes.string,
-  isPublic: PropTypes.bool,
-  isLogin: PropTypes.bool,
-  isReviewer: PropTypes.bool,
-  pageId: PropTypes.number,
-  pageType: PropTypes.string
-};
-
-RenderPublishAnalysesPanel.defaultProps = {
-  userInfo: '',
-  isPublic: true,
-  isLogin: false,
-  isReviewer: false,
-  pageId: null,
-  pageType: 'reactions'
-};
-
 ReactionTable.propTypes = {
   reaction: PropTypes.any.isRequired,
   toggle: PropTypes.func,
@@ -2043,13 +1870,14 @@ const DatasetDetail = ({ isPublished, element }) => {
   };
 
   const moleculeView = molecule.inchikey === null ? (<span />) : (<MoleculeInfo molecule={molecule} sample_svg_file={element.sample_svg_file} />);
+  const elementView = element.element?.type === 'reaction' ? new Reaction(element.element) : new Sample(element.element);
   const datasetView = !element ? (
     <span>There is no published dataset</span>
   ) : (
     <RenderPublishAnalyses
       key={`${element.id}-${element.updated_at}`}
       analysis={element.dataset}
-      element={element.element}
+      element={elementView}
       expanded
       elementType="Sample"
       license={element.license}
@@ -2057,7 +1885,6 @@ const DatasetDetail = ({ isPublished, element }) => {
       isPublic={isPublished}
     />
   );
-
   return (
     <Grid>
       {moleculeView}
@@ -2067,6 +1894,18 @@ const DatasetDetail = ({ isPublished, element }) => {
           {datasetView}
         </Col>
       </Row>
+      <NMRiumDisplayer
+        sample={elementView}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        readOnly
+      />
+      <ViewSpectra
+        sample={elementView}
+        handleSampleChanged={() => {}}
+        handleSubmit={() => {}}
+        isPublic
+      />
     </Grid>
   );
 };
@@ -2209,15 +2048,37 @@ export {
   PublishTypeAs,
   ReactionSchemeOnlyInfo,
   ReactionInfo,
-  ReactionTable,
   ReactionRinChiKey,
   RenderAnalysisHeader,
   RenderPublishAnalyses,
-  RenderPublishAnalysesPanel,
-  resizableSvg,
+  AnalysisRenderer, // Changed from RenderPublishAnalysesPanel to AnalysisRenderer
   SchemeWord,
   SidToPubChem,
   OrcidIcon,
   ToggleIndicator,
-  CollectionDesc
+  CollectionDesc,
+  zoomSvg,
+  RorLink,
+};
+
+const RorLink = ({ rorId }) => {
+  if (!rorId) return null;
+
+  const handleOnClick = (e) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <a href={`https://ror.org/${rorId}`} target="_blank" rel="noopener noreferrer" onClick={handleOnClick} title={`ROR ID: ${rorId}`}>
+      <img src="/images/ror-icon-rgb.svg" className="ror-logo" alt="ROR ID" style={{ height: '16px', marginLeft: '3px' }} />
+    </a>
+  );
+};
+
+RorLink.propTypes = {
+  rorId: PropTypes.string
+};
+
+RorLink.defaultProps = {
+  rorId: null
 };

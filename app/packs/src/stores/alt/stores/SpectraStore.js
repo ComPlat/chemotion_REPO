@@ -88,7 +88,7 @@ class SpectraStore {
     });
   }
 
-  handleLoadSpectra({ fetchedFiles, spcInfos }) {
+  handleLoadSpectra({ fetchedFiles, spcInfos, element }) {
     const spcMetas = this.decodeSpectra(fetchedFiles);
     const sortedSpcInfo = [...spcInfos];
     sortedSpcInfo.sort((a, b) => b.idx - a.idx);
@@ -115,6 +115,7 @@ class SpectraStore {
       spcIdx: (spcMetas[0].idx || 0),
       others: [],
       arrSpcIdx: newArrSpcIdx,
+      updatedElement: element,
     });
   }
 
@@ -211,11 +212,12 @@ class SpectraStore {
     })
   }
 
-  handleLoadSpectraForNMRDisplayer({ fetchedFiles, spcInfos }) {
+  handleLoadSpectraForNMRDisplayer({ fetchedFiles, spcInfos, element }) {
     this.setState({
       spcInfos,
       fetchedFiles,
       fetched: true,
+      updatedElement: element,
     });
   }
 
