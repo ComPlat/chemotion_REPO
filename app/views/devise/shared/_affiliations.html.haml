@@ -14,5 +14,5 @@
   = f.label "Department"
   %br/
   = f.text_field :department, autofocus: true, class: 'form-control',
-      id: 'department-select'
+      id: 'department-select', data: { depends_on: 'organization-select' }
   %br/

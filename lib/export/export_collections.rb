@@ -251,9 +251,6 @@ module Export
         upload_att = Labimotion::Export.fetch_segments(reaction, @uuids, nil, &method(:fetch_one))
         @attachments += upload_att if upload_att&.length&.positive?
 
-        segment, @attachments = Labimotion::Export.fetch_segments(reaction, @attachments, &method(:fetch_one))
-        @segments += segment if segment.present?
-
         # fetch containers, attachments and literature
         fetch_containers(reaction)
         fetch_literals(reaction)

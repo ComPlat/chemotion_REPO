@@ -33,6 +33,17 @@ Rails.application.configure do
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = true
 
+  # Skip sending real emails in development environment
+  config.action_mailer.delivery_method = :test
+  
+  # Uncomment the line below if you want to see emails in the Rails console output instead
+  # config.action_mailer.delivery_method = :stdout
+  
+  # Alternative approach: letter_opener gem (shows emails in the browser)
+  # Uncomment these lines and add gem 'letter_opener' to your Gemfile to use it
+  # config.action_mailer.delivery_method = :letter_opener
+  # config.action_mailer.perform_deliveries = true
+
   # config.action_mailer.perform_caching = false
 
   # Print deprecation notices to the Rails logger.

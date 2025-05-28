@@ -30,7 +30,7 @@ module Chemotion
           # or delegate methods to CelllineSample
           @element_klass = klass == CelllineSample ? CelllineMaterial.name : klass.name
           @element       = klass == CelllineSample ? element.cellline_material : element
-          params[:element_id] = @element.id
+          params[:element_id] = @element.id if @element
           #################################
 
           allowed = if /get/i.match?(request.env['REQUEST_METHOD'])

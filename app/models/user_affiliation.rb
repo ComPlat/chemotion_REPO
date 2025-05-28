@@ -18,6 +18,9 @@ class UserAffiliation < ApplicationRecord
   belongs_to :user
   belongs_to :affiliation
 
+  def ror_id
+    affiliation&.ror_id
+  end
 
   delegate :country, :organization, :department, :group, to: :affiliation, prefix: false, allow_nil: true
 end

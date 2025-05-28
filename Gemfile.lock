@@ -436,7 +436,7 @@ GEM
       rexml
     kramdown-parser-gfm (1.1.0)
       kramdown (~> 2.0)
-    labimotion (1.4.1)
+    labimotion (2.0.0.rc8)
       rails (~> 6.1.7)
     language_server-protocol (3.17.0.3)
     latex-decode (0.4.0)
@@ -481,6 +481,9 @@ GEM
       ruby2_keywords (~> 0.0.1)
     mustermann-grape (1.0.2)
       mustermann (>= 1.0.0)
+    net-ftp (0.3.8)
+      net-protocol
+      time
     net-imap (0.4.20)
       date
       net-protocol
@@ -496,7 +499,7 @@ GEM
       net-protocol
     net-ssh (6.1.0)
     nio4r (2.7.3)
-    nokogiri (1.18.4-x86_64-linux-gnu)
+    nokogiri (1.15.6-x86_64-linux)
       racc (~> 1.4)
     oauth2 (2.0.9)
       faraday (>= 0.17.3, < 3.0)
@@ -578,7 +581,7 @@ GEM
       activesupport (>= 3.0.0)
     raabro (1.4.0)
     racc (1.8.1)
-    rack (2.2.13)
+    rack (2.2.14)
     rack-accept (0.4.5)
       rack (>= 0.4)
     rack-contrib (2.5.0)
@@ -914,7 +917,7 @@ DEPENDENCIES
   kaminari
   kaminari-grape
   ketcherails!
-  labimotion (= 1.4.1)
+  labimotion (= 2.0.0.rc8)
   launchy
   listen
   memory_profiler
@@ -922,6 +925,7 @@ DEPENDENCIES
   mime-types
   mimemagic (= 0.3.10)
   moneta
+  net-ftp
   net-scp (= 3.0.0)
   net-sftp
   net-ssh

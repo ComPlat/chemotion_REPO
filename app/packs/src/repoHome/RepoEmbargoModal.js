@@ -81,7 +81,7 @@ const InfoModal = ({ showModal, selectEmbargo, onCloseFn, editable=false }) => {
       <Modal.Header closeButton>
         <Modal.Title>
           <h4><Label>{la}</Label></h4>
-          <ContributorInfo contributor={tag.contributors} />
+          <ContributorInfo contributor={tag.contributors} affiliationMap={affiliationMap} />
           <h5>
             <b>Author{author_ids.length > 1 ? 's' : ''}: </b>
             <AuthorList creators={tag.creators} affiliationMap={affiliationMap} />
@@ -89,6 +89,7 @@ const InfoModal = ({ showModal, selectEmbargo, onCloseFn, editable=false }) => {
           <AffiliationList
             affiliations={tag.affiliations}
             affiliationMap={affiliationMap}
+            rorMap={tag.rors}
           />
           <Doi type="collection" id={id} doi={doi} isPublished={isPublished} />
         </Modal.Title>

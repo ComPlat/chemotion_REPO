@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Row, Col, Radio, Well, Button, FormGroup } from 'react-bootstrap';
 import AsyncSelect from 'react-select5/async';
 import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
-import capitalizeFirstLetter from 'src/components/chemrepo/format-utils';
+import { capitalizeFirstLetter } from 'src/components/chemrepo/format-utils';
 import PublicActions from 'src/stores/alt/repo/actions/PublicActions';
 import RepoNavListTypes from 'src/repoHome/RepoNavListTypes';
 import SuggestionsFetcher from 'src/fetchers/SuggestionsFetcher';

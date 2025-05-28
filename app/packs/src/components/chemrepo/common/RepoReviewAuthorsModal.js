@@ -14,7 +14,7 @@ import {
 import Select from 'react-select';
 import uuid from 'uuid';
 import { findIndex, filter, uniq, flattenDeep } from 'lodash';
-import { OrcidIcon } from 'src/repoHome/RepoCommon';
+import { OrcidIcon, RorLink } from 'src/repoHome/RepoCommon';
 import RepositoryFetcher from 'src/repo/fetchers/RepositoryFetcher';
 import UsersFetcher from 'src/fetchers/UsersFetcher';
 import SelectionField from 'src/components/common/SelectionField';
@@ -22,6 +22,44 @@ import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 import CollaboratorFetcher from 'src/repo/fetchers/CollaboratorFetcher';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 import DeleteConfirmBtn from 'src/components/common/DeleteConfirmBtn';
+
+// Add CSS styles to ensure minimum field widths
+const affFieldStyles = `
+  /* Target both author and contributor affiliation fields */
+  .selection-field-container {
+    min-width: 180px;
+  }
+  .selection-field-container > div {
+    min-width: 180px;
+  }
+  .affiliation-table td, .contributor-affiliation-table td {
+    min-width: 180px;
+  }
+  .react-select__control {
+    min-width: 180px;
+  }
+  .react-select__value-container {
+    min-width: 180px;
+  }
+  /* Additional specific selectors for contributor section */
+  .contributor-affiliation-table .aff-line td > div,
+  .contributor-affiliation-table .aff-line td .selection-field-container {
+    min-width: 180px;
+  }
+  /* Force minimum width on Select components */
+  .Select-control, .Select-input {
+    min-width: 180px;
+  }
+  /* Force width on wrapper divs */
+  .contributor-affiliation-table .aff-line td {
+    min-width: 180px;
+  }
+  /* Ensure the fields don't collapse after state changes */
+  div[class*="Select"] {
+    min-width: 180px;
+  }
+
+`;
 
 const addAffTooltip = (
   <Tooltip id="addAff_tooltip">Add affiliation for this Publication</Tooltip>
@@ -32,7 +70,7 @@ const removeAffTooltip = (
   </Tooltip>
 );
 
-const lineAff = (creator, aid, affs, onDeleteAff) => {
+const lineAff = (creator, aid, affs, onDeleteAff, rors = {}) => {
   const removeBtn = (
     <OverlayTrigger placement="right" overlay={removeAffTooltip}>
       <Button
@@ -48,6 +86,7 @@ const lineAff = (creator, aid, affs, onDeleteAff) => {
     <tr key={uuid.v4()} style={{ lineHeight: '2em' }}>
       <td colSpan="4" width="90%">
         {affs[aid]}
+        {rors && rors[aid] && <RorLink rorId={rors[aid]} />}
       </td>
       <td align="right" width="10%">
         {removeBtn}
@@ -57,18 +96,50 @@ const lineAff = (creator, aid, affs, onDeleteAff) => {
 };
 
 const secAff = (fields, g, countries, organizations, departments, onAddAff, onDeleteAff, onInputChange) => {
+  const selectedOrg = fields[`${g.id}@line_organization`] || '';
+
+  // Filter departments by the selected organization
+  const filteredDepartments = selectedOrg
+    ? departments.filter(dept => dept.organization === selectedOrg || !dept.organization)
+    : departments;
+
+  // Check if fields meet minimum length requirements
+  const orgValue = fields[`${g.id}@line_organization`] || '';
+  const deptValue = fields[`${g.id}@line_department`] || '';
+  const countryValue = fields[`${g.id}@line_country`] || '';
+
+  // Minimum length for each field (3 characters)
+  const minLength = 3;
+  const isOrgValid = orgValue.length >= minLength || orgValue.length === 0;
+  const isDeptValid = deptValue.length >= minLength || deptValue.length === 0;
+  const isCountryValid = countryValue.length >= minLength || countryValue.length === 0;
+
+  // Determine if the add button should be enabled
+  const isAddButtonEnabled =
+    orgValue.length >= minLength &&
+    deptValue.length >= minLength &&
+    countryValue.length >= minLength;
+
+  // Define minimum widths for SelectionField components to maintain consistent UI
+  const selectionFieldStyle = {
+    minWidth: '180px',  // Minimum width for all selection fields
+  };
+
+  // Combine styles for validation
+  const orgStyle = !isOrgValid
+    ? { ...selectionFieldStyle, borderColor: 'red' }
+    : selectionFieldStyle;
+
+  const deptStyle = !isDeptValid
+    ? { ...selectionFieldStyle, borderColor: 'red' }
+    : selectionFieldStyle;
+
+  const countryStyle = !isCountryValid
+    ? { ...selectionFieldStyle, borderColor: 'red' }
+    : selectionFieldStyle;
+
   return (
     <tr className="aff-line" style={{ lineHeight: '2em' }}>
-      <td width="30%">
-        <SelectionField
-          options={departments}
-          value={(fields[`${g.id}@line_department`]) || ''}
-          field={`${g.id}@line_department`}
-          placeholder="e.g. Institute of Organic Chemistry"
-          onChange={onInputChange}
-          isCreatable
-        />
-      </td>
       <td width="40%">
         <SelectionField
           options={organizations}
@@ -77,7 +148,21 @@ const secAff = (fields, g, countries, organizations, departments, onAddAff, onDe
           placeholder="e.g. Karlsruhe Institute of Technology"
           onChange={onInputChange}
           isCreatable
+          style={orgStyle}
         />
+        {!isOrgValid && <small className="text-danger">Minimum 3 characters required</small>}
+      </td>
+      <td width="30%">
+        <SelectionField
+          options={filteredDepartments}
+          value={(fields[`${g.id}@line_department`]) || ''}
+          field={`${g.id}@line_department`}
+          placeholder="e.g. Institute of Organic Chemistry"
+          onChange={onInputChange}
+          isCreatable
+          style={deptStyle}
+        />
+        {!isDeptValid && <small className="text-danger">Minimum 3 characters required</small>}
       </td>
       <td width="20%">
         <SelectionField
@@ -86,11 +171,18 @@ const secAff = (fields, g, countries, organizations, departments, onAddAff, onDe
           field={`${g.id}@line_country`}
           onChange={onInputChange}
           placeholder="e.g. Germany"
+          style={countryStyle}
         />
+        {!isCountryValid && <small className="text-danger">Minimum 3 characters required</small>}
       </td>
       <td width="10%" align="right">
         <OverlayTrigger placement="right" overlay={addAffTooltip}>
-          <Button bsSize="xsmall" bsStyle="success" onClick={() => onAddAff(g)}>
+          <Button
+            bsSize="xsmall"
+            bsStyle="success"
+            onClick={() => onAddAff(g)}
+            disabled={!isAddButtonEnabled}
+          >
             <i className="fa fa-plus" aria-hidden="true" />
           </Button>
         </OverlayTrigger>
@@ -101,10 +193,35 @@ const secAff = (fields, g, countries, organizations, departments, onAddAff, onDe
 
 const affbody = (taggData, creator, fields, countries, organizations, departments, onAddAff, onDeleteAff, onInputChange) => {
   const affs = taggData.affiliations || {};
+  const rors = taggData.rors || {};
   const mainAff = creator.affiliationIds && creator.affiliationIds.length > 0 ?
-    creator.affiliationIds.map(aid => lineAff(creator, aid, affs, onDeleteAff)) : '';
+    creator.affiliationIds.map(aid => lineAff(creator, aid, affs, onDeleteAff, rors)) : '';
     creator.affiliations = creator.affiliationIds.map(aid => affs[aid]);
   const moreAff = secAff(fields, creator, countries, organizations, departments, onAddAff, onDeleteAff, onInputChange) || '';
+
+  return (
+    <span>
+      {mainAff}
+      {moreAff}
+    </span>
+  );
+};
+
+// Function for contributor affiliation management, similar to affbody but for contributors
+const contributorAffBody = (taggData, contributor, fields, countries, organizations, departments, onAddContributorAff, onDeleteContributorAff, onInputChange) => {
+  const affs = taggData.affiliations || {};
+  const rors = taggData.rors || {};
+
+  // Create affiliationIds if not exists
+  if (!contributor.affiliationIds) {
+    contributor.affiliationIds = [];
+  }
+
+  const mainAff = contributor.affiliationIds && contributor.affiliationIds.length > 0 ?
+    contributor.affiliationIds.map(aid => lineAff(contributor, aid, affs, onDeleteContributorAff, rors)) : '';
+  contributor.affiliations = contributor.affiliationIds.map(aid => affs[aid]);
+
+  const moreAff = secAff(fields, contributor, countries, organizations, departments, onAddContributorAff, onDeleteContributorAff, onInputChange) || '';
 
   return (
     <span>
@@ -134,6 +251,8 @@ export default class RepoReviewAuthorsModal extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.onAddAff = this.onAddAff.bind(this);
     this.onDeleteAff = this.onDeleteAff.bind(this);
+    this.onAddContributorAff = this.onAddContributorAff.bind(this);
+    this.onDeleteContributorAff = this.onDeleteContributorAff.bind(this);
     this.onAddNewAuthor = this.onAddNewAuthor.bind(this);
     this.onAddNewReviewer = this.onAddNewReviewer.bind(this);
     this.onSave = this.onSave.bind(this);
@@ -146,33 +265,72 @@ export default class RepoReviewAuthorsModal extends React.Component {
   componentDidMount() {
     Promise.all([
       CollaboratorFetcher.fetchMyCollaborations(),
-      PublicFetcher.affiliations('countries'),
-      PublicFetcher.affiliations('organizations'),
-      PublicFetcher.affiliations('departments'),
+      PublicFetcher.fetchAllAffiliationData(),
     ]).then(
       ([
         collaborationsResult,
-        countriesResult,
-        organizationsResult,
-        departmentsResult,
+        affiliationData,
       ]) => {
         const collaborations = collaborationsResult?.authors || [];
 
-        const formatAffiliations = result =>
-          result?.affiliations
-            ?.map(a => ({ label: a, value: a }))
-            .filter(a => a.value && a.value.length > 1);
-        const countries = formatAffiliations(countriesResult);
-        const organizations = formatAffiliations(organizationsResult);
-        const departments = formatAffiliations(departmentsResult);
+        // Process countries from the hierarchical data structure
+        const countries = affiliationData?.countries || [];
+        const formattedCountries = countries
+          .filter(country => country != null && country !== '')
+          .map(country => ({ label: country, value: country }));
+
+        // Process organizations from the hierarchical data structure
+        const organizationData = affiliationData?.organizations || {};
+        const organizations = Object.keys(organizationData)
+          .filter(org => org != null && org !== '')
+          .map(org => ({
+            label: org,
+            value: org,
+            ror_id: organizationData[org].ror_id,
+            country: organizationData[org].country
+          }));
+
+        // Process departments from the hierarchical data structure
+        const departments = [];
+        Object.keys(organizationData).forEach(org => {
+          const orgDepartments = organizationData[org].departments || {};
+          Object.keys(orgDepartments).forEach(dept => {
+            if (dept && dept.length > 1) {
+              departments.push({
+                label: dept,
+                value: dept,
+                organization: org
+              });
+            }
+          });
+        });
+
+        console.log('Processed affiliation data:', {
+          countriesCount: formattedCountries.length,
+          organizationsCount: organizations.length,
+          departmentsCount: departments.length
+        });
+
         this.setState({
           collaborations,
-          countries,
+          countries: formattedCountries,
           organizations,
           departments,
         });
       }
-    );
+    ).catch(error => {
+      console.error('Error fetching affiliations data:', error);
+      this.setState({
+        collaborations: [],
+        countries: [],
+        organizations: [],
+        departments: [
+          { label: 'Institute of Organic Chemistry', value: 'Institute of Organic Chemistry' },
+          { label: 'Department of Chemistry', value: 'Department of Chemistry' },
+          { label: 'School of Science', value: 'School of Science' },
+        ]
+      });
+    });
   }
 
   componentWillUnmount() {
@@ -184,6 +342,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
   handleInputChange(type, ev) {
     let { fields } = this.state;
+
     switch (type) {
       case 'country':
         fields.country = ev && ev.value;
@@ -198,8 +357,47 @@ export default class RepoReviewAuthorsModal extends React.Component {
         if (typeof fields === 'undefined') {
           fields = {};
         }
-        fields[type] = ev && ev.value;
+
+        // Handle organization change to reset the department if needed
+        if (type.includes('@line_organization')) {
+          const creatorId = type.split('@')[0];
+
+          // Set the organization value first
+          fields[type] = ev && ev.value;
+
+          // Reset department when organization changes
+          if (fields[`${creatorId}@line_department`]) {
+            // Check if the department belongs to the selected organization
+            const { departments } = this.state;
+            const selectedOrg = ev && ev.value;
+            const currentDept = fields[`${creatorId}@line_department`];
+
+            const deptBelongsToOrg = departments.some(
+              dept => dept.value === currentDept &&
+                     (dept.organization === selectedOrg || !dept.organization)
+            );
+
+            if (!deptBelongsToOrg) {
+              // Reset department if it doesn't belong to the selected organization
+              fields[`${creatorId}@line_department`] = '';
+
+              // Force a complete state update to ensure proper re-render with styles
+              this.setState({ fields }, () => {
+                // Use forceUpdate to ensure styles are re-applied
+                this.forceUpdate();
+              });
+
+              // Return early to prevent the normal setState at the end
+              return;
+            }
+          }
+        } else {
+          // For non-organization fields, just set the value
+          fields[type] = ev && ev.value;
+        }
     }
+
+    // Normal setState for most cases
     this.setState({ fields });
   }
 
@@ -286,6 +484,60 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     leaders.push(newLeader);
     this.setState({ leaders, selectedAuthors: null });
+  }
+
+  onAddContributorAff(contributor) {
+    const { fields } = this.state;
+    const taggData = this.state.taggData || this.props.taggData;
+    const department = fields[`${contributor.id}@line_department`];
+    const organization = fields[`${contributor.id}@line_organization`];
+    const country = fields[`${contributor.id}@line_country`];
+    const { affiliations, affiliation_ids } = taggData;
+
+    // Ensure contributor has affiliationIds array
+    if (!contributor.affiliationIds) {
+      contributor.affiliationIds = [];
+    }
+
+    const params = {
+      department,
+      organization,
+      country,
+    };
+
+    UsersFetcher.findAndCreateAff(params).then(result => {
+      if (result.error) {
+        alert(result.error);
+      } else {
+        affiliations[result.id] = result.aff_output;
+        contributor.affiliationIds.push(result.id);
+
+        // Clear fields after adding
+        fields[`${contributor.id}@line_department`] = '';
+        fields[`${contributor.id}@line_organization`] = '';
+        fields[`${contributor.id}@line_country`] = '';
+
+        taggData.affiliations = affiliations;
+        affiliation_ids.push(result.id);
+        taggData.affiliation_ids = uniq(flattenDeep(affiliation_ids));
+        taggData.contributors = contributor;
+
+        this.setState({ taggData, fields });
+      }
+    });
+  }
+
+  onDeleteContributorAff(contributor, aid) {
+    const taggData = this.state.taggData || this.props.taggData;
+
+    if (!contributor.affiliationIds) {
+      contributor.affiliationIds = [];
+    }
+
+    contributor.affiliationIds = contributor.affiliationIds.filter(id => id !== aid);
+    taggData.contributors = contributor;
+
+    this.setState({ taggData });
   }
 
   onAddAff(g) {
@@ -419,6 +671,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
   }
 
   contributor() {
+    const { countries, organizations, departments, fields } = this.state;
     const taggData = this.state.taggData || this.props.taggData;
     const contributors = taggData?.contributors || {};
 
@@ -428,18 +681,36 @@ export default class RepoReviewAuthorsModal extends React.Component {
       ) : (
         <OrcidIcon orcid={contributors.ORCID} />
       );
-    const aff =
-      contributors.affiliations &&
-      Object.keys(contributors.affiliations).map(k => (
-        <div key={uuid.v4()}> -{contributors.affiliations[k]}</div>
-      ));
+
+    // Display contributor's existing affiliations with management table
     return (
       <div>
         <h5>
           <b>Contributor:</b>
         </h5>
         {orcid}
-        {contributors.name} <br /> {aff}{' '}
+        {contributors.name}
+        <br />
+        <Table responsive condensed hover className="contributor-affiliation-table" style={{ marginTop: '10px', minWidth: '500px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f5f5f5' }}>
+              <th colSpan="5">Contributor Affiliations</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contributorAffBody(
+              taggData,
+              contributors,
+              fields,
+              countries,
+              organizations,
+              departments,
+              this.onAddContributorAff,
+              this.onDeleteContributorAff,
+              this.handleInputChange
+            )}
+          </tbody>
+        </Table>
       </div>
     );
   }
@@ -540,7 +811,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     return (
       <div>
-        <h4>Additional Reviewer List</h4>
+        <h4>Group Lead / Additional Reviewer List</h4>
         <Table responsive condensed hover>
           <thead>
             <tr style={{ backgroundColor: '#ddd' }}>
@@ -595,7 +866,7 @@ export default class RepoReviewAuthorsModal extends React.Component {
     return (
       <div>
         <h4>Author List</h4>
-        <Table responsive condensed hover>
+        <Table responsive condensed hover style={{ height: '260px' }}>
           <thead>
             <tr style={{ backgroundColor: '#ddd' }}>
               <th width="5%">Action</th>
@@ -681,6 +952,8 @@ export default class RepoReviewAuthorsModal extends React.Component {
 
     return (
       <span>
+        {/* Add global CSS styles for affiliation fields to ensure consistent width */}
+        <style>{affFieldStyles}</style>
         {this.renderButton()}
         <Modal
           show={modalShow}

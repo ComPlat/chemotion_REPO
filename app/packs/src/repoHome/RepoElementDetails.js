@@ -37,6 +37,7 @@ export default class RepoElementDetails extends Component {
         <RepoSampleDetails
           isPublished
           element={currentElement}
+          isCI={currentElement.isCI}
           review_info={this.state.review_info}
           review={this.state.review || {}}
           listType={listType}

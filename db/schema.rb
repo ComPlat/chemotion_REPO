@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_09_17_085816) do
+ActiveRecord::Schema.define(version: 2025_03_31_144600) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -32,6 +32,10 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.date "to"
     t.string "domain"
     t.string "cat"
+    t.string "ror_id"
+    t.string "original_organization"
+    t.datetime "deleted_at"
+    t.index ["ror_id"], name: "index_affiliations_on_ror_id"
   end
 
   create_table "analyses_experiments", id: :serial, force: :cascade do |t|
@@ -862,6 +866,38 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.string "sprite_class"
   end
 
+  create_table "layer_tracks", force: :cascade do |t|
+    t.string "identifier", null: false
+    t.string "name"
+    t.string "label"
+    t.string "description"
+    t.jsonb "properties", default: {}
+    t.integer "created_by"
+    t.datetime "created_at"
+    t.integer "updated_by"
+    t.datetime "updated_at"
+    t.integer "deleted_by"
+    t.datetime "deleted_at"
+  end
+
+  create_table "layers", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "label"
+    t.string "description"
+    t.jsonb "properties", default: {}, null: false
+    t.string "identifier", null: false
+    t.integer "created_by", null: false
+    t.datetime "created_at", null: false
+    t.integer "updated_by"
+    t.datetime "updated_at"
+    t.integer "deleted_by"
+    t.datetime "deleted_at"
+    t.index ["identifier"], name: "index_layers_on_identifier", unique: true
+    t.index ["label"], name: "index_layers_on_label"
+    t.index ["name"], name: "index_layers_on_name"
+    t.index ["properties"], name: "index_layers_on_properties", using: :gin
+  end
+
   create_table "literals", id: :serial, force: :cascade do |t|
     t.integer "literature_id"
     t.integer "element_id"
@@ -1133,6 +1169,8 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.float "scheme_yield"
     t.boolean "show_label", default: false, null: false
     t.float "conversion_rate"
+    t.integer "gas_type", default: 0
+    t.jsonb "gas_phase_data", default: {"time"=>{"unit"=>"h", "value"=>nil}, "temperature"=>{"unit"=>"°C", "value"=>nil}, "turnover_number"=>nil, "part_per_million"=>nil, "turnover_frequency"=>{"unit"=>"TON/h", "value"=>nil}}
     t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
     t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
   end
@@ -1563,6 +1601,7 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
   create_table "users_collaborators", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "collaborator_id"
+    t.boolean "is_group_lead", default: false
   end
 
   create_table "users_devices", id: :serial, force: :cascade do |t|
@@ -1609,6 +1648,25 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
     t.index ["vessel_template_id"], name: "index_vessels_on_vessel_template_id"
   end
 
+  create_table "vocabularies", force: :cascade do |t|
+    t.string "identifier"
+    t.string "name"
+    t.string "label"
+    t.string "field_type"
+    t.string "description"
+    t.integer "opid", default: 0
+    t.string "term_id"
+    t.string "source"
+    t.string "source_id"
+    t.string "layer_id"
+    t.string "field_id"
+    t.jsonb "properties", default: {}
+    t.integer "created_by"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.datetime "deleted_at"
+  end
+
   create_table "wellplates", id: :serial, force: :cascade do |t|
     t.string "name"
     t.string "description"
@@ -1642,6 +1700,7 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
 
   add_foreign_key "collections", "inventories"
   add_foreign_key "dois", "molecules"
+  add_foreign_key "layer_tracks", "layers", column: "identifier", primary_key: "identifier"
   add_foreign_key "literals", "literatures"
   add_foreign_key "report_templates", "attachments"
   add_foreign_key "sample_tasks", "samples"
@@ -1784,6 +1843,23 @@ ActiveRecord::Schema.define(version: 2024_09_17_085816) do
              select id from users where type='Person' and id= $1
              union
              select user_id from users_groups where group_id = $1
+      $function$
+  SQL
+  create_function :lab_record_layers_changes, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.lab_record_layers_changes()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+          BEGIN
+              INSERT INTO layer_tracks (name, label, description, properties, identifier, created_by, created_at, updated_by, updated_at, deleted_by, deleted_at)
+              VALUES (OLD.name, OLD.label, OLD.description, OLD.properties, OLD.identifier, OLD.created_by, OLD.created_at, OLD.updated_by, OLD.updated_at, OLD.deleted_by, OLD.deleted_at);
+          EXCEPTION
+              WHEN OTHERS THEN
+                  -- Ensure the main operation still completes successfully
+          END;
+          RETURN NEW;
+      END;
       $function$
   SQL
   create_function :labels_by_user_sample, sql_definition: <<-'SQL'

@@ -23,18 +23,60 @@ module Chemotion
             country = ISO3166::Country.translations[c_code]
             from = format_date(emp['employment_summary']['start_date'])
             to = format_date(emp['employment_summary']['end_date'])
-            aff = Affiliation.find_or_create_by(country: country, organization: org, department: dep)
+            aff = Affiliation.where(country: country, organization: org, department: dep).order(:id).first_or_create
             UserAffiliation.create(user_id: user.id, affiliation_id: aff.id, from: from, to: to)
           end
+        end
+
+        # Check if the current user is authorized to manage this collaborator
+        def authorized_to_manage_collaborator?(collaboration)
+          # User can manage their own collaborators
+          return true if collaboration.user_id == current_user.id
+
+          # Add additional authorization logic if needed
+          # For example, group admins might be allowed to manage group collaborators
+
+          false # Default to not authorized unless conditions above are met
         end
       end
 
       namespace :list do
         desc 'fetch collaborators of current user'
         get do
-          ids = UsersCollaborator.where(user_id: current_user.id).pluck(:collaborator_id)
-          data = User.where(id: ids)
+          ## collaborations = current_user.collaborators
+          collaborations = UsersCollaborator.where(user_id: current_user.id)
+          data = collaborations.map do |uc|
+            user = uc.collaborator
+            user.instance_variable_set('@is_group_lead', uc.is_group_lead || false) if user.present?
+            user
+          end
           present data, with: Entities::CollaboratorEntity, root: 'authors'
+        end
+      end
+
+      namespace :update do
+        desc 'update collaborator information (e.g., group lead status)'
+        params do
+          requires :id, type: Integer
+          requires :is_group_lead, type: Boolean
+        end
+        post do
+          # Update the status
+          collaboration = UsersCollaborator.find_by(
+            user_id: current_user.id,
+            collaborator_id: params[:id]
+          )
+
+          if collaboration && authorized_to_manage_collaborator?(collaboration)
+            collaboration.update(is_group_lead: params[:is_group_lead])
+            user = collaboration.collaborator
+            user.instance_variable_set('@is_group_lead', collaboration.is_group_lead)
+            present user, with: Entities::CollaboratorEntity, root: 'user'
+          elsif collaboration
+            error!({ error: true, message: 'Unauthorized to manage this collaborator'}, 403)
+          else
+            error!({ error: true, message: 'Collaborator not found' }, 404)
+          end
         end
       end
 
@@ -144,7 +186,7 @@ module Chemotion
         end
         post do
           collaborator = User.find(params[:id])
-          aff = [Affiliation.find_or_create_by(country: params[:country], organization: params[:organization], department: params[:department])]
+          aff = [Affiliation.where(country: params[:country], organization: params[:organization], department: params[:department]).order(:id).first_or_create]
           collaborator.affiliations << aff unless aff.nil?
           present collaborator, with: Entities::CollaboratorEntity, root: 'user'
         end
@@ -158,7 +200,7 @@ module Chemotion
           requires :country, type: String
         end
         post do
-          aff = Affiliation.find_or_create_by(country: params[:country], organization: params[:organization], department: params[:department])
+          aff = Affiliation.where(country: params[:country], organization: params[:organization], department: params[:department]).order(:id).first_or_create
           { id: aff.id, aff_output: aff.output_full }
         end
       end
@@ -262,8 +304,8 @@ module Chemotion
           attributes[:providers] = { orcid: params[:orcid] }
           new_user = User.create!(attributes)
           new_user.profile.update!({data: {}})
-          new_user.affiliations = [Affiliation.find_or_create_by(country: params[:country],
-            organization: params[:organization], department: params[:department])]
+          new_user.affiliations = [Affiliation.where(country: params[:country],
+            organization: params[:organization], department: params[:department]).order(:id).first_or_create]
 
           new_author = UsersCollaborator.create({ user_id: current_user.id, collaborator_id: new_user.id })
           present new_user, with: Entities::CollaboratorEntity, root: 'user'

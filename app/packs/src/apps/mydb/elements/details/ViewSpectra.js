@@ -3,6 +3,7 @@ import React from 'react';
 import { SpectraEditor, FN } from '@complat/react-spectra-editor';
 import { Modal, Well, Button } from 'react-bootstrap';
 import Select from 'react-select';
+import Sample from 'src/models/Sample';
 import PropTypes from 'prop-types';
 import TreeSelect from 'antd/lib/tree-select';
 import { InlineMetadata } from 'chem-generic-ui';
@@ -131,11 +132,14 @@ class ViewSpectra extends React.Component {
   }
 
   getDSList() {
-    const sample = this.onChangeElement(); // REPO multiple samples
+    let sample = this.onChangeElement(); // REPO multiple samples
     const { spcInfos } = this.state;
     const spcDts = spcInfos.map(e => e.idDt);
+    if (sample && !(sample instanceof Sample)) {
+      sample = new Sample(sample);
+    }
     const dcs = sample?.datasetContainers();
-    const dcss = dcs.filter(e => spcDts.includes(e.id));
+    const dcss = dcs?.filter(e => spcDts.includes(e.id));
     return dcss;
   }
 
@@ -626,10 +630,10 @@ class ViewSpectra extends React.Component {
           { name: 'save & close', value: this.writeCloseCommon },
         ];
       } else {
-        return [
-          { name: 'save', value: this.saveOp },
-          { name: 'save & close', value: this.saveCloseOp },
-        ];
+      return [
+        { name: 'save', value: this.saveOp },
+        { name: 'save & close', value: this.saveCloseOp },
+      ];
       }
     }
     const saveable = updatable;

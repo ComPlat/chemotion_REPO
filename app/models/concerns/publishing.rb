@@ -122,6 +122,7 @@ module Publishing
           'name' => contributor.name,
           'ORCID' => contributor.orcid,
           'affiliations' => contributor.current_affiliations.map{ |aff| aff.output_full },
+          'affiliationIds' => contributor.current_affiliations.map{ |aff| aff.id },
           'id' => contributor.id
         },
         affiliations: affiliations_output,

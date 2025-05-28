@@ -16,6 +16,14 @@
     "plugin:react/recommended"
   ],
   "rules": {
+    "func-style": ["error", "expression", { "allowArrowFunctions": true }],
+    "react/function-component-definition": [
+      "error",
+      {
+        "namedComponents": ["arrow-function", "function-expression"],
+        "unnamedComponents": ["arrow-function", "function-expression"]
+      }
+    ],
     "no-console": ["off"],
     "comma-dangle": [1,"only-multiline"],
     "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],

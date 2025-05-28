@@ -100,7 +100,7 @@ export default class CollectionSubtree extends React.Component {
   }
 
   isVisible(node, uiState) {
-    if (node.descendant_ids) {
+    if (node.descendant_ids && uiState.currentCollection?.id) {
       let currentCollectionId = parseInt(uiState.currentCollection.id)
       if (node.descendant_ids.indexOf(currentCollectionId) > -1) return true
     }

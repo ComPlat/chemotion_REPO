@@ -19,10 +19,14 @@
               = text_field_tag :data_orcid,
                                 current_user.providers && current_user.providers['orcid'],
                                 maxlength: 19,
-                                readonly: true,
                                 class: 'form-control',
                                 id: 'txt-orcid',
                                 placeholder: 'e.g. 0000-0002-1234-5678'
+            .col-sm-3
+              = f.submit "Validate & Save ORCID", class: "btn btn-primary", id: 'validate-orcid-btn'
+          .form-group
+            .col-sm-offset-2.col-sm-7
+              %small.text-muted ORCID iD must be in the format: 0000-0000-0000-0000
 
   .panel.panel-default
     .panel-heading

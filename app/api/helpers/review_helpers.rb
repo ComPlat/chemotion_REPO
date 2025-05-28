@@ -151,14 +151,88 @@ module ReviewHelpers
     if tagg_data.present?
       tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
       tagg_data['affiliation_ids'] = [tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq]
-      tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| tagg_data['affiliation_ids'].first&.include?(k.to_i) }
+      affiliation_ids_to_keep = tagg_data['affiliation_ids'].first || []
+
+      # Process affiliations and ensure all have ROR IDs when possible
+      if tagg_data['affiliations'].present?
+        # Filter affiliations to only include those in affiliation_ids
+        tagg_data['affiliations'] = tagg_data['affiliations']&.select { |k, _| affiliation_ids_to_keep.include?(k.to_i) }
+
+        # Initialize or reset rors hash
+        tagg_data['rors'] ||= {}
+        new_rors = {}
+
+        # Process each affiliation that we're keeping
+        tagg_data['affiliations'].each do |id, affiliation_value|
+          affiliation_id = id.to_i
+
+          # First try to look up the ROR ID from the Affiliation model
+          db_affiliation = Affiliation.find_by(id: affiliation_id)
+          if db_affiliation&.ror_id.present?
+            new_rors[id] = db_affiliation.ror_id
+            next
+          end
+
+          # If not found in the database, check if we already have it in the current tagg_data
+          if tagg_data['rors'][id].present?
+            new_rors[id] = tagg_data['rors'][id]
+            next
+          end
+
+          # Check if it exists in the publication data
+          if pub.taggable_data.present? && pub.taggable_data['rors'].present? && pub.taggable_data['rors'][id.to_s].present?
+            new_rors[id] = pub.taggable_data['rors'][id.to_s]
+            next
+          end
+
+          # If still not found, try to look it up using the helper function
+          parts = affiliation_value.to_s.split(', ')
+          organization_name = parts.size > 1 ? parts[1] : nil
+          country = parts.size > 2 ? parts[2] : nil
+
+          # Skip if we don't have enough information
+          next if organization_name.blank?
+
+          # Try to find ROR ID
+          ror_result = lookup_ror_data(organization_name, country)
+          new_rors[id] = ror_result if ror_result.present?
+        end
+
+        # Replace the rors with our filtered and updated version
+        tagg_data['rors'] = new_rors
+      else
+        # If no affiliations provided, ensure we clean up any existing ones that aren't in the kept IDs
+        tagg_data['affiliations'] = {}
+        tagg_data['rors'] = {}
+      end
 
       pub_taggable_data = pub.taggable_data || {}
+
+      # Clean up any existing affiliations and rors that are not in the kept IDs
+      if pub_taggable_data['affiliations'].present?
+        pub_taggable_data['affiliations'] = pub_taggable_data['affiliations'].select { |k, _| affiliation_ids_to_keep.include?(k.to_i) }
+      end
+
+      if pub_taggable_data['rors'].present?
+        pub_taggable_data['rors'] = pub_taggable_data['rors'].select { |k, _| affiliation_ids_to_keep.include?(k.to_i) }
+      end
+
+      # Merge the new data
       pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
       pub.update(taggable_data: pub_taggable_data)
 
       et_taggable_data = et.taggable_data || {}
       pub_tag = et_taggable_data['publication'] || {}
+
+      # Also clean up element tag data
+      if pub_tag['affiliations'].present?
+        pub_tag['affiliations'] = pub_tag['affiliations'].select { |k, _| affiliation_ids_to_keep.include?(k.to_i) }
+      end
+
+      if pub_tag['rors'].present?
+        pub_tag['rors'] = pub_tag['rors'].select { |k, _| affiliation_ids_to_keep.include?(k.to_i) }
+      end
+
       pub_tag = pub_tag.deep_merge(tagg_data || {})
       et_taggable_data['publication'] = pub_tag
       et.update(taggable_data: et_taggable_data)
@@ -229,6 +303,40 @@ module ReviewHelpers
     { error: e.message }
   end
 
+  def lookup_ror_data(organization_name, country)
+    # Sanitize and prepare the organization name for comparison
+    org_name = organization_name.to_s.strip.downcase
+    country_name = country.to_s.strip.downcase
+    return nil if org_name.blank?
+
+    # Load organization data from JSON cache file if it exists
+    organizations_file = Rails.root.join('config', 'organizations_ror.json')
+    return nil unless File.exist?(organizations_file)
+
+    organizations_data = JSON.parse(File.read(organizations_file)) rescue nil
+    return nil unless organizations_data
+
+    # Try exact match first
+    match = organizations_data.find do |org|
+      org['name'].to_s.downcase == org_name &&
+      (country_name.blank? || org['country'].to_s.downcase == country_name)
+    end
+
+    # If no exact match, try fuzzy matching
+    if match.nil?
+      match = organizations_data.find do |org|
+        (org_name.include?(org['name'].to_s.downcase) ||
+         org['name'].to_s.downcase.include?(org_name)) &&
+        (country_name.blank? || org['country'].to_s.downcase == country_name)
+      end
+    end
+
+    # Return the ROR ID if found
+    match ? match['ror_id'] : nil
+  rescue StandardError => e
+    Rails.logger.error("Error looking up ROR data: #{e.message}")
+    nil
+  end
 
   private
 
