@@ -510,9 +510,16 @@ module Reporter
         end.compact
 
         if rdoi.present?
-          dd = [{
-           "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://doi.org/#{rdoi}\n"
-          }]
+          pub = Publication.find_by(element_type: 'Reaction', element_id: obj.id)
+          if pub.present? && pub.taggable_data['scheme_only'] == true
+            dd = [{
+            "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://www.chemotion-repository.net/pid/#{pub.id}\n"
+            }]
+          else
+            dd = [{
+            "insert" => "\nAdditional information on the chemical synthesis is available via Chemotion repository: \nhttps://doi.org/#{rdoi}\n"
+            }]
+          end
         end
         if pdois.present?
           dd += [{

@@ -2194,6 +2194,14 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@babel/types@^7.20.0":
+  version "7.28.2"
+  resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.28.2.tgz#da9db0856a9a88e0a13b019881d7513588cf712b"
+  integrity sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==
+  dependencies:
+    "@babel/helper-string-parser" "^7.27.1"
+    "@babel/helper-validator-identifier" "^7.27.1"
+
 "@babel/types@^7.22.15", "@babel/types@^7.22.5", "@babel/types@^7.23.0":
   version "7.23.0"
   resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.23.0.tgz#8c1f020c9df0e737e4e247c0619f58c68458aaeb"
@@ -5953,10 +5961,10 @@ cheerio@^1.0.0-rc.3:
     parse5-htmlparser2-tree-adapter "^6.0.1"
     tslib "^2.2.0"
 
-chem-generic-ui-viewer@^1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-1.5.0.tgz#588a339d2cb6a9ba20cb8fcff2f76e4555c3936f"
-  integrity sha512-ZRYtDUfNzp4xMHJtmxqKoHJ/XbbFtDfiIXdeXKLGbEEhsV6hhmSMlqh7thEQyHt2m69VEMERnu9r3d4zXQDHGA==
+chem-generic-ui-viewer@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/chem-generic-ui-viewer/-/chem-generic-ui-viewer-1.6.0.tgz#d25221705f102c223ee589541884a98ce16385c8"
+  integrity sha512-A4D1fNVHa8le948rLjW21eWiHNVNX+mXjXP0W+VpM85vOpIrm92P2ZfIPAiAqa8Dq3AJeH8l/kytMWdMVuM52Q==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.5.2"
     "@fortawesome/free-regular-svg-icons" "^6.5.2"
@@ -14097,9 +14105,9 @@ regenerator-runtime@^0.13.4:
   integrity sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==
 
 regenerator-runtime@^0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.14.0.tgz#5e19d68eb12d486f797e15a3c6a918f7cec5eb45"
-  integrity sha512-srw17NI0TUWHuGa5CFGGmhfNIeja30WMBfbslPNhf6JrqQlLN5gcrvig1oqPxiVaXb0oW0XRKtH6Nngs5lKCIA==
+  version "0.14.1"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.14.1.tgz#356ade10263f685dda125100cd862c1db895327f"
+  integrity sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==
 
 regenerator-transform@^0.13.3:
   version "0.13.4"
@@ -14235,10 +14243,10 @@ replace-in-file@^6.3.5:
     glob "^7.2.0"
     yargs "^17.2.1"
 
-repo-review-ui@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-1.0.1.tgz#97613b728508ea1902d6b3d0054d8f95ebf0636a"
-  integrity sha512-GEjYibJANwnxd80S3+dVZMg7hm3PVWg+dlGOZFODFwdsYNhibUXJ6j417GyIt0sSgso7TcsWCrONk/u76aD/eA==
+repo-review-ui@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/repo-review-ui/-/repo-review-ui-1.3.0.tgz#b2ea27c512f1eed343fba1c8629d9cfc8e0d07d9"
+  integrity sha512-imkFZaLNXK7vhEqNmKDnAeIx6hLFpzlkFqq5levFEH5xFRqOZHAQcr8IvYe+env54pumdmIh7A79BcvvXcRBLA==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.1.2"
     "@fortawesome/free-regular-svg-icons" "^6.1.2"
@@ -14251,7 +14259,6 @@ repo-review-ui@^1.0.1:
     prop-types "^15.8.1"
     react-draggable "^4.4.5"
     react-redux "^7.2.4"
-    react-select "5.4.0"
     redux "^4.2.0"
     redux-immutable "^4.0.0"
     redux-thunk "^2.0.0"

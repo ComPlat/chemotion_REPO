@@ -279,7 +279,7 @@ class Reaction < ApplicationRecord
 
   def yield_amount(sample_id)
     rps = ReactionsProductSample.find_by(reaction_id: id, sample_id: sample_id)
-    rps.scheme_yield || rps.equivalent
+    (rps.equivalent.nil? || rps.equivalent.zero?) ? rps.scheme_yield : rps.equivalent
   end
 
   def solvents_in_svg

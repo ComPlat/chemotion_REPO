@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 sfn_config = {}
 
 if File.exist? Rails.root.join('config', 'scifinder_n.yml')

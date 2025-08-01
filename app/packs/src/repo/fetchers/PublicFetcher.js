@@ -215,7 +215,7 @@ export default class PublicFetcher {
       });
   }
 
-  static fetchMolecule(id, advFlag = false, advType = '', advValues = null) {
+  static fetchMolecule(id, advFlag = false, advType = '', advValues = null, pid = null, suffix = '') {
     const paramAdvType =
       advType && advType !== '' ? `&adv_type=${advType}` : '';
 
@@ -228,8 +228,18 @@ export default class PublicFetcher {
       paramAdvValue = '';
     }
 
+    let paramPid = '';
+    if (typeof pid === 'number') {
+      paramPid = `&pid=${pid}`;
+    }
+
+    let paramSuffix = '';
+    if (typeof suffix === 'string') {
+      paramSuffix = `&suffix=${suffix}`;
+    }
+
     // const paramAdvValue = advValues ? advValues.map(x => `&adv_val[]=${x.value}`).join('') : '';
-    const api = `/api/v1/public/molecule.json?id=${id}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}`;
+    const api = `/api/v1/public/molecule.json?id=${id}&adv_flag=${advFlag}${paramAdvType}${paramAdvValue}${paramPid}${paramSuffix}`;
     return fetch(api, { credentials: 'same-origin' })
       .then(response => response.json())
       .catch(errorMessage => {

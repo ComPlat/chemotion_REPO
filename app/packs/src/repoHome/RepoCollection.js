@@ -5,6 +5,7 @@ import RepoCollectionDetails from 'src/repoHome/RepoCollectionDetails';
 import PublicStore from 'src/stores/alt/repo/stores/PublicStore';
 import { MetadataModal, InfoModal } from 'src/repoHome/RepoEmbargoModal';
 import EmbargoFetcher from 'src/repo/fetchers/EmbargoFetcher';
+import { DownloadZipBtn } from 'src/repoHome/RepoCommon';
 import { getFormattedISODate } from 'src/components/chemrepo/date-utils';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
 
@@ -148,7 +149,11 @@ export default class RepoCollection extends Component {
 
   renderSearch() {
     const { selectEmbargo, elements } = this.state;
-    const la = selectEmbargo && selectEmbargo.taggable_data && selectEmbargo.taggable_data.label;
+    const taggableData =  selectEmbargo?.taggable_data || {};
+    const la = taggableData.label;
+
+    const zipUrl = taggableData.zip_download_url;
+    const chemotionZipUrl = taggableData.chemotion_zip_url;
 
     const actionButtons =
       (
@@ -156,6 +161,7 @@ export default class RepoCollection extends Component {
           <ButtonToolbar>
             <Button
               id="all-info-button"
+              bsSize="small"
               disabled={selectEmbargo === null || (elements && elements.length === 0)}
               onClick={() => this.handleMetadataShow()}
             >
@@ -163,12 +169,14 @@ export default class RepoCollection extends Component {
             </Button>
             <Button
               id="all-info-button"
+              bsSize="small"
               disabled={selectEmbargo === null || (elements && elements.length === 0)}
               onClick={() => this.handleInfoShow()}
             >
               <i className="fa fa-users" aria-hidden="true" />&nbsp;Info and DOI
             </Button>
-            <Button href="/home/publications" target="_blank">
+            <DownloadZipBtn zipUrl={zipUrl} chemotionZipUrl={chemotionZipUrl} publicationId={selectEmbargo?.id} buttonSize="small" />
+            <Button href="/home/publications" bsSize="small" target="_blank">
               back to all publications
             </Button>
           </ButtonToolbar>

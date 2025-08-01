@@ -194,13 +194,13 @@ const routes = {
   '/molecules': {
     target: {
       show: function(e) {
-        PublicActions.displayMolecule(e.params.moleculeId)
+        PublicActions.displayMolecule(e.params.moleculeId, null, e.params.suffix)
       },
       tag: function (e) {
         if (e.params.version === 'undefined') {
-          PublicActions.displayMolecule(e.params.moleculeId, e.params.suffix)
+          PublicActions.displayMolecule(e.params.moleculeId, null, e.params.suffix)
         } else {
-          PublicActions.displayMolecule(e.params.moleculeId, `${e.params.suffix}/${e.params.version}`)
+          PublicActions.displayMolecule(e.params.moleculeId, null, `${e.params.suffix}/${e.params.version}`)
         }
       }
     },

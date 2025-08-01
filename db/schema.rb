@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_07_15_140007) do
+ActiveRecord::Schema.define(version: 2025_11_13_000000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -489,6 +489,7 @@ ActiveRecord::Schema.define(version: 2025_07_15_140007) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.string "version"
+    t.integer "submitted", default: 0, null: false
     t.index ["dataset_klass_id"], name: "index_dataset_klasses_revisions_on_dataset_klass_id"
   end
 
@@ -650,6 +651,7 @@ ActiveRecord::Schema.define(version: 2025_07_15_140007) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.string "version"
+    t.integer "submitted", default: 0, null: false
     t.index ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id"
   end
 
@@ -1469,6 +1471,7 @@ ActiveRecord::Schema.define(version: 2025_07_15_140007) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.string "version"
+    t.integer "submitted", default: 0, null: false
     t.index ["segment_klass_id"], name: "index_segment_klasses_revisions_on_segment_klass_id"
   end
 
@@ -1526,6 +1529,19 @@ ActiveRecord::Schema.define(version: 2025_07_15_140007) do
     t.index ["collection_id"], name: "index_sync_collections_users_on_collection_id"
     t.index ["shared_by_id", "user_id", "fake_ancestry"], name: "index_sync_collections_users_on_shared_by_id"
     t.index ["user_id", "fake_ancestry"], name: "index_sync_collections_users_on_user_id_and_fake_ancestry"
+  end
+
+  create_table "template_submissions", force: :cascade do |t|
+    t.string "template_klass", null: false, comment: "The type of template submitted"
+    t.jsonb "template", default: {}, null: false, comment: "The template data submitted"
+    t.jsonb "metadata", default: {}, null: false, comment: "Additional metadata about the klass info and submission"
+    t.string "origin", null: false, comment: "The origin of the submission"
+    t.integer "state", default: 0, null: false, comment: "The state of the submission (0: pending, 1: approved, 2: rejected, 3: released)"
+    t.datetime "created_at", null: false, comment: "The creation time of the submission"
+    t.datetime "updated_at", comment: "The last update time of the submission"
+    t.datetime "deleted_at", comment: "The deletion time of the submission"
+    t.index ["metadata"], name: "idx_template_submissions_metadata", using: :gin
+    t.index ["template"], name: "idx_template_submissions_template", using: :gin
   end
 
   create_table "text_templates", id: :serial, force: :cascade do |t|

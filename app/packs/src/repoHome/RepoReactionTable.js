@@ -72,7 +72,11 @@ function ReactionTable({
       case 'products':
         if (showSwitch === 'y') {
           if (schemeOnly === true) {
-            val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`;
+            if (s.equivalent == null || s.equivalent === 0) {
+              val = `${materialCalc(s.scheme_yield * 100, 1, 0).toString()}%`;
+            } else {
+              val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
+            }
           } else {
             val = `${materialCalc(s.equivalent * 100, 1, 0).toString()}%`;
           }

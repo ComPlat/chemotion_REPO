@@ -6,7 +6,6 @@ import {
   ButtonToolbar,
   OverlayTrigger,
   Tooltip,
-  Label,
 } from 'react-bootstrap';
 import { ReviewUserLabels } from 'src/components/UserLabels';
 import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
@@ -14,9 +13,10 @@ import ReviewActions from 'src/stores/alt/repo/actions/ReviewActions';
 export default class RepoUserLabelModal extends React.Component {
   constructor(props) {
     super(props);
+    const { element } = props;
     this.state = {
       modalShow: false,
-      selectedIds: this.props.element.user_labels || [],
+      selectedIds: element.user_labels || [],
     };
     this.handleSelectLabels = this.handleSelectLabels.bind(this);
     this.handleSaveLabels = this.handleSaveLabels.bind(this);
@@ -37,10 +37,10 @@ export default class RepoUserLabelModal extends React.Component {
     const { element } = this.props;
 
     return (
-      <div>
+      <>
         <OverlayTrigger
           placement="top"
-          overlay={<Tooltip id="tt_metadata">Add/Remove user labels</Tooltip>}
+          overlay={<Tooltip id="tt_metadata">Add/Remove User Labels</Tooltip>}
         >
           <Button
             onClick={() => this.setState({ modalShow: true })}
@@ -54,8 +54,11 @@ export default class RepoUserLabelModal extends React.Component {
           onHide={() => this.setState({ modalShow: false })}
           dialogClassName="news-preview-dialog"
         >
-          <Modal.Body style={{ overflow: 'auto' }}>
-            <div>
+          <Modal.Header closeButton>
+            <Modal.Title>Please select Labels</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div style={{ position: 'relative' }}>
               <h4>
                 <ReviewUserLabels
                   element={element}
@@ -64,7 +67,8 @@ export default class RepoUserLabelModal extends React.Component {
                 />
               </h4>
             </div>
-            <br />
+          </Modal.Body>
+          <Modal.Footer>
             <ButtonToolbar>
               <Button
                 bsStyle="warning"
@@ -79,9 +83,9 @@ export default class RepoUserLabelModal extends React.Component {
                 Save
               </Button>
             </ButtonToolbar>
-          </Modal.Body>
+          </Modal.Footer>
         </Modal>
-      </div>
+      </>
     );
   }
 }

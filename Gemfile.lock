@@ -458,7 +458,7 @@ GEM
       rexml
     kramdown-parser-gfm (1.1.0)
       kramdown (~> 2.0)
-    labimotion (2.0.0.rc8)
+    labimotion (2.0.3)
       rails (~> 6.1.7)
     language_server-protocol (3.17.0.3)
     latex-decode (0.4.0)
@@ -837,10 +837,6 @@ GEM
       logger
     ruby2_keywords (0.0.5)
     ruby_dig (0.0.2)
-    ruby_jard (0.3.1)
-      byebug (>= 9.1, < 12.0)
-      pry (~> 0.13.0)
-      tty-screen (~> 0.8.1)
     rubyzip (2.3.2)
     sassc (2.4.0)
       ffi (~> 1.9)
@@ -956,7 +952,6 @@ GEM
     timeout (0.4.3)
     ttfunk (1.8.0)
       bigdecimal (~> 3.1)
-    tty-screen (0.8.2)
     turbo-sprockets-rails4 (1.2.5)
       parallel (~> 1.0)
       railties (>= 4)
@@ -1081,7 +1076,7 @@ DEPENDENCIES
   kaminari
   kaminari-grape
   ketcherails!
-  labimotion (= 2.0.0.rc8)
+  labimotion (= 2.0.3)
   launchy
   linkeddata
   listen
@@ -1132,7 +1127,6 @@ DEPENDENCIES
   ruby-geometry
   ruby-mailchecker
   ruby-ole
-  ruby_jard
   sablon!
   sassc-rails
   scenic

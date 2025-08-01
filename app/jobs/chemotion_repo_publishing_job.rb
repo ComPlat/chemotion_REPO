@@ -131,6 +131,7 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
     @publications.each do |pub|
       pub.transition_from_completing_to_completed!
     end
+    send_repo_tracker_job if ExternalServicesConfig.repo_tracker_enabled?
     transition_success?(
       Publication::STATE_COMPLETING,
       Publication::STATE_COMPLETED
@@ -181,6 +182,18 @@ class ChemotionRepoPublishingJob < ActiveJob::Base
         end
       end
     end
+  end
+
+  def send_repo_tracker_job
+    return unless @publication && @publication.persisted?
+
+    @publication.reload
+    if ExternalServicesConfig.repo_tracker_enabled?
+      RepoTrackerService.new(@publication.original_element || @element, @element, @publication.published_by, 'published').call
+    end
+
+  rescue StandardError => e
+    Rails.logger.error e.backtrace.join("\n")
   end
 
   def replace_old_sample_version_in_reaction

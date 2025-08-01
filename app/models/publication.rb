@@ -76,7 +76,11 @@ class Publication < ActiveRecord::Base
   STATE_PENDING = 'pending'
   STATE_DECLINED = 'declined'
   STATE_REVIEWED = 'reviewed'
+  STATE_REVERT = 'revert'
   STATE_RETRACTED = 'retracted'
+
+  # Callback to automatically upload to NMRXiv when publication is completed
+  # after_update :trigger_nmrxiv_upload, if: :state_changed_to_completed?
 
   def embargoed?(root_publication = root)
     cid = User.with_deleted.find(root_publication.published_by).publication_embargo_collection.id
@@ -212,7 +216,7 @@ class Publication < ActiveRecord::Base
       CollectionsReaction
     end.move_to_collection(
       element.id,
-      [pub_user.reviewing_collection.id] + Collection.reviewed_collection.pluck(:id),
+      [pub_user.reviewing_collection.id, Collection.embargo_accepted_collection&.id] + Collection.reviewed_collection.pluck(:id),
       [pub_user.pending_collection.id] + Collection.element_to_review_collection.pluck(:id)
     )
   end
@@ -771,7 +775,7 @@ class Publication < ActiveRecord::Base
       if element_type == 'Reaction'
         gl_col_ids = collections_klass.joins(:collection).where(reaction_id: element_id).where("collections.label = 'Group Lead Review'").pluck :collection_id
       end
-      collections_klass.remove_in_collection([element_id], gl_col_ids ) if gl_col_ids.present?
+      collections_klass.remove_in_collection([element_id], gl_col_ids) if gl_col_ids.present?
       collections_klass.remove_in_collection([element_id], pending_collection_ids)
       collections_klass.remove_in_collection([element_id], Collection.element_to_review_collection.pluck(:id))
       collections_klass.remove_in_collection([element_id], [Collection.embargo_accepted_collection&.id])
@@ -781,8 +785,31 @@ class Publication < ActiveRecord::Base
       pd = taggable_data.merge(published_at: time)
       logger(['moved to collections'])
     end
-    self.update!(state: STATE_COMPLETED, taggable_data: taggable_data.merge(pd), published_at: time)
+    self.update!(state: STATE_COMPLETED, published_at: time)
+
+    # Generate publication zip file and update taggable_data
+    generate_publication_zip!(pd)
+
+    # Generate Chemotion zip file for element export
+    chemotion_zip_path = generate_chemotion_zip
+    if chemotion_zip_path
+      pd[:chemotion_zip_path] = chemotion_zip_path
+      # Generate download URL from file path
+      # Handle both absolute and relative paths
+      relative_path = if chemotion_zip_path.start_with?('/')
+                        # Absolute path: convert to relative from public directory
+                        Pathname.new(chemotion_zip_path).relative_path_from(Rails.public_path).to_s
+                      else
+                        # Already relative path: use as-is
+                        chemotion_zip_path
+                      end
+      download_url = "#{ENV['PUBLIC_URL']}/#{relative_path}"
+      pd[:chemotion_zip_url] = download_url
+    end
+
+    self.update!(taggable_data: taggable_data.merge(pd))
     self.concept.update_tag if ENV['REPO_VERSIONING'] == 'true'
+    trigger_nmrxiv_upload
   end
 
   def default_line
@@ -859,7 +886,7 @@ class Publication < ActiveRecord::Base
 
   def cust_sample
     if element_type == 'Sample'
-      desc_type = "#{element.decoupled ? 'de' : ''}coupled_sample#{element.molecule_inchikey == 'DUMMY' ? '' : '_structure'}"
+      desc_type = "#{element.decoupled ? 'de' : ''}coupled_sample#{element.molecule_inchikey == 'DECOUPLED' ? '' : '_structure'}"
       melting_point = range_to_s(element.melting_point)
       boiling_point = range_to_s(element.boiling_point)
 
@@ -881,6 +908,240 @@ class Publication < ActiveRecord::Base
 
   def log_invalid_transition(to_state)
     logger("CANNOT TRANSITION from #{state} to #{to_state}")
+  end
+
+  # Get the zip file path stored in taggable_data
+  # Works for Sample, Reaction, and Collection publications
+  def zip_file_path
+    path = taggable_data&.dig('zip_file_path')
+    return nil unless path
+    # Maintain backward compatibility: if path is absolute (starts with /), return it as is.
+    # Otherwise, join it with Rails.public_path.
+    path.start_with?('/') ? path : Rails.public_path.join(path).to_s
+  end
+
+  # Get the zip download URL stored in taggable_data
+  # Works for Sample, Reaction, and Collection publications
+  def zip_download_url
+    taggable_data&.dig('zip_download_url')
+  end
+
+  # Get the Chemotion zip file path stored in taggable_data
+  def chemotion_zip_path
+    path = taggable_data&.dig('chemotion_zip_path')
+    return nil unless path
+    # Maintain backward compatibility: if path is absolute (starts with /), return it as is.
+    # Otherwise, join it with Rails.public_path.
+    path.start_with?('/') ? path : Rails.public_path.join(path).to_s
+  end
+
+  # Get the Chemotion zip download URL stored in taggable_data
+  def chemotion_zip_url
+    taggable_data&.dig('chemotion_zip_url')
+  end
+
+  # Check if zip file exists at the stored path
+  def zip_file_exists?
+    path = zip_file_path
+    return false unless path
+    File.exist?(path)
+  end
+
+  # Get information about bundled zip files for Collection publications
+  # Returns an array of hashes with sample/reaction IDs and their zip paths
+  # def bundled_zip_files
+  #   return [] unless element_type == 'Collection'
+
+  #   collection = element
+  #   return [] unless collection
+
+  #   bundled_files = []
+
+  #   # Get sample zip files
+  #   if collection.respond_to?(:samples)
+  #     collection.samples.each do |sample|
+  #       sample_pub = Publication.find_by(element_type: 'Sample', element_id: sample.id, state: 'completed', ancestry: nil)
+  #       if sample_pub && sample_pub.zip_file_path && File.exist?(sample_pub.zip_file_path)
+  #         bundled_files << {
+  #           type: 'Sample',
+  #           id: sample.id,
+  #           zip_path: sample_pub.zip_file_path,
+  #           download_url: sample_pub.zip_download_url
+  #         }
+  #       end
+  #     end
+  #   end
+
+  #   # Get reaction zip files
+  #   if collection.respond_to?(:reactions)
+  #     collection.reactions.each do |reaction|
+  #       reaction_pub = Publication.find_by(element_type: 'Reaction', element_id: reaction.id, state: 'completed', ancestry: nil')
+  #       if reaction_pub && reaction_pub.zip_file_path && File.exist?(reaction_pub.zip_file_path)
+  #         bundled_files << {
+  #           type: 'Reaction',
+  #           id: reaction.id,
+  #           zip_path: reaction_pub.zip_file_path,
+  #           download_url: reaction_pub.zip_download_url
+  #         }
+  #       end
+  #     end
+  #   end
+
+  #   bundled_files
+  # end
+
+  # Generate publication zip file and update the provided data hash
+  # @param data_hash [Hash] the hash to update with zip file information
+  def generate_publication_zip!(data_hash)
+    return unless %w[Sample Reaction Collection].include?(element_type)
+
+    begin
+      zip_service = PublicationZipService.new(self)
+      result = zip_service.generate_zip
+
+      if result[:success]
+        # Store the zip file path in the provided data hash
+        data_hash[:zip_file_path] = result[:file_path]
+        data_hash[:zip_download_url] = result[:download_url]
+        logger(["Publication zip generated successfully", "Path: #{result[:file_path]}"])
+      else
+        logger(["Failed to generate publication zip", "Error: #{result[:error]}"])
+      end
+    rescue => e
+      logger(["Error generating publication zip", "Exception: #{e.message}"])
+      logger(["Backtrace: #{e.backtrace.join("\n")}"])
+    end
+  end
+
+  # Generate element zip file using ExportElement for Sample/Reaction or ExportCollections for Collection
+  # @param export_id [String] unique identifier for the export (optional, defaults to generated value)
+  # @param format [String] export format (default: 'zip')
+  # @return [String, nil] path to the generated zip file or nil if invalid
+  def generate_chemotion_zip(export_id: nil, format: 'zip')
+    return unless %w[Sample Reaction Collection].include?(element_type)
+
+    begin
+      # Generate export_id if not provided
+      export_id ||= "pub_#{id}_#{element_type.downcase}_#{element_id}_#{Time.now.to_i}"
+
+      # Generate export metadata
+      export_metadata = generate_export_metadata
+
+      # Use appropriate export class based on element type
+      temp_file_path = if element_type == 'Collection'
+                         # Use ExportCollections for collections
+                         exporter = Export::ExportCollections.new(export_id, [element_id], format, false, false)
+                         exporter.export_metadata = export_metadata
+                         exporter.prepare_data
+                         exporter.to_file
+                       else
+                         # Use ExportElement for samples and reactions
+                         Export::ExportElement.generate(
+                           export_id,
+                           element_type,
+                           element_id,
+                           format,
+                           export_metadata
+                         )
+                       end
+
+      return nil unless temp_file_path && File.exist?(temp_file_path)
+
+      # Generate organized file path with year/month structure
+      organized_path = generate_chemotion_file_path
+      return nil unless organized_path
+
+      # Ensure directory structure exists
+      directory = File.dirname(organized_path)
+      FileUtils.mkdir_p(directory) unless Dir.exist?(directory)
+
+      # Move file to organized location
+      FileUtils.mv(temp_file_path, organized_path)
+
+      logger(["Element zip generated successfully", "Path: #{organized_path}", "Export ID: #{export_id}"])
+      # Return relative path from public directory for storage
+      Pathname.new(organized_path).relative_path_from(Rails.public_path).to_s
+    rescue => e
+      logger(["Error generating element zip", "Exception: #{e.message}"])
+      logger(["Backtrace: #{e.backtrace.join("\n")}"])
+      nil
+    end
+  end
+
+  # Generate organized file path for Chemotion zip with year/month structure
+  # @return [String, nil] the organized file path or nil on error
+  def generate_chemotion_file_path
+    begin
+      # Get published_at date, fallback to current date if not available
+      date = published_at || Time.current
+      year = date.year
+      month = date.month
+
+      # Determine base directory based on element type
+      base_directory = case element_type&.downcase
+                       when 'sample'
+                         Rails.public_path.join('zip/samples')
+                       when 'reaction'
+                         Rails.public_path.join('zip/reactions')
+                       when 'collection'
+                         Rails.public_path.join('zip/collections')
+                       else
+                         Rails.public_path.join('zip/others')
+                       end
+
+      # Generate filename: chemotion_xxx.zip where xxx is the publication ID
+      filename = "chemotion_#{element_type}_#{id}.zip"
+
+      # Construct full path: public/zip/[samples|reactions|collections]/year/month/chemotion_xxx.zip
+      file_path = base_directory.join(year.to_s, month.to_s, filename)
+
+      file_path.to_s
+    rescue StandardError => e
+      logger(["Failed to generate chemotion file path", "Error: #{e.message}"])
+      nil
+    end
+  end
+
+  # Generate metadata hash for export
+  # @return [Hash] metadata information for the export
+  def generate_export_metadata
+    # Read version information from VERSION file
+    version_data = read_version_file
+
+    {
+      export_datetime: Time.current.iso8601,
+      repository: {
+        name: 'Chemotion Repository',
+        url: ENV['PUBLIC_URL'],
+        mode: ENV['PUBLISH_MODE'],
+        version: version_data
+      }
+    }
+  end
+
+  # Read version information from VERSION file
+  # @return [Hash] version information
+  def read_version_file
+    version_file_path = Rails.root.join('VERSION')
+    return {} unless File.exist?(version_file_path)
+
+    begin
+      version_content = File.read(version_file_path)
+      version_hash = {}
+
+      version_content.each_line do |line|
+        line = line.strip
+        next if line.empty?
+
+        key, value = line.split(':', 2)
+        version_hash[key.strip] = value&.strip if key && value
+      end
+
+      version_hash
+    rescue StandardError => e
+      logger(["Error reading VERSION file", "Exception: #{e.message}"])
+      {}
+    end
   end
 
   def self.repo_log_exception(exception, options = {})
@@ -908,5 +1169,29 @@ class Publication < ActiveRecord::Base
         ********************************************************************************
       INFO
     )
+  end
+
+  private
+
+  # Check if the state just changed to completed
+  def state_changed_to_completed?
+    saved_change_to_state? && state == STATE_COMPLETED
+  end
+
+  # Trigger NMRXiv upload job asynchronously
+  def trigger_nmrxiv_upload
+    return if ancestry.present? || ancestry == '/'
+    return unless ExternalServicesConfig.nmrxiv_enabled?
+    return unless element_type == 'Reaction' || element_type == 'Sample'
+
+    delay(run_at: 1.second.from_now).call_nmrxiv_service
+  rescue => e
+    logger("Error queuing NMRXiv auto-upload job: #{e.message}")
+  end
+
+  def call_nmrxiv_service
+    NmrxivAutoUploadService.new(id).call
+  rescue => e
+    logger("Error call_nmrxiv_service: #{e.message}")
   end
 end

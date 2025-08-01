@@ -59,6 +59,7 @@
 /config/inference.yml
 /config/omniauth.yml
 /config/scifinder_n.yml
+/config/stt.yml
 /config/radar.yml
 
 /doc/*
@@ -102,6 +103,9 @@
 !/public/images/wild_card/
 !/public/images/ghs/
 !/public/images/creative_common/
+
+/public/nmrxiv/upload/*
+!/public/nmrxiv/upload/.keep
 
 /public/intro/*
 !/public/intro/.keep

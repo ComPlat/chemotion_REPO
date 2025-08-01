@@ -1,5 +1,5 @@
 export default Object.freeze({
-  INCHIKEY_DUMMY: 'DUMMY',
+  INCHIKEY_DUMMY: 'DECOUPLED',
   P_STATE: {
     ACCEPTED: 'accepted',
     PENDING: 'pending',

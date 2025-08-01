@@ -156,7 +156,7 @@ function MoleculeHeader({
       style={{ backgroundColor: '#F5F5F5', cursor: 'pointer' }}
       onClick={onClick}
     >
-      {sample.molecule?.inchikey === 'DUMMY' && sample.molfile == null
+      {sample.molecule?.inchikey === 'DECOUPLED' && sample.molfile == null
         ? (<td colSpan="3" style={{ position: 'relative ' }}><div><h4>(No-structure sample)</h4></div></td>)
         : (
           <td colSpan="2" style={{ position: 'relative ' }}>
@@ -187,7 +187,7 @@ function MoleculeHeader({
             </div>
           </td>
         )}
-      {sample.molecule?.inchikey === 'DUMMY' && sample.molfile == null
+      {sample.molecule?.inchikey === 'DECOUPLED' && sample.molfile == null
         ? null : dragColumn(sample, showDragColumn, DragDropItemTypes.MOLECULE, targetType)}
     </tr>
   );

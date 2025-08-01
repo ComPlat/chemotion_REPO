@@ -174,6 +174,33 @@ module PubChem
     [cas]
   end
 
+  def self.get_smiles_from_identifier(identifier)
+    return nil unless identifier.is_a?(String)
+    return nil if identifier.strip.empty?
+
+    options = { timeout: 10, headers: { 'Content-Type' => 'application/json' } }
+    encoded_id = URI.encode_www_form_component(identifier.strip)
+    url = "#{http_s}#{PUBCHEM_HOST}/rest/pug/compound/name/#{encoded_id}/property/IsomericSMILES,CanonicalSMILES,SMILES,ConnectivitySMILES/JSON"
+
+    begin
+      resp = HTTParty.get(url, options)
+      return nil unless resp.success?
+
+      result = JSON.parse(resp.body)
+      if result['Fault']
+        Rails.logger.warn "PubChem API error: #{result['Fault']['Code']} - #{result['Fault']['Message']}"
+        return nil
+      end
+      props = result.dig('PropertyTable', 'Properties', 0)
+      return nil unless props.is_a?(Hash)
+
+      props['IsomericSMILES'] || props['CanonicalSMILES'] || props['SMILES'] || props['ConnectivitySMILES']
+    rescue StandardError => e
+      Rails.logger.error ["with identifier: #{identifier}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+      nil
+    end
+  end
+
   def self.get_lcss_from_cid(cid)
     return nil unless cid
     return nil unless cid.is_a? Integer

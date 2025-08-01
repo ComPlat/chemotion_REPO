@@ -61,6 +61,7 @@ module Repo
       end
       logger(next_step, 'process_new_state_job')
       @publication.process_new_state_job
+      send_repo_tracker_job if ExternalServicesConfig.repo_tracker_enabled?
 
       send_message_to_user
 
@@ -322,10 +323,6 @@ module Repo
       @element.reactions_samples.each  do |rs|
         new_rs = rs.dup
         sample = @current_user.samples.find_by(id: rs.sample_id)
-        if @scheme_only == true
-          sample.target_amount_value = 0.0
-          sample.real_amount_value = nil
-        end
         sample_analysis_set = sample.analyses.where(id: @analysis_set_ids)
         new_sample = duplicate_sample(sample, sample_analysis_set, pub.id)
         sample.tag_as_published(new_sample, sample_analysis_set)
@@ -555,7 +552,7 @@ module Repo
 
       @element.reactions_samples.select { |rs| rs.type == 'ReactionsProductSample' }.map do |p|
         py = @scheme_params[:scheme_yield].select { |o| o['id'] == p.sample_id }
-        p.equivalent = py[0]['_equivalent'] if py && !py.empty?
+        # p.equivalent = py[0]['_equivalent'] if py && !py.empty?
         p.scheme_yield = py[0]['_equivalent'] if py && !py.empty?
       end
 
@@ -574,6 +571,18 @@ module Repo
       @element.role = ''
       @element.temperature = @scheme_params[:temperature]
       @element.duration = "#{@scheme_params[:duration][:dispValue]} #{@scheme_params[:duration][:dispUnit]}" unless @scheme_params[:duration].nil?
+    end
+
+    def send_repo_tracker_job
+      return unless @new_root && @new_root.persisted? && @user_id
+
+      @new_root.reload
+      if ExternalServicesConfig.repo_tracker_enabled?
+        RepoTrackerService.new(@element, @new_root, @user_id, 'submitted').call
+      end
+
+    rescue StandardError => e
+      log_exception(e, method: __method__)
     end
 
     def send_message_to_user

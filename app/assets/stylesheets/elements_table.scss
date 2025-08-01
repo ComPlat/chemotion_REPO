@@ -188,8 +188,14 @@ th.drag {
   overflow-y: scroll;
 }
 
+.review-list-search {
+  height: calc(100vh - 200px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
 .embargo-list {
-  height: calc(100vh - 170px);
+  height: calc(100vh - 200px);
   overflow-x: hidden;
   overflow-y: scroll;
 }

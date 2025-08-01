@@ -307,6 +307,10 @@ module Import
           et.update!(
             taggable_data: (et.taggable_data || {}).merge(eln_info: eln_info),
           )
+          if ExternalServicesConfig.repo_tracker_enabled?
+            RepoTrackerService.new(sample, sample, @current_user_id, 'processed').call
+          end
+          sample
         end
 
         # add sample to the @instances map

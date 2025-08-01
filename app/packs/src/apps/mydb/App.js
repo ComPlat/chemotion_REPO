@@ -195,6 +195,9 @@ class App extends Component {
     obj.btnAction = btnAction;
     obj.elementType = elementType;
     obj.elementId = elementType === 'sample' ? currentElement?.sample?.id : currentElement?.reaction?.id;
+
+    const { sttEnabled } = UIStore.getState();
+
     return (
       <RepoReviewModal
         show={showReviewModal}
@@ -202,6 +205,7 @@ class App extends Component {
         onSubmit={this.handleSubmitReview}
         onUpdate={this.handleReviewUpdate}
         onHide={() => this.setState({ showReviewModal: false })}
+        sttEnabled={sttEnabled || false}
       />
     );
   }
@@ -221,6 +225,7 @@ class App extends Component {
     } else {
       obj['elementId'] = currentElement?.reaction?.id;
     }
+    const { sttEnabled } = UIStore.getState();
 
     return (
       <RepoCommentModal
@@ -228,6 +233,7 @@ class App extends Component {
         data={obj}
         onUpdate={this.handleCommentUpdate}
         onHide={() => this.setState({ showCommentModal: false })}
+        sttEnabled={sttEnabled || false}
       />
     );
   }

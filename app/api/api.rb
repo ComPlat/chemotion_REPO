@@ -69,7 +69,8 @@ class API < Grape::API
         '/api/v1/gate/received',
         '/api/v1/gate/ping',
         '/api/v1/search/',
-        '/api/v1/suggestion'
+        '/api/v1/suggestion',
+        '/api/v1/external_tokens/nmrxiv/callback/'
       )
     end
 
@@ -156,6 +157,7 @@ class API < Grape::API
   }.freeze
 
   mount Chemotion::LiteratureAPI
+  mount Chemotion::CasLookupAPI
   mount Chemotion::ContainerAPI
   mount Chemotion::MoleculeAPI
   mount Chemotion::CollectionAPI
@@ -217,9 +219,16 @@ class API < Grape::API
   mount Chemotion::ArticleAPI
   mount Chemotion::CollaborationAPI
   mount Chemotion::PublicRepoAPI
+  mount Chemotion::PublicDownloadAPI
+  mount Chemotion::AiServicesAPI
+  mount Chemotion::TemplateSubmissionAPI
 
-  add_swagger_documentation(info: {
-    "title": "Chemotion Repository",
-    "version": "1.0"
-  }) if Rails.env.development?
+  add_swagger_documentation(
+    info: {
+      "title": "Chemotion Repository",
+      "version": "1.0"
+    },
+    host: Rails.env.production? ? 'www.chemotion-repository.net' : 'localhost:3000',
+    schemes: [Rails.env.production? ? 'https' : 'http']
+  ) if Rails.env.development?
 end

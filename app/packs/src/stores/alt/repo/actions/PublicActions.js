@@ -170,6 +170,7 @@ class PublicActions {
 
   displayMolecule(
     id,
+    pid,
     anchor = '',
     advFlag = false,
     advType = '',
@@ -177,7 +178,7 @@ class PublicActions {
     listType = RepoNavListTypes.SAMPLE
   ) {
     return dispatch => {
-      PublicFetcher.fetchMolecule(id, advFlag, advType, advVal)
+      PublicFetcher.fetchMolecule(id, advFlag, advType, advVal, pid, anchor)
         .then(result => {
           dispatch({ moleculeData: result, id: id, anchor: anchor, listType });
         })

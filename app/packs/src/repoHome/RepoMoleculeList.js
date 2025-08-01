@@ -88,10 +88,13 @@ const infoTag = molecule => {
 function RepoMoleculeList(props) {
   const { molecule, currentElement, isPubElement, advFlag, advType, advValue } =
     props;
-  const listClass =
-    currentElement?.molecule?.id === molecule.id
+
+  const pub_sample = (currentElement?.published_samples && currentElement?.published_samples[0]) || null;
+  let listClass =
+    pub_sample?.pub_id === molecule.publication?.id
       ? 'list_focus_on'
       : 'list_focus_off';
+
   const svgPathSample = molecule.sample_svg_file
     ? `/images/samples/${molecule.sample_svg_file}`
     : `/images/molecules/${molecule.molecule_svg_file}`;
@@ -104,6 +107,7 @@ function RepoMoleculeList(props) {
         LoadingActions.start();
         PublicActions.displayMolecule(
           molecule.id,
+          molecule.publication?.id || null,
           '',
           advFlag,
           advType,

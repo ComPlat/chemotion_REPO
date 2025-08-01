@@ -75,6 +75,8 @@ class Home extends Component {
 
   renderGuestPage() {
     const { guestPage, listType } = this.state;
+    const { sttEnabled } = PublicStore.getState();
+
     switch (guestPage) {
       case 'genericHub':
         return <RepoGenericHub />;
@@ -99,7 +101,7 @@ class Home extends Component {
       case 'publications':
         return <RepoPubl listType={listType || ''} />;
       case 'review':
-        return <RepoReview />;
+        return <RepoReview sttEnabled={sttEnabled || false} />;
       case 'collection':
         return <RepoCollection />;
       case 'embargo':
@@ -136,7 +138,7 @@ class Home extends Component {
               <Navigation />
               <Notifications />
             </Row>
-            <Row style={{ margin: '10px', paddingBottom: '10px' }}>
+            <Row style={{ margin: '0px 6px', paddingBottom: '10px' }}>
               {this.renderGuestPage()}
             </Row>
           </Grid>

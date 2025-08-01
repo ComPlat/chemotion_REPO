@@ -131,6 +131,12 @@ export default class RepoPubl extends Component {
     this.advSearchClick = this.advSearchClick.bind(this);
     this.loadAdvValuesByName = this.loadAdvValuesByName.bind(this);
     this.handleElementSelection = this.handleElementSelection.bind(this);
+    this.handleClearSearchSelection = this.handleClearSearchSelection.bind(this);
+    this.showStructureEditor = this.showStructureEditor.bind(this);
+    this.hideStructureEditor = this.hideStructureEditor.bind(this);
+    this.handleSearchTypeChange = this.handleSearchTypeChange.bind(this);
+    this.handleTanimotoChange = this.handleTanimotoChange.bind(this);
+    this.handleSelectionChange = this.handleSelectionChange.bind(this);
   }
 
   componentDidMount() {

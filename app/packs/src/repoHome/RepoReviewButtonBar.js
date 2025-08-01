@@ -37,6 +37,11 @@ const showButton = (btn, func, pubState, review_info) => {
       btnIcon = 'fa fa-play';
       btnTooltip = 'Submit for publication';
       break;
+    case 'Revert':
+      btnBsStyle = 'default';
+      btnIcon = 'fa fa-undo';
+      btnTooltip = 'Revert publication from Accepted to Pending state';
+      break;
     case 'Decline':
       btnBsStyle = 'default';
       btnIcon = 'fa fa-eject';
@@ -51,9 +56,10 @@ const showButton = (btn, func, pubState, review_info) => {
     default:
       break;
   }
-  return ((review_info?.review_level === 3 && pubState === 'pending' && btn !== 'Submit') ||
-  (pubState === 'pending' && btn !== 'Submit' && review_info?.preapproved !== true && btn !== 'Accept' && btn !== 'Decline' && review_info?.groupleader === true) ||
-  (review_info?.submitter === true && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline'))) ? (
+  return ((review_info?.review_level === 3 && pubState === 'pending' && btn !== 'Submit' && btn !== 'Revert') ||
+  (pubState === 'pending' && btn !== 'Submit' && btn !== 'Revert' && review_info?.preapproved !== true && btn !== 'Accept' && btn !== 'Decline' && review_info?.groupleader === true) ||
+  (review_info?.submitter === true && pubState === 'reviewed' && (btn === 'Submit' || btn === 'Decline')) ||
+   (review_info?.review_level === 3 && pubState === 'accepted' && btn === 'Revert')) ? (
     <OverlayTrigger
       key={`ot_${title}`}
       placement="top"
@@ -138,7 +144,7 @@ RepoReviewButtonBar.propTypes = {
 
 
 RepoReviewButtonBar.defaultProps = {
-  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
+  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'],
   buttonFunc: () => { },
   review_info: {},
   showComment: true,

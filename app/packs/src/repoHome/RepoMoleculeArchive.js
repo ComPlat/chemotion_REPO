@@ -49,7 +49,7 @@ const RepoMoleculeArchive = (props) => {
     : `/images/molecules/${molecule.molecule_svg_file}`;
   const pubchemInfo = pubchemTag(molecule);
   return (
-    <Col xs={12} sm={12} md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, '', advFlag, advType, advValue, RepoNavListTypes.MOLECULE_ARCHIVE)}>
+    <Col xs={12} sm={12} md={isPubElement === true ? 12 : 6} key={`list-molecule-${molecule.id}`} onClick={() => PublicActions.displayMolecule(molecule.id, molecule.publication?.id || null, '', advFlag, advType, advValue, RepoNavListTypes.MOLECULE_ARCHIVE)}>
       <div className={`home_archive ${listClass}`}>
         <div className="svg_border">
           <SVG src={svgPathSample} className="archive_svg_molecule" key={svgPathSample} />

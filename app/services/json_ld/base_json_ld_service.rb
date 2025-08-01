@@ -4,8 +4,7 @@ module JsonLd
   class BaseJsonLdService
     include Rails.application.routes.url_helpers
 
-    def initialize(base_url: nil)
-      @base_url = base_url || default_base_url
+    def initialize
     end
 
     # Common JSON-LD structure methods
@@ -63,32 +62,6 @@ module JsonLd
 
     def publication_url(suffix = nil)
       "https://www.chemotion-repository.net/inchikey/#{suffix}"
-    end
-
-    def tracking_item_name(pub, is_tracking = false)
-      return nil unless is_tracking
-
-      element = pub.element
-      return nil unless element
-
-      et = element.tag
-
-      tracking_item_name = et.taggable_data&.dig('tracking_item_name')
-      return tracking_item_name if tracking_item_name.present?
-
-      tracking_item_name = et.taggable_data&.dig('eln_info', 'tracking_item_name')
-      tracking_item_name = generate_tracking_item_name(pub, is_tracking) if tracking_item_name.nil?
-      et.update!(taggable_data: (et.taggable_data || {}).merge(tracking_item_name: tracking_item_name)) if tracking_item_name.present?
-      tracking_item_name
-    end
-
-    def generate_tracking_item_name(pub, is_tracking = false)
-      return nil unless is_tracking
-
-      element = pub.element
-      return nil unless element
-
-      "#{TrackerCommon.extract_hostname_without_tld}-#{element.short_label}-#{element.id}"
     end
 
     def json_ld_analysis_description(pub)
@@ -492,8 +465,5 @@ module JsonLd
 
     protected
 
-    def default_base_url
-      Rails.application.config.try(:base_url) || "http://localhost:3000"
-    end
   end
 end

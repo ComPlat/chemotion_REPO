@@ -1,5 +1,35 @@
 # Chemotion_Repository Changelog
 
+## [2.6.0]
+> 2026-03-06
+
+* Features and Enhancements:
+  * Publication downloader now includes attachments.
+  * Publication JSON downloads are sorted according to Generic Dataset settings.
+  * Refactored publication page to decouple sample handling.
+  * Data exchange integration with nmrXiv.
+  * Updated reaction yield calculation logic for scheme-only reactions.
+  * Added sample name and description to the publication page.
+  * Added support for downloading publications in Chemotion ZIP format.
+  * Added ability to revert accepted publications to pending status for reviewers.
+  * Added support for submitting templates to the Template Hub.
+  * Added speech-to-text functionality for reviewers.
+  * Added VERSION information.
+  * Upgraded Common API.
+  * Added template direct link support.
+  * Added preview functionality in the Template Hub.
+  * Enhanced search bar on the review page.
+  * Improved styling and usability of the Assign User Labels modal.
+
+* Bug Fixes:
+  * Fixed issue where the threshold could not be adjusted.
+  * Fixed issue where embargo action buttons were covered.
+  * Fixed versioning feature toggle to include resubmission.
+  * Fixed `TypeError: cannot access property 'setState'`.
+
+* Chores:
+  * Library upgrades, security updates, and general maintenance.
+
 ## [2.5.0]
 > 2025-08-06
 

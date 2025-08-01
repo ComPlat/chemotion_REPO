@@ -60,7 +60,7 @@ gem 'kaminari-grape'
 # gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', branch: 'upgrade-to-rails-6'
 gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', ref: 'd4ae864a0e2d9e853eac8e4fc4ce7e3ab8174f80'
 
-gem 'labimotion', '2.0.0.rc8'
+gem 'labimotion', '2.0.3'
 
 gem 'mimemagic', '0.3.10'
 gem 'mime-types'
@@ -176,7 +176,7 @@ group :development, :test do
 
   gem 'rspec'
   gem 'rspec-rails'
-  gem 'ruby_jard'
+  # gem 'ruby_jard'
 
   gem 'spring'
 end

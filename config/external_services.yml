@@ -1,0 +1,68 @@
+development:
+  nmrxiv:
+    enable_nmrxiv_service: true
+    base_url: 'https://dev.nmrxiv.org/api'
+    timeout: 30 # seconds
+    retry_attempts: 3
+    description: 'NMRXiv - Open NMR Data Repository and Computational Platform'
+    upload_endpoint: '/v1/chemotion/upload'
+
+  repo_tracker:
+    enable_service: true
+    base_url: 'https://tracker-deploy.chemdev.scc.kit.edu'
+    username: 'chemotion-repository@lists.kit.edu'
+    password: '00778899'
+    client_id: 'S8HbJdAEo--y05h4EUYblZBu-bgWkSDJrEb7kKMCpwc'
+    tracker_abbr: 'ChemotionRepository'
+    timeout: 50 # seconds
+    retry_attempts: 5
+    description: 'Repository Tracker - Track and manage repository data'
+    tracker_name: 'chemotion_repository'  ## fix for chemotion repository tracker
+    nmrxiv_tracker_name: 'nmrxiv'  ## fix for nmrxiv tracker
+    oauth_endpoint: '/oauth/token'
+    tracking_endpoint: '/api/v1/trackings'
+
+test:
+  nmrxiv:
+    enable_nmrxiv_service: true
+    base_url: 'https://test.nmrxiv.org/api'
+    timeout: 30 # seconds
+    retry_attempts: 3
+    description: 'NMRXiv - Open NMR Data Repository and Computational Platform'
+    upload_endpoint: '/v1/chemotion/upload'
+
+  repo_tracker:
+    enable_service: true
+    base_url: 'https://tracker-deploy.chemdev.scc.kit.edu'
+    username: 'chemotion@reposito.ry'
+    password: '00778899'
+    client_id: 'S8HbJdAEo--y05h4EUYblZBu-bgWkSDJrEb7kKMCpwc'
+    tracker_abbr: 'TestChemotionRepository'
+    timeout: 50 # seconds
+    retry_attempts: 5
+    description: 'Repository Tracker - Track and manage repository data'
+    tracker_name: 'chemotion_repository'
+    oauth_endpoint: '/oauth/token'
+    tracking_endpoint: '/api/v1/trackings'
+
+production:
+  nmrxiv:
+    enable_nmrxiv_service: true
+    base_url: 'https://www.nmrxiv.org/api'
+    timeout: 30 # seconds
+    retry_attempts: 3
+    description: 'NMRXiv - Open NMR Data Repository and Computational Platform'
+    upload_endpoint: '/v1/chemotion/upload'
+
+  repo_tracker:
+    enable_service: true
+    base_url: 'https://tracker-deploy.chemdev.scc.kit.edu'
+    username: 'chemotion@reposito.ry'
+    password: '00778899'
+    client_id: 'S8HbJdAEo--y05h4EUYblZBu-bgWkSDJrEb7kKMCpwc'
+    timeout: 50 # seconds
+    retry_attempts: 5
+    description: 'Repository Tracker - Track and manage repository data'
+    tracker_name: 'chemotion_repository'
+    oauth_endpoint: '/oauth/token'
+    tracking_endpoint: '/api/v1/trackings'

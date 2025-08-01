@@ -9,9 +9,6 @@ class JsonldConverterService
   SUPPORTED_ELEMENT_TYPES = %w[Sample Reaction Container].freeze
 
   # Convert any supported publication's JSON-LD to specified RDF format
-  # @param publication [Publication] Publication object
-  # @param format [Symbol] Output format (:turtle, :ntriples, :rdfxml, :jsonld)
-  # @return [String] Converted RDF data
   def self.convert_publication(publication, format: :turtle)
     validate_publication(publication)
 
@@ -50,10 +47,6 @@ class JsonldConverterService
   end
 
   # Convert any publication and save to a file
-  # @param publication [Publication] Publication object
-  # @param file_path [String] Path where to save the file
-  # @param format [Symbol] Output format (:turtle, :ntriples, :rdfxml, :jsonld)
-  # @return [String] Path to the saved file
   def self.convert_and_save_publication(publication, file_path, format: :turtle)
     converted_data = convert_publication(publication, format: format)
 
@@ -103,11 +96,6 @@ class JsonldConverterService
 
 
   # Convert all publications of specified types to specified format and save to directory
-  # @param output_dir [String] Directory to save the converted files
-  # @param format [Symbol] Output format (:turtle, :ntriples, :rdfxml, :jsonld)
-  # @param element_types [Array<String>] Element types to convert (default: all supported)
-  # @param limit [Integer] Optional limit on number of publications to process
-  # @return [Array<String>] Paths to the saved files
   def self.convert_all_publications(output_dir, format: :turtle, element_types: SUPPORTED_ELEMENT_TYPES, limit: nil)
     validate_output_directory(output_dir)
 
@@ -141,8 +129,6 @@ class JsonldConverterService
 
 
   # Validate publication JSON-LD data
-  # @param publication [Publication] Publication object
-  # @return [Boolean] true if valid
   def self.validate_publication_jsonld(publication)
     validate_publication(publication)
 
@@ -154,8 +140,6 @@ class JsonldConverterService
   end
 
   # Get conversion statistics for a publication
-  # @param publication [Publication] Publication object
-  # @return [Hash] Statistics hash
   def self.get_conversion_stats(publication)
     validate_publication(publication)
 
@@ -169,14 +153,11 @@ class JsonldConverterService
 
 
   # Get all available output formats
-  # @return [Array<Symbol>] Available format symbols
   def self.available_formats
     [:turtle, :ntriples, :rdfxml, :jsonld, :trig, :nquads]
   end
 
   # Check if a format is supported
-  # @param format [Symbol] Format to check
-  # @return [Boolean] true if supported
   def self.format_supported?(format)
     available_formats.include?(format.to_sym)
   end
@@ -227,8 +208,6 @@ class JsonldConverterService
   end
 
   # Convert format symbol to file extension
-  # @param format [Symbol] Format symbol
-  # @return [String] File extension
   def self.format_to_extension(format)
     case format
     when :turtle

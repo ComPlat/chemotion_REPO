@@ -388,6 +388,8 @@ export default class RepoReactionDetails extends Component {
           isCI={isCI}
           isReviewer={isReviewer}
           userInfo={product.pub_info || ''}
+          zipUrl={product.zip_download_url}
+          chemotionZipUrl={product.chemotion_zip_url}
           updateRepoXvial={() => this.updateRepoXvial()}
           xvialCom={product.xvialCom}
           literatures={references}
@@ -595,11 +597,21 @@ export default class RepoReactionDetails extends Component {
         reaction.publication.taggable_data.scheme_only === true) ||
       false;
 
+    const zipUrl =
+      reaction?.publication?.taggable_data &&
+      reaction.publication.taggable_data['zip_download_url'];
+
+    const chemotionZipUrl =
+      reaction?.publication?.taggable_data &&
+      reaction.publication.taggable_data['chemotion_zip_url'];
+
     let showDOI = (
       <>
         <Doi
           type="reaction"
           id={reaction.id}
+          zipUrl={zipUrl}
+          chemotionZipUrl={chemotionZipUrl}
           doi={isPublished ? taggData.doi : doi}
           isPublished={isPublished}
           pid={pubData.id}
@@ -619,7 +631,7 @@ export default class RepoReactionDetails extends Component {
       </>
     );
     if (schemeOnly) {
-      buttons = ['Decline', 'Comments', 'Review', 'Submit', 'Accept'];
+      buttons = ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'];
       showDOI = '';
     }
 
@@ -878,6 +890,6 @@ RepoReactionDetails.defaultProps = {
   isReview: false,
   review: {},
   canClose: true,
-  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
+  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'],
   onReviewUpdate: () => {},
 };

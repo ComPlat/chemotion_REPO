@@ -131,6 +131,8 @@ export default class RepoSampleDetails extends Component {
         concept: s.concept,
         reaction_ids: s.reaction_ids || [],
         showed_name: s.showed_name,
+        name: s.name,
+        description: s.description,
         molecule_iupac: molecule.iupac_name || [],
         molecule_id: molecule.id,
         container: s.container || element.analyses || {},
@@ -145,6 +147,8 @@ export default class RepoSampleDetails extends Component {
         molecule: s.molecule || '',
         sample_svg_file: s.sample_svg_file || '',
         molfile: s.molfile || '',
+        zip_download_url: s.zip_download_url || '',
+        chemotion_zip_url: s.chemotion_zip_url || '',
         fundingReferences: s.fundingReferences || [],
       };
 
@@ -234,6 +238,6 @@ RepoSampleDetails.defaultProps = {
   showComment: true,
   review: {},
   canClose: true,
-  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept'],
+  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'],
   onReviewUpdate: () => {},
 };

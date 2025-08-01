@@ -544,6 +544,17 @@ class ReviewUserLabels extends React.Component {
             options={labelOptions}
             value={selectedLabels}
             onChange={(e) => this.handleSelectChange(e)}
+            styles={{
+              menuPortal: base => ({
+                ...base,
+                zIndex: 1000,
+                position: 'fixed',
+              }),
+              menu: base => ({
+                ...base,
+                zIndex: 1000,
+              }),
+            }}
           />
         </FormGroup>
       </div>

@@ -12,12 +12,25 @@ import {
 
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
 
+const getAlertClass = type => {
+  switch (type) {
+    case 'success':
+      return 'alert alert-success alert-dismissible';
+    case 'error':
+      return 'alert alert-danger alert-dismissible';
+    default:
+      return 'alert alert-info alert-dismissible';
+  }
+};
+
 export default class ExternalTokensModal extends Component {
   constructor(props) {
     super(props);
     this.state = {
       externalTokens: [],
       nmrxivCredentials: {
+        firstName: '',
+        lastName: '',
         username: '',
         password: '',
         confirmPassword: '',
@@ -30,7 +43,8 @@ export default class ExternalTokensModal extends Component {
       modalMessage: null,
     };
 
-    this.handleNmrxivCredentialsChange = this.handleNmrxivCredentialsChange.bind(this);
+    this.handleNmrxivCredentialsChange =
+      this.handleNmrxivCredentialsChange.bind(this);
     this.handleNmrxivLogin = this.handleNmrxivLogin.bind(this);
     this.handleNmrxivRegister = this.handleNmrxivRegister.bind(this);
     this.fetchExternalTokens = this.fetchExternalTokens.bind(this);
@@ -43,25 +57,262 @@ export default class ExternalTokensModal extends Component {
   }
 
   componentDidMount() {
-    if (this.props.show) {
+    const { show } = this.props;
+    if (show) {
       this.fetchExternalTokens();
       this.fetchUserProfile();
     }
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.show && !prevProps.show) {
+    const { show } = this.props;
+    if (show && !prevProps.show) {
       this.fetchExternalTokens();
       this.fetchUserProfile();
     }
   }
 
   handleNmrxivCredentialsChange(field, value) {
+    const { nmrxivCredentials } = this.state;
     this.setState({
       nmrxivCredentials: {
-        ...this.state.nmrxivCredentials,
+        ...nmrxivCredentials,
         [field]: value,
       },
+    });
+  }
+
+  handleClose = () => {
+    const { onHide } = this.props;
+    this.setState(
+      {
+        isRegistering: false,
+        nmrxivCredentials: {
+          username: '',
+          password: '',
+          confirmPassword: '',
+          email: '',
+        },
+      },
+      () => onHide()
+    );
+  };
+
+  async handleSaveSyncPreference() {
+    this.setState({ syncPreferenceLoading: true });
+
+    try {
+      const { nmrxivSyncEnabled } = this.state;
+      const response = await fetch('/api/v1/profiles', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token':
+            document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute('content') || '',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          data: {
+            nmrxiv_sync_enabled: nmrxivSyncEnabled,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        this.showModalMessage(
+          'NMRXiv sync preference saved successfully!',
+          'success'
+        );
+      } else {
+        const errorData = await response.json();
+        this.showModalMessage(
+          errorData.error || 'Failed to save sync preference',
+          'error'
+        );
+      }
+    } catch (error) {
+      console.error('Save sync preference error:', error);
+      this.showModalMessage(
+        'Network error while saving sync preference',
+        'error'
+      );
+    } finally {
+      this.setState({ syncPreferenceLoading: false });
+    }
+  }
+
+  async handleNmrxivLogin() {
+    const { nmrxivCredentials } = this.state;
+
+    if (!nmrxivCredentials.email || !nmrxivCredentials.password) {
+      this.showModalMessage('Please enter both email and password', 'error');
+      return;
+    }
+
+    this.setState({ tokenLoading: true });
+
+    try {
+      const response = await fetch('/api/v1/external_tokens/authenticate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token':
+            document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute('content') || '',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          provider: 'nmrxiv',
+          credentials: {
+            email: nmrxivCredentials.email,
+            password: nmrxivCredentials.password,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Authentication response:', data);
+      if (response.ok) {
+        this.showModalMessage(
+          'Successfully authenticated with NMRXiv!',
+          'success'
+        );
+        this.fetchExternalTokens();
+        this.setState({
+          nmrxivCredentials: {
+            firstName: '',
+            lastName: '',
+            username: '',
+            password: '',
+            confirmPassword: '',
+            email: '',
+          },
+        });
+      } else {
+        this.showModalMessage(data.error || 'Authentication failed', 'error');
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      this.showModalMessage('Network error during authentication', 'error');
+    } finally {
+      this.setState({ tokenLoading: false });
+    }
+  }
+
+  async handleNmrxivRegister() {
+    const { nmrxivCredentials } = this.state;
+
+    if (
+      !nmrxivCredentials.firstName ||
+      !nmrxivCredentials.lastName ||
+      !nmrxivCredentials.username ||
+      !nmrxivCredentials.password ||
+      !nmrxivCredentials.confirmPassword ||
+      !nmrxivCredentials.email
+    ) {
+      this.showModalMessage('Please fill in all required fields', 'error');
+      return;
+    }
+
+    if (nmrxivCredentials.password !== nmrxivCredentials.confirmPassword) {
+      this.showModalMessage('Passwords do not match', 'error');
+      return;
+    }
+
+    this.setState({ tokenLoading: true });
+
+    try {
+      // First register with NMRXiv
+      const registerResponse = await fetch(
+        'https://dev.nmrxiv.org/api/auth/register',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            first_name: nmrxivCredentials.firstName,
+            last_name: nmrxivCredentials.lastName,
+            username: nmrxivCredentials.username,
+            email: nmrxivCredentials.email,
+            password: nmrxivCredentials.password,
+            password_confirmation: nmrxivCredentials.confirmPassword,
+          }),
+        }
+      );
+
+      if (registerResponse.ok) {
+        this.showModalMessage(
+          'Successfully registered with NMRXiv! Please check your email for verification.',
+          'success'
+        );
+
+        // After successful registration, try to login
+        setTimeout(() => {
+          this.handleNmrxivLogin();
+        }, 2000);
+      } else {
+        const errorData = await registerResponse.json();
+        this.showModalMessage(
+          errorData.error || 'Registration failed',
+          'error'
+        );
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      this.showModalMessage('Network error during registration', 'error');
+    } finally {
+      this.setState({ tokenLoading: false });
+    }
+  }
+
+  async handleNmrxivSyncChange(event) {
+    this.setState({ nmrxivSyncEnabled: event.target.checked });
+  }
+
+  async deleteExternalToken(provider) {
+    if (!confirm(`Are you sure you want to delete the ${provider} token?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/external_tokens/${provider}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token':
+            document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute('content') || '',
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        this.showModalMessage(
+          `Successfully deleted ${provider} token`,
+          'success'
+        );
+        this.fetchExternalTokens();
+      } else {
+        const data = await response.json();
+        this.showModalMessage(data.error || 'Failed to delete token', 'error');
+      }
+    } catch (error) {
+      console.error('Delete token error:', error);
+      this.showModalMessage('Network error while deleting token', 'error');
+    }
+  }
+
+  showModalMessage(message, type = 'info') {
+    this.setState({ modalMessage: { text: message, type } });
+    // Also send to notifications as before
+    NotificationActions.add({
+      message,
+      level: type,
     });
   }
 
@@ -100,7 +351,8 @@ export default class ExternalTokensModal extends Component {
 
       if (response.ok) {
         const profileData = await response.json();
-        const nmrxivSyncEnabled = profileData.data?.nmrxiv_sync_enabled || false;
+        const nmrxivSyncEnabled =
+          profileData.data?.nmrxiv_sync_enabled || false;
         this.setState({ nmrxivSyncEnabled });
       }
     } catch (error) {
@@ -108,207 +360,9 @@ export default class ExternalTokensModal extends Component {
     }
   }
 
-  async handleNmrxivLogin() {
-    const { nmrxivCredentials } = this.state;
-
-    if (!nmrxivCredentials.username || !nmrxivCredentials.password) {
-      this.showModalMessage('Please enter both username and password', 'error');
-      return;
-    }
-
-    this.setState({ tokenLoading: true });
-
-    try {
-      const response = await fetch('/api/v1/external_tokens/authenticate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          provider: 'nmrxiv',
-          credentials: {
-            username: nmrxivCredentials.username,
-            password: nmrxivCredentials.password
-          }
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        this.showModalMessage('Successfully authenticated with NMRXiv!', 'success');
-        this.fetchExternalTokens();
-        this.setState({
-          nmrxivCredentials: {
-            username: '',
-            password: '',
-            confirmPassword: '',
-            email: ''
-          }
-        });
-      } else {
-        this.showModalMessage(data.error || 'Authentication failed', 'error');
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      this.showModalMessage('Network error during authentication', 'error');
-    } finally {
-      this.setState({ tokenLoading: false });
-    }
-  }
-
-  async handleNmrxivRegister() {
-    const { nmrxivCredentials } = this.state;
-
-    if (!nmrxivCredentials.username || !nmrxivCredentials.password ||
-        !nmrxivCredentials.confirmPassword || !nmrxivCredentials.email) {
-      this.showModalMessage('Please fill in all required fields', 'error');
-      return;
-    }
-
-    if (nmrxivCredentials.password !== nmrxivCredentials.confirmPassword) {
-      this.showModalMessage('Passwords do not match', 'error');
-      return;
-    }
-
-    this.setState({ tokenLoading: true });
-
-    try {
-      // First register with NMRXiv
-      const registerResponse = await fetch('https://dev.nmrxiv.org/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: nmrxivCredentials.username,
-          email: nmrxivCredentials.email,
-          password: nmrxivCredentials.password,
-          password_confirmation: nmrxivCredentials.confirmPassword
-        })
-      });
-
-      if (registerResponse.ok) {
-        this.showModalMessage('Successfully registered with NMRXiv! Please check your email for verification.', 'success');
-
-        // After successful registration, try to login
-        setTimeout(() => {
-          this.handleNmrxivLogin();
-        }, 2000);
-      } else {
-        const errorData = await registerResponse.json();
-        this.showModalMessage(errorData.error || 'Registration failed', 'error');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      this.showModalMessage('Network error during registration', 'error');
-    } finally {
-      this.setState({ tokenLoading: false });
-    }
-  }
-
-  async deleteExternalToken(provider) {
-    if (!confirm(`Are you sure you want to delete the ${provider} token?`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/v1/external_tokens/${provider}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        this.showModalMessage(`Successfully deleted ${provider} token`, 'success');
-        this.fetchExternalTokens();
-      } else {
-        const data = await response.json();
-        this.showModalMessage(data.error || 'Failed to delete token', 'error');
-      }
-    } catch (error) {
-      console.error('Delete token error:', error);
-      this.showModalMessage('Network error while deleting token', 'error');
-    }
-  }
-
-  async handleNmrxivSyncChange(event) {
-    this.setState({ nmrxivSyncEnabled: event.target.checked });
-  }
-
-  async handleSaveSyncPreference() {
-    this.setState({ syncPreferenceLoading: true });
-
-    try {
-      const response = await fetch('/api/v1/profiles', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          data: {
-            nmrxiv_sync_enabled: this.state.nmrxivSyncEnabled
-          }
-        })
-      });
-
-      if (response.ok) {
-        this.showModalMessage('NMRXiv sync preference saved successfully!', 'success');
-      } else {
-        const errorData = await response.json();
-        this.showModalMessage(errorData.error || 'Failed to save sync preference', 'error');
-      }
-    } catch (error) {
-      console.error('Save sync preference error:', error);
-      this.showModalMessage('Network error while saving sync preference', 'error');
-    } finally {
-      this.setState({ syncPreferenceLoading: false });
-    }
-  }
-
-  showModalMessage(message, type = 'info') {
-    this.setState({ modalMessage: { text: message, type } });
-    // Also send to notifications as before
-    NotificationActions.add({
-      message,
-      level: type,
-    });
-  }
-
   clearModalMessage() {
     this.setState({ modalMessage: null });
   }
-
-  getAlertClass(type) {
-    switch (type) {
-      case 'success':
-        return 'alert alert-success alert-dismissible';
-      case 'error':
-        return 'alert alert-danger alert-dismissible';
-      default:
-        return 'alert alert-info alert-dismissible';
-    }
-  }
-
-  handleClose = () => {
-    this.setState({
-      isRegistering: false,
-      nmrxivCredentials: {
-        username: '',
-        password: '',
-        confirmPassword: '',
-        email: '',
-      },
-    });
-    this.props.onHide();
-  };
 
   render() {
     const { show } = this.props;
@@ -326,7 +380,9 @@ export default class ExternalTokensModal extends Component {
       return null;
     }
 
-    const nmrxivToken = externalTokens.find(token => token.provider === 'nmrxiv');
+    const nmrxivToken = externalTokens.find(
+      token => token.provider === 'nmrxiv'
+    );
 
     return (
       <Modal
@@ -346,7 +402,7 @@ export default class ExternalTokensModal extends Component {
         <Modal.Body>
           {modalMessage && (
             <div
-              className={this.getAlertClass(modalMessage.type)}
+              className={getAlertClass(modalMessage.type)}
               style={{ marginBottom: '15px' }}
             >
               <span>{modalMessage.text}</span>
@@ -370,23 +426,31 @@ export default class ExternalTokensModal extends Component {
                   <div>
                     <div style={{ marginBottom: '15px' }}>
                       <strong>Status:</strong>
-                      <span style={{
-                        marginLeft: '10px',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        backgroundColor: nmrxivToken.has_valid_token ? '#d4edda' : '#f8d7da',
-                        color: nmrxivToken.has_valid_token ? '#155724' : '#721c24'
-                      }}>
+                      <span
+                        style={{
+                          marginLeft: '10px',
+                          padding: '5px 10px',
+                          borderRadius: '4px',
+                          backgroundColor: nmrxivToken.has_valid_token
+                            ? '#d4edda'
+                            : '#f8d7da',
+                          color: nmrxivToken.has_valid_token
+                            ? '#155724'
+                            : '#721c24',
+                        }}
+                      >
                         {nmrxivToken.has_valid_token ? 'Active' : 'Expired'}
                       </span>
                     </div>
                     {nmrxivToken.expires_at && (
                       <div style={{ marginBottom: '15px' }}>
-                        <strong>Expires:</strong> {new Date(nmrxivToken.expires_at).toLocaleString()}
+                        <strong>Expires:</strong>{' '}
+                        {new Date(nmrxivToken.expires_at).toLocaleString()}
                       </div>
                     )}
                     <div style={{ marginBottom: '15px' }}>
-                      <strong>Last Updated:</strong> {new Date(nmrxivToken.updated_at).toLocaleString()}
+                      <strong>Last Updated:</strong>{' '}
+                      {new Date(nmrxivToken.updated_at).toLocaleString()}
                     </div>
                     <Button
                       bsStyle="danger"
@@ -398,19 +462,29 @@ export default class ExternalTokensModal extends Component {
                   </div>
                 ) : (
                   <div>
-                    <p>No NMRXiv token found. Please authenticate to get access to NMRXiv services.</p>
+                    <p>
+                      No NMRXiv token found. Please authenticate to get access
+                      to NMRXiv services.
+                    </p>
 
                     {!isRegistering ? (
                       <div>
                         <h4>Login to NMRXiv</h4>
                         <Form>
                           <FormGroup>
-                            <ControlLabel>Username</ControlLabel>
+                            <ControlLabel>
+                              Your registered email in NMRXiv
+                            </ControlLabel>
                             <FormControl
                               type="text"
-                              placeholder="Enter your NMRXiv username"
-                              value={nmrxivCredentials.username}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('username', e.target.value)}
+                              placeholder="Enter your NMRXiv email"
+                              value={nmrxivCredentials.email}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'email',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <FormGroup>
@@ -419,7 +493,12 @@ export default class ExternalTokensModal extends Component {
                               type="password"
                               placeholder="Enter your NMRXiv password"
                               value={nmrxivCredentials.password}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('password', e.target.value)}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'password',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <div style={{ marginBottom: '15px' }}>
@@ -432,7 +511,9 @@ export default class ExternalTokensModal extends Component {
                             </Button>
                             <Button
                               bsStyle="link"
-                              onClick={() => this.setState({ isRegistering: true })}
+                              onClick={() =>
+                                this.setState({ isRegistering: true })
+                              }
                             >
                               Don't have an account? Register here
                             </Button>
@@ -444,39 +525,101 @@ export default class ExternalTokensModal extends Component {
                         <h4>Register for NMRXiv</h4>
                         <Form>
                           <FormGroup>
-                            <ControlLabel>Username</ControlLabel>
+                            <ControlLabel>
+                              First Name <span style={{ color: 'red' }}>*</span>
+                            </ControlLabel>
+                            <FormControl
+                              type="text"
+                              placeholder="Enter your first name"
+                              value={nmrxivCredentials.firstName}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'firstName',
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </FormGroup>
+                          <FormGroup>
+                            <ControlLabel>
+                              Last Name <span style={{ color: 'red' }}>*</span>
+                            </ControlLabel>
+                            <FormControl
+                              type="text"
+                              placeholder="Enter your last name"
+                              value={nmrxivCredentials.lastName}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'lastName',
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </FormGroup>
+                          <FormGroup>
+                            <ControlLabel>
+                              Username <span style={{ color: 'red' }}>*</span>
+                            </ControlLabel>
                             <FormControl
                               type="text"
                               placeholder="Choose a username"
                               value={nmrxivCredentials.username}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('username', e.target.value)}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'username',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <FormGroup>
-                            <ControlLabel>Email</ControlLabel>
+                            <ControlLabel>
+                              Email <span style={{ color: 'red' }}>*</span>
+                            </ControlLabel>
                             <FormControl
                               type="email"
                               placeholder="Enter your email address"
                               value={nmrxivCredentials.email}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('email', e.target.value)}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'email',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <FormGroup>
-                            <ControlLabel>Password</ControlLabel>
+                            <ControlLabel>
+                              Password <span style={{ color: 'red' }}>*</span>{' '}
+                              (The password must be at least 8 characters long)
+                            </ControlLabel>
                             <FormControl
                               type="password"
                               placeholder="Enter a password"
                               value={nmrxivCredentials.password}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('password', e.target.value)}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'password',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <FormGroup>
-                            <ControlLabel>Confirm Password</ControlLabel>
+                            <ControlLabel>
+                              Confirm Password{' '}
+                              <span style={{ color: 'red' }}>*</span>
+                            </ControlLabel>
                             <FormControl
                               type="password"
                               placeholder="Confirm your password"
                               value={nmrxivCredentials.confirmPassword}
-                              onChange={(e) => this.handleNmrxivCredentialsChange('confirmPassword', e.target.value)}
+                              onChange={e =>
+                                this.handleNmrxivCredentialsChange(
+                                  'confirmPassword',
+                                  e.target.value
+                                )
+                              }
                             />
                           </FormGroup>
                           <div style={{ marginBottom: '15px' }}>
@@ -489,7 +632,9 @@ export default class ExternalTokensModal extends Component {
                             </Button>
                             <Button
                               bsStyle="link"
-                              onClick={() => this.setState({ isRegistering: false })}
+                              onClick={() =>
+                                this.setState({ isRegistering: false })
+                              }
                             >
                               Already have an account? Login here
                             </Button>
@@ -508,11 +653,15 @@ export default class ExternalTokensModal extends Component {
               </Panel.Heading>
               <Panel.Body>
                 <p>
-                  External tokens allow you to authenticate with third-party services like NMRXiv.
-                  These tokens are securely encrypted and stored in our system.
+                  External tokens allow you to authenticate with third-party
+                  services like NMRXiv. These tokens are securely encrypted and
+                  stored in our system.
                 </p>
                 <ul>
-                  <li><strong>NMRXiv:</strong> Access to NMR data repository and analysis tools</li>
+                  <li>
+                    <strong>NMRXiv:</strong> Access to NMR data repository and
+                    analysis tools
+                  </li>
                   <li>Tokens are automatically refreshed when possible</li>
                   <li>You can delete tokens at any time</li>
                 </ul>
@@ -522,32 +671,11 @@ export default class ExternalTokensModal extends Component {
             {nmrxivToken && (
               <Panel bsStyle="info">
                 <Panel.Heading>
-                  <Panel.Title>NMRXiv Sync Preference</Panel.Title>
+                  <Panel.Title>NMRXiv Publication Sync</Panel.Title>
                 </Panel.Heading>
                 <Panel.Body>
-                  <FormGroup>
-                    <ControlLabel>
-                      <input
-                        type="checkbox"
-                        checked={nmrxivSyncEnabled}
-                        onChange={this.handleNmrxivSyncChange}
-                        disabled={syncPreferenceLoading}
-                      />
-                      {' '}
-                      Do you want to sync. publication to NMRXiv?
-                    </ControlLabel>
-                  </FormGroup>
-                  <div style={{ marginBottom: '15px' }}>
-                    <Button
-                      bsStyle="primary"
-                      onClick={this.handleSaveSyncPreference}
-                      disabled={syncPreferenceLoading}
-                    >
-                      {syncPreferenceLoading ? 'Saving...' : 'Save Preference'}
-                    </Button>
-                  </div>
-                  <p className="text-muted">
-                    When enabled, your publications will be automatically synchronized to the NMRXiv system and linked to your NMRXiv account once they are accepted and released in the Chemotion Repository.
+                  <p>
+                    If you log in to NMRXiv and have an active token, your publication will be transferred to NMRXiv automatically once it is published. This process is automatic as long as your token is valid.
                   </p>
                 </Panel.Body>
               </Panel>

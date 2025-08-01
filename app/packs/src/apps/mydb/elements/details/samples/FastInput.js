@@ -1,20 +1,33 @@
 /* eslint-disable react/forbid-prop-types */
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  InputGroup, OverlayTrigger, FormGroup, Tooltip, FormControl, Button, Glyphicon
+  InputGroup,
+  OverlayTrigger,
+  FormGroup,
+  Tooltip,
+  FormControl,
+  Button,
+  Glyphicon,
 } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import uuid from 'uuid';
 import NotificationActions from 'src/stores/alt/actions/NotificationActions';
-import BaseFetcher from 'src/fetchers/BaseFetcher';
+import CasLookupFetcher from 'src/fetchers/CasLookupFetcher';
 import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import UserStore from 'src/stores/alt/stores/UserStore';
 import { validateCas } from 'src/utilities/CasValidation';
 
-const apiCall = (cas, src = 'cas') => (src === 'cas' ? `https://commonchemistry.cas.org/api/detail?cas_rn=${cas}` : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${cas}/property/CanonicalSMILES/JSON`);
-function FastInput(props) {
-  const refInput = useRef(null);
-  const [value, setValue] = useState(null);
-  const notify = (_params) => {
+const FastInput = ({ fnHandle }) => {
+  const [value, setValue] = useState('');
+
+  const currentUser =
+    (UserStore.getState() && UserStore.getState().currentUser) || {};
+  const componentEnabled = MatrixCheck(currentUser.matrix, 'fastInput');
+
+  if (!componentEnabled) return null;
+
+  const notify = _params => {
     NotificationActions.add({
       title: _params.title,
       message: _params.msg,
@@ -22,51 +35,55 @@ function FastInput(props) {
       position: 'tc',
       dismissible: 'button',
       autoDismiss: 5,
-      uid: uuid.v4()
+      uid: uuid.v4(),
     });
   };
 
   const searchSmile = () => {
     LoadingActions.start();
-    props.fnHandle(refInput.current.props.value);
+    fnHandle(value);
   };
 
-  const searchCas = (cas) => {
-    let params = {
-      apiEndpoint: apiCall(cas),
-      requestMethod: 'get',
-      jsonTranformation: json => json
-    };
+  const searchCas = cas => {
     LoadingActions.start();
-    BaseFetcher.withoutBodyData(params).then((cjson) => {
-      if (cjson.message) {
-        params = {
-          apiEndpoint: apiCall(cas, 'pubchem'),
-          requestMethod: 'get',
-          jsonTranformation: json => json
-        };
-        BaseFetcher.withoutBodyData(params).then((pjson) => {
-          if (pjson.Fault) {
-            notify({ title: 'CAS Error', lvl: 'error', msg: pjson.Fault.Code });
-          } else {
-            props.fnHandle(pjson.PropertyTable.Properties[0].CanonicalSMILES, cas);
-          }
-        }).catch((err) => {
-          notify({ title: 'CAS Error', lvl: 'error', msg: err });
+    CasLookupFetcher.fetchByCas(cas)
+      .then(result => {
+        fnHandle(result.smiles, result.cas);
+
+        if (result.source === 'pubchem') {
+          notify({
+            title: 'Info',
+            lvl: 'info',
+            msg: 'Data retrieved from PubChem',
+          });
+        }
+      })
+      .catch(err => {
+        const errorMsg =
+          err.message || err.toString() || 'Failed to look up data';
+
+        notify({
+          title: 'CAS Lookup Error',
+          lvl: 'error',
+          msg: `Unable to retrieve data: ${errorMsg}`,
         });
-      } else {
-        props.fnHandle(cjson.smile, cas);
-      }
-    }).catch((err) => {
-      notify({ title: 'CAS Error', lvl: 'error', msg: err });
-    }).finally(() => {
-      LoadingActions.stop();
-    });
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
   };
 
-  const searchString = (e) => {
-    const input = refInput.current.props.value;
+  const searchString = e => {
+    const input = value;
     if (e.key === 'Enter' || e.type === 'click') {
+      if (!input.trim()) {
+        notify({
+          title: 'Input Error',
+          lvl: 'error',
+          msg: 'CAS/SMILES input is required',
+        });
+        return;
+      }
       const getCas = validateCas(input, false);
       if (getCas !== 'smile') {
         searchCas(getCas);
@@ -78,14 +95,25 @@ function FastInput(props) {
     }
   };
 
-  const updateValue = (e) => {
+  const updateValue = e => {
     setValue(e.target.value);
   };
+
   const buttonStyle = {
-    height: '23px', borderRadius: '5px', position: 'absolute', right: '8px', borderColor: 'rgba(16, 10, 13, 0.14)', backgroundColor: 'white', outline: 'none'
+    height: '23px',
+    borderRadius: '5px',
+    position: 'absolute',
+    right: '8px',
+    borderColor: 'rgba(16, 10, 13, 0.14)',
+    backgroundColor: 'white',
+    outline: 'none',
   };
+
   const formStyle = {
-    height: '23px', borderRadius: '5px', position: 'relative', right: '30px'
+    height: '23px',
+    borderRadius: '5px',
+    position: 'relative',
+    right: '30px',
   };
 
   return (
@@ -93,7 +121,11 @@ function FastInput(props) {
       <OverlayTrigger
         placement="top"
         delayShow={500}
-        overlay={<Tooltip id="_fast_create_btn">Fast create by CAS RN (with dashes) or SMILES</Tooltip>}
+        overlay={
+          <Tooltip id="_fast_create_btn">
+            Fast create by CAS RN (with dashes) or SMILES
+          </Tooltip>
+        }
       >
         <FormGroup bsSize="xsmall" className="fast-input">
           <InputGroup className="mb-3">
@@ -101,17 +133,16 @@ function FastInput(props) {
               id="_fast_create_btn_split"
               type="text"
               pullRight
-              ref={refInput}
               onChange={updateValue}
               value={value}
-              onKeyPress={(e) => searchString(e)}
+              onKeyPress={e => searchString(e)}
               style={formStyle}
-              placeholder="fast create by CAS/Smiles ..."
+              placeholder="Fast create by CAS/Smiles ..."
             />
             <Button
               bsSize="xsmall"
               style={buttonStyle}
-              onClick={(e) => searchString(e)}
+              onClick={e => searchString(e)}
             >
               <Glyphicon glyph="glyphicon glyphicon-search" />
             </Button>
@@ -120,10 +151,10 @@ function FastInput(props) {
       </OverlayTrigger>
     </div>
   );
-}
+};
 
 FastInput.propTypes = {
-  fnHandle: PropTypes.func.isRequired
+  fnHandle: PropTypes.func.isRequired,
 };
 
 export default FastInput;

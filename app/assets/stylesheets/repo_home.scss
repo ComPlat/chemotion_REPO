@@ -1057,6 +1057,16 @@ $bs-successcolor: #5cb85c;
     padding-top: 8px !important;
     padding-bottom: 0px !important;
   }
+  &.active button {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: white !important;
+    font-weight: bolder !important;
+  }
+  &.active a,
+  &.active b {
+    background-color: unset !important;
+  }
 }
 
 .repo-generic-hub-layout {
@@ -1128,6 +1138,17 @@ $bs-successcolor: #5cb85c;
     color: #1976d2 !important;
     font-weight: bolder !important;
   }
+  &.active a,
+  &.active b {
+    text-decoration: underline !important;
+    text-decoration-color: #1976d2 !important;
+    text-decoration-style: solid !important;
+    text-decoration-thickness: 4px !important;
+    text-underline-offset: 20% !important;
+    color: #1976d2 !important;
+    font-weight: bolder !important;
+    background-color: unset !important;
+  }
 }
 
 .hub-menu {
@@ -1163,4 +1184,28 @@ $bs-successcolor: #5cb85c;
   align-items: stretch;
   justify-content: center;
   margin-top: 8px;
+}
+
+.new-version-btn-disabled,
+.new-version-btn-disabled:hover {
+  color: #fff !important;
+  background-color: #5cb85c !important;
+  border-color: #4cae4c !important;
+
+  opacity: 0.65;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.version-dropdown-item {
+  font-size: small;
+}
+
+.repo-nfdi-award {
+  display: inline-flex;;
+  align-items: center;
+  justify-content: center;
+  > img {
+    width: 80%;
+  }
 }

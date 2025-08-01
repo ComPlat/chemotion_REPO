@@ -2,15 +2,13 @@
 
 module JsonLd
   class PublicationJsonLdService < BaseJsonLdService
-    def initialize(publication, kinds, tracking, base_url: nil)
-      super(base_url: base_url)
+    def initialize(publication)
       @publication = publication
-      @is_tracking = tracking
-      @kinds = kinds
       @element_type = publication.element_type
     end
 
-    def generate
+    def generate(kinds: nil)
+      @kinds = kinds
       return {} if @publication.state != 'completed'
 
       case @element_type
@@ -31,10 +29,10 @@ module JsonLd
         '@id': doi_url(reaction_doi.full_doi),
         'dct:conformsTo': conformance_declarations('Study'),
         name: "CRR-#{@publication.id}",
-        trackingItemName: tracking_item_name(@publication, @is_tracking),
+        trackingItemName: RepoTrackerService.tracking_item_name(@publication),
         description: publication_description(@publication),
         keywords: generate_keywords(@publication),
-        license: @publication.rights_data[:rightsURI],
+        license: @publication.rights_data,
         publisher: publisher_info,
         url: publication_url(reaction_doi.suffix),
         dateCreated: format_date(@publication.created_at),
@@ -56,7 +54,7 @@ module JsonLd
         name: publication_title(@publication),
         description: publication_description(@publication),
         keywords: generate_keywords(@publication),
-        license: @publication.rights_data[:rightsURI],
+        license: @publication.rights_data,
         publisher: publisher_info,
         url: publication_url(sample_doi.suffix),
         dateCreated: format_date(@publication.created_at),
@@ -78,7 +76,7 @@ module JsonLd
         name: publication_title(@publication),
         description: publication_description(@publication),
         keywords: generate_keywords(@publication),
-        license: @publication.rights_data[:rightsURI],
+        license: @publication.rights_data,
         publisher: publisher_info,
         url: publication_url(container_doi.suffix),
         dateCreated: format_date(@publication.created_at),
@@ -102,16 +100,16 @@ module JsonLd
       sample_doi = sample_publication.doi
 
       return nil unless sample && sample_doi
-
       {
         '@type': 'Study',
         '@id': doi_url(sample_doi.full_doi),
         'dct:conformsTo': conformance_declarations('Study'),
         name: publication_title(sample_publication),
-        trackingItemName: tracking_item_name(sample_publication, @is_tracking),
+        trackingItemName: RepoTrackerService.tracking_item_name(sample_publication),
+        folderName: "sample_#{sample.id}",
         description: publication_description(sample_publication),
         keywords: generate_keywords(sample_publication),
-        license: sample_publication.rights_data[:rightsURI],
+        license: sample_publication.rights_data,
         publisher: publisher_info,
         url: publication_url(sample_doi.suffix),
         dateCreated: format_date(sample_publication.created_at),
@@ -150,7 +148,7 @@ module JsonLd
 
         analysis = child.element
         analysis_kind = analysis.extended_metadata&.dig('kind')
-        next unless analysis_kind && (@kinds.empty? || @kinds.any? { |kind| analysis_kind.include?(kind) })
+        next unless analysis_kind && (@kinds.nil? || @kinds.empty? || @kinds.any? { |kind| analysis_kind.include?(kind) })
 
         has_analysis_detail(child)
       end
@@ -177,7 +175,7 @@ module JsonLd
         analyses: "analysis_#{analysis.id}",
         datasets: dataset_folders(analysis),
         description: json_ld_analysis_description(child),
-        license: child.rights_data[:rightsURI],
+        license: child.rights_data,
         url: publication_url(child.doi.suffix),
         dateCreated: format_date(child.created_at),
         dateModified: format_date(child.updated_at),
@@ -211,8 +209,5 @@ module JsonLd
       end
     end
 
-    def default_base_url
-      Rails.application.routes.url_helpers.root_url
-    end
   end
 end

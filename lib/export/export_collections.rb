@@ -3,7 +3,7 @@
 # rubocop: disable Metrics/ClassLength, Metrics/AbcSize, Performance/MethodObjectAsBlock
 module Export
   class ExportCollections
-    attr_accessor :file_path
+    attr_accessor :file_path, :export_metadata
 
     def initialize(export_id, collection_ids, format = 'zip', nested = false, gate = false) # rubocop:disable Style/OptionalBooleanParameter
       @export_id = export_id
@@ -11,6 +11,7 @@ module Export
       @format = format
       @nested = nested
       @gt = gate
+      @export_metadata = nil
 
       @file_path = Rails.public_path.join(format, "#{export_id}.#{format}")
       @schema_file_path = Rails.public_path.join('json', 'schema.json')
@@ -65,6 +66,16 @@ module Export
           zipping.put_next_entry 'schema.json'
           zipping.write schema_json
           description += "#{schema_json_checksum} schema.json\n"
+
+          # write the export metadata file if available
+          if @export_metadata
+            metadata_json = @export_metadata.to_json
+            metadata_json_checksum = Digest::SHA256.hexdigest(metadata_json)
+            zipping.put_next_entry 'version.json'
+            zipping.write metadata_json
+            description += "#{metadata_json_checksum} version.json\n"
+          end
+
           # write all attachments into an attachments directory
           @attachments.each do |attachment|
             attachment_path = File.join('attachments', "#{attachment.identifier}#{File.extname(attachment.filename)}")
@@ -215,6 +226,7 @@ module Export
         # fetch containers, attachments and literature
         fetch_containers(sample)
         fetch_literals(sample)
+        fetch_publication_citation(sample)
 
         # collect the sample_svg_file and molecule_svg_file
         fetch_image('samples', sample.sample_svg_file)
@@ -254,6 +266,7 @@ module Export
         # fetch containers, attachments and literature
         fetch_containers(reaction)
         fetch_literals(reaction)
+        fetch_publication_citation(reaction)
 
         # collect the reaction_svg_file
         fetch_image('reactions', reaction.reaction_svg_file)
@@ -417,12 +430,58 @@ module Export
       literals = Literal.where(element_id: element.id, element_type: element_type)
       literals.each do |literal|
         fetch_one(literal.literature)
-        fetch_one(literal, {
+        literal_uuid = fetch_one(literal, {
                     'literature_id' => 'Literature',
                     'element_id' => element_type,
                     'user_id' => 'User',
                   })
+
+        # Force category to 'detail' in the export data
+        @data['Literal'][literal_uuid]['category'] = 'detail' if @data['Literal'] && @data['Literal'][literal_uuid]
       end
+    end
+
+    # Fetch publication citation from DOI and add as literature entry
+    def fetch_publication_citation(element)
+      return unless element.respond_to?(:publication)
+
+      publication = element.publication
+      return unless publication&.doi
+
+      full_doi = publication.doi.full_doi
+      return if full_doi.blank?
+
+      # Find or create a literature record for this publication DOI
+      literature = Literature.find_or_create_by(doi: full_doi) do |lit|
+        lit.title = "Publication: #{full_doi}"
+        lit.url = "https://doi.org/#{full_doi}"
+      end
+
+      # Find or create a literal linking this element to the literature
+      element_type = element.class.name
+      literal = Literal.find_or_create_by(
+        element_id: element.id,
+        element_type: element_type,
+        literature_id: literature.id
+      ) do |lit|
+        lit.category = 'detail'
+        lit.litype = 'citedOwn'
+        lit.user_id = publication.published_by
+      end
+
+      # Fetch the literature and literal for export
+      fetch_one(literature)
+      literal_uuid = fetch_one(literal, {
+                  'literature_id' => 'Literature',
+                  'element_id' => element_type,
+                  'user_id' => 'User',
+                })
+
+      # Force category to 'detail' in the export data
+      @data['Literal'][literal_uuid]['category'] = 'detail' if @data['Literal'] && @data['Literal'][literal_uuid]
+    rescue StandardError => e
+      Rails.logger.error ["Error fetching publication citation for DOI: #{publication.doi&.full_doi}", e.message,
+                          *e.backtrace].join($INPUT_RECORD_SEPARATOR)
     end
 
     def fetch_many(instances, foreign_keys = {})

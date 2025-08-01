@@ -131,8 +131,10 @@ module Chemotion
             INNER JOIN (
               SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
               FROM (
-              SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY molecule_id order by pub.published_at desc) as rownum
-              FROM samples, publications pub
+              SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY CASE WHEN m.inchikey = 'DECOUPLED' or m.inchikey = 'DUMMY' THEN samples.id ELSE molecule_id END order by pub.published_at desc) as rownum
+              FROM samples
+              INNER JOIN molecules m ON m.id = samples.molecule_id
+              CROSS JOIN publications pub
               WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL #{label_search}
                 and samples.id IN (
                 SELECT samples.id FROM samples
@@ -488,13 +490,41 @@ module Chemotion
         desc 'Return serialized molecule with list of PUBLISHED dataset'
         params do
           requires :id, type: Integer, desc: 'Molecule id'
+          optional :pid, type: Integer, desc: 'Publication id'
+          optional :suffix, type: String, desc: 'Suffix'
           optional :adv_flag, type: Boolean, desc: 'advanced search flag'
           optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :label_val, type: Integer, desc: 'label_val'
         end
         get do
-          get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+          if params[:pid].present?
+            sample = Publication.find_by(id: params[:pid], element_type: 'Sample')&.element
+            if sample.nil? || !sample.decoupled
+              get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+            else
+              get_pub_sample(params[:id], params[:pid], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+            end
+          elsif params[:suffix].present?
+            doi = Doi.find_by(suffix: params[:suffix], doiable_type: 'Sample')
+            if doi.nil?
+              get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+            else
+              sample = doi.doiable
+              if sample.nil? || !sample.decoupled
+                get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+              else
+                pid = Publication.find_by(element_type: 'Sample', state: 'completed', doi_id: doi.id)&.id
+                if pid.nil?
+                  get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+                else
+                  get_pub_sample(params[:id], pid, params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+                end
+              end
+            end
+          else
+            get_pub_molecule(params[:id], params[:adv_flag], params[:adv_type], params[:adv_val], params[:label_val])
+          end
         end
       end
 
@@ -709,7 +739,8 @@ module Chemotion
           # Handle date_to parameter safely
           if params[:date_to].present? && params[:date_to] != '{date_to}'
             begin
-              scope = scope.where('published_at <= ?', params[:date_to])
+              # Use end of day for date_to to include records from that day
+              scope = scope.where('published_at <= ?', "#{params[:date_to]} 23:59:59")
             rescue ArgumentError
               # Handle invalid date format gracefully
               Rails.logger.warn "Invalid date_to parameter: #{params[:date_to]}"

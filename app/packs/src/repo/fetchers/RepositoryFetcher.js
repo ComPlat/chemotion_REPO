@@ -341,6 +341,8 @@ export default class RepositoryFetcher {
       api = '/api/v1/repository/reviewing/reviewed';
     } else if (action === 'Submit') {
       api = '/api/v1/repository/reviewing/submit';
+    } else if (action === 'Revert') {
+      api = '/api/v1/repository/reviewing/revert';
     } else if (action === 'Decline') {
       api = '/api/v1/repository/reviewing/declined';
     } else {

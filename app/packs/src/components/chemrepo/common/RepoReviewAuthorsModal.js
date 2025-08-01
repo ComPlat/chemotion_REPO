@@ -54,10 +54,6 @@ const affFieldStyles = `
   .contributor-affiliation-table .aff-line td {
     min-width: 180px;
   }
-  /* Ensure the fields don't collapse after state changes */
-  div[class*="Select"] {
-    min-width: 180px;
-  }
 
 `;
 

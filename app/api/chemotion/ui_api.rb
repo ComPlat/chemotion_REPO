@@ -29,6 +29,7 @@ module Chemotion
         collector_address = collector_config.present? && (
           collector_config.dig(:mailcollector, :aliases, -1) || collector_config.dig(:mailcollector, :mail_address)
         )
+        stt_config = Rails.configuration.try(:stt).try(:config)
 
         {
           has_chem_spectra: has_chem_spectra,
@@ -45,6 +46,7 @@ module Chemotion
           u: Rails.configuration.u || {},
           x: load_x_config,
           third_party_apps: Entities::ThirdPartyAppEntity.represent(ThirdPartyApp.all),
+          stt_enabled: stt_config.present? && stt_config.authorization.present?,
         }
       end
     end

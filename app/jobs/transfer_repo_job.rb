@@ -97,6 +97,6 @@ class TransferRepoJob < ApplicationJob
   end
 
   def repo_logger
-    @@repo_logger ||= Logger.new(Rails.root.join('log/transfer_repo.log'))
+    @repo_logger ||= Logger.new(Rails.root.join('log/transfer_repo.log'))
   end
 end

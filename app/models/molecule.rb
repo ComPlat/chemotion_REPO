@@ -83,7 +83,7 @@ class Molecule < ApplicationRecord
   }
 
   def self.find_or_create_dummy
-    molecule = Molecule.find_or_create_by(inchikey: 'DUMMY')
+    molecule = Molecule.find_or_create_by(inchikey: 'DECOUPLED')
   end
 
   def self.find_or_create_by_molfile(molfile, **babel_info)
@@ -218,7 +218,7 @@ class Molecule < ApplicationRecord
   end
 
   def create_molecule_names
-    return if inchikey == 'DUMMY'
+    return if inchikey == 'DECOUPLED'
 
     if names.present?
       names.each do |nm|

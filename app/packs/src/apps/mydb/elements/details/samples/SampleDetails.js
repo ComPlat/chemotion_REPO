@@ -149,7 +149,7 @@ export default class SampleDetails extends React.Component {
       showMolfileModal: false,
       trackMolfile: props.sample.molfile,
       smileReadonly: !((typeof props.sample.molecule.inchikey === 'undefined')
-        || props.sample.molecule.inchikey == null || props.sample.molecule.inchikey === 'DUMMY'),
+        || props.sample.molecule.inchikey == null || props.sample.molecule.inchikey === 'DECOUPLED'),
       quickCreator: false,
       showInchikey: false,
       pageMessage: null,
@@ -220,7 +220,7 @@ export default class SampleDetails extends React.Component {
        && (typeof (nextProps.sample.molfile) === 'undefined'
         || (nextProps.sample.molfile || '').length === 0)
       )
-      || (typeof (nextProps.sample.molfile) !== 'undefined' && nextProps.sample.molecule.inchikey === 'DUMMY')
+      || (typeof (nextProps.sample.molfile) !== 'undefined' && nextProps.sample.molecule.inchikey === 'DECOUPLED')
     ) {
       this.setState({
         smileReadonly: false,
@@ -431,7 +431,7 @@ export default class SampleDetails extends React.Component {
       }
       sample.molecule = result;
       sample.molecule_id = result.id;
-      if (result.inchikey === 'DUMMY') { sample.decoupled = true; }
+      if (result.inchikey === 'DECOUPLED') { sample.decoupled = true; }
       this.setState({
         sample,
         smileReadonly: true,
@@ -1680,7 +1680,7 @@ export default class SampleDetails extends React.Component {
       .then((result) => {
         sample.molecule = result;
         sample.molecule_id = result.id;
-        if (result.inchikey === 'DUMMY') { sample.decoupled = true; }
+        if (result.inchikey === 'DECOUPLED') { sample.decoupled = true; }
         this.setState({
           sample, pageMessage: result.ob_log
         });

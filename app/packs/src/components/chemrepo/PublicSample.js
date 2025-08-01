@@ -70,9 +70,10 @@ const PublicSample = (_props) => {
       <b>Sample type: </b>{sampleTypeDescription}
       <DecoupleInfo sample={sample} molecule={element.molecule} />
       <br />
-      <Doi type="sample" id={sample.id} doi={sample.doi} isPublished={isPublished} pid={pubData.id} />
+      <Doi type="sample" id={sample.id} zipUrl={sample.zip_download_url} chemotionZipUrl={sample.chemotion_zip_url} doi={sample.doi} isPublished={isPublished} pid={pubData.id} />
       {sample.concept && <Doi type="sample" id={sample.id} doi={sample.concept.doi.full_doi} isPublished={isPublished} concept={true} pid={pubData.id} />}
       <ChemotionId id={pubData.id} type="sample" />
+      {!reactionLink && sample.name && <h5><b>Sample name:</b>&nbsp;{sample.name}</h5>}
       {embargo}
       <h5>
         <b>Relations of this sample: </b>{reactionLink}{analyticalLink}{materialLink}

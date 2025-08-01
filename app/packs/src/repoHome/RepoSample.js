@@ -85,7 +85,7 @@ export default class RepoSample extends Component {
 
   updateRepoXvial(elementId) {
     const { listType } = this.props;
-    PublicActions.displayMolecule(elementId, '', false, '', '', listType);
+    PublicActions.displayMolecule(elementId, '', '', false, '', '', listType);
     PublicActions.refreshPubElements(`Molecules=${listType}`);
   }
 
@@ -145,10 +145,10 @@ export default class RepoSample extends Component {
     const iupacUserDefined =
       sample.showed_name == sample.molecule_iupac ||
       sample.showed_name == null ? (
-        <span />
+        null
       ) : (
         <h5>
-          <b>Name: </b> {sample.showed_name}{' '}
+          <b>Molecule/Material name: </b> {sample.showed_name}{' '}
         </h5>
       );
     const userInfo = sample.pub_info || '';
@@ -284,8 +284,17 @@ export default class RepoSample extends Component {
             saveCallback={() => this.updateRepoXvial(sample.molecule_id)}
             xvialCom={xvialCom}
           />
-          &nbsp;
         </div>
+        {
+          sample.description && <div>
+            <b>Sample description:</b>
+            <Panel style={{ border: 'none' }} id="sample-description-panel">
+              <Panel.Body style={{ fontSize: '90%', backgroundColor: '#f5f5f5', padding: '4', whiteSpace: 'pre-wrap' }}>
+                {sample.description}
+              </Panel.Body>
+            </Panel>
+          </div>
+        }
         <RepoSegment segments={sample.segments} isPublic={isPublished} />
         <span className="repo-pub-sample-header">
           <div ref={this.panelRef}>

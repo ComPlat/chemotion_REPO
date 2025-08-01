@@ -28,12 +28,12 @@ export default class PublicSearchBar extends Component {
       alignItems: 'center',
       background: showSearchBar ? '#f8f9fa' : '#1976d2',
       boxShadow: '0 4px 26px rgba(0,0,0,0.15)',
-      borderRadius: '8px',
+      borderRadius: showSearchBar ? '4px' : '8px',
       minWidth: showSearchBar ? '50vw' : '38px',
       maxWidth: showSearchBar ? '90vw' : '38px',
-      padding: showSearchBar ? '4px 12px 4px 4px' : '0',
+      padding: showSearchBar ? '0px 12px 0px 0px' : '0',
       height: 'auto',
-      marginTop: '10px',
+      marginTop: showSearchBar ? '5px' : '10px',
       marginLeft: '14px',
     };
     const buttonStyle = {

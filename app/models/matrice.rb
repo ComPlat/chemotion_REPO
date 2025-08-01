@@ -47,8 +47,11 @@ class Matrice < ApplicationRecord
   end
 
   def self.molecule_viewer
-    rec = find_by(name: 'moleculeViewer')
-    { feature_enabled: rec&.enabled || false }.merge(rec&.configs || {}).deep_symbolize_keys
+    self.configs_for('moleculeViewer')
+  end
+
+  def self.fast_input
+    self.configs_for('fastInput')
   end
 
   private
@@ -61,5 +64,10 @@ class Matrice < ApplicationRecord
   # @note: this is a temporary solution to remove invalid matrices
   def clean_invalid_ids
     self.class.where('id > 31').find_each(&:really_destroy!)
+  end
+
+  def self.configs_for(name)
+    rec = find_by(name: name)
+    { feature_enabled: rec&.enabled || false }.merge(rec&.configs || {}).deep_symbolize_keys.with_indifferent_access
   end
 end

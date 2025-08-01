@@ -10,19 +10,21 @@ import {
 import Aviator from 'aviator';
 import UserAuth from 'src/components/navigation/UserAuth';
 import UserStore from 'src/stores/alt/stores/UserStore';
-import UIStore from 'src/stores/alt/stores/UIStore';
 import UserActions from 'src/stores/alt/actions/UserActions';
 import NavNewSession from 'src/components/navigation/NavNewSession';
-import NavHead from 'src/repoHome/NavHead';
 import DocumentHelper from 'src/utilities/DocumentHelper';
 
-const aviItem = (currentUser, key, url, text) => {
+const aviItem = (currentUser, key, url, text, onNavigate, isActive = false) => {
   if (!currentUser) return null;
+  const className = `white-nav-item${isActive ? ' active' : ''}`;
   return (
     <NavItem
       eventKey={key}
-      onClick={() => Aviator.navigate(url)}
-      className="white-nav-item"
+      onClick={() => {
+        Aviator.navigate(url);
+        if (onNavigate) onNavigate();
+      }}
+      className={className}
     >
       {text}
     </NavItem>
@@ -34,74 +36,74 @@ export default class Navigation extends React.Component {
     super(props);
     this.state = {
       currentUser: null,
-      modalProps: {
-        show: false,
-        title: '',
-        component: '',
-        action: null,
-        listSharedCollections: false,
-      },
+      currentRoute: window.location.pathname,
     };
     this.onChange = this.onChange.bind(this);
-    this.onUIChange = this.onUIChange.bind(this);
+    this.onRouteChange = this.onRouteChange.bind(this);
     // this.toggleCollectionTree = this.toggleCollectionTree.bind(this)
   }
 
   componentDidMount() {
-    UIStore.listen(this.onUIChange);
     UserStore.listen(this.onChange);
     UserActions.fetchCurrentUser();
     UserActions.fetchUserLabels();
     UserActions.fetchOmniauthProviders();
+
+    // Listen for route changes to update active state
+    window.addEventListener('popstate', this.onRouteChange);
   }
 
   componentWillUnmount() {
-    UIStore.unlisten(this.onUIChange);
     UserStore.unlisten(this.onChange);
+    window.removeEventListener('popstate', this.onRouteChange);
+  }
+
+  onRouteChange() {
+    this.setState({ currentRoute: window.location.pathname });
   }
 
   onChange(state) {
     const newId = state.currentUser ? state.currentUser.id : null;
     const oldId = this.state.currentUser ? this.state.currentUser.id : null;
-    if (newId !== oldId) { this.setState({ currentUser: state.currentUser }); }
-
+    if (newId !== oldId) {
+      this.setState({ currentUser: state.currentUser });
+    }
 
     if (state.omniauthProviders !== this.state.omniauthProviders) {
       this.setState({
-        omniauthProviders: state.omniauthProviders
+        omniauthProviders: state.omniauthProviders,
       });
     }
-  }
-
-  onUIChange(state) {
-    this.setState({
-      modalProps: state.modalParams,
-    });
   }
 
   // toggleCollectionTree() {
   //   this.props.toggleCollectionTree();
   // }
 
-  token() { return DocumentHelper.getMetaContent("csrf-token") }
+  token() {
+    return DocumentHelper.getMetaContent('csrf-token');
+  }
 
-  updateModalProps(modalProps) { this.setState({ modalProps }); }
+  getCurrentRoute() {
+    const { currentRoute } = this.state;
+    return currentRoute || window.location.pathname;
+  }
 
-  navHeader() {
-    return (
-      <Navbar.Header className="collec-tree">
-        <Navbar.Text style={{cursor: "pointer"}}>
-          {/* <i  className="fa fa-list" style={{fontStyle: "normal"}}
-              onClick={this.toggleCollectionTree} /> */}
-        </Navbar.Text>
-        <Navbar.Text />
-        <NavHead />
-      </Navbar.Header>
-    )
+  isActiveRoute(url) {
+    const currentRoute = this.getCurrentRoute();
+    if (
+      url === '/home' &&
+      (currentRoute === '/' ||
+        currentRoute === '/home' ||
+        currentRoute === '/home/')
+    ) {
+      return true;
+    }
+    return currentRoute.startsWith(url);
   }
 
   render() {
-    const { modalProps, currentUser, omniauthProviders } = this.state;
+    const { currentUser, omniauthProviders } = this.state;
 
     let userBar = <span />;
     if (currentUser) {
@@ -122,7 +124,10 @@ export default class Navigation extends React.Component {
             <a
               role="button"
               tabIndex={0}
-              onClick={() => Aviator.navigate('/home')}
+              onClick={() => {
+                Aviator.navigate('/home');
+                this.onRouteChange();
+              }}
             >
               Chemotion-Repository
             </a>
@@ -137,11 +142,46 @@ export default class Navigation extends React.Component {
                 My DB
               </NavItem>
             ) : null}
-            {aviItem(true, 2, '/home/publications', 'Data Publications')}
-            {aviItem(true, 7, '/home/moleculeArchive', 'Molecule Archive')}
-            {aviItem(currentUser, 3, '/home/review', 'Review')}
-            {aviItem(currentUser, 6, '/home/embargo', 'Embargoed Publications')}
-            {aviItem(true, 9, '/home/newsroom', 'News')}
+            {aviItem(
+              true,
+              2,
+              '/home/publications',
+              'Data Publications',
+              this.onRouteChange,
+              this.isActiveRoute('/home/publications')
+            )}
+            {aviItem(
+              true,
+              7,
+              '/home/moleculeArchive',
+              'Molecule Archive',
+              this.onRouteChange,
+              this.isActiveRoute('/home/moleculeArchive')
+            )}
+            {aviItem(
+              currentUser,
+              3,
+              '/home/review',
+              'Review',
+              this.onRouteChange,
+              this.isActiveRoute('/home/review')
+            )}
+            {aviItem(
+              currentUser,
+              6,
+              '/home/embargo',
+              'Embargoed Publications',
+              this.onRouteChange,
+              this.isActiveRoute('/home/embargo')
+            )}
+            {aviItem(
+              true,
+              9,
+              '/home/newsroom',
+              'News',
+              this.onRouteChange,
+              this.isActiveRoute('/home/newsroom')
+            )}
             <NavItem
               eventKey={5}
               target="_blank"
@@ -152,8 +192,13 @@ export default class Navigation extends React.Component {
             </NavItem>
             <NavItem
               eventKey={8}
-              onClick={() => Aviator.navigate('/home/genericHub')}
-              className="repo-generic-hub-btn"
+              onClick={() => {
+                Aviator.navigate('/home/genericHub');
+                this.onRouteChange();
+              }}
+              className={`repo-generic-hub-btn${
+                this.isActiveRoute('/home/genericHub') ? ' active' : ''
+              }`}
             >
               <OverlayTrigger
                 placement="bottom"

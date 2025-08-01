@@ -15,6 +15,7 @@ import {
   Grid,
   InputGroup,
   Label,
+  Modal,
   OverlayTrigger,
   Panel,
   Row,
@@ -290,6 +291,100 @@ const DownloadJsonBtn = (l) => {
       <LdData type={l.type.toLowerCase()} id={l.id} />
     </>
   );
+};
+
+const DownloadZipBtn = ({ zipUrl, chemotionZipUrl, publicationId, buttonSize }) => {
+  const [showModal, setShowModal] = React.useState(false);
+
+  // Button is disabled (not rendered) when both URLs are null, undefined, or empty
+  if (!zipUrl && !chemotionZipUrl) {
+    return null;
+  }
+
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleDownload = (url, type) => {
+    const filename = publicationId
+      ? `Publication-${publicationId}-${type}.zip`
+      : `Publication-${type}.zip`;
+
+    Utils.downloadFile({
+      contents: url,
+      name: filename
+    });
+    setShowModal(false);
+  };
+
+  return (
+    <>
+      <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip id={`tt_zip_download__${uuid.v4()}`}>Download ZIP file</Tooltip>}
+      >
+        <Button
+          bsSize={buttonSize}
+          onClick={handleOpenModal}
+        >
+          <i className="fa fa-file-archive-o" />&nbsp;Download ZIP
+        </Button>
+      </OverlayTrigger>
+
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Download ZIP File</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Please select which ZIP file you would like to download:</p>
+          <div style={{ marginTop: '20px' }}>
+            {zipUrl && (
+              <Button
+                bsStyle="primary"
+                bsSize="large"
+                block
+                onClick={() => handleDownload(zipUrl, 'standard')}
+                style={{ marginBottom: '10px' }}
+              >
+                <i className="fa fa-download" /> Standard ZIP
+              </Button>
+            )}
+            {chemotionZipUrl && (
+              <Button
+                bsStyle="primary"
+                bsSize="large"
+                block
+                onClick={() => handleDownload(chemotionZipUrl, 'chemotion')}
+              >
+                <i className="fa fa-download" /> Chemotion ZIP
+              </Button>
+            )}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={handleCloseModal}>Cancel</Button>
+        </Modal.Footer>
+      </Modal>
+    </>
+  );
+};
+
+DownloadZipBtn.propTypes = {
+  zipUrl: PropTypes.string,
+  chemotionZipUrl: PropTypes.string,
+  publicationId: PropTypes.number,
+  buttonSize: PropTypes.string,
+};
+
+DownloadZipBtn.defaultProps = {
+  zipUrl: null,
+  chemotionZipUrl: null,
+  publicationId: null,
+  buttonSize: 'xsmall',
 };
 
 const DownloadDOICsv = (e, a) => {
@@ -987,7 +1082,7 @@ const MoleculeInfo = ({ molecule, sample_svg_file = '', hasXvial = false, childr
 
 const RenderAnalysisHeader = (props) => {
   const {
-    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures, onVersionChange
+    element, isPublic, isLogin, isReviewer, updateRepoXvial, xvialCom, userInfo, reactionId, literatures, onVersionChange, zipUrl, chemotionZipUrl
   } = props;
   const svgPath = `/images/samples/${element.sample_svg_file}`;
   let doiLink = '';
@@ -1061,7 +1156,9 @@ const RenderAnalysisHeader = (props) => {
                     {doiLink}
                   </Button>
                   <ClipboardCopyBtn text={`https://dx.doi.org/${doiLink}`} />
+                  <DownloadZipBtn zipUrl={zipUrl} chemotionZipUrl={chemotionZipUrl} publicationId={crsId} />
                   <DownloadMetadataBtn type="sample" id={element.id} />
+
                   <RdfBtn type="sample" id={element.id} info={{ pid: crsId, doi: doiLink }} />
                 </span>
               )
@@ -2044,8 +2141,9 @@ CommentBtn.defaultProps = {
 
 const Doi = (props) => {
   const {
-    type, id, doi, isPublished, concept, pid
+    type, id, doi, isPublished, concept, pid, zipUrl, chemotionZipUrl
   } = props;
+
   let data = '';
   const title = (concept ? `${type} concept DOI:` : `${type} DOI:`).replace(/(^\w)/g, m => m.toUpperCase());
   if (isPublished) {
@@ -2056,6 +2154,7 @@ const Doi = (props) => {
         </Button>
         <ClipboardCopyBtn text={`https://dx.doi.org/${doi}`} />
         <DownloadMetadataBtn type={type} id={id} concept={concept} />
+        <DownloadZipBtn zipUrl={zipUrl} chemotionZipUrl={chemotionZipUrl} publicationId={id} />
         {!concept && <RdfBtn type={type} id={id} concept={concept} info={{ pid: pid, doi: doi }} />}
       </span>
     );
@@ -2084,6 +2183,8 @@ Doi.propTypes = {
   ]).isRequired,
   isPublished: PropTypes.bool.isRequired,
   concept: PropTypes.bool,
+  pid: PropTypes.string,
+  zipUrl: PropTypes.string,
 };
 
 export {
@@ -2104,6 +2205,7 @@ export {
   DownloadDOICsv,
   DownloadMetadataBtn,
   DownloadJsonBtn,
+  DownloadZipBtn,
   EditorTips,
   ElementIcon,
   ElAspect,

@@ -264,12 +264,16 @@ module MetadataJsonld
 
       klass = Labimotion::DatasetKlass.find_by(ols_term_id: ols_id)
 
-      ds&.properties.fetch('layers', nil)&.keys.each do |key|
+      layers = ds&.properties&.fetch('layers', nil)
+      sorted_layer_keys = layers&.sort_by { |_key, layer| layer['position'] || 0 }&.map(&:first) || []
+      sorted_layer_keys.each do |key|
         # next unless con_layers&.include?(key)
         # mcon_fields = mcon[:layers].find { |ss| ss[:identifier] == key }&.fetch(:fields, [])&.map { |field| field[:identifier] }
         # next if mcon_fields.nil?
 
-        ds&.properties['layers'][key].fetch('fields', []).each do |field|
+        fields = ds&.properties&.dig('layers', key, 'fields') || []
+        sorted_fields = fields.sort_by { |field| field['position'] || 0 }
+        sorted_fields.each do |field|
           # next unless mcon_fields&.include?(field['field'])
           # short_form = field.fetch('ontology', {}).fetch('short_form', '')
           short_form = json_ld_service.get_ols_short_form(field, klass, key)

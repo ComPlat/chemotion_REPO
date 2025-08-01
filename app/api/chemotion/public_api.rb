@@ -54,10 +54,12 @@ module Chemotion
 
       desc 'Public initialization'
       get 'initialize' do
+        stt_config = Rails.configuration.try(:stt).try(:config)
         {
           molecule_viewer: Matrice.molecule_viewer,
           repo_versioning: ENV['REPO_VERSIONING'] == 'true' ? true : false,
           u: Rails.configuration.u || {},
+          stt_enabled: stt_config.present? && stt_config.authorization.present?
         }
       end
 

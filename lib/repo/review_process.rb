@@ -18,7 +18,7 @@ module Repo
 
     def process
       return unless ['reaction', 'sample', 'collection'].include?(@type)
-      return unless ['comment', 'comments', 'reviewed', 'submit', 'approved', 'accepted', 'declined'].include?(@action)
+      return unless ['comment', 'comments', 'reviewed', 'submit', 'approved', 'accepted', 'declined', 'revert'].include?(@action)
 
       logger(next_step, 'save_comments')
       save_comments(action_name, @action != 'comments') unless @action == 'comment' || @action == 'approved'
@@ -160,6 +160,14 @@ module Repo
       raise e
     end
 
+    def process_revert
+      pub_update_state(Publication::STATE_PENDING)
+      process_review_info
+    rescue StandardError => e
+      log_exception(e, { step: @step, method: __method__ })
+      raise e
+    end
+
     def process_declined
       pub_update_state(Publication::STATE_DECLINED)
       ## TO BE HANDLED - remove from embargo collection
@@ -219,22 +227,37 @@ module Repo
       review = @root_publication.review || {}
       review_history = review['history'] || []
       current = review_history.last || {}
-      current['state'] = %w[accepted declined].include?(action) ? action : @root_publication.state
-      current['action'] = action unless action.nil?
-      current['username'] = @current_user.name
-      current['userid'] = @current_user.id
-      current['comment'] = @comment unless @comment.nil?
-      current['type'] = @root_publication.state == Publication::STATE_PENDING ? 'reviewed' : 'submit'
-      current['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
 
-      if review_history.length == 0
-        review_history[0] = current
+      if action == 'revert'
+        review_history << {
+          action: 'reverted',
+          state: 'pending',
+          username: @current_user.name,
+          userid: @current_user.id,
+          comment: @comment,
+          timestamp: Time.now.strftime('%d-%m-%Y %H:%M:%S'),
+        }
       else
-        review_history[review_history.length - 1] = current
+        current['state'] = %w[accepted declined].include?(action) ? action : @root_publication.state
+        current['action'] = action unless action.nil?
+        current['username'] = @current_user.name
+        current['userid'] = @current_user.id
+        current['comment'] = @comment unless @comment.nil?
+        current['type'] = @root_publication.state == Publication::STATE_PENDING ? 'reviewed' : 'submit'
+        current['timestamp'] = Time.now.strftime('%d-%m-%Y %H:%M:%S')
+
+        if review_history.length == 0
+          review_history[0] = current
+        else
+          review_history[review_history.length - 1] = current
+        end
       end
+
+
       if his ## add next_node
         next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if @action == 'reviewed'
         next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if @action == 'submit'
+        next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if @action == 'revert'
         unless next_node.nil?
           review_history << next_node
         end
@@ -284,10 +307,13 @@ module Repo
     def accept_new_sample(root, sample)
       doi = sample&.doi
 
-      # create or update concept
-      previous_version = sample.tag.taggable_data['previous_version']['id']
+      previous_version = sample.tag.taggable_data && sample.tag.taggable_data['previous_version']['id']
       previous_publication = Publication.find_by(element_type: 'Sample', element_id: previous_version)
+
+      # create or update concept
       if ENV['REPO_VERSIONING'] == 'true'
+        previous_version = sample.tag.taggable_data && sample.tag.taggable_data['previous_version'] && sample.tag.taggable_data['previous_version']['id']
+        previous_publication = Publication.find_by(element_type: 'Sample', element_id: previous_version) if previous_version.present?
         if previous_publication.nil?
           concept = Concept.create_for_doi!(doi)
         else
@@ -407,6 +433,7 @@ module Repo
       return 'revision' if @action == 'submit'
       return 'approved' if @action == 'approved'
       return 'accepted' if @action == 'accepted'
+      return 'revert' if @action == 'revert'
       return 'declined' if @action == 'declined'
     end
 

@@ -15,7 +15,6 @@ import StateLabel from 'src/components/chemrepo/common/StateLabel';
 import SVGView from 'src/components/chemrepo/SVGViewPan';
 import { SchemeWord, ChecklistPanel } from 'src/repoHome/RepoCommon';
 import { ShowUserLabels, SearchUserLabels } from 'src/components/UserLabels';
-import ReviewSearchBar from 'src/components/chemrepo/ReviewSearchBar';
 
 // import RepoReviewModal from '../components/common/RepoReviewModal';
 
@@ -110,6 +109,8 @@ export default class RepoReview extends Component {
     this.handleReviewUpdate = this.handleReviewUpdate.bind(this);
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this);
     this.setUserLabel = this.setUserLabel.bind(this);
+    this.renderSearch = this.renderSearch.bind(this);
+    this.renderSearchBar = this.renderSearchBar.bind(this);
   }
 
   componentDidMount() {
@@ -337,6 +338,20 @@ export default class RepoReview extends Component {
     return menu;
   }
 
+  renderSearchBar() {
+    return (
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        <div style={{ flexGrow: 1 }}>{this.renderSearch()}</div>
+      </div>
+    );
+  }
+
   renderSearch() {
     const { searchType, searchValue, listTypeOptions, userLabel } = this.state;
 
@@ -437,7 +452,7 @@ export default class RepoReview extends Component {
     );
 
     return (
-      <div style={{ paddingLeft: '8px', marginTop: '8px', marginBottom: '8px', width: '100%' }}>
+      <div style={{ paddingLeft: '8px', marginBottom: '8px', width: '100%' }}>
         {searchTbl}
       </div>
     );
@@ -499,6 +514,8 @@ export default class RepoReview extends Component {
       obj['elementId'] = currentElement?.reaction?.id;
     }
 
+    const { sttEnabled } = this.props;
+
     return (
       <RepoReviewModal
         show={showReviewModal}
@@ -506,6 +523,7 @@ export default class RepoReview extends Component {
         onSubmit={this.handleSubmitReview}
         onUpdate={this.handleReviewUpdate}
         onHide={() => this.setState({ showReviewModal: false })}
+        sttEnabled={sttEnabled || false}
       />
     );
   }
@@ -525,12 +543,15 @@ export default class RepoReview extends Component {
       obj['elementId'] = currentElement?.reaction?.id;
     }
 
+    const { sttEnabled } = this.props;
+
     return (
       <RepoCommentModal
         show={showCommentModal}
         data={obj}
         onUpdate={this.handleCommentUpdate}
         onHide={() => this.setState({ showCommentModal: false })}
+        sttEnabled={sttEnabled || false}
       />
     );
   }
@@ -548,20 +569,23 @@ export default class RepoReview extends Component {
       }
       return null;
     };
+    const listClass = 'review-list-search';
     return (
-      <div>
-        <div style={{ position: 'relative', maxWidth: '2000px', margin: '0 auto' }}>
-          <ReviewSearchBar
-            renderSearch={this.renderSearch.bind(this)}
-          />
-        </div>
-        <Row style={{ width: '100%', maxWidth: '2000px', margin: '0 auto' }}>
-          <Col md={currentElement ? 4 : 12} >
+      <div style={{ width: '100%', maxWidth: '2000px', margin: '0 auto' }}>
+        <Row style={{ width: '100%' }}>
+          <Col md={2} sm={0} />
+          <Col md={8} sm={12}>
+            {this.renderSearchBar()}
+          </Col>
+          <Col md={2} sm={0} />
+          <Col md={currentElement ? 4 : 12}>
             <div>
-              <div className="review-list" style={{ backgroundColor: '#f5f5f5' }} >
+              <div className={listClass} style={{ backgroundColor: '#f5f5f5' }}>
                 <Table striped className="review-entries">
                   <tbody striped="true" bordered="true" hover="true">
-                    {((typeof (elements) !== 'undefined' && elements) || []).map(r => renderElement(r, currentElement, embargoBtn(r))) }
+                    {((typeof elements !== 'undefined' && elements) || []).map(
+                      r => renderElement(r, currentElement, embargoBtn(r))
+                    )}
                   </tbody>
                 </Table>
               </div>

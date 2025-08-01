@@ -545,7 +545,7 @@ module Chemotion
 
         before do
           @root_publication = Publication.find_by(element_type: params['type'].classify,element_id: params['id']).root
-          reviewer_auth = User.reviewer_ids.include?(current_user.id) && @root_publication.state == Publication::STATE_PENDING
+          reviewer_auth = User.reviewer_ids.include?(current_user.id) && (@root_publication.state == Publication::STATE_PENDING || @root_publication.state == Publication::STATE_ACCEPTED)
           grouplead_auth = @root_publication.review&.dig('reviewers')&.include?(current_user&.id) && @root_publication.state == Publication::STATE_PENDING
           submitter_auth = (@root_publication.published_by == current_user.id || @root_publication.review&.dig('submitters')&.include?(current_user&.id)) && @root_publication.state == Publication::STATE_REVIEWED
           error!('Unauthorized. The operation cannot proceed.', 401) unless reviewer_auth || grouplead_auth || submitter_auth
@@ -572,6 +572,10 @@ module Chemotion
         end
 
         post :accepted do
+          process_review(extract_action)
+        end
+
+        post :revert do
           process_review(extract_action)
         end
 
