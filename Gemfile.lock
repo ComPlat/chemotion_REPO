@@ -275,7 +275,7 @@ GEM
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0.0)
     database_cleaner-core (2.0.1)
-    date (3.4.0)
+    date (3.4.1)
     debase (0.2.4.1)
       debase-ruby_core_source (>= 0.10.2)
     debase-ruby_core_source (3.3.1)
@@ -953,7 +953,7 @@ GEM
     tilt (2.4.0)
     time (0.4.1)
       date
-    timeout (0.4.1)
+    timeout (0.4.3)
     ttfunk (1.8.0)
       bigdecimal (~> 3.1)
     tty-screen (0.8.2)
