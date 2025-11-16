@@ -47,7 +47,7 @@
     "immutability-helper": "^2.8.1",
     "immutable": "^4.0.0-rc.12",
     "jcampconverter": "^2.11.0",
-    "js-yaml": "^3.13.1",
+    "js-yaml": "^4.1.1",
     "jsdom": "^22.1.0",
     "lodash": "^4.17.21",
     "mime-types": "^2.1.35",
