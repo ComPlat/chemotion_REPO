@@ -83,7 +83,7 @@ module Chemotion
         error!('Password cannot be blank', 422) if params[:credentials][:password].blank?
         case params[:provider]
         when 'nmrxiv'
-          service = Chemotion::NmrxivService.new
+          service = Repo::NmrxivService.new
           result = service.authenticate(
             params[:credentials][:email],
             params[:credentials][:password]
@@ -140,7 +140,7 @@ module Chemotion
 
         case params[:provider]
         when 'nmrxiv'
-          service = Chemotion::NmrxivService.new
+          service = Repo::NmrxivService.new
           result = service.validate_token(token.access_token)
 
           if result[:success]
@@ -185,7 +185,7 @@ module Chemotion
             error!("Token refresh failed: #{e.message}", 401)
           end
 
-          service = Chemotion::NmrxivService.new
+          service = Repo::NmrxivService.new
           result = service.get_user_projects(access_token)
 
           if result[:success]

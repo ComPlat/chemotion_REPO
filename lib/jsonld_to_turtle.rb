@@ -66,8 +66,10 @@ module JsonldToTurtle
       graph = RDF::Graph.new
       JSON::LD::API.toRdf(json_data) do |statement|
         graph << statement
-      end    # Convert to the specified format
-    case format
+      end
+
+      # Convert to the specified format
+      case format
     when :turtle
       graph.dump(:turtle, prefixes: common_prefixes)
     when :ntriples
@@ -136,7 +138,7 @@ module JsonldToTurtle
     # Common RDF prefixes for better readability
     def common_prefixes
       {
-        schema: RDF::Vocabulary.new('https://schema.org/'),
+        schema: RDF::Vocabulary.new('http://schema.org/'),
         dct: RDF::Vocabulary.new('http://purl.org/dc/terms/'),
         rdf: RDF::RDFV,
         rdfs: RDF::RDFS,

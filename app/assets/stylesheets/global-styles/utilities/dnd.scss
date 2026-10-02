@@ -1,0 +1,69 @@
+.dnd-zone {
+  @extend .w-100;
+  @extend .border;
+  @extend .border-dashed;
+  @extend .border-3;
+  @extend .p-3;
+  @extend .text-center;
+}
+
+.dnd-zone-list-item {
+  @extend .w-100;
+  @extend .border;
+  @extend .border-dashed;
+  @extend .border-3;
+  @extend .p-3;
+  @extend .text-start;
+}
+
+.dnd-zone-over {
+  @extend .border-primary;
+}
+
+.dnd-dragging {
+  @extend .opacity-25;
+}
+
+.dnd-arrow-disable {
+  @extend .text-muted;
+  cursor: not-allowed;
+  @extend .fs-3;
+}
+
+.dnd-arrow-enable {
+  cursor: move;
+  @extend .fs-3;
+}
+
+@mixin drag-surface() {
+  background-image: radial-gradient($chemstrap-white 1px, transparent 2px);
+  background-size: 4px 4px;
+  background-repeat: round;
+}
+
+@mixin draggable-list-item() {
+  @extend .border-bottom;
+  @extend .border-end;
+  &:hover {
+    @extend .surface-hover;
+  }
+
+  &.is-selected {
+    @extend .surface-active;
+    &:hover {
+      @extend .surface-hover;
+    }
+  }
+  &.draggable-list-item--is-dragging {
+    @extend .opacity-25;
+  }
+  &.draggable-list-item--can-drop {
+    @extend .surface-lighten3;
+    @extend .opacity-100;
+  }
+  &.draggable-list-item--is-over {
+    .drag-handle {
+      @extend .bg-active;
+    }
+  }
+}

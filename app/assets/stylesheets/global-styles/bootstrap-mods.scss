@@ -1,0 +1,397 @@
+$open-button-variants: (
+  "secondary": (
+    "bg": $secondary,
+    "border": $secondary,
+    "text": $secondary,
+  ),
+  "danger": (
+    "bg": $danger,
+    "border": shade-color($danger, 20%),
+    "text": shade-color($danger, 20%),
+  ),
+  "success": (
+    "bg": $success,
+    "border": shade-color($success, 20%),
+    "text": shade-color($success, 20%),
+  ),
+  "warning": (
+    "bg": $warning,
+    "border": shade-color($warning, 20%),
+    "text": shade-color($warning, 20%),
+  ),
+  "info": (
+    "bg": $info,
+    "border": shade-color($info, 20%),
+    "text": shade-color($info, 20%),
+  ),
+);
+
+$solid-button-variants: (
+  "primary": $primary,
+  "surface": $chemstrap-silicon,
+  "create": $chemstrap-green,
+);
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0.5em;
+  &.modal-title,
+  &.accordion-header,
+  &.popover-header {
+    margin-top: 0;
+  }
+}
+
+@mixin solid-button-variant($color) {
+  @include button-variant(
+    $color,
+    mix($color, $white, 50),
+    $white,
+    $hover-color: $white,
+    $active-color: $white,
+    $disabled-color: $white
+  );
+}
+
+// open chemstrap button variants
+
+@mixin open-button($name) {
+  @include button-variant(
+    mix(
+      map-get($silicon-shades, lighten5),
+      map-get(map-get($open-button-variants, $name), "bg"),
+      98
+    ),
+    mix(
+      map-get($carbon-shades, lighten3),
+      map-get(map-get($open-button-variants, $name), "border"),
+      50
+    ),
+    map-get(map-get($open-button-variants, $name), "text"),
+    mix(
+      map-get($silicon-shades, lighten5),
+      map-get(map-get($open-button-variants, $name), "bg"),
+      90
+    ),
+    mix(
+      map-get($carbon-shades, lighten3),
+      map-get(map-get($open-button-variants, $name), "border"),
+      50
+    ),
+    map-get(map-get($open-button-variants, $name), "text"),
+    map-get(map-get($open-button-variants, $name), "bg"),
+    map-get(map-get($open-button-variants, $name), "border"),
+    $chemstrap-white
+  );
+}
+
+@each $name, $color in $open-button-variants {
+  .btn-#{$name} {
+    @include open-button($name);
+  }
+}
+
+// solid chemstrap button variants
+@each $name, $color in $solid-button-variants {
+  .btn-#{$name} {
+    @include solid-button-variant($color);
+  }
+}
+
+.btn-light {
+  @include button-variant(
+    mix(map-get($silicon-shades, lighten5), $chemstrap-silicon, 85),
+    map-get($carbon-shades, lighten3),
+    $body-color,
+    mix(map-get($silicon-shades, lighten5), $chemstrap-silicon, 75),
+    map-get($carbon-shades, lighten3),
+    $body-color,
+    $chemstrap-graphite,
+    map-get($carbon-shades, lighten3),
+    $chemstrap-white
+  );
+}
+
+.btn-ghost {
+  @include button-variant(
+    transparent,
+    map-get($carbon-shades, lighten4),
+    $chemstrap-white,
+    mix(transparent, $chemstrap-blue, 50),
+    map-get($carbon-shades, lighten4),
+    $chemstrap-white,
+    $chemstrap-blue,
+    map-get($carbon-shades, lighten4),
+    $chemstrap-white
+  );
+}
+
+.btn-plain,
+.btn-neat {
+  @include button-variant(
+    transparent,
+    transparent,
+    $chemstrap-blue,
+    transparent,
+    transparent,
+    mix($chemstrap-blue, $chemstrap-blue-dark, 50),
+    transparent,
+    transparent,
+    $chemstrap-blue-dark,
+    transparent,
+    transparent,
+    map-get($carbon-shades, lighten1)
+  );
+}
+
+// button variant neat with no background or border
+.btn-neat {
+  padding: 0 !important;
+  &.btn-lg i {
+    font-size: 2rem;
+    line-height: 1em;
+  }
+  &.btn-md i {
+    font-size: 1.5rem;
+    line-height: 1em;
+  }
+  &.btn-sm i {
+    font-size: 1.25rem;
+    line-height: 1em;
+  }
+  &.btn-xsm i {
+    font-size: 1.125rem;
+    line-height: 1em;
+  }
+  &.btn-xxsm i {
+    font-size: 1rem;
+    line-height: 1em;
+  }
+}
+
+@mixin square-icon-form-elements($padding-x, $padding-y) {
+  padding: $padding-y $padding-x;
+  &:has(> i:only-child) {
+    padding: $padding-y;
+  }
+}
+
+@mixin xsm-form-elements {
+  @include square-icon-form-elements(
+    $input-btn-padding-x-xsm,
+    $input-btn-padding-y-xsm
+  );
+  font-size: 12px;
+  border-radius: 3px;
+  @include condensed-text-width;
+}
+
+@mixin xxsm-form-elements {
+  @include square-icon-form-elements(
+    $input-btn-padding-x-xxsm,
+    $input-btn-padding-y-xxsm
+  );
+  font-size: 12px;
+  border-radius: 2.5px;
+  @include condensed-text-width;
+}
+
+.btn {
+  @include square-icon-form-elements(
+    $input-btn-padding-x,
+    $input-btn-padding-y
+  );
+  &-lg {
+    @include square-icon-form-elements(
+      $input-btn-padding-x-lg,
+      $input-btn-padding-y-lg
+    );
+  }
+  &-sm {
+    @include square-icon-form-elements(
+      $input-btn-padding-x-sm,
+      $input-btn-padding-y-sm
+    );
+    @include condensed-text-width;
+  }
+  &-xsm {
+    @include xsm-form-elements;
+  }
+  &-xxsm {
+    @include xxsm-form-elements;
+  }
+}
+
+button.btn-close {
+  @extend .btn;
+  @extend .btn-sm;
+  padding: $input-btn-padding-y-sm !important;
+  background-image: none !important;
+  &::before {
+    @extend .fa;
+    @extend .fa-times;
+  }
+  @extend .btn-ghost;
+}
+
+.modal-header .btn-close {
+  margin: 0 0 0 auto !important;
+}
+
+.btn i {
+  @extend .fa-fw;
+  @extend .d-inline-flex;
+  @extend .flex-column;
+  @extend .align-items-center;
+  @extend .justify-content-center;
+  height: $btn-line-height;
+}
+
+.btn-toolbar {
+  @extend .gap-1;
+  @extend .align-items-center;
+}
+
+.form-control-xsm {
+  @include xsm-form-elements;
+}
+
+.form-control-xxsm {
+  @include xxsm-form-elements;
+}
+
+.input-group-sm > {
+  @include condensed-text-width;
+}
+
+.input-group-xsm > {
+  .form-control,
+  .form-select,
+  .input-group-text,
+  .btn {
+    @include xsm-form-elements;
+  }
+}
+
+.input-group-xxsm > {
+  .form-control,
+  .form-select,
+  .input-group-text,
+  .btn {
+    @include xxsm-form-elements;
+  }
+}
+
+.popover-header {
+  line-height: calc(1.625rem + 2px); // force height of close button
+}
+
+.popover-multi-item {
+  // Remove top-left radius for every child after the second
+  &:nth-child(n+3) .popover-header {
+    border-top-left-radius: 0;
+  }
+  &:not(:last-child) {
+    border-right: var(--bs-popover-border-width) solid
+      var(--bs-popover-border-color);
+    .popover-header {
+      border-top-right-radius: 0;
+    }
+  }
+}
+
+.input-group {
+  z-index: 0;
+}
+
+.accordion-button {
+  @extend .justify-content-between;
+  @extend .surface-lighten4;
+  @extend .border-0;
+  &::after {
+    content: "\f078";
+    font-family: "FontAwesome";
+    background-image: none !important;
+    @extend .bg-draggable;
+    @extend .rounded-circle;
+    width: 24px;
+    height: 24px;
+    @extend .text-white;
+    @extend .d-flex;
+    @extend .align-items-center;
+    @extend .justify-content-center;
+    @extend .ms-2;
+  }
+  &:hover::after {
+    padding-top: 3px;
+  }
+  &:not(.collapsed) {
+    &::after {
+      transform: rotate(180deg);
+      @extend .surface-base;
+    }
+  }
+  &.accordion-button--icon-only {
+    width: auto;
+    background: transparent !important;
+    &::after {
+      @extend .ms-0;
+    }
+  }
+  &.accordion-button.sbmm-accordion-header {
+    @extend .surface-lighten2;
+  }
+  &.accordion-button.sbmm-accordion-header.active {
+    @extend .surface-lighten1;
+  }
+}
+
+.dropdown {
+  > .btn {
+    line-height: 0;
+  }
+}
+
+.modal-header {
+  @extend .surface-active;
+}
+
+// Chemotion Repository specific button styles
+// Custom override for outline-dark button with white background and light grey hover
+.btn-outline-dark {
+  background-color: $chemstrap-white;
+  border-color: $gray-500;
+
+  &:hover {
+    background-color: #e9ecef;
+    border-color: $gray-800;
+    color: #070707;
+  }
+
+  &:focus {
+    background-color: #e9ecef;
+    border-color: $gray-800;
+    color: #070707;
+    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+  }
+
+  &:active,
+  &.active,
+  .show > &.dropdown-toggle {
+    background-color: #e9ecef;
+    border-color: #6c757d;
+    color: #495057;
+  }
+
+  &:disabled,
+  &.disabled {
+    background-color: $chemstrap-white;
+    border-color: #6c757d;
+    color: #6c757d;
+    opacity: 0.65;
+  }
+}

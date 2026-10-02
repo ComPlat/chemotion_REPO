@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: matrices
@@ -17,11 +19,6 @@
 #
 #  index_matrices_on_name  (name) UNIQUE
 #
-
-# Configuration settings for some features
-# - set visibility/activation of features globaly or for users and group
-#
-# @note: db/triggers/update_users_matrix_trg on update/insert to update user matrix
 class Matrice < ApplicationRecord
   include SequenceUtilities
 
@@ -47,12 +44,19 @@ class Matrice < ApplicationRecord
   end
 
   def self.molecule_viewer
-    self.configs_for('moleculeViewer')
+    configs_for('moleculeViewer')
   end
 
   def self.fast_input
-    self.configs_for('fastInput')
+    configs_for('fastInput')
   end
+
+  def self.configs_for(name)
+    rec = find_by(name: name)
+    { feature_enabled: rec&.enabled || false }.merge(rec&.configs || {}).deep_symbolize_keys.with_indifferent_access
+  end
+
+  private_class_method :configs_for
 
   private
 
@@ -64,10 +68,5 @@ class Matrice < ApplicationRecord
   # @note: this is a temporary solution to remove invalid matrices
   def clean_invalid_ids
     self.class.where('id > 31').find_each(&:really_destroy!)
-  end
-
-  def self.configs_for(name)
-    rec = find_by(name: name)
-    { feature_enabled: rec&.enabled || false }.merge(rec&.configs || {}).deep_symbolize_keys.with_indifferent_access
   end
 end

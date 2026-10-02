@@ -43,13 +43,19 @@ RSpec.describe Import::ImportChemicals do
     end
   end
 
-  describe '.sets amount of chemical' do
+  describe '.sets amount and volume of chemical' do
     let(:chemical) { { 'chemical_data' => [{}] } }
 
     it 'add amount value and unit' do
-      described_class.set_amount(chemical, '10mg')
+      described_class.set_amount_or_volume(chemical, 'amount', '10 mg')
       expect(chemical['chemical_data'][0]['amount']['value']).to eq(10.0)
       expect(chemical['chemical_data'][0]['amount']['unit']).to eq('mg')
+    end
+
+    it 'add volume value and unit' do
+      described_class.set_amount_or_volume(chemical, 'volume', '6.4 ml')
+      expect(chemical['chemical_data'][0]['volume']['value']).to eq(6.4)
+      expect(chemical['chemical_data'][0]['volume']['unit']).to eq('ml')
     end
   end
 
@@ -105,6 +111,20 @@ RSpec.describe Import::ImportChemicals do
           'H351' => ' Suspected of causing cancer',
         },
       )
+    end
+  end
+
+  describe '.build_chemical with delivery_date and opening_date' do
+    let(:chemical) { { 'chemical_data' => [{}] } }
+
+    it 'sets delivery_date from import' do
+      described_class.process_column(chemical, 'delivery date', '2024-05-01')
+      expect(chemical['chemical_data'][0]['delivery_date']).to eq('2024-05-01')
+    end
+
+    it 'sets opening_date from import' do
+      described_class.process_column(chemical, 'opening date', '2024-06-15')
+      expect(chemical['chemical_data'][0]['opening_date']).to eq('2024-06-15')
     end
   end
 

@@ -5,6 +5,8 @@ require 'grape-entity'
 require 'grape-swagger'
 
 class API < Grape::API
+  include LogidzeModule
+
   format :json
   prefix :api
   version 'v1'
@@ -13,7 +15,7 @@ class API < Grape::API
   # source: http://funonrails.com/2014/03/api-authentication-using-devise-token/
   helpers do # rubocop:disable Metrics/BlockLength
     def present(*args)
-      options = args.count > 1 ? args.extract_options! : {}
+      options = args.many? ? args.extract_options! : {}
 
       options[:current_user] = current_user
 
@@ -60,17 +62,11 @@ class API < Grape::API
     def public_request?
       request.path.start_with?(
         '/api/v1/public/',
-        '/api/v1/labimotion_hub/',
         '/api/v1/chemspectra/',
         '/api/v1/ketcher/layout',
         '/api/v1/gate/receiving',
-        '/api/v1/gate/receiving_chunk',
-        '/api/v1/gate/receiving_zip',
-        '/api/v1/gate/received',
         '/api/v1/gate/ping',
-        '/api/v1/search/',
-        '/api/v1/suggestion',
-        '/api/v1/external_tokens/nmrxiv/callback/'
+        *Chemotion::RepoAPI::PUBLIC_URLS
       )
     end
 
@@ -141,20 +137,26 @@ class API < Grape::API
     'screens' => %w[name collaborator requirements conditions result content plain_text_description],
     'research_plans' => %w[name body content],
     'elements' => %w[name short_label],
+    'sequence_based_macromolecule_samples' => %w[
+      name function_or_application obtained_by supplier concentration_value molarity_value activity_per_volume_value
+      activity_per_mass_value formulation purity purity_detection purification_method organism taxon_id strain tissue
+    ],
   }.freeze
 
   TARGET = Rails.env.production? ? 'https://www.chemotion-repository.net/' : 'http://localhost:3000/'
 
-  ELEMENTS = %w[research_plan reaction sample].freeze
+  # TODO: unify ELEMENTS and ELEMENT_CLASS. ELEMENTS is only used to iterate over ELEMENT_CLASS, which can be simply
+  #       replaced by ELEMENT_CLASS.keys if required
+  # Chemotion Repository narrows this set. The upstream ELN list is
+  # `research_plan screen wellplate reaction sample cell_line
+  #  device_description sequence_based_macromolecule_sample vessel`.
+  # Iterated by collection_api / element_api / permission_api / profile_api.
+  ELEMENTS = Chemotion::RepoAPI::ELEMENTS
 
-  ELEMENT_CLASS = {
-    'research_plan' => ResearchPlan,
-    'screen' => Screen,
-    'wellplate' => Wellplate,
-    'reaction' => Reaction,
-    'sample' => Sample,
-    'cell_line' => CelllineSample,
-  }.freeze
+  # Chemotion Repository narrows this map to research_plan / reaction /
+  # sample. Upstream ELN also exposes screen, wellplate, cell_line,
+  # device_description, vessel, and sequence_based_macromolecule_sample.
+  ELEMENT_CLASS = Chemotion::RepoAPI::ELEMENT_CLASS
 
   mount Chemotion::LiteratureAPI
   mount Chemotion::CasLookupAPI
@@ -177,7 +179,6 @@ class API < Grape::API
   mount Chemotion::AttachmentAPI
   mount Chemotion::PublicAPI
   mount Chemotion::ProfileAPI
-  mount Chemotion::CrossrefAPI
   mount Chemotion::CodeLogAPI
   mount Chemotion::DeviceAPI
   mount Chemotion::InboxAPI
@@ -212,16 +213,15 @@ class API < Grape::API
   mount Chemotion::AdminDeviceAPI
   mount Chemotion::AdminDeviceMetadataAPI
   mount Chemotion::ChemicalAPI
+  mount Chemotion::DeviceDescriptionAPI
+  mount Chemotion::VersionAPI
+  mount Chemotion::ComponentAPI
+  mount Chemotion::VesselAPI
+  mount Chemotion::SequenceBasedMacromoleculeAPI
+  mount Chemotion::SequenceBasedMacromoleculeSampleAPI
 
-
-  ## For REPO
-  mount Chemotion::RepositoryAPI
-  mount Chemotion::ArticleAPI
-  mount Chemotion::CollaborationAPI
-  mount Chemotion::PublicRepoAPI
-  mount Chemotion::PublicDownloadAPI
-  mount Chemotion::AiServicesAPI
-  mount Chemotion::TemplateSubmissionAPI
+  # Chemotion Repository-only API aggregator — mounts all repo-specific APIs.
+  mount Chemotion::RepoAPI
 
   add_swagger_documentation(
     info: {

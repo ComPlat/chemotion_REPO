@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop: disable Metrics/CyclomaticComplexity
+# rubocop:disable Metrics/CyclomaticComplexity
 class ElementDetailLevelCalculator
   attr_reader :user, :element, :detail_levels
 
@@ -12,6 +12,8 @@ class ElementDetailLevelCalculator
     wellplate_detail_level
     screen_detail_level
     celllinesample_detail_level
+    devicedescription_detail_level
+    sequencebasedmacromoleculesample_detail_level
   ].freeze
 
   def initialize(user:, element:)
@@ -22,7 +24,7 @@ class ElementDetailLevelCalculator
 
   private
 
-  def calculate_detail_levels # rubocop:disable Metrics/AbcSize
+  def calculate_detail_levels # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
     detail_levels = Hash.new(0)
     all_collections_detail_levels = user_collection_detail_levels + sync_collection_detail_levels
 
@@ -33,6 +35,9 @@ class ElementDetailLevelCalculator
     detail_levels[Screen] = all_collections_detail_levels.pluck(:screen_detail_level).max || 0
     detail_levels[Wellplate] = all_collections_detail_levels.pluck(:wellplate_detail_level).max || 0
     detail_levels[CelllineSample] = all_collections_detail_levels.pluck(:celllinesample_detail_level).max || 0
+    detail_levels[DeviceDescription] = all_collections_detail_levels.pluck(:devicedescription_detail_level).max || 0
+    detail_levels[SequenceBasedMacromoleculeSample] =
+      all_collections_detail_levels.pluck(:sequencebasedmacromoleculesample_detail_level).max || 0
     detail_levels[Well] = detail_levels[Wellplate]
 
     detail_levels
@@ -40,14 +45,12 @@ class ElementDetailLevelCalculator
 
   # taken from API#group_ids
   def user_ids
-    return nil if user.nil?
     @user_ids ||= user.group_ids + [user.id]
   end
 
   # All collections containing the element that belong to the user or were shared to them
   def user_collections_with_element
-    col = user_ids.nil? ? [Collection.public_collection] : element.collections.where(user_id: user_ids)
-    @user_collections_with_element ||= col
+    @user_collections_with_element ||= element.collections.where(user_id: user_ids)
   end
 
   # All collections containing the element that were synced to the current user
@@ -75,4 +78,4 @@ class ElementDetailLevelCalculator
                                        .map { |values| Hash[DETAIL_LEVEL_FIELDS.zip(values)] }
   end
 end
-# rubocop: enable Metrics/CyclomaticComplexity
+# rubocop:enable Metrics/CyclomaticComplexity Metrics/PerceivedComplexity

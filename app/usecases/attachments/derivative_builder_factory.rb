@@ -22,13 +22,6 @@ module Usecases
         end
 
         builders
-      rescue StandardError => e
-        Rails.logger.error <<~TXT
-        ---------  #{self.class.name} create_derivative_builders ------------
-           data_type_in: #{data_type_in}
-        --------------------------------------------------------------------
-        TXT
-        builders
       end
 
       def possible_creators

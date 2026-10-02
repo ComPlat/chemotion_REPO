@@ -3,30 +3,33 @@
 # Table name: publications
 #
 #  id                    :integer          not null, primary key
-#  state                 :string
-#  metadata              :jsonb
-#  taggable_data         :jsonb
+#  accepted_at           :datetime
+#  ancestry              :string           default("/"), not null
+#  deleted_at            :datetime
 #  dois                  :jsonb
 #  element_type          :string
-#  element_id            :integer
-#  doi_id                :integer
+#  metadata              :jsonb
+#  metadata_xml          :text
+#  oai_metadata_xml      :text
+#  original_element_type :string
+#  published_at          :datetime
+#  published_by          :integer
+#  review                :jsonb
+#  state                 :string
+#  taggable_data         :jsonb
 #  created_at            :datetime
 #  updated_at            :datetime
-#  deleted_at            :datetime
-#  original_element_type :string
+#  concept_id            :integer
+#  doi_id                :integer
+#  element_id            :integer
 #  original_element_id   :integer
-#  ancestry              :string
-#  metadata_xml          :text
-#  published_by          :integer
-#  published_at          :datetime
-#  review                :jsonb
-#  accepted_at           :datetime
-#  oai_metadata_xml      :text
 #
 # Indexes
 #
-#  index_publications_on_ancestry  (ancestry)
-#  publications_element_idx        (element_type,element_id,deleted_at)
+#  index_publications_element_type_state  (element_type,state)
+#  index_publications_on_ancestry         (ancestry)
+#  index_publications_on_published_at     (published_at)
+#  publications_element_idx               (element_type,element_id,deleted_at)
 #
 class Publication < ActiveRecord::Base
   class Net::FTP
@@ -83,8 +86,9 @@ class Publication < ActiveRecord::Base
   # after_update :trigger_nmrxiv_upload, if: :state_changed_to_completed?
 
   def embargoed?(root_publication = root)
-    cid = User.with_deleted.find(root_publication.published_by).publication_embargo_collection.id
-    embargo_col = root_publication.element.collections.select { |c| c['ancestry'].to_i == cid }
+    pe_col = User.with_deleted.find(root_publication.published_by).publication_embargo_collection
+    child_ids = pe_col ? pe_col.children.pluck(:id) : []
+    embargo_col = root_publication.element.collections.select { |c| child_ids.include?(c.id) }
     embargo_col.present? ? true : false
   end
 
@@ -208,7 +212,6 @@ class Publication < ActiveRecord::Base
   def move_to_pending_collection
     pub_user = User.with_deleted.find(published_by)
     return false unless pub_user && element
-
     case element_type
     when 'Sample'
       CollectionsSample
@@ -481,7 +484,7 @@ class Publication < ActiveRecord::Base
       fundings = fundings.map { |f| f.metadata.transform_keys(&:to_sym) }
     end
 
-    if ENV['REPO_VERSIONING'] == 'true'
+    if ENV['REPO_VERSIONING'] == 'true' && element_type != 'Collection'
       if for_concept
         versions = Publication.where(concept: self.concept)
       else
@@ -587,7 +590,7 @@ class Publication < ActiveRecord::Base
   def transition_from_metadata_uploading_to_uploaded!
     return unless valid_transition(STATE_DC_METADATA_UPLOADED)
 
-    mds = Datacite::Mds.new
+    mds = Repo::Datacite::Mds.new
 
     # register the doi
     if (ENV['DATACITE_MODE'] == 'test' || ENV['PUBLISH_MODE'] == 'production') && scheme_only == false
@@ -625,7 +628,7 @@ class Publication < ActiveRecord::Base
 
   def transition_from_doi_registering_to_registered!
     return unless valid_transition(STATE_DC_DOI_REGISTERED)
-    mds = Datacite::Mds.new
+    mds = Repo::Datacite::Mds.new
 
     # mint the doi
     suffix = doi.suffix
@@ -947,6 +950,13 @@ class Publication < ActiveRecord::Base
     File.exist?(path)
   end
 
+  # Check if chemotion zip file exists at the stored path
+  def chemotion_zip_exists?
+    path = chemotion_zip_path
+    return false unless path
+    File.exist?(path)
+  end
+
   # Get information about bundled zip files for Collection publications
   # Returns an array of hashes with sample/reaction IDs and their zip paths
   # def bundled_zip_files
@@ -1180,7 +1190,7 @@ class Publication < ActiveRecord::Base
 
   # Trigger NMRXiv upload job asynchronously
   def trigger_nmrxiv_upload
-    return if ancestry.present? || ancestry == '/'
+    return unless ancestry.present? && ancestry == '/'
     return unless ExternalServicesConfig.nmrxiv_enabled?
     return unless element_type == 'Reaction' || element_type == 'Sample'
 

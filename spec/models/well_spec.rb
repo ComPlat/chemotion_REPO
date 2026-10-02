@@ -1,5 +1,28 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: wells
+#
+#  id           :integer          not null, primary key
+#  additive     :string
+#  color_code   :string
+#  deleted_at   :datetime
+#  label        :string           default("Molecular structure"), not null
+#  position_x   :integer
+#  position_y   :integer
+#  readouts     :jsonb
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#  sample_id    :integer
+#  wellplate_id :integer          not null
+#
+# Indexes
+#
+#  index_wells_on_deleted_at    (deleted_at)
+#  index_wells_on_sample_id     (sample_id)
+#  index_wells_on_wellplate_id  (wellplate_id)
+#
 require 'rails_helper'
 
 RSpec.describe Well do
@@ -78,8 +101,8 @@ RSpec.describe Well do
       let(:well_three) { create(:well, sample_id: sample_three.id, wellplate_id: wellplate.id) }
 
       it 'three sample ids are returned' do
-        expected = [well_one.sample_id, well_two.sample_id, well_three.sample_id]
-        expect(described_class.get_samples_in_wellplates(wellplate.id)).to eq(expected)
+        expected = [well_one, well_two, well_three].map(&:sample_id)
+        expect(described_class.get_samples_in_wellplates(wellplate.id)).to match_array(expected)
       end
     end
   end

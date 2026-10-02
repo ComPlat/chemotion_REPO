@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: fundings
+#
+#  id           :bigint           not null, primary key
+#  created_by   :integer          not null
+#  deleted_at   :datetime
+#  deleted_by   :integer
+#  element_type :string           not null
+#  metadata     :jsonb            not null
+#  created_at   :datetime         not null
+#  element_id   :integer          not null
+#
+# Indexes
+#
+#  index_fundings_on_element_type_and_element_id  (element_type,element_id)
+#  index_fundings_on_metadata                     (metadata) USING gin
+#
 class Funding < ApplicationRecord
   acts_as_paranoid
 

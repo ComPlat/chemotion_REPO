@@ -1,0 +1,6 @@
+# Whitelist of allowed partners for the partner import API
+# Add partner system names that are authorized to import data
+allowed_partners:
+  - ExamplePartnerA
+  - ExamplePartnerB
+  # Add more authorized partners here as needed

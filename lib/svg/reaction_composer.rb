@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'digest'
+require 'cgi'
 
 module SVG
   class ReactionComposer
@@ -153,7 +154,6 @@ module SVG
 
     def compose_reaction_svg_and_save(options = {})
       prefix = options[:temp] ? 'temp-' : ''
-      prefix += "#{options[:prefix]}"
       svg = compose_reaction_svg
       file_name = prefix + generate_filename
       File.open(file_path + '/' + file_name, 'w') { |file| file.write(svg) }
@@ -231,7 +231,8 @@ module SVG
       @solvents = (options[:solvents] || []).select(&:present?)
       @temperature = options[:temperature]
       @duration = options[:duration]
-      @conditions = Chemotion::Sanitizer.scrub_svg(options[:conditions]) if options[:conditions].present?
+      # Use scrub_xml instead of scrub_svg for plain text conditions
+      @conditions = options[:conditions] if options[:conditions].present?
       @pas = options[:preserve_aspect_ratio]
       @show_yield = options[:show_yield]
       @box_width = options[:supporting_information] ? 2000 : 1560
@@ -332,9 +333,11 @@ module SVG
 
       s_conditions = conditions.split("\n") || []
       s_conditions.map.with_index do |condition, index|
+        # Escape XML special chars so "pH < value" and ">" etc. render correctly (scrub_xml would strip < as a tag)
+        escaped = CGI.escapeHTML(condition.to_s)
         <<~XML
           <svg font-family="sans-serif">
-            <text text-anchor="middle" x="#{arrow_width / 2}" y="#{y_init + index * 25}" font-size="#{word_size}">#{condition}</text>
+            <text text-anchor="middle" x="#{arrow_width / 2}" y="#{y_init + index * 25}" font-size="#{word_size}">#{escaped}</text>
           </svg>
         XML
       end.join(' ')
@@ -528,7 +531,7 @@ module SVG
           x_shift = group_width + 10 - vb[0]
           y_shift = (y_center - vb[3] / 2).round
           yield_svg = ''
-          yield_svg += compose_yield_svg(yield_amount, (vb[2] / 2).round, ((@max_height_for_products + vb[3]) / 2).round) if yield_amount && yield_amount > 0
+          yield_svg += compose_yield_svg(yield_amount, (vb[2] / 2).round, ((@max_height_for_products + vb[3]) / 2).round) if yield_amount
           group_width += vb[2] + 10
           svg['width'] = "#{vb[2]}px;"
           svg['height'] = "#{vb[3]}px;"

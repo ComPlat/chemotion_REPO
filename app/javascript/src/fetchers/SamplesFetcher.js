@@ -1,0 +1,245 @@
+import 'whatwg-fetch';
+import Immutable from 'immutable';
+
+import Sample from 'src/models/Sample';
+import NotificationActions from 'src/stores/alt/actions/NotificationActions';
+import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
+import BaseFetcher from 'src/fetchers/BaseFetcher';
+import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
+import Literature from 'src/models/Literature';
+
+// For Chemotion Repository
+import defaultAnalysisPublish from 'src/repo/others/defaultAnalysisPublish';
+
+export default class SamplesFetcher {
+  static fetchSamplesByUIStateAndLimit(params) {
+    return fetch('/api/v1/samples/ui_state/', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ui_state: {
+          all: params.sample.all,
+          included_ids: params.sample.included_ids,
+          excluded_ids: params.sample.excluded_ids,
+          collection_id: params.sample.collection_id
+        },
+        limit: params?.limit || null
+      })
+    })
+      .then((response) => response.json())
+      .then((json) => {
+        const samples = (json.samples || []).map((s) => new Sample(s));
+
+        // build literature map by literal_id
+        const literatures = (json.literatures || []).reduce(
+          (acc, l) => acc.set(l.literal_id, new Literature(l)),
+          new Immutable.Map()
+        );
+
+        // attach literatures per sample BEFORE enrichment
+        samples.forEach((sample) => {
+          const sampleLits = literatures.filter(
+            (l) => l.element_id === sample.id
+          );
+
+          if (sampleLits.size > 0) {
+            sample.literatures = sampleLits;
+            sample.updateChecksum(); // prevent dirty-on-load
+          }
+        });
+
+        return samples;
+      })
+      .catch((errorMessage) => {
+        console.error(errorMessage);
+      });
+  }
+
+  static fetchById(id) {
+    const promise = fetch(`/api/v1/samples/${id}.json`, {
+      credentials: 'same-origin'
+    })
+      .then((response) => response.json()).then((json) => {
+        const rSample = new Sample(json.sample);
+        if (json.literatures && json.literatures.length > 0) {
+          const tliteratures = json.literatures.map((literature) => new Literature(literature));
+          const lits = tliteratures.reduce((acc, l) => acc.set(l.literal_id, l), new Immutable.Map());
+          rSample.literatures = lits;
+          rSample.updateChecksum();
+        }
+        if (json.error) {
+          rSample.id = `${id}:error:Sample ${id} is not accessible!`;
+        }
+        // return rSample;
+        return new Sample(defaultAnalysisPublish(rSample));
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
+
+  static fetchByCollectionId(id, queryParams = {}, isSync = false, moleculeSort = false) {
+    const updatedQueryParams = { ...queryParams, moleculeSort };
+    return BaseFetcher.fetchByCollectionId(id, updatedQueryParams, isSync, 'samples', Sample);
+  }
+
+  static findByShortLabel(shortLabel) {
+    return fetch(
+      `/api/v1/samples/findByShortLabel/${shortLabel}.json`,
+      {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    ).then((response) => response.json()).catch((errorMessage) => console.log(errorMessage));
+  }
+
+  static update(s) {
+    const sample = defaultAnalysisPublish(s);
+    const promise = () => fetch(`/api/v1/samples/${sample.id}`, {
+      credentials: 'same-origin',
+      method: 'put',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(sample.serialize())
+    }).then((response) => response.json())
+      .then((json) => GenericElsFetcher.uploadGenericFiles(sample, json.sample.id, 'Sample')
+        .then(() => BaseFetcher.updateAnnotationsInContainer(sample))
+        .then(() => this.fetchById(json.sample.id))).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+
+    return AttachmentFetcher.uploadNewAttachmentsForContainer(sample.container)
+      .then(() => promise());
+  }
+
+  static create(s) {
+    const sample = defaultAnalysisPublish(s);
+    const promise = () => fetch('/api/v1/samples', {
+      credentials: 'same-origin',
+      method: 'post',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(sample.serialize())
+    }).then((response) => response.json())
+      .then((json) => GenericElsFetcher.uploadGenericFiles(sample, json.sample.id, 'Sample')
+        .then(() => this.fetchById(json.sample.id))).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    return AttachmentFetcher.uploadNewAttachmentsForContainer(sample.container).then(() => promise());
+  }
+
+  static splitAsSubsamples(params) {
+    const promise = fetch('/api/v1/samples/subsamples/', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ui_state: {
+          sample: {
+            all: params.sample.checkedAll,
+            included_ids: params.sample.checkedIds,
+            excluded_ids: params.sample.uncheckedIds
+          },
+          currentCollectionId: params.currentCollection.id
+        }
+      })
+    }).then((response) => response.json()).then((json) => json).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+
+    return promise;
+  }
+
+  static importSamplesFromFile(params) {
+    const data = new FormData();
+    if (params.file !== undefined) {
+      data.append('file', params.file);
+    } else {
+      const jsonData = JSON.stringify(params.data);
+      data.append('data', jsonData);
+    }
+    data.append('currentCollectionId', params.currentCollectionId);
+    data.append('import_type', params.type);
+
+    const promise = fetch('/api/v1/samples/import/', {
+      credentials: 'same-origin',
+      method: 'post',
+      body: data
+    }).then((response) => response.json())
+      .then((json) => json).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+    return promise;
+  }
+
+  static importSamplesFromFileConfirm(params) {
+    const promise = fetch('/api/v1/samples/confirm_import/', {
+      credentials: 'same-origin',
+      method: 'post',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        currentCollectionId: params.currentCollectionId,
+        rows: params.rows,
+        mapped_keys: params.mapped_keys,
+      })
+    }).then((response) => response.json()).then((json) => {
+      if (Array.isArray(json.error_messages)) {
+        json.error_messages.forEach((message) => {
+          NotificationActions.add({
+            message,
+            level: 'error',
+            autoDismiss: 10
+          });
+        });
+      } else {
+        NotificationActions.add({
+          message: json.error_messages || json.message,
+          level: json.message ? 'success' : 'error',
+          autoDismiss: 10
+        });
+      }
+      return json;
+    }).catch((errorMessage) => {
+      console.log(errorMessage);
+    });
+
+    return promise;
+  }
+
+  static batchRefreshSvg(svgs) {
+    return fetch('/api/v1/samples/batch-refresh-svg', {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        svgs: svgs.map(svg => ({
+          svg_path: svg.svgPath,
+          molfile: svg.molfile
+        }))
+      })
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    }).then(json => json.results || [])
+      .catch(errorMessage => {
+        console.error('Error batch refreshing SVGs:', errorMessage);
+        throw errorMessage;
+      });
+  }
+}

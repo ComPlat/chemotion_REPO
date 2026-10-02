@@ -4,20 +4,20 @@
 #
 # Table name: template_submissions
 #
-#  id            :bigint           not null, primary key
-#  template_klass :string           not null
-#  template      :jsonb            not null, default: {}
-#  metadata      :jsonb            not null, default: {}
-#  origin        :string           not null
-#  state         :integer          not null, default: 0
-#  created_at    :datetime         not null
-#  updated_at    :datetime
-#  deleted_at    :datetime
+#  id                                                                                     :bigint           not null, primary key
+#  deleted_at(The deletion time of the submission)                                        :datetime
+#  metadata(Additional metadata about the klass info and submission)                      :jsonb            not null
+#  origin(The origin of the submission)                                                   :string           not null
+#  state(The state of the submission (0: pending, 1: approved, 2: rejected, 3: released)) :integer          default("pending"), not null
+#  template(The template data submitted)                                                  :jsonb            not null
+#  template_klass(The type of template submitted)                                         :string           not null
+#  created_at(The creation time of the submission)                                        :datetime         not null
+#  updated_at(The last update time of the submission)                                     :datetime
 #
 # Indexes
 #
-#  idx_template_submissions_template  (template) USING gin
 #  idx_template_submissions_metadata  (metadata) USING gin
+#  idx_template_submissions_template  (template) USING gin
 #
 
 class TemplateSubmission < ApplicationRecord

@@ -2,6 +2,8 @@
 
 module Entities
   class SampleEntity < ApplicationEntity
+    # rubocop:disable Layout/ExtraSpacing
+    include Entities::Concerns::RepoSampleHelper
     # rubocop:disable Layout/LineLength, Layout/ExtraSpacing
     # Level 0 attributes and relations
     with_options(anonymize_below: 0) do
@@ -22,9 +24,19 @@ module Entities
       expose :comments,                                     using: 'Entities::CommentEntity'
       expose :comment_count
       expose :dry_solvent
-      expose! :created_by
       expose! :gas_type
       expose! :gas_phase_data
+      expose! :user_labels
+      expose! :weight_percentage
+
+      ## Repo
+      expose! :doi,                     unless: :displayed_in_list, anonymize_with: nil, using: Entities::DoiEntity
+      expose! :publication,             unless: :displayed_in_list
+      expose! :links if ENV['REPO_VERSIONING'] == 'true'
+      expose! :concept, unless: :displayed_in_list, anonymize_with: nil, using: Entities::ConceptEntity if ENV['REPO_VERSIONING'] == 'true'
+      ## expose :concept, using: Entities::ConceptEntity
+      expose :is_repo_public
+
     end
 
     # Level 1 attributes
@@ -72,35 +84,14 @@ module Entities
       expose! :tag,                                                 anonymize_with: nil,  using: 'Entities::ElementTagEntity'
       expose! :target_amount_unit,      unless: :displayed_in_list
       expose! :target_amount_value,     unless: :displayed_in_list
-      expose! :user_labels
       expose! :xref
-
-      ## Repo
-      expose! :doi,                     unless: :displayed_in_list, anonymize_with: nil, using: Entities::DoiEntity
-      expose! :publication,             unless: :displayed_in_list
-      expose! :links if ENV['REPO_VERSIONING'] == 'true'
-      expose! :concept, unless: :displayed_in_list, anonymize_with: nil, using: Entities::ConceptEntity if ENV['REPO_VERSIONING'] == 'true'
-      ## expose :concept, using: Entities::ConceptEntity
+      expose! :sample_type
+      expose! :sample_details
+      expose! :components,              unless: :displayed_in_list, anonymize_with: [],   using: 'Entities::ComponentEntity'
     end
-    # rubocop:enable Layout/LineLength, Layout/ExtraSpacing, Metrics/BlockLength
+    # rubocop:enable Layout/ExtraSpacing, Metrics/BlockLength
 
     expose_timestamps
-
-    expose :is_repo_public
-
-    # expose :molecule, using: Entities::MoleculeEntity
-    # expose :container, using: Entities::ContainerEntity
-
-    def concept
-      object.publication.concept unless object.publication.nil?
-    end
-
-    def is_repo_public
-      cols = object.tag&.taggable_data['collection_labels']&.select do |c|
-        c['id'] == ENV['PUBLIC_COLL_ID']&.to_i || c['id'] == ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
-      end
-      (cols && cols.length > 0) || false
-    end
 
     private
 
@@ -108,22 +99,8 @@ module Entities
       object.residues.any?
     end
 
-    # REPO: This method is used to retrieve the policy for the sample.
-    # Issue: ELN changed its policy logic when it refactored its code and now retrieves policies from Reaction.
-    # The policy should follow the object (sample) and not the parent object.
-    def retrieve_policy
-      return options[:policy] if options[:policy].nil?
-
-      if options[:policy]&.record.is_a?(Sample)
-        options[:policy]
-      else
-        ElementPolicy.new(options[:policy].user, object)
-      end
-    end
-
     def can_update
-      sample_policy = retrieve_policy
-      sample_policy.try(:update?) || false
+      options[:policy].try(:update?) || false
     end
 
     def can_publish
@@ -134,7 +111,7 @@ module Entities
       object.new_record? ? 0 : object.children.count.to_i
     end
 
-    def is_restricted # rubocop:disable Naming/PredicateName
+    def is_restricted
       detail_levels[Sample] < 10
     end
 
@@ -163,7 +140,7 @@ module Entities
     end
 
     def parent_id
-      object.parent&.id
+      object.parent_id
     end
 
     def type
@@ -171,7 +148,7 @@ module Entities
     end
 
     def comment_count
-      0 # object.comments.count
+      object.comments.count
     end
 
     def gas_type
@@ -180,6 +157,10 @@ module Entities
 
     def gas_phase_data
       object.reactions_samples.pick(:gas_phase_data)
+    end
+
+    def weight_percentage
+      object.reactions_samples.pick(:weight_percentage)
     end
   end
 end

@@ -35,7 +35,7 @@ module Repo
 
       Repo::SubmissionApis.duplicate_literals(new_sample, sample.literals)
 
-      ## TODO: check if this is correct ## Paggy
+      ## TODO: check if this is correct
       # analyses = sample.analyses ? sample.analyses.or(sample.links) : sample.links
       ## *** ArgumentError Exception: Relation passed to #or must be structurally compatible. Incompatible values: [:joins]
       analyses = sample.analyses ? (sample.analyses.to_a + sample.links.to_a).uniq : sample.links

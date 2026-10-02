@@ -16,6 +16,7 @@ module Chemotion
     end
   end
 
+  # rubocop: disable Metrics/ClassLength
   class ProfileAPI < Grape::API
     resource :profiles do
       desc 'Return the profile of the current_user'
@@ -28,6 +29,10 @@ module Chemotion
 
         layout&.each_key do |ll|
           data[ll.to_s] = layout[ll] if layout[ll].present? && data[ll.to_s].nil?
+        end
+
+        layout&.fetch(:layout, {})&.each do |element, sorting|
+          data['layout'][element.to_s] = sorting if data['layout'][element.to_s].nil?
         end
 
         if current_user.matrix_check_by_name('genericElement')
@@ -97,6 +102,8 @@ module Chemotion
           optional :layout_detail_sample, type: Hash, profile_layout_hash: true
           optional :layout_detail_wellplate, type: Hash, profile_layout_hash: true
           optional :layout_detail_screen, type: Hash, profile_layout_hash: true
+          optional :layout_detail_device_description, type: Hash, profile_layout_hash: true
+          optional :layout_detail_vessel, type: Hash, profile_layout_hash: true
           optional :export_selection, type: Hash do
             optional :sample, type: [Boolean]
             optional :reaction, type: [Boolean]
@@ -108,10 +115,13 @@ module Chemotion
           end
           optional :default_structure_editor, type: String
           optional :filters, type: Hash
+          optional :inbox_auto, type: Boolean
+          optional :inbox_manual, type: Boolean
         end
         optional :show_external_name, type: Boolean
         optional :show_sample_name, type: Boolean
         optional :show_sample_short_label, type: Boolean
+        optional :curation, type: Integer, default: 2
       end
       put do
         declared_params = declared(params, include_missing: false)
@@ -127,23 +137,29 @@ module Chemotion
         declared_params[:data] = declared_params[:data].merge(generic_layouts)
 
         data = current_user.profile.data || {}
-        data['layout'] = {
+        data['layout'] ||= {
           'sample' => 1,
           'reaction' => 2,
           'wellplate' => 3,
           'screen' => 4,
           'research_plan' => 5,
           'cell_line' => -1000,
-        } if data['layout'].nil?
+          'device_description' => -1100,
+          'sequence_based_macromolecule_sample' => -1200,
+          'vessel' => -1300,
+        }
 
         layout = data['layout'].select { |e| available_ements.include?(e) }
         data['layout'] = layout.sort_by { |_k, v| v }.to_h
-        data['default_structure_editor'] = 'ketcher' if data['default_structure_editor'].nil?
+        if data['default_structure_editor'].nil? || data['default_structure_editor'] =~ /ketcher/i
+          data['default_structure_editor'] = 'ketcher'
+        end
         new_profile = {
           data: data.deep_merge(declared_params[:data] || {}),
           show_external_name: declared_params[:show_external_name],
           show_sample_name: declared_params[:show_sample_name],
           show_sample_short_label: declared_params[:show_sample_short_label],
+          curation: declared_params[:curation],
         }
         (current_user.profile.update!(**new_profile) &&
           new_profile) || error!('profile update failed', 500)
@@ -198,7 +214,7 @@ module Chemotion
       end
 
       desc 'get user profile editor ketcher 2 setting options'
-      get 'editors/ketcher2-options' do
+      get 'editors/ketcher-options' do
         file_path = "ketcher-optns/#{current_user.id}.json"
         complete_folder_path = Rails.root.join('uploads', Rails.env, file_path)
         error_messages = []
@@ -220,7 +236,7 @@ module Chemotion
       params do
         requires :data, type: Hash, desc: 'data structure for ketcher options'
       end
-      put 'editors/ketcher2-options' do
+      put 'editors/ketcher-options' do
         error_messages = []
         folder_path = 'ketcher-optns'
         complete_folder_path = Rails.root.join('uploads', Rails.env, folder_path)
@@ -252,5 +268,6 @@ module Chemotion
       end
     end
   end
+  # rubocop: enable Metrics/ClassLength
 end
 # rubocop: enable Style/MultilineIfModifier

@@ -1,0 +1,2468 @@
+$searchcolor: #dddddd;
+$statisticcolor: #3a9fd3;
+$topbgcolor: #f5f5f5;
+$bs-primarycolor: #337ab7;
+$bs-defaultcolor: #777777;
+$bs-infocolor: #5bc0de;
+$bs-warningcolor: #f0ad4e;
+$bs-successcolor: #5cb85c;
+
+// Welcome-page typography scale, shared across sections.
+$home-font-section:   2.25rem;  // section titles (.home-title span)
+$home-font-card-h1:   1.75rem;  // top-row intro card h1
+$home-font-card-h2:   1.25rem;  // top-row statics/archive card h3
+$home-font-partner:   1rem;     // partner card titles
+$home-font-body:      1rem;     // body text
+$home-font-caption:   0.875rem; // captions, meta
+$home-line-height:    1.5;
+$home-line-height-h:  1.25;
+$home-surface:        #ffffff;
+$home-surface-muted:  #f7f9fb;
+$home-border:         #e6ecf2;
+$home-shadow:         0 2px 8px rgba(0, 0, 0, 0.06);
+$home-shadow-hover:   0 6px 16px rgba(0, 0, 0, 0.1);
+$home-radius-card:    10px;
+$home-radius-btn:     8px;
+
+.repo-main-container {
+  overflow-x: hidden;
+  padding-left: 6px;
+  padding-right: 6px;
+  box-sizing: border-box;
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@mixin viewer-modal {
+  height: 95%;
+  top: 52% !important;
+  margin: unset !important;
+}
+
+.file-viewer-modal {
+  @include viewer-modal;
+  width: 98vw !important;
+  .modal-content {
+    height: 95%;
+  }
+}
+
+.structure-viewer-modal {
+  @include viewer-modal;
+  width: 60vw !important;
+  .modal-content {
+    height: calc(100% - 60px);
+  }
+}
+
+.repo-xvial-info {
+  .env {
+    padding: 0px 2px 0px 2px;
+    background-color: white;
+    color: $bs-primarycolor;
+  }
+  .youtube {
+    color: red;
+    font-size: 150%;
+  }
+}
+
+.author-modal-dialog {
+  max-width: 90vw !important;
+  width: 90vw !important;
+}
+
+.author-modal-dialog .modal-content {
+  width: 100% !important;
+  min-width: 800px !important;
+}
+
+.author-modal-dialog .modal-body {
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+
+.funding-modal-dialog {
+  max-width: 90vw !important;
+  width: 90vw !important;
+}
+
+.funding-modal-dialog .modal-content {
+  width: 100% !important;
+  min-width: 800px !important;
+}
+
+.funding-modal-dialog .modal-body {
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+
+.aff-line {
+  .form-group {
+    margin-bottom: unset !important;
+  }
+}
+
+.repo-pub-sample-header {
+  display: flex;
+  align-items: center;
+  .repo-pub-title {
+    font-size: 120%;
+  }
+  .repo-public-user-comment {
+    margin-left: auto;
+  }
+}
+
+.public-element {
+  h4 { font-size: 1.1rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: 0.9rem; }
+  .fs-5 { font-size: 1rem !important; }
+  .fs-4 { font-size: 1.05rem !important; }
+}
+
+.repo-pub-list-icons {
+  display: inline-flex;
+  align-items: center;
+}
+
+@mixin xvial-elem-base {
+  margin: 0px 4px 0px 0px;
+}
+
+.xvial-pub-elem {
+  display: inline-block;
+  span {
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    color: $bs-primarycolor;
+    padding: 2px 0px 2px 6px;
+    border: 2px solid $bs-primarycolor;
+    background-color: white;
+    div {
+      font-size: 50%;
+      display: contents;
+    }
+    button {
+      @include xvial-elem-base;
+      padding: 0px;
+    }
+    a {
+      @include xvial-elem-base;
+      cursor: pointer;
+    }
+  }
+  span i {
+    @include xvial-elem-base;
+  }
+}
+
+@mixin xvial-span-base {
+  justify-content: center;
+  font-size: 80%;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border-radius: 3px;
+  background-color: white;
+  color: orange;
+  border: 2px solid orange;
+}
+
+.xvial-span {
+  @include xvial-span-base;
+  display: none;
+}
+
+.xvial {
+  display: flex;
+  color: $bs-primarycolor;
+}
+
+.xvial-com {
+  display: inline-flex;
+  border: 2px solid $bs-primarycolor;
+}
+
+.repo-registed-compound-desc {
+  color: $bs-primarycolor;
+  font-style: italic;
+  font-size: small;
+  i {
+    color: black;
+    cursor: pointer;
+  }
+}
+
+.repo-home {
+  display: block;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.card-well {
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  height: 36vh;
+  padding: 10px 0px;
+}
+
+.card-nfdi4chem {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  padding: 10px;
+  height: unset;
+  margin-top: 0px !important;
+  > h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+  > h4 {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0px 10px;
+  }
+}
+
+.card-latest {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+}
+
+.card-well-competition {
+  @extend .card-well;
+  display: flex;
+  margin: 10px;
+  border-radius: 0px;
+  .carl-spt {
+    flex: 1;
+    display: flex;
+    .carousel-inner .active.left {
+      top: 0%;
+    }
+    .carousel-inner .next {
+      top: 0%;
+    }
+    .carousel-inner .prev {
+      top: 0%;
+    }
+  }
+
+  .carl-spt-item {
+    text-align: center;
+    height: 100%;
+    width: 100%;
+    a {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+  }
+
+  .carl-spt-item .img {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 480px;
+    height: 100%;
+  }
+
+  .carl-spt-item .caption {
+    position: sticky;
+    font-size: 1vmax;
+    color: black;
+    text-shadow: unset;
+    padding-bottom: unset;
+    left: 0px;
+  }
+
+  .carl-spt-item-s {
+    height: 220px;
+    text-align: center;
+  }
+
+  .carl-spt-item-s .caption {
+    left: 15%;
+    right: 15%;
+    padding-bottom: 0px;
+    bottom: 0px;
+  }
+
+  img {
+    width: 100%;
+  }
+
+  p {
+    bottom: -45px;
+    color: black;
+    position: relative;
+    text-align: justify;
+    text-shadow: none;
+  }
+
+  .carousel-control.left,
+  .carousel-control.right {
+    background-image: none !important;
+    color: #e7e7e7;
+  }
+
+  .italic-desc {
+    font-size: 1.4rem;
+    font-style: italic;
+  }
+}
+
+.thumbnail-spt img {
+  width: 25%;
+}
+
+.icon-chemotion {
+  width: 15%;
+}
+
+.icon-nfdi4chem {
+  width: 36% !important;
+}
+
+.visibility-impact {
+  left: 30px;
+  width: 300px !important;
+}
+
+.icon-molecule-archive {
+  margin: 10px;
+  background-color: rgb(12, 61, 118);
+}
+
+.chem-finder {
+  left: 10%;
+  top: 10px;
+
+  img {
+    width: 90%;
+  }
+}
+
+.reviewers-intro {
+  background-color: aliceblue;
+}
+
+.card-reviewers {
+  img {
+    max-height: 250px;
+    max-width: 200px;
+  }
+  h3, h4 {
+    font-weight: bolder;
+    min-height: 40px;
+  }
+  .description {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+}
+
+.repo-about {
+  display: block;
+}
+
+.card-icons {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 20px 0;
+
+  .card-icon-item {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    max-width: 300px;
+  }
+
+  img {
+    max-height: 90px;
+    max-width: 100%;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+  }
+
+  // Make the middle logo (ChemotionRepository) slightly larger
+  .card-icon-item:nth-child(2) img {
+    max-height: 100px;
+  }
+}
+
+.card-well-about {
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
+  padding: 30px;
+  text-align: center;
+}
+
+.panel-analyses-public {
+  margin: 2px !important;
+}
+
+.carl-sample svg {
+  max-width: 100%;
+  max-height: 150px;
+  height: auto;
+  width: 100%;
+}
+
+.reaction-scheme-word {
+  font-size: smaller;
+  color: $bs-primarycolor;
+}
+
+.move-embargo-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 45% !important;
+  width: 40vw !important;
+}
+
+.table-scroll {
+  overflow: auto;
+  max-height: calc(25vh);
+  table {
+    width: 100%;
+    thead tr th {
+      position: sticky;
+      top: 0;
+      background: #eee;
+    }
+    tbody {
+      white-space: pre-line;
+    }
+  }
+}
+
+.search-keyword {
+  display: inline-flex;
+  flex: 1;
+  .well {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 5px;
+    justify-content: center;
+    background-color: unset;
+    .form-group {
+      margin-bottom: unset;
+    }
+  }
+}
+
+
+.home-embargo-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  .btns-grp {
+    background-color: $searchcolor;
+    border: thin $searchcolor;
+    button {
+      background-color: $searchcolor;
+      border-color: $searchcolor;
+      border-radius: unset;
+    }
+  }
+}
+
+.home-adv-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  div {
+    .o-author {
+      min-width: 120px;
+    }
+    .o-name {
+      min-width: 200px;
+    }
+    .Select-control {
+      border-radius: unset;
+    }
+  }
+  .btns-grp {
+    background-color: $searchcolor;
+    button {
+      background-color: $searchcolor;
+      border-color: $searchcolor;
+      border-radius: unset;
+    }
+  }
+}
+
+.home-search {
+  margin-left: unset !important;
+  background-color: $searchcolor;
+  button {
+    background-color: $searchcolor;
+  }
+}
+
+.clip-copy {
+  display: inline;
+  word-break: break-all;
+}
+
+.repo-top-row {
+  display: flex;
+  align-items: stretch;
+  background-color: $topbgcolor;
+  border-radius: 6px;
+}
+
+.repo-welcome {
+  max-width: 2000px;
+  margin: auto !important;
+  > div:nth-child(2) {
+    background-color: $topbgcolor;
+    > h2 {
+      text-align: center;
+    }
+  }
+}
+
+.repo-molecule-archive {
+  display: flex;
+  flex-direction: column;
+}
+
+.repo-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  h1 {
+    text-align: center;
+  }
+  .row-bottom {
+    display: flex;
+    align-items: center;
+    div:first-child {
+      padding-right: unset;
+    }
+    div:last-child {
+      padding-left: unset;
+    }
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    .row {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      .heading {
+        font-size: 1.8vmax;
+      }
+      .list {
+        font-size: 1vmax;
+      }
+    }
+    .row .even {
+      flex: 1;
+    }
+    .row .even .row {
+      border: 1px solid #e7e7e7;
+      background-color: #e7e7e7;
+      h2 {
+        font-weight: bolder;
+        text-align: center;
+      }
+      .info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        .cnt {
+          font-size: 180%;
+        }
+      }
+    }
+  }
+}
+
+.repo-statistic {
+  @extend .card-well;
+  background-color: unset;
+  padding-bottom: 10px;
+  > div {
+    flex: 1;
+    h3 {
+      text-align: center;
+    }
+  }
+}
+
+@mixin preview-btn {
+  z-index: 100;
+  position: absolute;
+  top: 80%;
+}
+
+.repo-analysis-header {
+  display: inline-block;
+  width: 100%;
+  .preview {
+    vertical-align: top;
+    width: 125px;
+    float: right;
+    position: relative;
+    img {
+      height: 100%;
+      width: 100%;
+    }
+    .preview-table {
+      border: 1px solid transparent;
+    }
+    .preview-table:hover {
+      border: 1px solid $statisticcolor;
+    }
+    .btn0 {
+      display: none;
+    }
+    .btn1 {
+      @include preview-btn;
+      right: 0px;
+    }
+    .btn2 {
+      @include preview-btn;
+      right: 30px;
+    }
+  }
+  .abstract {
+    display: inline-block;
+    width: calc(100% - 125px);
+    .lower-text {
+      .sub-title {
+        font-size: 14px;
+      }
+    }
+    .desc {
+      margin-bottom: 4px;
+      .clip-copy {
+        word-break: normal;
+      }
+    }
+  }
+}
+
+.repo-analysis-listgroup {
+  border: none !important;
+  background-color: transparent !important;
+  padding-left: unset !important;
+}
+
+.pub-info-dialog {
+  display: block;
+  padding-left: 0px;
+  top: 45% !important;
+  height: 40vh !important;
+  width: 40vw !important;
+}
+
+.max_tooltip {
+  .tooltip-inner {
+    max-width: 30vw;
+  }
+}
+
+.tooltip_list {
+  padding-inline-start: 20px;
+  margin-bottom: unset;
+}
+
+.tooltip_list_paragraph {
+  ul {
+    padding-inline-start: 20px;
+  }
+  p {
+    margin-bottom: unset;
+  }
+}
+
+@mixin btn-xvial-base {
+  border: none !important;
+  padding: 0px 0px 0px 5px !important;
+  font-size: 80% !important;
+}
+
+.btn-xvial-none {
+  i {
+    color: unset;
+  }
+}
+
+.btn-xvial-data {
+  display: flex;
+  i {
+    color: $bs-primarycolor;
+  }
+  span {
+    border: 1px solid $bs-primarycolor;
+    background-color: white;
+    color: $bs-primarycolor;
+    border-radius: 3px;
+    .base {
+      @include btn-xvial-base;
+    }
+  }
+}
+
+.label-xvial-data {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.label-xvial-data span {
+  border: 1px solid $bs-primarycolor;
+  background-color: white;
+  color: $bs-primarycolor;
+}
+
+.wrap-ring {
+  font-size: 1.6em;
+}
+
+.animation-ring {
+  position: relative;
+  z-index: 0;
+  padding: 0px 8px 0px 8px !important;
+  font-size: 1.6em !important;
+  border: none !important;
+  background-color: unset !important;
+  margin: 3px;
+}
+
+.animation-ring::before {
+  content: '';
+  border-radius: 100%;
+  border: 0px solid $bs-primarycolor;
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ring 2s linear 30 both;
+}
+
+@keyframes ring {
+  from {
+    border-width: unset;
+    width: 0px;
+    height: 0px;
+    opacity: 1;
+  }
+  to {
+    border-width: 3px;
+    width: 150%;
+    height: 150%;
+    opacity: 0;
+  }
+}
+
+.bs_tooltip {
+  .tooltip-inner {
+    max-width: 200px;
+  }
+}
+
+@mixin home-list-layout {
+  background-color: white;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  margin-top: 15px;
+  padding: 5px;
+}
+
+.home_reaction {
+  @include home-list-layout;
+  border-radius: 8px;
+}
+
+.home_archive {
+  @include home-list-layout;
+  display: inline-flex;
+  width: 100%;
+  .svg_border {
+    border-right: 1px lightgrey solid;
+  }
+  .content {
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    .info {
+      max-height: 100%;
+      height: 100%;
+      .border {
+        display: flex;
+        padding: 0px 15px 5px 15px;
+        border: none !important;
+        .dl {
+          font-weight: bold;
+          width: 25%;
+        }
+        .dr {
+          width: 75%;
+        }
+      }
+    }
+  }
+}
+
+.home_wrapper {
+  display: flex;
+  div:last-child {
+    border: none;
+  }
+}
+
+.home_wrapper_item {
+  flex: 1 20%;
+  text-align: center;
+  border-right: 1px lightgrey dashed;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  div:first-child {
+    color: rgb(141, 140, 140);
+    max-height: 20px;
+  }
+  .item_xvial {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.home_wrapper_item > div {
+  flex: 1 100%;
+  text-align: center;
+  align-items: center;
+}
+
+.list_focus_off {
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.list_focus_on {
+  cursor: pointer;
+  border: 1px #337ab7 solid;
+  background-color: #f0f8ff !important;
+}
+
+.layout_svg_reaction > svg {
+  height: 120px;
+  max-height: unset;
+  width: 90%;
+  margin-left: 10px;
+}
+
+.layout_svg_molecule > svg {
+  height: 90px;
+  width: 90px;
+}
+
+.archive_svg_molecule > svg {
+  height: 140px;
+  width: 140px;
+}
+
+.panel-cite {
+  border-color: white !important;
+  .panel-heading {
+    background-color: unset !important;
+    padding: unset !important;
+    border-color: white !important;
+  }
+}
+
+.date_info {
+  display: inline-flex;
+  flex-direction: column;
+  margin-right: 8px;
+  .updated {
+    font-size: 0.6em;
+    text-align: right;
+  }
+}
+
+.repo-quill-viewer {
+  .ql-editor {
+    cursor: inherit;
+    padding: unset;
+  }
+}
+
+.repo-ma-panel {
+  span {
+    display: flex;
+    justify-content: center;
+    margin-right: 4px;
+  }
+  a {
+    @include xvial-elem-base;
+    cursor: pointer;
+    background-color: white;
+    padding: 0px 6px;
+  }
+  span i {
+    @include xvial-elem-base;
+  }
+}
+
+.repo-public-sample-info {
+  h5 {
+    margin-top: 4px;
+    margin-bottom: unset;
+    display: flex;
+    align-items: center;
+  }
+  h5 .btn-link {
+    padding: unset;
+  }
+}
+
+.repo-public-sample-rel {
+  button {
+    padding: 0px 0px;
+  }
+  button i {
+    font-size: 1.5em;
+  }
+}
+
+.repo-btn-success span {
+  background-color: $bs-successcolor !important;
+  color: white !important;
+}
+
+.repo-btn-success span:hover {
+  background-color: #19b5fe !important;
+  color: black !important;
+}
+
+.repo-generic-hub-btn {
+  a {
+    padding-top: 8px !important;
+    padding-bottom: 0px !important;
+  }
+  &.active button {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: white !important;
+    font-weight: bolder !important;
+  }
+  &.active a,
+  &.active b {
+    background-color: unset !important;
+  }
+}
+
+.repo-generic-hub-layout {
+  position: relative;
+
+  .repo-generic-hub-inner {
+    display: flex;
+    align-items: stretch;
+    height: calc(100vh - 120px);
+
+    .expand-button {
+      border-radius: 0px;
+    }
+
+    .content {
+      background-color: #efefef;
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      .btn-group{
+        display: inline-flex !important;
+        .btn {
+          flex: 1;
+        }
+      }
+    }
+  }
+}
+
+@mixin button-look {
+  background-color: white;
+  padding: 6px;
+  border: 1px solid #ccc;
+}
+
+.repo-generic-hub-desc {
+  margin: 20px 40px;
+  .contact {
+    float: right;
+    .btn {
+      padding: 10px;
+    }
+  }
+  .start {
+    @include button-look;
+  }
+  .download {
+    @include button-look;
+    border-radius: 6px;
+  }
+}
+
+.white-nav-item {
+  a, span {
+    color: #333 !important;
+    cursor: pointer;
+  }
+
+  /* Default link styling */
+  &.nav-link {
+    padding: 15px 15px 10px 0px !important;
+    color: #333 !important;
+    cursor: pointer;
+    text-decoration: none !important;
+  }
+
+  /* Hover styles for Nav.Link and nested elements */
+  &:hover,
+  &:hover a,
+  &:hover b,
+  &:hover span {
+    text-decoration: underline !important;
+    text-decoration-color: #1976d2 !important;
+    text-decoration-style: solid !important;
+    text-decoration-thickness: 4px !important;
+    text-underline-offset: 20% !important;
+    color: #1976d2 !important;
+    font-weight: bolder !important;
+  }
+
+  /* Active styles for Nav.Link and nested elements */
+  &.active,
+  &.active a,
+  &.active b {
+    text-decoration: underline !important;
+    text-decoration-color: #1976d2 !important;
+    text-decoration-style: solid !important;
+    text-decoration-thickness: 4px !important;
+    text-underline-offset: 20% !important;
+    color: #1976d2 !important;
+    font-weight: bolder !important;
+    background-color: unset !important;
+  }
+}
+
+.hub-menu {
+  color: white !important;
+  background-color: #6c757d !important;
+  border: 1px solid #6c757d !important;
+  border-radius: 0px !important;
+}
+
+.hub-menu:hover {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}
+
+.hub-menu:focus {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}
+
+.hub-menu:active {
+  background-color: #ddd !important;
+  color: #6c757d !important;
+}
+
+.news-box {
+  font-size: 12px;
+  padding: 0px 14px;
+  border: 1px solid #dbe4ef;
+  background-color: #f9fcff;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  color: #334155;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    min-height: 115px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    &--end {
+      justify-content: flex-end;
+    }
+  }
+
+  &__tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #dbe4ef;
+    margin-bottom: 8px;
+  }
+
+  &__tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #7a8a9c;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    &:hover {
+      color: #1e3a5f;
+    }
+
+    &--active {
+      color: #1e3a5f;
+      border-bottom-color: #3870b2;
+    }
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e3a5f;
+    letter-spacing: 0.2px;
+  }
+
+  &__header-link {
+    font-size: 11px;
+    a {
+      color: #3870b2;
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+
+  &__badge {
+    font-weight: 600;
+    font-size: 11px;
+    padding: 2px 8px;
+    background-color: #e3edf8;
+    color: #1e3a5f;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  &__sublabel {
+    font-size: 10px;
+    color: #7a8a9c;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &__list-item {
+    position: relative;
+    padding-left: 12px;
+    line-height: 1.35;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 0.6em;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: #8aa4bf;
+    }
+
+    a {
+      color: #3870b2;
+      text-decoration: none;
+
+      &:hover {
+        color: #1e3a5f;
+        text-decoration: underline;
+      }
+
+      .fa-external-link {
+        font-size: 0.85em;
+        margin-left: 3px;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  &__version-num {
+    margin-left: 6px;
+    color: #64748b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.95em;
+  }
+
+  &__divider {
+    border-top: 1px solid #dbe4ef;
+    margin: 10px 0;
+  }
+
+  // Legacy selectors kept for backward compatibility with other consumers
+  &__item {
+    margin-bottom: 0.2em;
+  }
+
+  &__version {
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  &__includes {
+    font-size: 0.95em;
+  }
+}
+
+.new-version-btn-disabled,
+.new-version-btn-disabled:hover {
+  color: #fff !important;
+  background-color: #5cb85c !important;
+  border-color: #4cae4c !important;
+
+  opacity: 0.65;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.version-dropdown-item {
+  font-size: small;
+}
+
+// Publication Insights / Review Guidelines toggles, styled independently of the
+// header action buttons but sized to match them; scoped under .repo-welcome to
+// outrank Bootstrap's .btn. The extra left padding stands in for the leading icon
+// the header buttons have, so the labels start at the same x position.
+.repo-welcome .repo-insights-btn {
+  white-space: nowrap;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 18px 10px 2.25rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+  }
+}
+
+// Additional styles for React Bootstrap 2.x compatibility
+.repo-header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 4vw, 44px) clamp(16px, 2.5vw, 28px) clamp(20px, 3vw, 32px);
+
+  .repo-header-logo {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .icon-chemotion {
+    margin-bottom: 0;
+    width: 100%;
+    max-width: clamp(220px, 26vw, 340px);
+    height: auto;
+    filter: drop-shadow(0 8px 22px rgba(15, 23, 42, 0.10));
+  }
+
+  .repo-header-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+
+    .repo-header-action-btn {
+      white-space: nowrap;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 10px 18px;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+      }
+    }
+  }
+
+  .repo-header-search {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 780px;
+    margin: 0 auto;
+
+    .repo-search-panel {
+      padding: 0;
+      max-width: none;
+    }
+    .repo-search-card {
+      margin-left: 0;
+      margin-right: 0;
+      padding: 18px 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+  }
+}
+
+// Card structure fixes for React Bootstrap 2.x
+.repo-molecule-archive,
+.repo-statistic {
+  @extend .card-well;
+  border: none;
+  display: flex;
+  flex-direction: column;
+
+  .card-header {
+    text-align: center;
+    padding: 15px;
+    background-color: $topbgcolor;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .card-body {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-footer {
+    padding: 15px;
+    background-color: $topbgcolor;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+  }
+}
+
+// Stat row layout
+.card-stat-row {
+  width: 100%;
+
+  .stat-icon {
+    text-align: center;
+    margin-right: 15px;
+    min-width: 80px;
+
+    .animation-ring {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .stat-title {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: $bs-primarycolor;
+    }
+
+    i {
+      font-size: 2rem;
+      color: $bs-primarycolor;
+    }
+  }
+
+  .stat-content {
+    flex: 1;
+
+    .stat-count {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+
+      .stat-title-inline {
+        font-size: 0.9rem;
+        font-weight: normal;
+      }
+    }
+
+    .stat-desc {
+      font-style: italic;
+      font-size: 0.85rem;
+      color: #666;
+    }
+  }
+}
+
+// Molecule Archive specific styles
+.repo-molecule-archive {
+  .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .archive-description {
+    font-size: clamp(0.9rem, calc(0.7rem + 0.35vw), 1.1rem);
+    color: #555;
+    line-height: 1.4;
+    margin: 0 0 6px 0;
+  }
+
+  .card-footer {
+    padding: 14px 16px;
+  }
+
+  .card-footer .icon-molecule-archive2 {
+    width: 100%;
+    max-width: 140px;
+    max-height: 90px;
+    height: auto;
+    background-color: rgb(12, 61, 118);
+    padding: 8px 12px;
+    border-radius: 6px;
+  }
+}
+
+// Statistics board specific styles
+.repo-statistic {
+  .stat-section {
+    border: 1px solid $statisticcolor;
+    border-bottom-width: 6px;
+    background-color: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 0px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .analysis-breakdown {
+    display: flex;
+    font-size: 0.85rem;
+
+    > div:first-child {
+      margin-right: 10px;
+    }
+  }
+}
+
+// Search interface improvements for React Bootstrap 2.x
+.search-keyword {
+  .card {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    .form-group {
+      margin-bottom: 0;
+      gap: 15px;
+
+      // Ensure proper spacing for labels and form elements
+      > span {
+        font-weight: 500;
+        color: #333;
+        white-space: nowrap;
+
+        &.me-3 {
+          margin-right: 15px;
+        }
+
+        &.mx-2 {
+          margin: 0 10px;
+        }
+      }
+
+      .form-check {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        margin-bottom: 0;
+
+        .form-check-input {
+          margin-top: 0;
+          margin-right: 5px;
+        }
+
+        .form-check-label {
+          margin-bottom: 0;
+          display: flex;
+          align-items: center;
+          font-size: 0.9rem;
+          white-space: nowrap;
+
+          i {
+            margin-right: 4px;
+          }
+        }
+      }
+
+      .btn {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        white-space: nowrap;
+
+        i {
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .card .form-group {
+      &.d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+
+        > span {
+          margin-right: 0 !important;
+          margin-bottom: 5px;
+        }
+
+        .form-check {
+          margin-right: 0;
+          width: auto;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}
+
+// AsyncSelect styling improvements
+.search-keyword + div {
+  .react-select__control {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      border-color: $bs-primarycolor;
+    }
+
+    &.react-select__control--is-focused {
+      border-color: $bs-primarycolor;
+      box-shadow: 0 0 0 0.2rem rgba(51, 122, 183, 0.25);
+    }
+  }
+
+  .react-select__placeholder {
+    color: #666;
+    font-style: italic;
+  }
+}
+
+// Ensure the top row cards have proper spacing on smaller screens
+@media (max-width: 992px) {
+  .repo-top-row {
+    flex-direction: column;
+
+    .row > div {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.home-title {
+  text-align: center;
+  margin: 12px 0 8px 0;
+
+  span {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: $home-line-height-h;
+    letter-spacing: 0.01em;
+    color: $bs-primarycolor;
+    border-bottom: 3px solid $statisticcolor;
+    padding-bottom: 6px;
+
+    @media (max-width: 768px) {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .repo-welcome {
+    padding: 0 15px;
+  }
+}
+
+// --- Welcome page ------------------------------------------------------------
+// Visual styling and typography scoped strictly under .repo-welcome.
+.repo-welcome {
+  // Body defaults inherited by card text
+  font-size: $home-font-body;
+  line-height: $home-line-height;
+  color: #333;
+
+  // Top row surface polish (background + inner card softness)
+  .repo-top-row {
+    background-color: $home-surface-muted;
+    border-radius: $home-radius-card;
+    padding: 16px 8px;
+  }
+
+  // Intro card internal split: [strategic partner][latest publication].
+  // A small gap keeps the carousel's left control clear of the NFDI card.
+  .repo-intro-body {
+    gap: 12px;
+  }
+  .repo-intro-strategy {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+  }
+  .repo-intro-latest {
+    flex: 3 3 0;
+    min-width: 0;
+    position: relative;
+
+    // Restyled Carousel controls: compact circular buttons that stay on-theme
+    // and remain clearly visible against the white sample card.
+    .carousel-control-prev,
+    .carousel-control-next {
+      z-index: 2;
+      width: 32px;
+      height: 32px;
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      background-color: rgba($bs-primarycolor, 0.08);
+      opacity: 1;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+
+      &:hover,
+      &:focus {
+        background-color: rgba($bs-primarycolor, 0.2);
+        transform: translateY(-50%) scale(1.06);
+      }
+    }
+
+    .carousel-control-prev { left: 6px; }
+    .carousel-control-next { right: 6px; }
+
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+      width: 14px;
+      height: 14px;
+      filter: none;
+      // Override Bootstrap's default white chevron with a themed color.
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5L4.25 4l2.5-2.5z' fill='%23337ab7'/%3E%3C/svg%3E");
+    }
+
+    .carousel-control-next-icon {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5L3.75 4l-2.5 2.5L2.75 8l4-4-4-4z' fill='%23337ab7'/%3E%3C/svg%3E");
+    }
+  }
+
+  // Top-row cards — white panels with soft border/shadow
+  .repo-molecule-archive,
+  .repo-statistic,
+  .repo-intro,
+  .repo-research-data {
+    background-color: $home-surface;
+    border-radius: $home-radius-card;
+    box-shadow: $home-shadow;
+    border: 1px solid $home-border;
+    transition: box-shadow 0.25s ease;
+    overflow: hidden;
+
+    &:hover {
+      box-shadow: $home-shadow-hover;
+    }
+
+    .card-header {
+      background-color: $home-surface;
+      border-bottom: 1px solid $home-border;
+    }
+
+    .card-footer {
+      background-color: $home-surface;
+      border-top: 1px solid $home-border;
+    }
+  }
+
+  // Archive for Materials — flat (no nested-block chrome), matching Research Data Repository
+  .repo-molecule-archive {
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+
+    &:hover {
+      box-shadow: none;
+    }
+
+    .card-header {
+      background-color: transparent;
+      border-bottom: 0;
+    }
+
+    .card-footer {
+      background-color: transparent;
+      border-top: 0;
+    }
+  }
+
+  // Intro card primary heading
+  .repo-intro h1 {
+    font-size: $home-font-card-h1;
+    font-weight: 600;
+    line-height: $home-line-height-h;
+    letter-spacing: 0.01em;
+    color: #222;
+    margin: 8px 0 12px;
+
+    @media (max-width: 768px) {
+      font-size: 1.375rem;
+    }
+  }
+
+  // Top-row card subheaders (statics / archive)
+  .repo-statistic h3,
+  .repo-molecule-archive h3 {
+    font-size: $home-font-card-h2;
+    font-weight: 600;
+    line-height: $home-line-height-h;
+    letter-spacing: 0.01em;
+    color: $bs-primarycolor;
+    margin: 0;
+    text-transform: capitalize;
+  }
+
+  // NFDI4Chem partnership block inside intro card
+  .card-nfdi4chem {
+    > h3 { font-size: $home-font-card-h2; font-weight: 600; }
+    > h4 { font-size: $home-font-body; font-weight: 500; color: #555; }
+  }
+
+  // Unified stat numbers — keep strong but not shouting
+  .stat-count.fs-4 {
+    font-size: 1.375rem !important;
+    font-weight: 700;
+  }
+  .stat-title {
+    font-size: $home-font-caption;
+    letter-spacing: 0.02em;
+  }
+  .stat-desc {
+    font-size: $home-font-caption;
+    line-height: $home-line-height;
+  }
+
+  // Partners styles live in _repo-home-partners.scss
+
+  // Header section softening
+  .repo-header-section {
+    padding-top: 12px;
+  }
+
+  // NFDI4Chem card (strategic partner, hosts Research Data Repository stats)
+  .repo-nfdi4chem {
+    background-color: $home-surface-muted;
+    box-shadow: none;
+    border: 0;
+    overflow: hidden;
+
+    .card-header {
+      background-color: $home-surface-muted;
+      border-bottom: 0;
+
+      h3 {
+        font-size: $home-font-card-h2;
+        font-weight: 600;
+        line-height: $home-line-height-h;
+        letter-spacing: 0.01em;
+        color: $bs-primarycolor;
+        margin: 0;
+        text-transform: capitalize;
+      }
+    }
+
+    .nfdi4chem-intro {
+      font-size: $home-font-caption;
+      color: #555;
+      line-height: $home-line-height;
+    }
+
+    .card-footer {
+      background-color: $home-surface-muted;
+      padding-top: 4px;
+      padding-bottom: 16px;
+    }
+
+    .nfdi4chem-logo {
+      width: 78%;
+      max-width: 160px;
+      height: auto;
+    }
+  }
+
+  // Research Data Repository card (right column, narrow) — stats stacked vertically.
+  // Flat styling: no outer card chrome and no inner stat-strip panel, to avoid
+  // nested-block appearance inside the already-muted top-row wrapper.
+  .repo-research-data {
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+
+    &:hover {
+      box-shadow: none;
+    }
+
+    .card-header {
+      background-color: transparent;
+      border-bottom: 0;
+      text-align: center;
+
+      h3 {
+        font-size: $home-font-card-h2;
+        font-weight: 600;
+        line-height: $home-line-height-h;
+        letter-spacing: 0.01em;
+        color: $bs-primarycolor;
+        margin: 0;
+        text-transform: capitalize;
+      }
+    }
+
+    .card-body {
+      padding-top: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .repo-stat-strip {
+      flex-direction: column;
+      align-items: center;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 4px 0;
+      gap: 16px;
+
+      .donut-col {
+        width: clamp(210px, calc(110px + 11vw), 320px);
+        max-width: 100%;
+        justify-content: flex-start;
+        column-gap: 32px;
+        padding: 3px 8px;
+
+        // Replace the vertical separator with a horizontal one between rows.
+        & + .donut-col::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 10%;
+          right: 10%;
+          width: auto;
+          height: 1px;
+          background: $home-border;
+        }
+
+        // Lock the main column to a fluid width so the legend's left edge
+        // lines up vertically across the three rows even though the labels
+        // and value strings differ in length.
+        .donut-col-main {
+          flex: 0 0 clamp(120px, calc(35px + 7vw), 180px);
+          min-width: 0;
+        }
+
+        .donut-legend {
+          min-width: 0;
+        }
+      }
+    }
+  }
+
+  // Research Data Repository — unified stat strip at the bottom of the intro card
+  .repo-intro-stats {
+    margin-top: 12px;
+
+    .repo-intro-stats-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: $bs-primarycolor;
+      text-align: center;
+      margin: 0 0 10px 0;
+
+      &::before,
+      &::after {
+        content: '';
+        display: inline-block;
+        width: 24px;
+        height: 1px;
+        background: $home-border;
+        vertical-align: middle;
+        margin: 0 10px;
+      }
+    }
+  }
+
+  .repo-stat-strip {
+    display: flex;
+    align-items: stretch;
+    background: $home-surface;
+    border: 1px solid $home-border;
+    border-radius: $home-radius-card;
+    padding: 6px 4px;
+    gap: 0;
+    box-shadow: $home-shadow;
+
+    &.repo-stat-strip-single {
+      box-shadow: none;
+      border: 0;
+      background: transparent;
+      padding: 4px 0;
+      justify-content: center;
+
+      // Single column has no legend to spread against, so shrink it to its
+      // content and let the strip's own centering position it.
+      .donut-col {
+        flex: 0 1 auto;
+      }
+
+      .donut-col + .donut-col::before {
+        display: none;
+      }
+    }
+
+    .donut-col {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 4px 10px;
+      position: relative;
+      display: flex !important;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      column-gap: 8px;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      text-align: left;
+      color: inherit !important;
+      text-decoration: none !important;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+
+      .donut-col-main {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex: 0 1 auto;
+        min-width: 0;
+      }
+
+      .donut-legend {
+        flex: 0 0 auto;
+      }
+
+      & + .donut-col::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10%;
+        bottom: 10%;
+        width: 1px;
+        background: $home-border;
+      }
+
+      &.donut-col-link {
+        cursor: pointer;
+
+        &:hover,
+        &:focus {
+          background-color: rgba($statisticcolor, 0.06);
+          transform: translateY(-1px);
+
+          .donut-col-label {
+            color: darken($bs-primarycolor, 8%);
+          }
+          .donut-col-value {
+            color: darken($statisticcolor, 6%);
+          }
+        }
+      }
+
+      .stat-icon-slot {
+        width: clamp(52px, calc(12px + 4vw), 84px);
+        height: clamp(52px, calc(12px + 4vw), 84px);
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba($statisticcolor, 0.1);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+
+        i {
+          font-size: clamp(1.6rem, calc(0.2rem + 2.3vw), 2.9rem);
+          line-height: 1;
+          color: $statisticcolor;
+        }
+      }
+
+      &.donut-col-link:hover .stat-icon-slot,
+      &.donut-col-link:focus .stat-icon-slot {
+        background-color: rgba($statisticcolor, 0.18);
+        transform: scale(1.04);
+      }
+
+      .donut-col-headline {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+      }
+
+      .donut-col-label {
+        font-size: clamp(0.8rem, calc(0.6rem + 0.35vw), 1.05rem);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: $bs-primarycolor;
+        line-height: 1.2;
+        margin-bottom: 2px;
+      }
+
+      .donut-col-value {
+        font-size: clamp(1.25rem, calc(0.7rem + 1vw), 1.85rem);
+        font-weight: 700;
+        line-height: 1.05;
+        color: #1a1a1a;
+        letter-spacing: -0.02em;
+        transition: color 0.15s ease;
+      }
+
+      // Legend becomes a 2-col mini-table so numbers right-align and labels
+      // left-align horizontally while stacking vertically.
+      .donut-legend {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        column-gap: 6px;
+        row-gap: 2px;
+        align-items: baseline;
+        font-size: clamp(0.78rem, calc(0.6rem + 0.35vw), 1rem);
+        line-height: 1.35;
+
+        .donut-legend-row {
+          display: contents;
+        }
+
+        .donut-legend-num {
+          font-weight: 700;
+          color: #333;
+          text-align: right;
+        }
+
+        .donut-legend-lbl {
+          color: #777;
+          text-align: left;
+        }
+      }
+    }
+  }
+}
+// --- end Welcome page --------------------------------------------------------
+
+// --- Modern Repo Navbar ------------------------------------------------------
+.repo-navbar {
+  --repo-accent: #1976d2;
+  --repo-accent-soft: rgba(25, 118, 210, 0.1);
+  --repo-accent-dark: #0d5bab;
+  --repo-text: #1f2937;
+  --repo-muted: #6b7280;
+  --repo-border: #e5e7eb;
+
+  position: relative;
+  margin-bottom: 8px;
+  padding: 0.5rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--repo-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  border-radius: 0;
+
+  .repo-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    color: var(--repo-text);
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    padding: 0.25rem 0.5rem;
+    transition: opacity 0.15s ease;
+
+    &:hover {
+      opacity: 0.85;
+    }
+
+    .repo-brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--repo-accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .repo-brand-text {
+      color: var(--repo-text);
+      b {
+        color: var(--repo-text);
+        font-weight: 600;
+      }
+    }
+  }
+
+  .navbar-collapse .navbar-nav {
+    flex-grow: 1;
+    justify-content: flex-end;
+    gap: 0.15rem;
+  }
+
+  .repo-nav-link {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.85rem !important;
+    color: var(--repo-text) !important;
+    font-size: 0.92rem;
+    font-weight: 500;
+    border-radius: 8px;
+    text-decoration: none !important;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    i {
+      font-size: 0.9em;
+      opacity: 0.7;
+      color: inherit;
+      padding-left: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    &:hover {
+      background: #f1f5f9;
+      color: var(--repo-accent) !important;
+      i { opacity: 1; }
+    }
+
+    &:focus:not(:hover) {
+      background: transparent;
+      color: var(--repo-text) !important;
+      outline: none;
+    }
+
+    &.active {
+      background: var(--repo-accent-soft);
+      color: var(--repo-accent) !important;
+      font-weight: 600;
+      i { opacity: 1; }
+    }
+  }
+
+  .repo-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 8px;
+    background: var(--repo-accent);
+    color: #ffffff;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.15s ease;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background: var(--repo-accent-dark);
+      color: #ffffff;
+    }
+  }
+
+  .repo-userbar .form-control {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .btn-sm,
+  .repo-userbar .dropdown-toggle {
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(1.5em + 0.5rem + 2px);
+  }
+
+  .repo-userbar,
+  .repo-nav-group {
+    position: relative;
+    margin-left: 0.6rem;
+    padding-left: 0.9rem;
+  }
+
+  .repo-userbar::before,
+  .repo-nav-group::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 1px;
+    background: var(--repo-border);
+    pointer-events: none;
+  }
+
+  @media (max-width: 991.98px) {
+    .repo-nav-group,
+    .repo-userbar {
+      padding-left: 0;
+      margin-left: 0;
+    }
+    .repo-nav-group::before,
+    .repo-userbar::before { display: none; }
+  }
+
+  @media (min-width: 992px) and (max-width: 1399.98px) {
+    .repo-nav-link span { display: none; }
+    .repo-nav-link { gap: 0; padding: 0.5rem 0.6rem !important; }
+    .repo-nav-link i { font-size: 1rem; }
+  }
+
+  @media (max-width: 991.98px) {
+    .navbar-collapse .navbar-nav {
+      align-items: stretch;
+      gap: 0.25rem;
+      padding-top: 0.5rem;
+    }
+    .repo-nav-link { width: 100%; }
+    .repo-userbar {
+      border-left: none;
+      padding-left: 0;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--repo-border);
+    }
+  }
+}
+// --- end Modern Repo Navbar -------------------------------------------------
+
+// --- Modern Repo Search Panel ----------------------------------------------
+.repo-search-panel {
+  .repo-search-card {
+    position: relative;
+    max-width: 780px;
+    background: #ffffff;
+    border: 1px solid #e5e9f0;
+    border-radius: 12px;
+    transition: box-shadow 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07), 0 2px 6px rgba(15, 23, 42, 0.05);
+    }
+
+    .repo-search-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+
+      .repo-search-hint {
+        margin: 0;
+        flex: 1 1 auto;
+      }
+    }
+
+    .repo-search-close {
+      flex: 0 0 auto;
+      padding: 0 4px;
+      color: #8c96a3;
+      text-decoration: none;
+      line-height: 1;
+      font-size: 1rem;
+
+      &:hover, &:focus {
+        color: #1f2937;
+        text-decoration: none;
+      }
+    }
+
+    .repo-search-hint {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: #5b6677;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+
+    .repo-search-filters {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-group .btn,
+    .repo-draw-btn {
+      padding: 0.35rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      line-height: 1.2;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+
+      i { margin-right: 2px; font-size: 0.85em; }
+    }
+
+    .repo-draw-btn { border-radius: 0; }
+
+    .fst-italic { font-size: 0.85rem; }
+
+    .btn-group > .btn {
+      border-radius: 0;
+    }
+
+    .btn-group > .btn + .btn {
+      margin-left: -1px;
+    }
+
+    .text-uppercase.fw-semibold {
+      letter-spacing: 0.06em;
+      color: #5b6676;
+      font-size: 0.72rem;
+    }
+
+    .repo-search-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5b6676;
+      font-size: 0.78rem;
+      font-weight: 600;
+      width: 88px;
+      flex: 0 0 88px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .react-select__control {
+      border-radius: 999px;
+      border-color: #d0d7de;
+      min-height: 40px;
+      font-size: 0.9rem;
+      box-shadow: none;
+
+      &:hover { border-color: $bs-primarycolor; }
+
+      &.react-select__control--is-focused {
+        border-color: $bs-primarycolor;
+        box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.18);
+      }
+    }
+
+    .react-select__placeholder { color: #8c96a3; }
+  }
+
+  @media (max-width: 576px) {
+    .repo-search-card {
+      padding: 12px;
+
+      .repo-search-label {
+        display: none;
+      }
+
+      .btn-group .btn,
+      .repo-draw-btn {
+        padding: 0.22rem 0.6rem;
+        font-size: 0.72rem;
+      }
+
+      .fst-italic { font-size: 0.72rem; }
+    }
+  }
+}
+// --- end Modern Repo Search Panel ------------------------------------------
+
+// Sub-partials (must come after vars + base rules above)
+@import "repo-home-partners";
+@import "repo-home-footer";
+@import "repo-home-features";
+@import "repo-home-stats";

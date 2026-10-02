@@ -66,8 +66,7 @@ module SubmissionHelpers
   end
 
   def perform_method
-    method = ENV['PUBLISH_MODE'] == 'production' ? :perform_later : :perform_now
-    method
+    Rails.env.production? ? :perform_later : :perform_now
   end
 
   def send_message_and_tag(element, user)

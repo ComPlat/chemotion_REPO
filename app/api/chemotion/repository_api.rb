@@ -62,7 +62,7 @@ module Chemotion
           error!('401 Unauthorized', 401) unless pub.published_by == current_user.id
           if @embargo_id.to_i.positive?
             e_col = Collection.find(@embargo_id.to_i)
-            error!('404 This embargo has been released.', 404) unless e_col.ancestry.to_i == current_user.publication_embargo_collection.id
+            error!('404 This embargo has been released.', 404) unless e_col.parent_id == current_user.publication_embargo_collection&.id
           end
         end
         post do
@@ -160,10 +160,8 @@ module Chemotion
         after_validation do
           @sample = Sample.find_by(id: params[:id])
           error!('401 No data found', 401) unless @sample
-
           element_policy = ElementPolicy.new(current_user, @sample)
           error!('401 Unauthorized', 401) unless element_policy.read? || User.reviewer_ids.include?(current_user.id)
-
           @publication = @sample.publication
           error!('401 No data found', 401) if @publication.nil?
           error!('401 The submission has been published', 401) if @publication.state == 'completed'
@@ -208,6 +206,158 @@ module Chemotion
         end
         get do
           review_advanced_search(params, current_user)
+        end
+      end
+
+      # desc: create a minimal sample from the public welcome-page "New Entry" form
+      # and drop it into the review pipeline so reviewers can see it.
+      namespace :quickEntry do
+        helpers RepositoryHelpers
+        helpers SubmissionHelpers
+        desc 'Create a minimum sample and send it for review via Quick Entry'
+        params do
+          optional :name, type: String, default: '', desc: 'Sample name'
+          optional :molfile, type: String, desc: 'Molfile (preferred over smiles)'
+          optional :smiles, type: String, desc: 'SMILES string (used if molfile is blank)'
+          optional :target_amount_value, type: Float, default: 0.0, desc: 'Target amount value'
+          optional :target_amount_unit, type: String, default: 'g', desc: 'Target amount unit (e.g. g, mg, mol)'
+          optional :purity, type: Float, default: 1.0, desc: 'Purity (0..1)'
+          optional :description, type: String, default: '', desc: 'Free-text description'
+          optional :external_label, type: String, default: '', desc: 'External label'
+          optional :melting_point_lowerbound, type: Float, desc: 'Lower bound of melting point (°C)'
+          optional :melting_point_upperbound, type: Float, desc: 'Upper bound of melting point (°C)'
+          optional :boiling_point_lowerbound, type: Float, desc: 'Lower bound of boiling point (°C)'
+          optional :boiling_point_upperbound, type: Float, desc: 'Upper bound of boiling point (°C)'
+          optional :license, type: String, default: 'CC BY-SA', desc: 'Creative Commons License'
+          optional :orcid, type: String, desc: 'Author ORCID iD'
+          optional :coauthors, type: Array[String], default: [], desc: 'Collaborator user IDs to add as co-authors'
+          optional :reviewers, type: Array[String], default: [], desc: 'Collaborator user IDs to add as additional reviewers'
+          optional :add_group_lead, type: Boolean, default: false, desc: 'Also include current user group leads as authors'
+          optional :analyses_meta, type: String, desc: 'JSON-encoded analysis entries: [{name, type, instrument, content, file_count}]'
+          optional :analyses, type: Array[File], desc: 'Analytical files, flat order matching analyses_meta file_counts'
+          optional :references_meta, type: String, desc: 'JSON-encoded reference entries: [{title, doi, url, isbn, litype}]'
+        end
+        post do
+          missing_structure = params[:molfile].blank? && params[:smiles].blank?
+          error!('400 Provide either molfile or smiles', 400) if missing_structure
+
+          if params[:orcid].present?
+            orcid_val = params[:orcid].strip
+            error!('400 Invalid ORCID format', 400) unless orcid_val.match?(/\A\d{4}-\d{4}-\d{4}-\d{3}[0-9X]\z/)
+            providers = current_user.providers || {}
+            if providers['orcid'] != orcid_val
+              providers['orcid'] = orcid_val
+              current_user.update!(providers: providers)
+            end
+          end
+
+          coauthor_ids = coauthor_validation(params[:coauthors]) || []
+          reviewer_ids = coauthor_validation(params[:reviewers]) || []
+
+          references = []
+          if params[:references_meta].present?
+            begin
+              references = Array(JSON.parse(params[:references_meta]))
+            rescue JSON::ParserError
+              error!('400 Invalid references_meta JSON', 400)
+            end
+            references.each_with_index do |ref, idx|
+              next if [ref['title'], ref['doi'], ref['url'], ref['isbn']].any? { |v| v.to_s.strip.present? }
+
+              error!("400 Reference ##{idx + 1}: provide at least a title, DOI, URL, or ISBN", 400)
+            end
+          end
+
+          entries = []
+          if params[:analyses_meta].present?
+            begin
+              parsed = JSON.parse(params[:analyses_meta])
+              entries = Array(parsed)
+            rescue JSON::ParserError
+              error!('400 Invalid analyses_meta JSON', 400)
+            end
+          end
+
+          uploaded_files = Array(params[:analyses]).select { |f| f.is_a?(Hash) && f[:tempfile] }
+          if entries.empty? && uploaded_files.any?
+            entries = uploaded_files.map do |file|
+              { 'name' => File.basename(file[:filename].to_s, '.*'), 'file_count' => 1 }
+            end
+          end
+
+          error!('400 At least one analysis is required', 400) if entries.empty?
+          entries.each_with_index do |entry, idx|
+            kind = entry['type'].to_s
+            error!("400 Analysis ##{idx + 1}: please select an analysis type", 400) unless kind.match?(/\A\w{3,4}:\d{6,7}\s\|\s\w+/)
+            error!("400 Analysis ##{idx + 1}: instrument is required", 400) if entry['instrument'].to_s.strip.empty?
+            content_value = entry['content']
+            content_text = if content_value.is_a?(Hash) && content_value['ops']
+                             Array(content_value['ops']).map { |op| op['insert'].to_s }.join
+                           else
+                             content_value.to_s
+                           end
+            error!("400 Analysis ##{idx + 1}: content is required", 400) if content_text.strip.empty?
+            error!("400 Analysis ##{idx + 1}: please attach at least one file", 400) if entry['file_count'].to_i < 1
+          end
+
+          staging_dir = nil
+          analysis_entries = []
+          if entries.any?
+            staging_dir = Rails.root.join('tmp', 'quick_entry', SecureRandom.hex(12))
+            FileUtils.mkdir_p(staging_dir)
+            file_cursor = 0
+            entries.each_with_index do |entry, idx|
+              file_count = entry['file_count'].to_i
+              entry_files = uploaded_files.slice(file_cursor, file_count) || []
+              file_cursor += file_count
+
+              staged = entry_files.map do |file|
+                safe_name = "#{SecureRandom.hex(6)}_#{File.basename(file[:filename].to_s)}"
+                dest = staging_dir.join(safe_name)
+                FileUtils.cp(file[:tempfile].path, dest)
+                {
+                  filename: file[:filename],
+                  path: dest.to_s,
+                  content_type: file[:type],
+                }
+              end
+
+              analysis_entries << {
+                name: entry['name'].to_s,
+                type: entry['type'].to_s,
+                instrument: entry['instrument'].to_s,
+                content: entry['content'],
+                files: staged,
+              }
+            end
+          end
+
+          job_payload = {
+            user_id: current_user.id,
+            name: params[:name],
+            external_label: params[:external_label].to_s,
+            target_amount_value: params[:target_amount_value],
+            target_amount_unit: params[:target_amount_unit],
+            purity: params[:purity],
+            description: params[:description].to_s,
+            molfile: params[:molfile],
+            smiles: params[:smiles],
+            melting_point_lowerbound: params[:melting_point_lowerbound],
+            melting_point_upperbound: params[:melting_point_upperbound],
+            boiling_point_lowerbound: params[:boiling_point_lowerbound],
+            boiling_point_upperbound: params[:boiling_point_upperbound],
+            license: params[:license],
+            coauthor_ids: coauthor_ids,
+            reviewer_ids: reviewer_ids,
+            add_group_lead: params[:add_group_lead] ? true : false,
+            analysis_entries: analysis_entries,
+            references: references,
+            staging_dir: staging_dir&.to_s,
+          }
+
+          QuickEntrySubmissionJob.send(perform_method, job_payload)
+
+          { status: 'queued', creation_source: 'quick_entry' }
         end
       end
 
@@ -404,7 +554,7 @@ module Chemotion
           error!('400 type not supported', 400) if ENV['REPO_VERSIONING'] != 'true'
 
           # look for the sample in all public samples created by the current user
-          @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)   ## TO BE CHANGED by Paggy ****
+          @sample = Collection.public_collection.samples.find_by(id: params[:sampleId], created_by: current_user.id)
           error!('401 Unauthorized', 401) unless @sample
 
           # look for an optional reaction in the public collection or the versions_collection of the current user
@@ -583,6 +733,118 @@ module Chemotion
           process_review(extract_action)
         end
       end
+
+      # namespace :revert_publication_state do
+      #   helpers ReviewHelpers
+
+      #   desc 'Revert publication state from accepted to pending'
+      #   params do
+      #     requires :id, type: Integer, desc: 'Element ID'
+      #     requires :type, type: String, desc: 'Element Type (Sample or Reaction)'
+      #     requires :reason, type: String, desc: 'Reason for reverting'
+      #   end
+
+      #   before do
+      #     # Only reviewers can revert publication states
+      #     @is_reviewer = User.reviewer_ids.include?(current_user.id)
+      #     error!('Unauthorized. Only reviewers can revert publication states.', 401) unless @is_reviewer
+      #   end
+
+      #   after_validation do
+      #     @publication = Publication.find_by(
+      #       element_type: params[:type].classify,
+      #       element_id: params[:id],
+      #       ancestry: '/'
+      #     )
+
+      #     error!('Publication not found', 404) unless @publication
+      #     error!('Publication must be in accepted state to revert', 400) unless @publication.state == Publication::STATE_ACCEPTED
+      #   end
+
+      #   post do
+      #     begin
+      #       byebug
+      #       # Store the revert information in the review history
+      #       review_data = @publication.review || {}
+      #       review_data['history'] ||= []
+      #       review_data['history'] << {
+      #         action: 'reverted',
+      #         state: 'pending',
+      #         username: current_user.name,
+      #         userid: current_user.id,
+      #         comment: params[:reason],
+      #         timestamp: Time.now.strftime('%d-%m-%Y %H:%M:%S'),
+      #       }
+      #       review_data['history'] << {
+      #         action: 'reviewing',
+      #         state: 'pending',
+      #         type: 'reviewed',
+      #       }
+
+      #       @publication.review = review_data
+      #       @publication.save!
+
+      #       # Update the publication state to pending
+      #       @publication.update_state(Publication::STATE_PENDING)
+
+      #       # Move element back to reviewing collection
+      #       element = @publication.element
+      #       if element.present?
+      #         reviewing_col = Collection.element_to_review_collection
+      #         pub_user = User.with_deleted.find(@publication.published_by)
+      #         pending_col = pub_user.pending_collection
+
+      #         # Remove from accepted collection
+      #         accepted_col = Collection.embargo_accepted_collection
+      #         if element.is_a?(Reaction)
+      #           CollectionsReaction.where(reaction_id: element.id, collection_id: accepted_col.id).destroy_all
+      #         elsif element.is_a?(Sample)
+      #           CollectionsSample.where(sample_id: element.id, collection_id: accepted_col.id).destroy_all
+      #         end
+
+      #         # Add to reviewing collection
+      #         if element.is_a?(Reaction)
+      #           reviewing_col.each do |col|
+      #             CollectionsReaction.find_or_create_by!(
+      #               reaction_id: element.id,
+      #               collection: col,
+      #             )
+      #           end
+      #         elsif element.is_a?(Sample)
+      #           reviewing_col.each do |col|
+      #             CollectionsSample.find_or_create_by!(
+      #               sample_id: element.id,
+      #               collection: col,
+      #             )
+      #           end
+      #         end
+      #       end
+
+      #       # Send notification to submitter
+      #       submitter = User.with_deleted.find(@publication.published_by)
+      #       if submitter.present?
+      #         # You can add email notification here if needed
+      #         # PublicationMailer.revert_notification(submitter, @publication, params[:reason], current_user).deliver_later
+      #       end
+
+      #       {
+      #         success: true,
+      #         message: "Publication reverted to pending state successfully",
+      #         publication_id: @publication.id,
+      #         element_id: @publication.element_id,
+      #         element_type: @publication.element_type,
+      #         new_state: Publication::STATE_PENDING
+      #       }
+      #     rescue StandardError => e
+      #       Publication.repo_log_exception(e, {
+      #         params: params,
+      #         user_id: current_user&.id,
+      #         publication_id: @publication&.id
+      #       })
+      #       { error: e.message }
+      #     end
+      #   end
+      # end
 
       namespace :save_repo_authors do
         helpers ReviewHelpers

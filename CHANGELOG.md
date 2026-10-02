@@ -1,5 +1,53 @@
 # Chemotion_Repository Changelog
 
+## [3.0.0]
+> 2026-07-13
+
+* Features and Enhancements:
+  * Introduced a faceted search for `Data Publications`, filtering results by author, contributor, ontology, licence, publication year and element type, and reporting how many entries each filter matches.
+  * Rebuilt the `Molecule Archive` around the same faceted sidebar, so compounds and publications are browsed in the same way.
+  * Backed both searches with materialized views, so results and facet counts are served from a precomputed snapshot instead of being recalculated on every query.
+  * Marked publications that have an X-Vial sample with a badge directly in the search results.
+  * Excluded scheme-only reactions from the `Reaction` filter, so the count reflects reactions that carry data.
+  * Rewrote the welcome page, with a structure carousel, publication insights, publication statistics per year, a new login menu and a `Home` button in the navigation bar.
+  * Added `Quick Entry` to the welcome page, so a sample, its analyses and its publication details can be submitted in a single dialog without opening the ELN.
+  * Extended `Quick Entry` with a full reaction editor, `ChemDraw` file upload and a reordered final step.
+  * Stated in `Quick Entry` that the submitter is always listed as the first author of a submission, with co-authors added after.
+  * Turned the tabs of the `Publications` page into a collapsible side menu.
+  * Allowed contributors and reviewers to add literature references on the publication, review and embargo pages, and included the reference details in the Chemotion `ZIP` export and in the reaction report.
+  * Added a QR code linking to the published page on the Repository detail pages.
+  * Added a contributor filter and scrollbars to the embargo overview.
+  * Displayed dataset metadata on the review and publish pages.
+  * Refreshed the reviewer action buttons directly after an action, so the review state no longer needs a manual page reload.
+  * Provided an `SDF` export of published compounds for the `ChemSpider` integration.
+  * Aligned the sample and reaction `JSON-LD` with the current Bioschemas profiles for `ChemicalSubstance` and `MolecularEntity`.
+  * Enabled click-to-zoom on the reaction list of a publication, and added a page-size selector next to the pagination.
+
+* Bug Fixes:
+  * Fixed publication attachments and author labels not being available to visitors who were not logged in.
+  * Fixed the structure drawing tool not opening on the publication page.
+  * Fixed the affiliation numbering of authors.
+  * Fixed submissions arriving without their attachments after a sample or reaction was sent for review.
+  * Fixed a blank page when switching from `Edit` to `Order` mode in the `Analysis` tab.
+  * Fixed the details scrollbar disappearing when the browser was resized.
+  * Fixed an inline script being blocked by the Content Security Policy.
+  * Fixed the spectra viewer failing when an analysis had no description.
+  * Fixed the QR code overlapping the download buttons, and a preview image being rendered at too low a resolution.
+  * Fixed the wording of the analysis information in the exported `DOCX` report.
+  * Fixed the `Authors` modal layout and its saving behaviour.
+
+* Chores:
+  * Split the Repository models and the `RepoCommon` module out of the shared code, separating the Repository code from the ELN.
+  * Updated `react-bootstrap` from 0.33.1 to 2.10.2.
+  * Updated `chem-generic-ui-viewer` to 1.7.0.
+  * Included the [Chemotion LabIMotion version 2.1.1](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#211).
+  * Included the [Chemotion LabIMotion version 2.1.0](https://github.com/LabIMotion/labimotion/blob/main/CHANGELOG.md#210).
+  * Included the [Chemotion ELN version 3.1.2](https://github.com/ComPlat/chemotion_ELN/blob/v3.1.2/CHANGELOG.md).
+  * Included the [Chemotion ELN version 3.1.1](https://github.com/ComPlat/chemotion_ELN/blob/v3.1.1/CHANGELOG.md).
+  * Included the [Chemotion ELN version 3.1.0](https://github.com/ComPlat/chemotion_ELN/blob/v3.1.0/CHANGELOG.md).
+  * Included the [Chemotion ELN version 3.0.0](https://github.com/ComPlat/chemotion_ELN/blob/v3.0.0/CHANGELOG.md).
+
+
 ## [2.6.0]
 > 2026-03-06
 

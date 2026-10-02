@@ -45,6 +45,8 @@ module Usecases
         end
 
         def update_thumbnail(attachment, svg_string)
+          return if attachment.attachment(:thumbnail).blank?
+
           location_of_thumbnail = attachment.attachment(:thumbnail).url
           tmp_thumbnail_location = "#{location_of_thumbnail.split('.')[0]}_thumb.svg"
           xml = replace_link_with_base64(attachment.attachment.url, svg_string, attachment.attachment.mime_type)
@@ -54,16 +56,6 @@ module Usecases
 
           FileUtils.move(thumbnail, location_of_thumbnail)
           FileUtils.rm_f(tmp_thumbnail_location)
-        rescue StandardError => e
-          Attachment.logger.error <<~TXT
-          ---------  #{self.class.name} - update_thumbnail ------------
-            AttachmentID: #{attachment&.id}
-            svg_string: #{svg_string}
-
-            Error Message:  #{e.message}
-            Error:  #{e.backtrace.join("\n")}
-          --------------------------------------------------------------------
-          TXT
         end
 
         def create_annotated_flat_image(attachment, svg_string) # rubocop:disable Metrics/AbcSize

@@ -36,6 +36,7 @@ module Datacollector
 
       raise Errors::DatacollectorError, "Sender not found #{from}" unless validate(@sender)
       raise Errors::DatacollectorError, "Recipient not found #{to}" unless validate(@recipient)
+      raise Errors::DatacollectorError, 'Recipient can only be a User' unless valid_recipient?(@recipient)
       raise Errors::DatacollectorError, 'User can only send to self' if @sender.is_a?(User) && @recipient != @sender
 
       prepare_containers
@@ -48,10 +49,17 @@ module Datacollector
     def attach(filename, file_path, dataset_name = nil)
       dataset_name = dataset_name.presence || Time.zone.now.strftime('%Y-%m-%d')
       attachment = create_attachment(filename, file_path)
-      dataset = prepare_dataset(dataset_name)
-      # rubocop:disable Rails/SkipsModelValidations
-      dataset.touch
-      # rubocop:enable Rails/SkipsModelValidations
+      match, variation = attachment.resolve_unique_match
+
+      if match
+        dataset = match.container.analyses_container.create_analysis_with_dataset!(name: dataset_name)
+        match.assign_attachment_to_variation(variation, dataset.parent_id) if match.is_a?(Reaction)
+      else
+        dataset = prepare_dataset(dataset_name)
+        # rubocop:disable Rails/SkipsModelValidations
+        dataset.touch
+        # rubocop:enable Rails/SkipsModelValidations
+      end
       attachment.update!(attachable: dataset)
 
       # Add notifications
@@ -97,6 +105,7 @@ module Datacollector
       Attachment.create(
         filename: name,
         created_by: sender.id,
+        created_by_type: sender.class.name,
         created_for: recipient.id,
         file_path: file_data,
       )
@@ -123,7 +132,7 @@ module Datacollector
     # @param queue [String] The queue name
     def schedule_notification(queue)
       MessageIncomingDataJob.set(queue: queue, wait: 3.minutes).perform_later(
-        sender_container.name, sender.id, recipient.id
+        sender_container.name, sender, recipient
       )
     end
   end

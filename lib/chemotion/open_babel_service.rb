@@ -83,7 +83,12 @@ M  END
     smiles = c.write_string(m, false).to_s.gsub(/\s.*/m, "").strip
 
     c.set_out_format 'can'
-    ca_smiles = c.write_string(m, false).to_s.gsub(/\s.*/m, "").strip
+    ca_smiles = begin
+      str = c.write_string(m, false).to_s
+      str.lines.first.to_s.gsub(/\s.*/m, "").strip
+    rescue StandardError, SystemStackError
+      ''
+    end
 
     unless format == 'mol'
       c.set_out_format 'mol'
@@ -137,20 +142,23 @@ M  END
     inchi_info[:inchikey]
   end
 
-  def self.inchi_info_from_molfile(molfile)
+  def self.molfile_from_chemdraw(content, format = 'cdxml')
+    return nil if content.blank?
+
+    OpenBabel.obErrorLog.clear_log
     c = OpenBabel::OBConversion.new
-    c.set_in_format 'mol'
-
+    c.set_in_format format
     m = OpenBabel::OBMol.new
-    c.read_string m, molfile
+    return nil unless c.read_string(m, content)
 
-    c.set_out_format 'inchi'
-    inchi = c.write_string(m, false).to_s.gsub(/\n/, '').strip
-
-    c.set_out_format 'inchikey'
-    inchikey = c.write_string(m, false).to_s.gsub(/\n/, '').strip
-
-    [inchi, inchikey]
+    pop = OpenBabel::OBOp.find_type('gen2D')
+    pop.do(m) if pop
+    c.set_out_format 'mol'
+    molfile = c.write_string(m, false).to_s
+    molfile.presence
+  rescue StandardError => e
+    Rails.logger.error("OpenBabelService.molfile_from_chemdraw failed: #{e.message}")
+    nil
   end
 
   def self.molfile_from_cano_smiles(cano_smiles)
@@ -412,8 +420,6 @@ M  END
   end
 
   def self.svg_from_molfile molfile, options={}
-    return nil if molfile.blank?
-
     c = OpenBabel::OBConversion.new
     c.set_in_format 'mol'
     c.set_out_format 'svg'
@@ -430,9 +436,6 @@ M  END
     #m.do_transformations c.get_options(OpenBabel::OBConversion::GENOPTIONS), c
 
     c.write_string(m, false)
-  rescue StandardError => e
-    Rails.logger.error e
-    nil
   end
 
   # Return an array of 32
@@ -495,19 +498,6 @@ M  END
     return smi
   end
 
-  def self.get_ob_molfile_from_molfile molfile
-    c = OpenBabel::OBConversion.new
-    m = OpenBabel::OBMol.new
-    f = OpenBabel::OBMol.new
-
-    c.set_in_format('mol')
-    c.read_string(m, molfile)
-
-    c.set_out_format 'mol'
-    mf = c.write_string(m, false)
-    mf
-  end
-
   def self.substructure_match query, molfile_target
     c = OpenBabel::OBConversion.new
     m = OpenBabel::OBMol.new
@@ -527,8 +517,11 @@ M  END
     mf = mofile_clear_coord_bonds(molfile)
     mol = mf || molfile
     # `obabel -imol #{file_name} -ocdxml`
-    input = Tempfile.new(["input", ".mol"]).path
-    output = output_path || Tempfile.new(["output", ".mol"]).path
+    # Keep Tempfile references alive until after File.read; GC finalizers delete the files.
+    input_tf = Tempfile.new(["input", ".mol"])
+    output_tf = output_path ? nil : Tempfile.new(["output", ".mol"])
+    input = input_tf.path
+    output = output_path || output_tf.path
     File.write(input, mol)
 
     c = OpenBabel::OBConversion.new
@@ -538,7 +531,10 @@ M  END
 
     orig_cdxml = File.read(output)
     shifted_cdxml, geometry = Cdxml::Shifter.new({orig_cdxml: orig_cdxml, shifter: shifter}).convey
-    return { content: shifted_cdxml, geometry: geometry, path: output }
+    { content: shifted_cdxml, geometry: geometry, path: output_path }
+  ensure
+    input_tf&.close!
+    output_tf&.close!
   end
 
   def self.smi_to_svg(smi)

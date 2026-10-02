@@ -14,8 +14,8 @@ class CreateMolecules < ActiveRecord::Migration[4.2]
       t.string :molecule_svg_file
 
       t.timestamps null: false
-    end
+    end unless table_exists?(:molecules)
 
-    add_index :molecules, :inchikey, unique: true
+    add_index :molecules, :inchikey, unique: true unless index_exists?(:molecules, :inchikey)
   end
 end

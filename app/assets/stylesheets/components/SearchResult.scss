@@ -1,0 +1,111 @@
+.modal.modal-dialog-fullscreen .search-result-body {
+  max-height: none;
+}
+.search-result-body {
+  max-height: 72vh;
+}
+
+.search-value-list {
+  position: relative;
+  max-height: 12vh;
+  min-height: 92px;
+  overflow-y: auto;
+}
+
+.search-result-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.tab-spinner {
+  color: var(--bs-gray-400);
+  position: relative;
+  top: 1rem;
+  left: 1rem;
+}
+
+.search-result-tab-content {
+  @extend .border-lighten2;
+  @extend .rounded-bottom;
+  @extend .border;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 150px;
+  position: relative;
+  border-top: none !important;
+}
+
+.search-result-group:last-child {
+  @extend .border-lighten3;
+  @extend .border-bottom;
+}
+
+.search-result-tab-content-container .search-result-group:first-child .search-result-group-header-content:first-child .search-result-tab-content-list,
+.search-result-tab-content-container .search-result-group:first-child .search-result-tab-content-list-name:first-child {
+  border-top: none !important;
+}
+
+.search-result-tab-content-list {
+  @extend .surface-lighten4;
+  @extend .border-lighten3;
+  @extend .border-top;
+  padding: 0 1rem 0 1rem;
+}
+
+.search-result-tab-content-list:first-child {
+  border-top: none;
+}
+
+.search-result-tab-content-list p {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.search-result-tab-content-list p:first-child {
+  margin-top: 1rem;
+}
+
+.search-result-tab-content-list-white {
+  background-color: var(--bs-white);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--bs-gray-200);
+  border-top: 1px solid var(--bs-gray-100);
+}
+
+.search-result-tab-content-list-white:last-child {
+  border-bottom: none;
+}
+
+.search-result-molecule {
+  display: flex;
+  min-height: 4rem;
+}
+
+.search-result-molecule .preview-table {
+  max-width: 140px;
+  margin-right: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.search-result-molecule.reaction .preview-table {
+  max-width: 300px;
+}
+
+.search-result-tab-content-list-name {
+  padding: 0.6rem 1rem;
+  background-color: var(--bs-white);
+  @extend .border-lighten3;
+  @extend .border-top;
+}
+
+.search-result-tab-content-list-name:hover, .search-result-tab-content-list-white div:hover {
+  cursor: pointer;
+}
+
+.search-result-pagination.pagination {
+  margin: 1.5rem 1rem 1rem 1rem !important;
+  margin-bottom: 0;
+}

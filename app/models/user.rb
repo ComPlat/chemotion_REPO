@@ -4,40 +4,47 @@
 #
 # Table name: users
 #
-#  id                     :integer          not null, primary key
-#  email                  :string           default(""), not null
-#  encrypted_password     :string           default(""), not null
-#  reset_password_token   :string
-#  reset_password_sent_at :datetime
-#  remember_created_at    :datetime
-#  sign_in_count          :integer          default(0), not null
-#  current_sign_in_at     :datetime
-#  last_sign_in_at        :datetime
-#  current_sign_in_ip     :inet
-#  last_sign_in_ip        :inet
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  name                   :string
-#  first_name             :string           not null
-#  last_name              :string           not null
-#  deleted_at             :datetime
-#  counters               :hstore           not null
-#  name_abbreviation      :string(12)
-#  type                   :string           default("Person")
-#  reaction_name_prefix   :string(3)        default("R")
-#  confirmation_token     :string
-#  confirmed_at           :datetime
-#  confirmation_sent_at   :datetime
-#  unconfirmed_email      :string
-#  layout                 :hstore           not null
-#  selected_device_id     :integer
-#  failed_attempts        :integer          default(0), not null
-#  unlock_token           :string
-#  locked_at              :datetime
-#  account_active         :boolean
-#  matrix                 :integer          default(0)
-#  providers              :jsonb
-#  inventory_labels       :jsonb
+#  id                        :integer          not null, primary key
+#  account_active            :boolean
+#  allocated_space           :bigint           default(0)
+#  confirmation_sent_at      :datetime
+#  confirmation_token        :string
+#  confirmed_at              :datetime
+#  consumed_timestep         :integer
+#  counters                  :hstore           not null
+#  current_sign_in_at        :datetime
+#  current_sign_in_ip        :inet
+#  deleted_at                :datetime
+#  email                     :string           default(""), not null
+#  encrypted_otp_secret      :string
+#  encrypted_otp_secret_iv   :string
+#  encrypted_otp_secret_salt :string
+#  encrypted_password        :string           default(""), not null
+#  failed_attempts           :integer          default(0), not null
+#  first_name                :string           not null
+#  last_name                 :string           not null
+#  last_sign_in_at           :datetime
+#  last_sign_in_ip           :inet
+#  layout                    :hstore           not null
+#  locked_at                 :datetime
+#  matrix                    :integer          default(0)
+#  name                      :string
+#  name_abbreviation         :string(12)
+#  otp_backup_codes          :string           is an Array
+#  otp_required_for_login    :boolean
+#  providers                 :jsonb
+#  reaction_name_prefix      :string(3)        default("R")
+#  remember_created_at       :datetime
+#  reset_password_sent_at    :datetime
+#  reset_password_token      :string
+#  sign_in_count             :integer          default(0), not null
+#  type                      :string           default("Person")
+#  unconfirmed_email         :string
+#  unlock_token              :string
+#  used_space                :bigint           default(0)
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  selected_device_id        :integer
 #
 # Indexes
 #
@@ -49,21 +56,25 @@
 #  index_users_on_unlock_token          (unlock_token) UNIQUE
 #
 
-
-# rubocop: disable Metrics/ClassLength, Metrics/CyclomaticComplexity, Performance/RedundantMerge, Style/MultilineIfModifier
-# rubocop: disable Metrics/MethodLength
+# rubocop: disable Metrics/ClassLength, Metrics/CyclomaticComplexity
 # rubocop: disable Metrics/AbcSize
-# rubocop: disable Metrics/CyclicComplexity
 # rubocop: disable Metrics/PerceivedComplexity
 
 class User < ApplicationRecord
   attr_writer :login
   attr_accessor :provider, :uid
+  include RepoUser
 
   acts_as_paranoid
   # Include default devise modules. Others available are: :timeoutable
+
   devise :database_authenticatable, :registerable, :confirmable,
-         :recoverable, :rememberable, :trackable, :validatable, :lockable, :omniauthable, authentication_keys: [:login]
+         :recoverable, :rememberable, :trackable, :validatable,
+         :lockable, :omniauthable,
+         :two_factor_authenticatable,
+         authentication_keys: [:login],
+         otp_secret_encryption_key: Rails.application.config.otp_secret_encryption_key
+
   has_one :profile, dependent: :destroy
   has_one :container, as: :containable
 
@@ -77,6 +88,8 @@ class User < ApplicationRecord
   # created vessels will be kept when the creator goes (dependent: nil).
   has_many :created_vessels, class_name: 'Vessel', inverse_of: :creator, dependent: nil
   has_many :cellline_samples, through: :collections
+  has_many :device_descriptions, through: :collections
+  has_many :sequence_based_macromolecule_samples, through: :collections
 
   has_many :samples_created, foreign_key: :created_by, class_name: 'Sample'
 
@@ -103,11 +116,10 @@ class User < ApplicationRecord
   has_one :screen_text_template, dependent: :destroy
   has_one :wellplate_text_template, dependent: :destroy
   has_one :research_plan_text_template, dependent: :destroy
+  has_one :device_description_text_template, dependent: :destroy
   has_many :element_text_templates, dependent: :destroy
   has_many :calendar_entries, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
   has_many :comments, foreign_key: :created_by, inverse_of: :creator, dependent: :destroy
-  has_many :users_collaborators, foreign_key: :user_id
-  has_many :collaborators, through: :users_collaborators, source: :user
 
   accepts_nested_attributes_for :affiliations, :profile
 
@@ -117,24 +129,24 @@ class User < ApplicationRecord
   validate :name_abbreviation_reserved_list, on: :create
   validate :name_abbreviation_length, on: :create
   validate :name_abbreviation_format, on: :create
-  validate :orcid_checker, on: :create
-# validate :academic_email
   validate :mail_checker
 
   # NB: only Persons and Admins can get a confirmation email and confirm their email.
   before_create :skip_confirmation_notification!, unless: proc { |user|
-                                                            %w[Person Admin].include?(user.type)
-                                                          }
+    %w[Person Admin].include?(user.type)
+  }
   # NB: option to skip devise confirmable for Admins and Persons
   before_create :skip_confirmation!, if: proc { |user|
-                                           %w[Person Admin].include?(user.type) &&
-                                             self.class.allow_unconfirmed_access_for.nil?
-                                         }
-  before_create :set_account_active, if: proc { |user| %w[Person Anonymous].include?(user.type) }
+    %w[Person Admin].include?(user.type) &&
+      self.class.allow_unconfirmed_access_for.nil?
+  }
+  before_create :set_account_active, if: proc { |user| %w[Person].include?(user.type) }
 
   after_create :create_chemotion_public_collection
   after_create :create_all_collection
   after_create :update_matrix
+  after_create :send_welcome_email, if: proc { |user| %w[Person].include?(user.type) }
+  after_create :set_default_avail_space
   before_destroy :delete_data
 
   scope :by_name, lambda { |query|
@@ -175,6 +187,23 @@ class User < ApplicationRecord
     @login || name_abbreviation || email
   end
 
+  # Optional: Generate QR code for the app
+  def generate_qr_code
+    issuer = 'Chemotion'
+    label = email
+    if otp_secret.blank?
+      self.otp_secret = User.generate_otp_secret
+      save!
+    end
+
+    uri = otp_provisioning_uri(label, issuer: issuer)
+
+    RQRCode::QRCode.new(uri).as_svg(module_size: 4)
+  end
+
+  def check_otp(otp_attempt)
+    validate_and_consume_otp!(otp_attempt)
+  end
   def self.find_first_by_auth_conditions(warden_conditions)
     conditions = warden_conditions.dup
     if (login = conditions.delete(:login))
@@ -220,12 +249,6 @@ class User < ApplicationRecord
     when 'Device'
       min_val = name_abbr_config[:length_device]&.first || 2
       max_val = name_abbr_config[:length_device]&.last || 5
-    when 'Anonymous'
-      min_val = name_abbr_config[:length_anonymous]&.first || 2
-      max_val = name_abbr_config[:length_anonymous]&.last || 5
-    when 'Collaborator'
-      min_val = name_abbr_config[:length_device]&.first || 2
-      max_val = name_abbr_config[:length_device]&.last || 5
     else
       min_val = name_abbr_config[:length_default]&.first || 2
       max_val = name_abbr_config[:length_default]&.last || 3
@@ -236,41 +259,10 @@ class User < ApplicationRecord
     errors.add(:name_abbreviation, "has to be #{min_val} to #{max_val} characters long")
   end
 
-
-  def group_leads
-    User.joins("INNER JOIN users_collaborators ON users_collaborators.collaborator_id = users.id")
-    .where(users_collaborators: { user_id: id, is_group_lead: true }).distinct
-  end
-
-  def orcid_checker
-    return if orcid.nil?
-
-    result = Chemotion::OrcidService.record_person(orcid)
-    oc_given_names = result&.person&.given_names&.strip
-    oc_family_name = result&.person&.family_name&.strip
-
-    if result.nil?
-      errors.add(:orcid, ' does not exist! Please check.')
-    elsif oc_given_names&.casecmp(first_name.strip) != 0 || oc_family_name&.casecmp(last_name.strip) != 0
-      errors.add(:orcid, " #{orcid} belongs to #{oc_given_names} #{oc_family_name} (first name: #{oc_given_names}, last_name: #{oc_family_name})! Please check.")
-    end
-  end
-
-  def academic_email
-    Swot::is_academic?(email) || errors.add(
-      :email, 'not from an academic organization'
-    )
-  end
-
   def mail_checker
     MailChecker.valid?(email) || errors.add(
       :email, 'from throwable email providers not accepted'
     )
-  end
-
-  def orcid
-    providers&.fetch('orcid', nil)
-    # profile&.data&.fetch('ORCID', nil)
   end
 
   def owns_collections?(collections)
@@ -307,12 +299,22 @@ class User < ApplicationRecord
     save!
   end
 
+  # The element models for which the counters that can be incremented
+  COUNTER_KEYS = %w[
+    samples reactions wellplates celllines device_descriptions sequence_based_macromolecule_samples
+  ].freeze
+
+  # Increment a counter for a given key
+  #   - samples, reactions, wellplates, celllines, device_descriptions
+  #   - or a Generic Element
+  # The counter is use to generate short labels as the first counter part of the label (ex the 5 in `JD-5-2`)
+  # @param [String] key The key of the counter to increment
+  # @return [String] The new integer value of the counter as String
   def increment_counter(key)
-    return if counters[key].nil?
+    return if counters[key].blank? && !key.in?(COUNTER_KEYS)
 
-    counters[key] = counters[key].succ
+    counters[key] = counters[key].to_i.next
     save!
-
     counters[key]
   end
 
@@ -339,154 +341,12 @@ class User < ApplicationRecord
     SyncCollectionsUser.where('user_id IN (?) ', [id] + group_ids)
   end
 
-  def self.is_public
-    self.find_by(email: ENV['SYS_EMAIL'])
-  end
-
-  def self.embargo_viewer_ids
-    (ENV['EMBARGO_VIEWER'] || '').split(',').map(&:to_i)
-  end
-
-  def is_embargo_viewer
-    (ENV['EMBARGO_VIEWER'] || '').split(",").include?(self.id.to_s)
-  end
-
-  def self.reviewer_ids
-    (ENV['REVIEWERS'] || '').split(',').map(&:to_i)
-  end
-
-  def is_reviewer
-    (ENV['REVIEWERS'] || '').split(",").include?(self.id.to_s)
-  end
-
-  def is_article_editor
-    (ENV['NEWSROOM_EDITOR'] || '').split(",").include?(self.id.to_s)
-  end
-
-  def is_howto_editor
-    (ENV['HOWTO_EDITOR'] || '').split(",").include?(self.id.to_s)
-  end
-
-  def pending_collection
-    su_id = User.chemotion_user.id
-    Collection.joins(
-      "INNER JOIN sync_collections_users ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{self.id}")
-      .where("sync_collections_users.permission_level = 0 and sync_collections_users.fake_ancestry is not null")
-      .where("collections.label = 'Pending Publications'").first
-  end
-
-  def versions_collection
-    su_id = User.chemotion_user.id
-    Collection.joins(
-      "INNER JOIN sync_collections_users ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{self.id}")
-      .where("collections.label = 'New Versions'").first
-  end
-
-  def version_sync_collection
-    su_id = User.chemotion_user.id
-    SyncCollectionsUser.joins(
-      "INNER JOIN collections ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{id}")
-      .where("collections.label = 'New Versions'").first
-  end
-
-  def reviewing_collection
-    su_id = User.chemotion_user.id
-    Collection.joins(
-      "INNER JOIN sync_collections_users ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{self.id}")
-      .where("collections.label = 'Reviewing'").first
-  end
-
-  def sync_reviewing_collection
-    su_id = User.chemotion_user.id
-    SyncCollectionsUser.joins(
-      "INNER JOIN collections ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{self.id}")
-      .where("collections.label = 'Reviewing'").first
-  end
-
-
-  def sync_element_to_review_collection
-    su_id = User.chemotion_user.id
-    SyncCollectionsUser.joins(
-      "INNER JOIN collections ON " +
-      "sync_collections_users.collection_id = collections.id")
-      .where("sync_collections_users.shared_by_id = #{su_id}")
-      .where("sync_collections_users.user_id = #{self.id}")
-      .where("collections.label = 'Element To Review'").first
-  end
-
-  def find_or_create_grouplead_collection
-    chemotion_user = User.chemotion_user
-    sys_review_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Group Lead Review from', is_locked: true, is_shared: false)
-    sys_review_collection = Collection.find_or_create_by(user: chemotion_user, label: 'Group Lead Review', ancestry: "#{sys_review_from.id}", shared_by_id: id)
-
-    col_attributes = {
-      user: self,
-      shared_by_id: chemotion_user.id,
-      is_locked: true,
-      is_shared: true
-    }
-
-    rc = Collection.find_by(col_attributes)
-    unless rc.nil?
-      SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_review_collection.id,
-        permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    end
-    sys_review_collection
-  end
-
-  def published_collection
-    su_id = User.chemotion_user.id
-    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
-              .where("sync_collections_users.shared_by_id = #{su_id}")
-              .where("sync_collections_users.user_id = #{self.id}")
-              .where("collections.label = 'Published Elements'").first
-  end
-
-  def sync_published_collection
-    SyncCollectionsUser.joins("INNER JOIN collections on collections.id = sync_collections_users.collection_id")
-              .where("sync_collections_users.user_id = #{self.id}")
-              .where("collections.id = #{Collection.public_collection_id}").first
-
-  end
-
-  def publication_embargo_collection
-    su_id = User.chemotion_user.id
-    Collection.joins("INNER JOIN sync_collections_users ON sync_collections_users.collection_id = collections.id")
-              .where("sync_collections_users.shared_by_id = #{su_id}")
-              .where("sync_collections_users.user_id = #{self.id}")
-              .where("collections.label = 'Embargoed Publications'").first
-  end
-
-  def all_collection
-    Collection.where(user: self, label: 'All', is_locked: true, position: 0)&.first
-
-  end
-
-  def self.chemotion_user
-    find_by(email: ENV['SYS_EMAIL'])
-  end
-
   def current_affiliations
     Affiliation.joins(
       'INNER JOIN user_affiliations ua ON ua.affiliation_id = affiliations.id',
     ).where(
       '(ua.user_id = ?) and (ua.deleted_at ISNULL) and (ua.to ISNULL or ua.to > ?)',
-      id, Time.now
+      id, Time.zone.now
     ).order('ua.from DESC')
   end
 
@@ -529,7 +389,7 @@ class User < ApplicationRecord
       sql = ApplicationRecord.send(:sanitize_sql_array, ['select generate_users_matrix(array[?])', id])
       ApplicationRecord.connection.exec_query(sql)
     end
-  rescue StandardError => e
+  rescue StandardError
     log_error 'Error on update_matrix'
   end
 
@@ -554,7 +414,7 @@ class User < ApplicationRecord
             end
       ApplicationRecord.connection.exec_query(sql)
     end
-  rescue StandardError => e
+  rescue StandardError
     log_error 'Error on update_matrix'
   end
 
@@ -604,11 +464,24 @@ class User < ApplicationRecord
     Matrice.extra_rules || {}
   end
 
-  def confirm(*args)
-    was_confirmed = confirmed_at.present?
-    super
+  def self.default_admin
+    find_by(type: 'Admin', name_abbreviation: 'ADM').presence || where(type: 'Admin').order(:created_at).first
+  end
 
-    send_welcome_email if %w[Person].include?(self.type) && !was_confirmed
+  def self.default_disk_space=(value)
+    value = value.to_i
+    return true if value == default_disk_space
+
+    find_each do |user|
+      user.update(allocated_space: [user.allocated_space, value].max)
+    end
+    default_admin&.update(allocated_space: value)
+  end
+
+  def self.default_disk_space
+    return 0 if default_admin.nil?
+
+    default_admin.allocated_space
   end
 
   private
@@ -620,47 +493,13 @@ class User < ApplicationRecord
   # - delete it
 
   def create_all_collection
-    return if self.type == 'Anonymous'
     Collection.create(user: self, label: 'All', is_locked: true, position: 0)
   end
 
   def create_chemotion_public_collection
-    return unless self.type == 'Person'
+    return unless type == 'Person'
 
-    chemotion_user = User.chemotion_user
-    # Collection.create(user: self, label: 'chemotion.net', is_locked: true, position: 1)
-    Collection.find_or_create_by(user: self, label: 'ELN Gate', is_locked: true, position: 1)
-    Collection.find_or_create_by(user: self, label: 'My Data', is_locked: true, position: 2)
-
-    sys_published_by = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Published by')
-    sys_pending_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Pending Publication from')
-    sys_versions_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'New Versions from')
-    sys_reviewing_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Reviewing Publication from')
-    sys_ready_publish_from = Collection.find_or_create_by(user_id: chemotion_user.id, label: 'Embargoed Publications from')
-
-    sys_reviewing_collection = self.reviewing_collection || Collection.create(user: chemotion_user, label: 'Reviewing', ancestry: "#{sys_reviewing_from.id}")
-    sys_pending_collection = self.pending_collection || Collection.create(user: chemotion_user, label: 'Pending Publications', ancestry: "#{sys_pending_from.id}")
-    sys_versions_collection = self.versions_collection || Collection.create(user: chemotion_user, label: 'New Versions', ancestry: "#{sys_versions_from.id}")
-    sys_published_collection = self.published_collection || Collection.create(user: chemotion_user, label: 'Published Elements', ancestry: "#{sys_published_by.id}")
-    sys_publication_embargo_collection = self.publication_embargo_collection || Collection.create(user: chemotion_user, label: 'Embargoed Publications', ancestry: "#{sys_ready_publish_from.id}")
-
-    root_label = "with %s" %chemotion_user.name_abbreviation
-    root_collection_attributes = {
-      label: root_label,
-      user: self,
-      shared_by_id: chemotion_user.id,
-      is_locked: true,
-      is_shared: true
-    }
-    rc = Collection.find_or_create_by(root_collection_attributes)
-
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: Collection.public_collection_id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: Collection.scheme_only_reactions_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_published_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_pending_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_versions_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_reviewing_collection.id, permission_level: 3, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
-    SyncCollectionsUser.find_or_create_by(user: self, shared_by_id: chemotion_user.id, collection_id: sys_publication_embargo_collection.id, permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10, fake_ancestry: rc.id.to_s)
+    Collection.create(user: self, label: 'chemotion-repository.net', is_locked: true, position: 1)
   end
 
   def set_account_active
@@ -669,6 +508,11 @@ class User < ApplicationRecord
 
   def send_welcome_email
     WelcomeMailer.delay.mail_welcome_message(id)
+  end
+
+  def set_default_avail_space
+    self.allocated_space = User.default_disk_space
+    save!
   end
 
   def delete_data
@@ -693,7 +537,7 @@ class Person < User
   has_many :groups, through: :users_groups
 
   has_many :users_admins, dependent: :destroy, foreign_key: :admin_id
-  has_many :administrated_accounts,  through: :users_admins, source: :user
+  has_many :administrated_accounts, through: :users_admins, source: :user
 end
 
 class Group < User
@@ -702,7 +546,7 @@ class Group < User
 
   has_many :users_admins, dependent: :destroy, foreign_key: :user_id
   has_many :admins, through: :users_admins, source: :admin # ,  foreign_key:    association_foreign_key: :admin_id
-
+  around_save :update_allocated_space
   before_destroy :remove_from_matrices
 
   def administrated_by?(user)
@@ -715,10 +559,22 @@ class Group < User
     # Override method to return an array of user IDs in the group
     users.ids
   end
+
+  def update_allocated_space
+    return yield unless allocated_space_changed?
+
+    yield
+    users.each do |user|
+      next if user.allocated_space >= allocated_space
+
+      user.update(allocated_space: allocated_space)
+    end
+  end
 end
 
-# rubocop: enable Metrics/ClassLength, Metrics/CyclomaticComplexity, Performance/RedundantMerge, Style/MultilineIfModifier
-# rubocop: enable Metrics/MethodLength
+class DeviceDeprecated < User
+end
+
+# rubocop: enable Metrics/ClassLength, Metrics/CyclomaticComplexity
 # rubocop: enable Metrics/AbcSize
-# rubocop: enable Metrics/CyclicComplexity
 # rubocop: enable Metrics/PerceivedComplexity

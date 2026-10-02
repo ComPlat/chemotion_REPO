@@ -4,6 +4,9 @@ RSpec.describe Chemotion::AdminDeviceMetadataAPI do
   let!(:admin1) { create(:admin) }
   let(:warden_instance) { instance_double(WardenAuthentication) }
   let(:device) { create(:device) }
+  let(:data_cite_configured?) do
+    ENV['DATA_CITE_PREFIX'].present? && ENV['DATA_CITE_BASE_URI'].present?
+  end
   let(:device_metadata) do
     create(:device_metadata, data_cite_prefix: ENV.fetch('DATA_CITE_PREFIX', nil),
                              doi: "#{ENV.fetch('DATA_CITE_PREFIX', nil)}/DEVICE-3", device: device)
@@ -35,6 +38,8 @@ RSpec.describe Chemotion::AdminDeviceMetadataAPI do
     end
 
     it 'synchronizes device metadata to data cite' do
+      skip 'DataCite not configured (requires DATA_CITE_PREFIX and DATA_CITE_BASE_URI)' unless data_cite_configured?
+
       expect(device_metadata.data_cite_updated_at).to be_blank
 
       put "/api/v1/admin_device_metadata/#{device_metadata.device_id}/sync_to_data_cite"
@@ -82,6 +87,8 @@ RSpec.describe Chemotion::AdminDeviceMetadataAPI do
       end
 
       it 'creates device metadata' do
+        skip 'DataCite not configured (requires DATA_CITE_PREFIX and DATA_CITE_BASE_URI)' unless data_cite_configured?
+
         post '/api/v1/admin_device_metadata', params: params
         new_doi_from_data_cite = "#{ENV.fetch('DATA_CITE_PREFIX', nil)}/DEVICE-1"
         expect(device.device_metadata.doi).to eql(new_doi_from_data_cite)
@@ -99,6 +106,8 @@ RSpec.describe Chemotion::AdminDeviceMetadataAPI do
       end
 
       it 'Updates device metadata' do
+        skip 'DataCite not configured (requires DATA_CITE_PREFIX and DATA_CITE_BASE_URI)' unless data_cite_configured?
+
         post '/api/v1/admin_device_metadata', params: update_params
         new_doi_from_data_cite = "#{ENV.fetch('DATA_CITE_PREFIX', nil)}/DEVICE-1"
         expect(device.device_metadata.doi).to eql(new_doi_from_data_cite)

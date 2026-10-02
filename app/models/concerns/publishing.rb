@@ -13,20 +13,33 @@ module Publishing
   extend ActiveSupport::Concern
 
   included do
-
+    attr_accessor :previous_version
     has_one :publication, as: :element
     has_one :publication_as_source, as: :original_element
     has_one :doi, as: :doiable
     before_save :check_doi
+    before_destroy :remove_from_previous_version
+    if is_a?(Reaction) || is_a?(Sample) || is_a?(Container)
+    validates :creator, presence: true
+    end
+  end
 
+  def links
+    if is_a?(Reaction) || is_a?(Sample)
+      self.container ? self.container.links : Container.none
+    elsif is_a?(Container)
+      Container.links_for_root(self.id)
+    else
+      Container.none
+    end
   end
 
   def publication_tag
-    self.tag.taggable_data['publication']
+    tag.taggable_data['publication']
   end
 
   def reserve_suffix
-    return if self.is_a?(Container)
+    return if is_a?(Container)
 
     return Doi.create_for_element!(self) unless (d = self.doi)
 
@@ -85,11 +98,11 @@ module Publishing
       else
         ds_version =  term_id + version_str
       end
-      "#{Datacite::Mds.new.doi_prefix}/#{ds_version}"
+      "#{Repo::Datacite::Mds.new.doi_prefix}/#{ds_version}"
     else
       version_str = version.to_i.zero? ? '' : '.' + version.to_s
       inchikey_version = self.molecule.inchikey + version_str
-      "#{Datacite::Mds.new.doi_prefix}/#{inchikey_version}"
+      "#{Repo::Datacite::Mds.new.doi_prefix}/#{inchikey_version}"
     end
   end
 
@@ -174,7 +187,6 @@ module Publishing
 
   def tag_as_published(pub_sample, ori_analyses)
     return if self.is_a?(Container)
-
     et = self.tag
     publish_pending = !et.taggable_data&.key?('previous_version')
     if (pub_sample.is_a? Reaction)
@@ -191,6 +203,8 @@ module Publishing
       analysis.reload
       aid = pub_sample.analyses.select { |a| a.extended_metadata == analysis.extended_metadata }&.first&.id || true
       at = analysis.tag
+# byebug
+
       at.update!(
         taggable_data: (at.taggable_data || {}).merge(public_analysis: aid)
       )
@@ -371,6 +385,10 @@ module Publishing
       end
     end
     true
+  end
+
+  def auto_set_short_label_version
+    self.short_label = get_new_version_short_label
   end
 
   ## for Container

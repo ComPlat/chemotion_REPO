@@ -12,12 +12,15 @@ module Tagging
   end
 
   def update_tag
-    klass = self.class.name.split('::').last
+    klass = self.class.name
     case klass
     when 'ReactionsProductSample', 'ReactionsStartingMaterialSample',
       'ReactionsSolventSample', 'ReactionsReactantSample'
-      args = { reaction_tag: reaction_id }
+      args = { reaction_tag: reaction_id, resources_tag: true }
       element = 'sample'
+    when 'ReactionsReactantSbmmSample'
+      args = { reaction_tag: reaction_id, resources_tag: true }
+      element = 'sequence_based_macromolecule_sample'
     when 'Well'
       args = { wellplate_tag: wellplate_id }
       element = 'sample'
@@ -27,18 +30,21 @@ module Tagging
 
       args = if deleted_at.nil?
                { element_tag: { type: el.element_klass.name,
-                                id: element_id } }
+                                id: element_id }, resources_tag: true }
              else
-               { element_tag: {} }
+               { element_tag: {}, resources_tag: true }
              end
       element = 'sample'
     when 'CollectionsReaction', 'CollectionsWellplate', 'CollectionsSample', 'Labimotion::CollectionsElement',
-      'CollectionsScreen', 'CollectionsResearchPlan'
+      'CollectionsScreen', 'CollectionsResearchPlan', 'CollectionsDeviceDescription'
       args = { collection_tag: true }
       element = Labimotion::Utils.elname_by_collection(klass)
     when 'CollectionsCellline'
       args = { collection_tag: true }
       element = 'cellline_sample'
+    when 'CollectionsVessel'
+      args = { collection_tag: true }
+      element = 'vessel'
     end
 
     element && send(element)&.update_tag!(args)

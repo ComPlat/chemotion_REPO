@@ -1,0 +1,1796 @@
+/* eslint-disable react/no-access-state-in-setstate */
+/* eslint-disable react/destructuring-assignment */
+/* eslint-disable react/forbid-prop-types */
+/* eslint-disable no-param-reassign */
+import React from 'react';
+import PropTypes from 'prop-types';
+import {
+  Button, InputGroup, ListGroupItem, Tabs, Tab, Row, Col,
+  Tooltip, OverlayTrigger, Modal, Alert, Form,
+  Accordion, Container
+} from 'react-bootstrap';
+import SVG from 'react-inlinesvg';
+import { CreatableSelect } from 'src/components/common/Select';
+import { cloneDeep, findIndex, set } from 'lodash';
+import uuid from 'uuid';
+import Immutable from 'immutable';
+
+import ElementActions from 'src/stores/alt/actions/ElementActions';
+import DetailActions from 'src/stores/alt/actions/DetailActions';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+
+import UIStore from 'src/stores/alt/stores/UIStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import UIActions from 'src/stores/alt/actions/UIActions';
+import UserActions from 'src/stores/alt/actions/UserActions';
+import CollectionActions from 'src/stores/alt/actions/CollectionActions';
+import QcActions from 'src/stores/alt/actions/QcActions';
+import QcStore from 'src/stores/alt/stores/QcStore';
+
+import ElementAnalysesLabels from 'src/apps/mydb/elements/labels/ElementAnalysesLabels';
+import QuickCreationBadge from 'src/components/common/QuickCreationBadge';
+import PubchemLabels from 'src/components/pubchem/PubchemLabels';
+import PubchemLcss from 'src/components/pubchem/PubchemLcss';
+import ElementReactionLabels from 'src/apps/mydb/elements/labels/ElementReactionLabels';
+import ElementDetailCard from 'src/apps/mydb/elements/details/ElementDetailCard';
+import SampleDetailsContainers from 'src/apps/mydb/elements/details/samples/analysesTab/SampleDetailsContainers';
+
+import StructureEditorModal from 'src/components/structureEditor/StructureEditorModal';
+
+import Sample from 'src/models/Sample';
+import PolymerSection from 'src/apps/mydb/elements/details/samples/propertiesTab/PolymerSection';
+import ElementalCompositionGroup from 'src/apps/mydb/elements/details/samples/propertiesTab/ElementalCompositionGroup';
+import SampleName from 'src/components/common/SampleName';
+import ClipboardCopyText from 'src/components/common/ClipboardCopyText';
+import SampleForm from 'src/apps/mydb/elements/details/samples/propertiesTab/SampleForm';
+import ComputedPropsContainer from 'src/components/computedProps/ComputedPropsContainer';
+import ComputedPropLabel from 'src/apps/mydb/elements/labels/ComputedPropLabel';
+import DetailsTabLiteratures from 'src/apps/mydb/elements/details/literature/DetailsTabLiteratures';
+import MoleculesFetcher from 'src/fetchers/MoleculesFetcher';
+import QcMain from 'src/apps/mydb/elements/details/samples/qcTab/QcMain';
+import { EditUserLabels } from 'src/components/UserLabels';
+import NotificationActions from 'src/stores/alt/actions/NotificationActions';
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
+// import NmrSimTab from 'src/apps/mydb/elements/details/samples/nmrSimTab/NmrSimTab';
+import FastInput from 'src/apps/mydb/elements/details/samples/FastInput';
+import ScifinderSearch from 'src/components/scifinder/ScifinderSearch';
+import ElementDetailSortTab from 'src/apps/mydb/elements/details/ElementDetailSortTab';
+import { addSegmentTabs } from 'src/components/generic/SegmentDetails';
+import MeasurementsTab from 'src/apps/mydb/elements/details/samples/measurementsTab/MeasurementsTab';
+import { validateCas } from 'src/utilities/CasValidation';
+import ChemicalTab from 'src/components/chemicals/ChemicalTab';
+import ChemicalFetcher from 'src/fetchers/ChemicalFetcher';
+import CommentSection from 'src/components/comments/CommentSection';
+import CommentActions from 'src/stores/alt/actions/CommentActions';
+import CommentModal from 'src/components/common/CommentModal';
+import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
+import { commentActivation } from 'src/utilities/CommentHelper';
+import PrivateNoteElement from 'src/apps/mydb/elements/details/PrivateNoteElement';
+import { copyToClipboard } from 'src/utilities/clipboard';
+// eslint-disable-next-line import/no-named-as-default
+import VersionsTable from 'src/apps/mydb/elements/details/VersionsTable';
+
+// For Chemotion Repository
+import RepositoryActions from 'src/repo/actions/RepositoryActions';
+import PublishSampleModal from 'src/repo/chemrepo/PublishSampleModalNew';
+import SampleDetailsRepoComment from 'src/repo/chemrepo/SampleDetailsRepoComment';
+import { permitOn } from 'src/components/common/uis';
+import SampleDetailsRepoHelper from 'src/apps/mydb/elements/details/samples/SampleDetailsRepoHelper';
+
+import { PublicationActions, PublishBtn, validateMolecule } from 'src/repo/chemrepo/PublishCommon';
+
+
+const MWPrecision = 6;
+
+// Module-level slot: holds chemical data to be created after a new sample is
+// persisted (survives the SampleDetails unmount/remount caused by navigateToNewElement).
+let _pendingChemicalCreate = null;
+
+const decoupleCheck = (sample) => {
+  if (!sample.decoupled && sample.molecule && sample.molecule.id === '_none_' && !sample.isMixture()) {
+    NotificationActions.add({
+      title: 'Error on Sample creation', message: 'The molecule structure is required!', level: 'error', position: 'tc'
+    });
+    LoadingActions.stop();
+    return false;
+  }
+  if (sample.decoupled && sample.sum_formula?.trim() === '') { sample.sum_formula = 'undefined structure'; }
+  if (!sample.decoupled) { sample.sum_formula = ''; }
+  return true;
+};
+
+const rangeCheck = (field, sample) => {
+  if (sample[`${field}_lowerbound`] && sample[`${field}_lowerbound`] !== ''
+    && sample[`${field}_upperbound`] && sample[`${field}_upperbound`] !== ''
+    && Number.parseFloat(sample[`${field}_upperbound`]) < Number.parseFloat(sample[`${field}_lowerbound`])) {
+    NotificationActions.add({
+      title: `Error on ${field.replace(/(^\w{1})|(_{1}\w{1})/g, (match) => match.toUpperCase())}`,
+      message: 'range lower bound must be less than or equal to range upper',
+      level: 'error',
+      position: 'tc'
+    });
+    LoadingActions.stop();
+    return false;
+  }
+  return true;
+};
+
+const sampleTitle = (sample) => {
+  const inventoryLabel = sample.inventory_sample && sample.inventory_label ? sample.inventory_label : null;
+  return inventoryLabel || sample.title();
+};
+
+const sampleTitleAppendix = (sample, handleFastInput) => (
+  <>
+    <ElementAnalysesLabels element={sample} key={`${sample.id}_analyses`} />
+    <ElementReactionLabels element={sample} key={`${sample.id}_reactions`} />
+    <PubchemLabels element={sample} />
+    {sample.isNew && !sample.isMixture() && <FastInput fnHandle={handleFastInput} />}
+  </>
+);
+
+export default class SampleDetails extends React.Component {
+  // eslint-disable-next-line react/static-property-placement
+
+  constructor(props) {
+    super(props);
+
+    const currentUser = (UserStore.getState() && UserStore.getState().currentUser) || {};
+
+    // Check redirectedFromMixture flag in UIStore
+    const redirectedFromMixture = UIStore.getState() && UIStore.getState().redirectedFromMixture;
+
+    this.state = {
+      sample: props.sample,
+      reaction: null,
+      materialGroup: null,
+      showStructureEditor: false,
+      loadingMolecule: false,
+      loadingComponentDeletion: false,
+      showChemicalIdentifiers: false,
+      activeTab: UIStore.getState().sample.activeTab,
+      qrCodeSVG: '',
+      isCasLoading: false,
+      validCas: true,
+      showPublishSampleModal: false,  // Chemotion Repository: Flag to control the visibility of the publish sample modal
+      showMolfileModal: false,
+      trackMolfile: props.sample.molfile,
+      smileReadonly: !((typeof props.sample.molecule.inchikey === 'undefined')
+        || props.sample.molecule.inchikey == null || props.sample.molecule.inchikey === 'DECOUPLED'),
+      smilesInput: '',
+      molfile: props.sample.molfile || '',
+      inchiString: props.sample.molecule_inchistring || '',
+      quickCreator: false,
+      showInchikey: false,
+      pageMessage: null,
+      visible: Immutable.List(),
+      startExport: false,
+      sfn: UIStore.getState().hasSfn,
+      saveInventoryAction: false,
+      closeAfterInventorySave: false,
+      isChemicalEdited: false,
+      currentUser,
+      showRedirectWarning: redirectedFromMixture || false,
+      casInputValue: '',
+      ketcherSVGError: null,
+      previousSurfaceType: null
+    };
+
+    this.enableComputedProps = MatrixCheck(currentUser.matrix, 'computedProp');
+    this.enableSampleDecoupled = MatrixCheck(currentUser.matrix, 'sampleDecoupled');
+    this.enableNmrSim = MatrixCheck(currentUser.matrix, 'nmrSim');
+
+    // Chemotion Repository - begin
+    this.showPublishSampleModal = this.showPublishSampleModal.bind(this);
+    this.forcePublishRefreshClose = this.forcePublishRefreshClose.bind(this);
+    this.handleCommentScreen = this.handleCommentScreen.bind(this);
+    this.handleValidation = this.handleValidation.bind(this);
+    this.handleResetValidation = this.handleResetValidation.bind(this);
+    this.handleAssociateClick = this.handleAssociateClick.bind(this);
+    this.handleRepoXvial = this.handleRepoXvial.bind(this);
+    this.unseal = this.unseal.bind(this);
+    // Chemotion Repository - end
+
+    this.onUIStoreChange = this.onUIStoreChange.bind(this);
+    this.isCASNumberValid = this.isCASNumberValid.bind(this);
+    this.handleMolfileShow = this.handleMolfileShow.bind(this);
+    this.handleMolfileClose = this.handleMolfileClose.bind(this);
+    this.handleSampleChanged = this.handleSampleChanged.bind(this);
+    this.handleAmountChanged = this.handleAmountChanged.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleSelect = this.handleSelect.bind(this);
+    this.toggleInchi = this.toggleInchi.bind(this);
+    this.fetchQcWhenNeeded = this.fetchQcWhenNeeded.bind(this);
+    this.customizableField = this.customizableField.bind(this);
+    this.decoupleMolecule = this.decoupleMolecule.bind(this);
+    this.onTabPositionChanged = this.onTabPositionChanged.bind(this);
+    this.handleSegmentsChange = this.handleSegmentsChange.bind(this);
+    this.decoupleChanged = this.decoupleChanged.bind(this);
+    this.handleFastInput = this.handleFastInput.bind(this);
+    this.matchSelectedCollection = this.matchSelectedCollection.bind(this);
+    this.showStructureEditor = this.showStructureEditor.bind(this);
+
+    this.handleStructureEditorSave = this.handleStructureEditorSave.bind(this);
+    this.handleStructureEditorCancel = this.handleStructureEditorCancel.bind(this);
+    this.splitSmiles = this.splitSmiles.bind(this);
+    this.setComponentDeletionLoading = this.setComponentDeletionLoading.bind(this);
+    this.chemicalTabRef = React.createRef();
+  }
+
+  componentDidMount() {
+    const { sample } = this.props;
+    const { currentUser, showRedirectWarning } = this.state;
+
+    UIStore.listen(this.onUIStoreChange);
+
+    const { activeTab } = this.state;
+    this.fetchQcWhenNeeded(activeTab);
+
+    if (MatrixCheck(currentUser.matrix, commentActivation) && !sample.isNew) {
+      CommentActions.fetchComments(sample);
+    }
+
+    // After a new sample is created, carry out any pending chemical create that
+    // was snapshotted before the old SampleDetails instance was closed.
+    if (_pendingChemicalCreate && !sample.isNew) {
+      const snapshot = _pendingChemicalCreate;
+      _pendingChemicalCreate = null;
+      ChemicalFetcher.create({ sample_id: sample.id, ...snapshot })
+        .then(() => {
+          // Re-fetch chemical so ChemicalTab renders the newly-created record
+          // without requiring a page refresh.
+          this.chemicalTabRef.current?.fetchChemical(sample);
+        })
+        .catch((err) => console.log(err));
+    }
+
+    if (showRedirectWarning) {
+      // Use setTimeout to defer dispatch and avoid dispatch-in-dispatch errors in Alt/Flux
+      setTimeout(() => {
+        UIActions.setRedirectedFromMixture(false);
+      }, 0);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { sample } = this.props;
+    if (sample === prevProps.sample) { return };
+
+    const smileReadonly = !(
+      (sample.isNew
+       && (typeof (sample.molfile) === 'undefined'
+        || (sample.molfile || '').length === 0)
+      )
+      || (typeof (sample.molfile) !== 'undefined' && sample.molecule.inchikey === 'DECOUPLED')
+    );
+
+    // Sync casInputValue when CAS changes
+    const currentCas = sample.xref?.cas ?? '';
+
+    this.setState({
+      sample,
+      smileReadonly,
+      loadingMolecule: false,
+      isCasLoading: false,
+      casInputValue: currentCas,
+    });
+  }
+
+  componentWillUnmount() {
+    UIStore.unlisten(this.onUIStoreChange);
+  }
+
+  handleMolfileShow() {
+    this.setState({
+      showMolfileModal: true
+    });
+  }
+
+  handleMolfileClose() {
+    this.setState({
+      showMolfileModal: false
+    });
+  }
+
+  handleSampleChanged(sample, cb) {
+    this.setState({
+      sample,
+    }, () => {
+      if (typeof cb === 'function') {
+        cb();
+      }
+    });
+  }
+
+  handleAmountChanged(amount) {
+    const { sample } = this.state;
+    sample.setAmountAndNormalizeToGram(amount);
+    this.setState({ sample });
+  }
+
+  handleFastInput(smi, cas) {
+    this.setState({ showChemicalIdentifiers: true, smilesInput: smi }, () => {
+      this.handleMoleculeBySmile(cas);
+    });
+  }
+
+  handleMoleculeBySmile(cas) {
+    const { sample, smilesInput } = this.state;
+    // const casObj = {};
+    MoleculesFetcher.fetchBySmi(smilesInput)
+      .then((result) => {
+        if (!result || result == null) {
+          NotificationActions.add({
+            title: 'Error on Sample creation',
+            message: `Cannot create molecule with entered Smiles/CAS! [${smilesInput}]`,
+            level: 'error',
+            position: 'tc'
+          });
+        } else {
+          sample.molfile = result.molfile;
+          sample.molecule_id = result.id;
+          sample.molecule = result;
+          sample.xref = { ...sample.xref, cas };
+          this.setState({
+            molfile: result.molfile,
+            inchiString: result.inchistring,
+            quickCreator: true,
+            sample,
+            smileReadonly: true,
+            pageMessage: result.ob_log
+          });
+          ElementActions.refreshElements('sample');
+        }
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      }).finally(() => LoadingActions.stop());
+  }
+
+  handleInventorySample(e) {
+    const { sample, visible } = this.state;
+    sample.inventory_sample = e.target.checked;
+    this.handleSampleChanged(sample);
+
+    if (e.target.checked) {
+      // Add 'inventory' to visible tabs if not already present
+      if (!visible.includes('inventory')) {
+        this.setState({ visible: visible.push('inventory') });
+      }
+      // Persist inventory tab in collection layout if not already present
+      this.persistInventoryTabInCollection();
+    } else {
+      // Remove 'inventory' from visible tabs
+      this.setState({
+        visible: visible.filter((v) => v !== 'inventory'),
+      });
+      // switch to properties tab if current tab is inventory tab
+      if (this.state.activeTab === 'inventory') {
+        this.setState({
+          activeTab: 'properties'
+        });
+      }
+    }
+  }
+
+  handleStructureEditorSave(molfile, svg, info, editorId) {
+    const { sample } = this.state;
+    sample.molfile = molfile;
+    const svgFile = svg; // SVG is passed as 4th parameter
+    const editor = editorId || 'ketcher'; // editorId is passed as 6th parameter
+    const config = info; // info might contain config data like smiles
+    const smiles = (config && sample.molecule) ? config.smiles : null;
+    sample.contains_residues = molfile?.indexOf(' R# ') > -1;
+    sample.formulaChanged = true;
+    this.setState({ loadingMolecule: true });
+
+    const fetchError = (errorMessage) => {
+      NotificationActions.add({
+        title: 'Error on Sample creation',
+        message: `Cannot create molecule! Error: [${errorMessage}]`,
+        level: 'error',
+        position: 'tc'
+      });
+      this.setState({ loadingMolecule: false });
+    };
+
+    const fetchSuccess = (result) => {
+      if (!result || result == null) {
+        throw new Error('No molecule returned!');
+      }
+      sample.molecule = result;
+      sample.molecule_id = result.id;
+      if (result.inchikey === 'DECOUPLED') { sample.decoupled = true; }
+
+      // Handle temporary SVG file from structure editor
+      if (result.temp_svg) {
+        // For mixture samples, clear any existing sample_svg_file to preserve combined molecule SVG
+        // This ensures the combined molecule SVG is always displayed
+        if (sample.isMixture()) {
+          sample.sample_svg_file = null;
+        } else {
+          sample.sample_svg_file = result.temp_svg;
+        }
+      }
+
+      this.setState({
+        sample,
+        smileReadonly: true,
+        pageMessage: result.ob_log,
+        loadingMolecule: false
+      });
+    };
+
+    const fetchMolecule = (fetchFunction) => {
+      fetchFunction()
+        .then(fetchSuccess).catch(fetchError).finally(() => {
+          this.splitSmiles(editor);
+          this.hideStructureEditor();
+        });
+    };
+
+    if (!smiles || smiles === '') {
+      fetchMolecule(
+        () => MoleculesFetcher.fetchByMolfile(molfile, svgFile, editor, sample.decoupled)
+      );
+    } else {
+      fetchMolecule(() => MoleculesFetcher.fetchBySmi(smiles, svgFile, molfile, editor));
+    }
+  }
+
+  handleStructureEditorCancel() {
+    this.hideStructureEditor();
+  }
+
+  handleSubmit(closeView = false) {
+    const { currentCollection } = UIStore.getState();
+    LoadingActions.start.defer();
+    const { sample, validCas } = this.state;
+    if (this.matchSelectedCollection(currentCollection) && sample.inventory_label !== undefined) {
+      sample.collection_id = currentCollection.id;
+    }
+    this.checkMolfileChange();
+    if (!validCas) {
+      sample.xref = { ...sample.xref, cas: '' };
+    }
+    if (!decoupleCheck(sample)) return;
+    if (!rangeCheck('boiling_point', sample)) return;
+    if (!rangeCheck('melting_point', sample)) return;
+
+    // Prepare mixture samples for saving using Sample.js method
+    sample.prepareMixtureForSave();
+
+    if (sample.belongTo && sample.belongTo.type === 'reaction') {
+      const reaction = sample.belongTo;
+      reaction.editedSample = sample;
+      const materialGroup = sample.matGroup;
+      if (sample.isNew) {
+        ElementActions.createSampleForReaction(sample, reaction, materialGroup);
+      } else {
+        ElementActions.updateSampleForReaction(sample, reaction, closeView);
+      }
+    } else if (sample.belongTo && sample.belongTo.type === 'wellplate') {
+      const wellplate = sample.belongTo;
+      ElementActions.updateSampleForWellplate(sample, wellplate);
+    } else if (sample.isNew) {
+      ElementActions.createSample(sample, closeView);
+    } else {
+      sample.cleanBoilingMelting();
+      ElementActions.updateSample(new Sample(sample), closeView);
+    }
+
+    if (sample.is_new || closeView) {
+      DetailActions.close(sample, true);
+    }
+    sample.updateChecksum();
+    this.setState({ validCas: true, trackMolfile: sample.molfile });
+  }
+
+  handleSegmentsChange(se) {
+    const { sample } = this.state;
+    const { segments } = sample;
+    const idx = findIndex(segments, (o) => o.segment_klass_id === se.segment_klass_id);
+    if (idx >= 0) { segments.splice(idx, 1, se); } else { segments.push(se); }
+    sample.segments = segments;
+    this.setState({ sample });
+  }
+
+  handleExportAnalyses(sample) {
+    this.setState({ startExport: true });
+    AttachmentFetcher.downloadZipBySample(sample.id)
+      .then(() => { this.setState({ startExport: false }); })
+      .catch((errorMessage) => { console.log(errorMessage); });
+  }
+
+  handleSelect(eventKey) {
+    UIActions.selectTab({ tabKey: eventKey, type: 'sample' });
+    this.fetchQcWhenNeeded(eventKey);
+  }
+
+  onCasSelectOpen(casArr) {
+    const { sample } = this.state;
+    if (casArr.length === 0) {
+      this.setState({ isCasLoading: true });
+      DetailActions.getMoleculeCas(sample);
+    }
+  }
+
+  onTabPositionChanged(visible) {
+    this.setState({ visible });
+  }
+
+  onUIStoreChange(state) {
+    if (state.sample.activeTab !== this.state.activeTab) {
+      this.setState((previousState) => ({
+        ...previousState, activeTab: state.sample.activeTab
+      }));
+    }
+  }
+
+  /* eslint-disable camelcase */
+
+  sampleFooter() {
+    const { sample, startExport } = this.state;
+    const hasAnalyses = !!(sample.analyses && sample.analyses.length > 0);
+    const downloadBtn = (!sample.isNew && hasAnalyses) ? (
+      <Button
+        variant="info"
+        disabled={!this.sampleIsValid()}
+        onClick={() => this.handleExportAnalyses(sample)}
+      >
+        Download Analysis
+        {startExport && <i className="fa fa-spin fa-spinner ms-1" />}
+      </Button>
+    ) : null;
+
+    const submitBtn = (
+      <PublishBtn sample={sample} showModal={this.showPublishSampleModal} />
+    );
+
+    if (!downloadBtn && !submitBtn) return null;
+    return (
+      <>
+        {downloadBtn}
+        {submitBtn}
+      </>
+    );
+  }
+
+  onSVGStructureError = (errorMessage) => {
+    if (this.errorTimer) {
+      clearTimeout(this.errorTimer);
+    }
+    this.setState({ ketcherSVGError: errorMessage });
+    this.errorTimer = setTimeout(() => {
+      this.setState({ ketcherSVGError: null });
+      this.errorTimer = null;
+    }, 5000);
+  };
+
+  structureEditorModal(sample) {
+    const { molfile } = sample;
+    const hasParent = sample && sample.parent_id;
+    const hasChildren = sample && sample.children_count > 0;
+    return (
+      <StructureEditorModal
+        key={sample.id}
+        showModal={this.state.showStructureEditor}
+        onSave={this.handleStructureEditorSave}
+        onCancel={this.handleStructureEditorCancel}
+        molfile={molfile}
+        hasParent={hasParent}
+        hasChildren={hasChildren}
+        sample={sample}
+        onSVGStructureError={this.onSVGStructureError}
+      />
+    );
+  }
+
+  saveSampleOrChemical(closeView = false) {
+    const { sample, isChemicalEdited } = this.state;
+    const needChemicalSave = isChemicalEdited && !sample.isNew;
+    const needChemicalCreate = isChemicalEdited && sample.isNew;
+
+    if (sample.isPendingToSave) {
+      // Snapshot chemical data BEFORE handleSubmit closes this instance.
+      // For new samples, navigateToNewElement mounts a fresh SampleDetails;
+      // componentDidMount on that new instance will consume _pendingChemicalCreate.
+      if (needChemicalCreate) {
+        _pendingChemicalCreate = this.chemicalTabRef.current?.getChemicalSnapshot() ?? null;
+      }
+
+      // When chemical also needs saving on an existing sample, don't close on
+      // the sample save so ChemicalTab stays mounted to receive saveInventoryAction.
+      this.handleSubmit(needChemicalSave ? false : closeView);
+    }
+
+    if (needChemicalSave) {
+      // Defer close until the inventory save completes; handleInventorySaveComplete
+      // consumes closeAfterInventorySave when didSave is true.
+      this.setState({ saveInventoryAction: true, closeAfterInventorySave: closeView });
+    }
+  }
+
+  handleInventorySaveComplete = (didSave) => {
+    const { sample, closeAfterInventorySave } = this.state;
+
+    if (didSave && closeAfterInventorySave) {
+      DetailActions.close(sample, true);
+    }
+
+    this.setState({ closeAfterInventorySave: false });
+  };
+
+  editChemical = (boolean) => {
+    this.setState({ isChemicalEdited: boolean });
+  };
+
+  /**
+   * Persists the inventory tab into the current collection's tabs_segment
+   * and the user profile layout so it survives sample save/refresh.
+   * Only acts when the collection's sample layout does not already include
+   * the inventory tab; no-op for sync-to-me collections.
+   */
+  persistInventoryTabInCollection() {
+    const { currentCollection } = UIStore.getState();
+    if (!currentCollection || currentCollection.is_sync_to_me) return;
+
+    const sampleLayout = currentCollection?.tabs_segment?.sample;
+
+    // If the collection already tracks the inventory tab, nothing to do
+    if (sampleLayout && Object.prototype.hasOwnProperty.call(sampleLayout, 'inventory')) return;
+
+    // Resolve the effective layout: collection -> user profile -> fallback
+    const userProfile = UserStore.getState().profile;
+    const baseLayout = sampleLayout
+      || userProfile?.data?.layout_detail_sample;
+
+    if (!baseLayout) return;
+
+    // Append inventory as the next visible tab
+    const maxOrder = Math.max(0, ...Object.values(baseLayout).map((v) => Math.abs(v)));
+    const updatedLayout = { ...baseLayout, inventory: maxOrder + 1 };
+
+    // Persist to collection tabs_segment
+    const tabSegment = { ...currentCollection?.tabs_segment, sample: updatedLayout };
+    CollectionActions.updateTabsSegment({ segment: tabSegment, cId: currentCollection.id });
+    UIActions.selectCollection({ ...currentCollection, tabs_segment: tabSegment, clearSearch: true });
+
+    if (!userProfile) return;
+    // Persist to user profile
+    set(userProfile, 'data.layout_detail_sample', updatedLayout);
+    UserActions.updateUserProfile(userProfile);
+  }
+
+  matchSelectedCollection(currentCollection) {
+    const { sample } = this.props;
+    if (sample.isNew) {
+      return true;
+    }
+    const collection_labels = sample.tag?.taggable_data?.collection_labels || [];
+    const result = collection_labels.filter((object) => object.id === currentCollection.id).length > 0;
+    return result;
+  }
+
+  sampleInventoryTab(ind) {
+    const { sample } = this.state;
+    const { saveInventoryAction } = this.state;
+
+    return (
+      <Tab eventKey={ind} title="Inventory" key={`Inventory${sample.id.toString()}`} unmountOnExit={false}>
+        {
+          !sample.isNew && <CommentSection section="sample_inventory" element={sample} />
+        }
+        <ListGroupItem>
+          <ChemicalTab
+            ref={this.chemicalTabRef}
+            sample={sample}
+            type="sample"
+            handleUpdateSample={(s) => this.setState({ sample: s })}
+            setSaveInventory={(v) => this.setState({ saveInventoryAction: v })}
+            saveInventory={saveInventoryAction}
+            editChemical={this.editChemical}
+            onInventorySaveComplete={this.handleInventorySaveComplete}
+            key={`ChemicalTab${sample.id.toString()}`}
+          />
+        </ListGroupItem>
+      </Tab>
+    );
+  }
+
+  sampleContainerTab(ind) {
+    const { sample, currentUser } = this.state;
+    // Chemotion Repository
+    const isPub = !!(sample.publication && sample.publication.published_at);
+
+    return (
+      <Tab eventKey={ind} title="Analyses" key={`Container${sample.id.toString()}`}>
+        {
+          !sample.isNew && <CommentSection section="sample_analyses" element={sample} />
+        }
+        <ListGroupItem className="pb-4">
+          <SampleDetailsContainers
+            sample={sample}
+            setState={(newSample) => { this.setState(newSample); }}
+            handleSampleChanged={this.handleSampleChanged}
+            handleSubmit={this.handleSubmit}
+            fromSample
+            publish={isPub}
+            isReviewer={!!currentUser.is_reviewer}
+          />
+        </ListGroupItem>
+      </Tab>
+    );
+  }
+
+  sampleLiteratureTab() {
+    const { sample } = this.state;
+    if (!sample) { return null; }
+    return (
+      <Tab
+        eventKey="references"
+        title="References"
+        key={`References_${sample.id}`}
+      >
+        {
+          !sample.isNew && <CommentSection section="sample_references" element={sample} />
+        }
+        <DetailsTabLiteratures
+          element={sample}
+          literatures={sample.isNew ? sample.literatures : null}
+        />
+      </Tab>
+    );
+  }
+
+  sampleImportReadoutTab(ind) {
+    const { sample } = this.state;
+    return (
+      <Tab
+        eventKey={ind}
+        title="Results"
+        key={`Results${sample.id.toString()}`}
+      >
+        {
+          !sample.isNew && <CommentSection section="sample_results" element={sample} />
+        }
+        <Form.Group controlId="importedReadoutInput">
+          <Form.Label>Imported readout</Form.Label>
+          <InputGroup>
+            <Form.Control
+              type="text"
+              value={sample.imported_readout || ''}
+              disabled
+              readOnly
+            />
+          </InputGroup>
+        </Form.Group>
+      </Tab>
+    );
+  }
+
+  measurementsTab(index) {
+    const { sample } = this.state;
+
+    return (
+      <Tab
+        eventKey={index}
+        title="Measurements"
+        key={`Measurements${sample.id.toString()}`}
+      >
+        <MeasurementsTab sample={sample} />
+      </Tab>
+    );
+  }
+
+  versioningTable(index) {
+    const { sample } = this.state;
+
+    return (
+      <Tab
+        eventKey={index}
+        title="History"
+        key={`History_Sample_${sample.id.toString()}`}
+      >
+        <ListGroupItem>
+          <VersionsTable
+            type="samples"
+            id={sample.id}
+            element={sample}
+            parent={this}
+            isEdited={sample.isEdited}
+          />
+        </ListGroupItem>
+      </Tab>
+    );
+  }
+
+  moleculeComputedProps(ind) {
+    const { sample } = this.state;
+    const key = `computed_props_${sample.id.toString()}`;
+    if (!this.enableComputedProps) return <span key={key} />;
+
+    const title = (
+      <span>
+        <ComputedPropLabel cprops={sample.molecule_computed_props} />
+        Computed Properties
+      </span>
+    );
+
+    return (
+      <Tab
+        eventKey={ind}
+        title={title}
+        key={key}
+      >
+        <ComputedPropsContainer sample={sample} />
+      </Tab>
+    );
+  }
+
+  fetchQcWhenNeeded(key) {
+    if (key !== 'qc_curation') return;
+    const { infers } = QcStore.getState();
+    const { sample } = this.state;
+    let isInStore = false;
+    infers.forEach((i) => {
+      if (i.sId === sample.id) isInStore = true;
+    });
+    if (isInStore) return;
+    QcActions.setLoading.defer();
+    QcActions.loadInfers.defer({ sample });
+  }
+
+  qualityCheckTab(ind) {
+    const { sample } = this.state;
+    if (!sample) { return null; }
+    return (
+      <Tab
+        eventKey={ind}
+        title="QC & curation"
+        key={`QC_${sample.id}_${ind}`}
+      >
+        {
+          !sample.isNew && <CommentSection section="sample_qc_curation" element={sample} />
+        }
+        <QcMain
+          sample={sample}
+        />
+      </Tab>
+    );
+  }
+
+  // nmrSimTab(ind) {
+  //   const { sample } = this.state;
+  //   if (!sample) { return null; }
+  //   return (
+  //     <Tab
+  //       eventKey={ind}
+  //       title="NMR Simulation"
+  //       key={`NMR_${sample.id}_${ind}`}
+  //     >
+  //       <NmrSimTab
+  //         sample={sample}
+  //       />
+  //     </Tab>
+  //   );
+  // }
+
+  sampleIsValid() {
+    const { sample, loadingMolecule, quickCreator } = this.state;
+    return (sample.isValid && !loadingMolecule) || sample.is_scoped == true || quickCreator;
+  }
+
+  elementalPropertiesItem(sample) {
+    // avoid empty ListGroupItem
+    if (!sample.molecule_formula || sample.isMixture()) {
+      return false;
+    }
+
+    const label = sample.contains_residues
+      ? 'Polymer section / Elemental composition'
+      : 'Elemental composition';
+
+    const { materialGroup } = this.state;
+
+    return (
+      <Accordion className="polymer-section">
+        <Accordion.Item eventKey="elemental-comp">
+          <Accordion.Header>{label}</Accordion.Header>
+          <Accordion.Body>
+            {sample.contains_residues ? (
+              <PolymerSection
+                sample={sample}
+                handleAmountChanged={this.handleAmountChanged}
+                handleSampleChanged={this.handleSampleChanged}
+                materialGroup={materialGroup}
+              />
+            ) : (
+              <ElementalCompositionGroup
+                handleSampleChanged={this.handleSampleChanged}
+                sample={sample}
+              />
+            )}
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
+    );
+  }
+
+  chemicalIdentifiersItem(sample) {
+    const { showChemicalIdentifiers } = this.state;
+    const paneKey = 'chem-identifiers';
+
+    return (
+      <Accordion
+        className="chem-identifiers-section mb-2"
+        activeKey={showChemicalIdentifiers && paneKey}
+        onSelect={(key) => this.setState({ showChemicalIdentifiers: key === paneKey })}
+      >
+        <Accordion.Item eventKey={paneKey}>
+          <Accordion.Header>
+            Chemical identifiers
+            {sample.decoupled && <span className="text-danger ms-1">[decoupled]</span>}
+          </Accordion.Header>
+          <Accordion.Body>
+            {this.moleculeInchi(sample)}
+            {this.moleculeCanoSmiles(sample)}
+            {this.moleculeMolfile(sample)}
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
+    );
+  }
+
+  samplePropertiesTab(ind) {
+    const { sample } = this.state;
+
+    return (
+      <Tab eventKey={ind} title="Properties" key={`Props${sample.id.toString()}`}>
+        {!sample.isNew && <CommentSection section="sample_properties" element={sample} />}
+        <SampleForm
+          sample={sample}
+          handleSampleChanged={this.handleSampleChanged}
+          showStructureEditor={this.showStructureEditor}
+          customizableField={this.customizableField}
+          enableSampleDecoupled={this.enableSampleDecoupled}
+          decoupleMolecule={this.decoupleMolecule}
+          onDecoupleChanged={this.decoupleChanged}
+          setComponentDeletionLoading={this.setComponentDeletionLoading}
+          setMoleculeLoading={(loading) => this.setState({ loadingMolecule: loading })}
+        />
+        <div className="mb-2">
+          {this.chemicalIdentifiersItem(sample)}
+          {sample.molecule_formula && (
+            this.elementalPropertiesItem(sample)
+          )}
+        </div>
+        <EditUserLabels element={sample} fnCb={this.handleSampleChanged} />
+        <div className="mt-2">
+          <PrivateNoteElement element={sample} disabled={!sample.can_update} />
+        </div>
+      </Tab>
+    );
+  }
+
+  customizableField() {
+    const { xref } = this.state.sample;
+    const {
+      cas,
+      optical_rotation,
+      rfvalue,
+      rfsovents,
+      supplier,
+      private_notes,
+      ...customKeys
+    } = cloneDeep(xref || {});
+    const check = ['form', 'solubility', 'refractive_index', 'flash_point', 'inventory_label'];
+
+    if (Object.keys(customKeys).length === 0
+      || check.some((key) => Object.keys(customKeys).includes(key))) return null;
+    return (
+      Object.keys(customKeys).map((key) => (
+        <tr key={`field_${key}`}>
+          <td colSpan="4">
+            <Form.Group>
+              <Form.Label>{key}</Form.Label>
+              <Form.Control type="text" defaultValue={customKeys[key] || ''} onChange={(e) => this.updateKey(key, e)} />
+            </Form.Group>
+          </td>
+        </tr>
+      ))
+    );
+  }
+
+  updateKey(key, e) {
+    const { sample } = this.state;
+    sample.xref[key] = e.target.value;
+    this.setState({ sample });
+  }
+
+  moleculeCas() {
+    const { sample, isCasLoading, validCas } = this.state;
+    const { molecule, xref } = sample;
+    const cas = xref?.cas ?? '';
+    let casArr = Array.isArray(molecule?.cas) ? molecule?.cas?.filter((el) => el !== null) : [];
+    if (cas && !casArr.includes(cas)) {
+      casArr.push(cas);
+    }
+    const errorMessage = <span className="text-danger">Cas number is invalid</span>;
+    const options = casArr.map((element) => ({ label: element, value: element }));
+
+    return (
+      <div className="my-4">
+        <InputGroup>
+          <div className="d-flex flex-grow-1">
+            <InputGroup.Text>CAS</InputGroup.Text>
+            <CreatableSelect
+              name="cas"
+              isClearable
+              isInputEditable
+              inputValue={this.state.casInputValue}
+              options={options}
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  const value = selectedOption.value;
+                  this.setState({ casInputValue: value });
+                  this.updateCas(selectedOption);
+                } else {
+                  this.setState({ casInputValue: '' });
+                  this.updateCas(null);
+                }
+              }}
+              onInputChange={(inputValue, { action }) => {
+                if (action === 'input-change' || action === 'set-value') {
+                  this.setState({ casInputValue: inputValue });
+                }
+              }}
+              onFocus={() => {
+                const currentCas = cas || '';
+                this.setState({ casInputValue: currentCas });
+              }}
+              onMenuOpen={() => this.onCasSelectOpen(casArr)}
+              isLoading={isCasLoading}
+              value={options.find(({ value }) => value === cas) || null}
+              onBlur={() => this.isCASNumberValid(cas || '', true)}
+              isDisabled={!sample.can_update}
+              className="flex-grow-1"
+              placeholder="Select or enter CAS number"
+              allowCreateWhileLoading
+              formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+            />
+            <OverlayTrigger placement="bottom" overlay={this.clipboardTooltip()}>
+              <Button
+                variant="light"
+                onClick={() => copyToClipboard(cas)}
+              >
+                <i className="fa fa-clipboard" />
+              </Button>
+            </OverlayTrigger>
+          </div>
+        </InputGroup>
+        {!validCas && errorMessage}
+      </div>
+    );
+  }
+
+  isCASNumberValid(cas, boolean) {
+    const { sample } = this.state;
+    const result = validateCas(cas, boolean);
+    if (result !== false) {
+      sample.xref = { ...sample.xref, cas: result };
+      this.setState({ sample, validCas: result });
+    } else {
+      this.setState({ validCas: result });
+    }
+  }
+
+  updateCas(e) {
+    const { sample } = this.state;
+    const value = e?.value ?? '';
+    sample.xref = { ...sample.xref, cas: value };
+    this.setState({ sample });
+  }
+
+  sampleHeader(sample) {
+    const { isChemicalEdited, activeTab } = this.state;
+    const titleTooltip = formatTimeStampsOfElement(sample || {});
+    const isChemicalTab = activeTab === 'inventory';
+    const saveBtnDisplay = sample.isEdited || (isChemicalEdited && isChemicalTab);
+
+    // Get validation block for Chemotion Repository Submission Validation
+    const validationBlock = this.getValidationBlock(sample);
+
+    const inventorySample = (
+      <Form.Check
+        type="checkbox"
+        id="sample-inventory-header"
+        className="mx-2 sample-inventory-header"
+        checked={sample.inventory_sample}
+        onChange={(e) => this.handleInventorySample(e)}
+        label="Inventory"
+      />
+    );
+
+    const decoupleCb = sample.can_update && this.enableSampleDecoupled ? (
+      <Form.Check
+        type="checkbox"
+        id="sample-header-decouple"
+        className="mx-2 sample-header-decouple"
+        checked={sample.decoupled}
+        onChange={(e) => this.decoupleChanged(e)}
+        label="Decoupled"
+      />
+    ) : null;
+
+    const { pageMessage } = this.state;
+    const messageBlock = (pageMessage
+      && (pageMessage.error.length > 0 || pageMessage.warning.length > 0)) ? (
+        <Alert variant="warning" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+          <strong>Structure Alert</strong>
+          <Button
+            size="sm"
+            variant="outline-warning"
+            style={{ float: 'right' }}
+            onClick={() => this.setState({ pageMessage: null })}
+          >
+            Close Alert
+          </Button>
+          {
+          pageMessage.error.map((m) => (
+            <div key={uuid.v1()}>{m}</div>
+          ))
+        }
+          {
+          pageMessage.warning.map((m) => (
+            <div key={uuid.v1()}>{m}</div>
+          ))
+        }
+        </Alert>
+      ) : null;
+
+    // warning message for redirection
+    const redirectWarningBlock = this.state.showRedirectWarning ? (
+      <Alert variant="warning" className="d-flex flex-column gap-2 mt-2 mb-0 p-2">
+        <div>
+          <strong>Notice:</strong>
+          <p className="mb-1">
+            You are viewing the original sample that was used to create this component. Some of its attributes may have
+            changed now.
+          </p>
+          <p className="mb-0">
+            Any updates you make here will apply only to the original sample, not to any component generated from it.
+            However, changes on this sample may affect other dependant entities.
+          </p>
+        </div>
+        <div className="align-self-end">
+          <Button
+            size="sm"
+            variant="outline-warning"
+            onClick={() => this.setState({ showRedirectWarning: false })}
+          >
+            Close Alert
+          </Button>
+        </div>
+      </Alert>
+    ) : null;
+
+    return (
+      <>
+        <QuickCreationBadge sample={sample} />
+        {decoupleCb}
+        {inventorySample}
+        <PublicationActions
+          element={sample}
+          showModal={this.showPublishSampleModal}
+          showComment={this.handleCommentScreen}
+          validation={this.handleValidation}
+          fnUnseal={this.unseal}
+        />
+        {messageBlock}
+        {validationBlock}
+        {redirectWarningBlock}
+      </>
+    );
+  }
+
+  sampleInfo(sample) {
+    const isMixture = sample.isMixture();
+    let pubchemLcss = (sample.pubchem_tag && sample.pubchem_tag.pubchem_lcss
+      && sample.pubchem_tag.pubchem_lcss.Record) || null;
+    if (pubchemLcss && pubchemLcss.Reference) {
+      const echa = pubchemLcss.Reference.filter((e) => e.SourceName
+        === 'European Chemicals Agency (ECHA)').map((e) => e.ReferenceNumber);
+      if (echa.length > 0) {
+        pubchemLcss = pubchemLcss.Section.find((e) => e.TOCHeading === 'Safety and Hazards') || [];
+        pubchemLcss = pubchemLcss.Section.find((e) => e.TOCHeading === 'Hazards Identification') || [];
+        pubchemLcss = pubchemLcss.Section[0].Information.filter((e) => echa.includes(e.ReferenceNumber)) || null;
+      } else pubchemLcss = null;
+    }
+    const pubchemCid = sample.pubchem_tag && sample.pubchem_tag.pubchem_cid
+      ? sample.pubchem_tag.pubchem_cid : 0;
+    const lcssSign = pubchemLcss && !sample.decoupled
+      ? <PubchemLcss cid={pubchemCid} informArray={pubchemLcss} /> : null;
+
+    return (
+      <Container>
+        <Row className="mb-4">
+          <Col md={4}>
+            <h4><SampleName sample={sample} /></h4>
+            {!isMixture && (
+              <>
+                <h5>{this.sampleAverageMW(sample)}</h5>
+                <h5>{this.sampleExactMW(sample)}</h5>
+              </>
+            )}
+            {sample.isNew || isMixture ? null : <h6>{this.moleculeCas()}</h6>}
+            {lcssSign}
+          </Col>
+          <Col md={8} className="position-relative">
+            {this.svgOrLoading(sample)}
+          </Col>
+        </Row>
+      </Container>
+    );
+  }
+
+  moleculeInchi(sample) {
+    const inchiLabel = this.state.showInchikey ? 'InChIKey' : 'InChI';
+    const inchiTooltip = <Tooltip id="inchi_tooltip">toggle InChI/InChIKey</Tooltip>;
+
+    return (
+      <InputGroup className="mb-3">
+        <OverlayTrigger placement="top" overlay={inchiTooltip}>
+          <Button
+            variant="light"
+            onClick={this.toggleInchi}
+          >
+            {inchiLabel}
+          </Button>
+        </OverlayTrigger>
+        <Form.Control
+          type="text"
+          key={sample.id}
+          value={(this.state.showInchikey ? sample.molecule_inchikey : this.state.inchiString) || ''}
+          disabled
+          readOnly
+        />
+        <OverlayTrigger placement="bottom" overlay={this.clipboardTooltip()}>
+          <Button
+            variant="light"
+            onClick={() => copyToClipboard(
+              (this.state.showInchikey
+                ? sample.molecule_inchikey
+                : this.state.inchiString)
+              || ' '
+            )}
+          >
+            <i className="fa fa-clipboard" />
+          </Button>
+        </OverlayTrigger>
+      </InputGroup>
+    );
+  }
+
+  clipboardTooltip() {
+    return (
+      <Tooltip id="assign_button">copy to clipboard</Tooltip>
+    );
+  }
+
+  moleculeCreatorTooltip() {
+    return (
+      <Tooltip id="assign_button">create molecule</Tooltip>
+    );
+  }
+
+  moleculeCanoSmiles(sample) {
+    const { smileReadonly, smilesInput } = this.state;
+    return (
+      <InputGroup className="mb-3">
+        <InputGroup.Text>Canonical Smiles</InputGroup.Text>
+        <Form.Control
+          type="text"
+          value={smileReadonly ? sample.molecule_cano_smiles || '' : smilesInput}
+          disabled={smileReadonly}
+          readOnly={smileReadonly}
+          onChange={(e) => {
+            if (!smileReadonly) {
+              this.setState({ smilesInput: e.target.value });
+            }
+          }}
+        />
+        <OverlayTrigger placement="bottom" overlay={this.clipboardTooltip()}>
+          <Button
+            variant="light"
+            onClick={() => copyToClipboard(sample.molecule_cano_smiles || '')}
+          >
+            <i className="fa fa-clipboard" />
+          </Button>
+        </OverlayTrigger>
+        <OverlayTrigger placement="bottom" overlay={this.moleculeCreatorTooltip()}>
+          <Button
+            variant="light"
+            id="smile-create-molecule"
+            disabled={smileReadonly}
+            readOnly={smileReadonly}
+            onClick={() => this.handleMoleculeBySmile()}
+          >
+            <i className="fa fa-save" />
+          </Button>
+        </OverlayTrigger>
+      </InputGroup>
+    );
+  }
+
+  moleculeMolfile(sample) {
+    return (
+      <InputGroup className="mb-3">
+        <InputGroup.Text>Molfile</InputGroup.Text>
+        <Form.Control
+          as="textarea"
+          rows={5}
+          value={this.state.molfile}
+          disabled
+          readOnly
+        />
+        <OverlayTrigger placement="bottom" overlay={this.clipboardTooltip()}>
+          <Button
+            variant="light"
+            onClick={() => copyToClipboard(sample.molfile || '')}
+          >
+            <i className="fa fa-clipboard" />
+          </Button>
+        </OverlayTrigger>
+        <Button
+          variant="light"
+          onClick={this.handleMolfileShow}
+        >
+          <i className="fa fa-file-text" />
+        </Button>
+      </InputGroup>
+    );
+  }
+
+  svgOrLoading(sample) {
+    const svgPath = (this.state.loadingMolecule || this.state.loadingComponentDeletion)
+      ? '/images/wild_card/loading-bubbles.svg'
+      : sample.svgPath;
+
+    const style = 'position-relative d-flex align-items-center justify-content-center';
+
+    const className = `${style} ${svgPath ? 'svg-container' : 'svg-container-empty'}`;
+
+    return sample.can_update ? (
+      <>
+        <div
+          className={className}
+          onClick={this.showStructureEditor}
+          role="button"
+          tabIndex="0"
+        >
+          <i className="fa fa-pencil position-absolute top-0 end-0" />
+          <SVG key={svgPath} src={svgPath} className="molecule-mid" />
+        </div>
+      </>
+    ) : (
+      <div className={className}>
+        <SVG key={svgPath} src={svgPath} className="molecule-mid" />
+      </div>
+    );
+  }
+
+  sampleAverageMW(sample) {
+    let mw;
+
+    if (sample.isMixture() && sample.sample_details) {
+      mw = sample.total_mixture_mass_g;
+    } else {
+      mw = sample.molecule_molecular_weight;
+    }
+
+    if (mw) return <ClipboardCopyText text={`${mw.toFixed(MWPrecision)} g/mol`} />;
+    return '';
+  }
+
+  sampleExactMW(sample) {
+    if (sample.isMixture() && sample.sample_details) { return }
+
+    const mw = sample.molecule_exact_molecular_weight;
+    if (mw) return <ClipboardCopyText text={`Exact mass: ${mw.toFixed(MWPrecision)} g/mol`} />;
+    return '';
+  }
+
+  checkMolfileChange() {
+    const { trackMolfile } = this.state;
+    const { sample } = this.props;
+    // !sample.isNew to allow setting mp & bp for new samples
+    if (trackMolfile !== sample.molfile && !sample.isNew) {
+      sample.updateRange('boiling_point', '', '');
+      sample.updateRange('melting_point', '', '');
+      this.setState({ sample });
+    }
+  }
+
+  showStructureEditor() {
+    this.setState({
+      showStructureEditor: true
+    });
+  }
+
+  hideStructureEditor() {
+    this.setState({
+      showStructureEditor: false
+    });
+  }
+
+
+  // Chemotion Repository begin
+  // Chemotion Repository
+  getValidationBlock(sample) {
+    return SampleDetailsRepoHelper.getValidationBlock(
+      sample,
+      () => this.handleAssociateClick(),
+      () => this.handleResetValidation()
+    );
+  }
+
+  // Chemotion Repository
+  fundingsTab(ind) {
+    const { sample } = this.state;
+    return SampleDetailsRepoHelper.fundingsTab(sample, ind);
+  }
+
+  // Chemotion Repository
+  showPublishSampleModal(show) {
+    SampleDetailsRepoHelper.showPublishSampleModal(this, show);
+  }
+
+  // Chemotion Repository
+  handleCommentScreen() {
+    SampleDetailsRepoHelper.handleCommentScreen(this);
+    this.props.toggleCommentScreen(this.state.commentScreen);
+  }
+
+  // Chemotion Repository
+  forcePublishRefreshClose(sample, show) {
+    SampleDetailsRepoHelper.forcePublishRefreshClose(this, sample, show);
+  }
+
+  // Chemotion Repository
+  handleResetValidation() {
+    SampleDetailsRepoHelper.handleResetValidation(this);
+  }
+
+  // Chemotion Repository
+  handleAssociateClick() {
+    SampleDetailsRepoHelper.handleAssociateClick(this);
+  }
+
+  // Chemotion Repository
+  handleRepoXvial(elementId, xvial) {
+    SampleDetailsRepoHelper.handleRepoXvial(this, elementId, xvial);
+  }
+
+  // Chemotion Repository
+  unseal() {
+    SampleDetailsRepoHelper.unseal(this);
+  }
+
+  // Chemotion Repository
+  handleValidation(element) {
+    SampleDetailsRepoHelper.handleValidation(this, element);
+  }
+  // Chemotion Repository end
+
+  /**
+   * Sets the loading state for component deletion
+   * @param {boolean} loading - Whether component deletion is in progress
+   */
+  setComponentDeletionLoading(loading) {
+    this.setState({
+      loadingComponentDeletion: loading
+    });
+  }
+
+  /**
+   * Splits the canonical SMILES string of a mixture sample into individual
+   * components and updates the UI in two phases for fast feedback:
+   *   Phase 1 – splitSmilesToMolecule fetches molecules and adds Component
+   *             instances synchronously. setState shows the list immediately.
+   *   Phase 2 – updateMixtureMolecule fetches the combined molecule/SVG.
+   *
+   * @param {string} editor - The editor identifier used for molecule fetching.
+   * @returns {Promise<void>}
+   */
+  async splitSmiles(editor) {
+    const { sample } = this.state;
+    if (!sample.isMixture() || !sample.molecule_cano_smiles || sample.molecule_cano_smiles === '') { return; }
+
+    const mixtureSmiles = sample.molecule_cano_smiles.split('.');
+    if (!mixtureSmiles || mixtureSmiles.length === 0) return;
+
+    this.setState({ loadingMolecule: true });
+
+    try {
+      // Phase 1: Fetch individual molecules, create Components, add sync
+      await sample.splitSmilesToMolecule(mixtureSmiles, editor);
+      this.setState({ sample });
+
+      // Phase 2: Update combined molecule/SVG
+      await sample.updateMixtureMolecule();
+      this.setState({ sample, loadingMolecule: false });
+    } catch (error) {
+      console.log(error);
+      this.setState({ loadingMolecule: false });
+    }
+  }
+
+  toggleInchi() {
+    const { showInchikey } = this.state;
+    this.setState({ showInchikey: !showInchikey });
+  }
+
+  decoupleMolecule() {
+    const { sample } = this.state;
+    MoleculesFetcher.decouple(sample.molfile, sample.sample_svg_file, sample.decoupled)
+      .then((result) => {
+        sample.molecule = result;
+        sample.molecule_id = result.id;
+        if (result.inchikey === 'DECOUPLED') { sample.decoupled = true; }
+        this.setState({
+          sample, pageMessage: result.ob_log
+        });
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+
+  decoupleChanged(e) {
+    const { sample, previousSurfaceType } = this.state;
+    const checked = typeof e === 'boolean' ? e : e.target.checked;
+    sample.decoupled = checked;
+    if (!sample.decoupled) {
+      sample.sum_formula = '';
+      sample.molecular_mass = null;
+      if (sample.residues && sample.residues[0] && sample.residues[0].custom_info && previousSurfaceType != null) {
+        sample.residues[0].custom_info.surface_type = previousSurfaceType;
+        this.setState({ previousSurfaceType: null });
+      }
+    } else {
+      if (!sample.sum_formula || sample.sum_formula.trim() === '') sample.sum_formula = 'undefined structure';
+      if (sample.residues && sample.residues[0] && sample.residues[0].custom_info) {
+        const ci = sample.residues[0].custom_info;
+        this.setState({ previousSurfaceType: ci.surface_type || null });
+        delete ci.surface_type;
+      }
+    }
+    if (!sample.decoupled && ((sample.molfile || '') === '')) {
+      this.handleSampleChanged(sample);
+    } else {
+      this.handleSampleChanged(sample, this.decoupleMolecule);
+    }
+  }
+
+  renderMolfileModal() {
+    const { molfile } = this.state;
+
+    return (
+      <Modal
+        centered
+        show={this.state.showMolfileModal}
+        dialogClassName="modal-lg"
+        onHide={this.handleMolfileClose}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Molfile</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div>
+            <Form.Group controlId="molfileInputModal">
+              <Form.Control
+                as="textarea"
+                rows={30}
+                readOnly
+                disabled
+                value={molfile}
+              />
+            </Form.Group>
+          </div>
+          <div>
+            <Button variant="warning" onClick={this.handleMolfileClose}>
+              Close
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
+  render() {
+    const { sample } = this.state;
+    const { visible, isChemicalEdited } = this.state;
+
+    // Chemotion Repository
+    let { showPublishSampleModal } = this.state;
+    const tabContentsMap = {
+      properties: this.samplePropertiesTab('properties'),
+      analyses: this.sampleContainerTab('analyses'),
+      references: this.sampleLiteratureTab(),
+      fundings: this.fundingsTab('fundings'),
+      results: this.sampleImportReadoutTab('results'),
+      qc_curation: this.qualityCheckTab('qc_curation'),
+      measurements: this.measurementsTab('measurements'),
+      history: this.versioningTable('history')
+    };
+
+    // No needed for Chemotion Repository
+    // if (this.enableComputedProps) {
+    //   tabContentsMap.computed_props = this.moleculeComputedProps('computed_props');
+    // }
+
+    // No needed for Chemotion Repository
+    // if (this.enableNmrSim) {
+    //   tabContentsMap.nmr_sim = this.nmrSimTab('nmr_sim');
+    // }
+
+    if (sample.inventory_sample) {
+      tabContentsMap.inventory = this.sampleInventoryTab('inventory');
+    }
+
+    const tabTitlesMap = {
+      literature: 'References',
+      qc_curation: 'QC & curation',
+      nmr_sim: 'NMR Simulation',
+    };
+
+    addSegmentTabs(sample, this.handleSegmentsChange, tabContentsMap);
+    const stb = [];
+    const tabContents = [];
+    visible.forEach((value) => {
+      const tabContent = tabContentsMap[value];
+      if (tabContent) { tabContents.push(tabContent); }
+      stb.push(value);
+    });
+
+    let segmentKlasses = (UserStore.getState() && UserStore.getState().segmentKlasses) || [];
+    segmentKlasses = segmentKlasses.filter((s) => s.element_klass && s.element_klass.name === sample.type);
+    segmentKlasses.forEach((klass) => {
+      const visIdx = visible.indexOf(klass.label);
+      const idx = findIndex(sample.segments, (o) => o.segment_klass_id === klass.id);
+      if (visIdx < 0 && idx > -1) {
+        const tabContent = tabContentsMap[klass.label];
+        if (tabContent) { tabContents.push(tabContent); }
+        stb.push(klass.label);
+      }
+    });
+
+    if (sample.inventory_sample && visible.indexOf('inventory') < 0) {
+      const tabContent = tabContentsMap.inventory;
+      if (tabContent) { tabContents.push(tabContent); }
+      stb.push('inventory');
+    }
+
+    const { pageMessage, ketcherSVGError } = this.state;
+    const messageBlock = (pageMessage
+      && (pageMessage.error.length > 0 || pageMessage.warning.length > 0)) ? (
+        <Alert variant="warning" style={{ marginBottom: 'unset', padding: '5px', marginTop: '10px' }}>
+          <strong>Structure Alert</strong>
+          <Button
+            size="sm"
+            variant="warning"
+            onClick={() => this.setState({ pageMessage: null })}
+          >
+            Close Alert
+          </Button>
+          {
+          pageMessage.error.map((m) => (
+            <div key={uuid.v1()}>{m}</div>
+          ))
+        }
+          {
+          pageMessage.warning.map((m) => (
+            <div key={uuid.v1()}>{m}</div>
+          ))
+        }
+        </Alert>
+      ) : null;
+
+    const activeTab = (this.state.activeTab !== 0 && stb.indexOf(this.state.activeTab) > -1
+      && this.state.activeTab) || visible.get(0);
+
+    const pendingToSave = sample.isPendingToSave || isChemicalEdited;
+    const hasComponents = !sample.isMixture() || sample.hasComponents();
+    // Chemical can be saved independently of sample validity (requires existing sample)
+    const canSaveChemical = isChemicalEdited && !sample.isNew && sample.can_update;
+    const saveDisabled = (!this.sampleIsValid() || !sample.can_update || !hasComponents)
+      && !canSaveChemical;
+    const isFullScreen = this.props.isListCollapsed;
+
+    return (
+      <ElementDetailCard
+        element={sample}
+        isPendingToSave={pendingToSave}
+        headerToolbar={this.sampleHeader(sample)}
+        footerToolbar={this.sampleFooter()}
+        title={sampleTitle(sample)}
+        titleTooltip={formatTimeStampsOfElement(sample || {})}
+        titleAppendix={sampleTitleAppendix(sample, this.handleFastInput)}
+        onSave={(closeView) => this.saveSampleOrChemical(closeView)}
+        saveDisabled={saveDisabled}
+        showPrintCode
+        showCalendar
+      >
+        {ketcherSVGError?.length > 0 && (
+          <Alert
+            variant="danger"
+            show={ketcherSVGError?.length > 0}
+            dismissible
+            onClose={() => this.setState({ ketcherSVGError: null })}
+          >
+            <strong>SVG generation failed.</strong>
+            <br />
+            <small className="text-muted">{ketcherSVGError}</small>
+          </Alert>
+        )}
+<Row>
+  <Col md={isFullScreen && this.state.commentScreen ? 6 : 12}>
+    <div className={isFullScreen ? 'full' : 'base'}>
+        {this.sampleInfo(sample)}
+        {this.state.sfn && <ScifinderSearch el={sample} />}
+        <div className="tabs-container--with-borders">
+          <ElementDetailSortTab
+            type="sample"
+            availableTabs={Object.keys(tabContentsMap)}
+            tabTitles={tabTitlesMap}
+            onTabPositionChanged={this.onTabPositionChanged}
+            addInventoryTab={sample.inventory_sample}
+            openedFromCollectionId={this.props.openedFromCollectionId}
+          />
+          <Tabs
+            mountOnEnter
+            unmountOnExit
+            activeKey={activeTab}
+            onSelect={this.handleSelect}
+            id="SampleDetailsXTab"
+            className="has-config-overlay"
+          >
+            {tabContents}
+          </Tabs>
+        </div>
+    </div>
+  </Col>
+          {
+            isFullScreen && this.state.commentScreen && (
+              <Col md={6}>
+                <div className={isFullScreen ? 'full' : 'base'}>
+                  <SampleDetailsRepoComment sampleId={sample.id} />
+                </div>
+              </Col>
+            )
+          }
+          </Row>
+        {
+          showPublishSampleModal && (
+            <PublishSampleModal
+              show={showPublishSampleModal}
+              sample={sample}
+              onHide={() => this.showPublishSampleModal(false)}
+              onPublishRefreshClose={this.forcePublishRefreshClose}
+            />
+          )
+        }
+        {this.structureEditorModal(sample)}
+        {this.renderMolfileModal()}
+        <CommentModal element={sample} />
+      </ElementDetailCard>
+    );
+  }
+}
+
+SampleDetails.propTypes = {
+  sample: PropTypes.object,
+  openedFromCollectionId: PropTypes.number,
+  toggleCommentScreen: PropTypes.func,
+  isListCollapsed: PropTypes.bool,
+};

@@ -1,0 +1,25 @@
+table.layout-container {
+  td {
+    font-size: 25pt;
+    color: #337ab7;
+    border: 1px solid #c8c8c8;
+    div {
+      text-align: center;
+      width: 50px;
+    }
+  }
+
+  .hidden-layout {
+    background-color: #ddd;
+    color: #555555;
+  }
+}
+
+.tab-layout-cell {
+  font-size: 12px;
+  color: #000000;
+  text-align: center;
+  word-wrap: break-word;
+  width: 85px;
+  margin-top: 10px;
+}

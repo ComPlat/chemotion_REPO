@@ -91,7 +91,6 @@ module Chemotion
 
           if collaborator.nil?
             result = Chemotion::OrcidService.record_person(params[:orcid])
-            ## byebug ### PAGGY
             if result.nil?
               erro_msg = 'ORCID iD does not exist! Please check.'
             elsif result.person&.family_name.nil?

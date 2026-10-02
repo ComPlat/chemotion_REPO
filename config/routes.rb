@@ -1,10 +1,16 @@
 # rubocop:disable Metrics/BlockLength, Layout/LineLength, Style/FrozenStringLiteralComment
 #
+
+## Chemotion Repository Configuration
+# This file is part of the Chemotion Repository project.
+# It is licensed under the GNU General Public License v3.0 or later.
+
 Rails.application.routes.draw do
   post '/graphql', to: 'graphql#execute' unless Rails.env.production?
+  post '/csp-violation-report', to: 'csp_reports#create'
 
   if ENV['DEVISE_DISABLED_SIGN_UP'].presence == 'true'
-    devise_for :users, controllers: { registrations: 'users/registrations', omniauth_callbacks: 'users/omniauth' }, skip: [:registrations]
+    devise_for :users, controllers: { registrations: 'users/registrations', omniauth_callbacks: 'users/omniauth', sessions: 'users/sessions' }, skip: [:registrations]
     as :user do
       get 'sign_in' => 'devise/sessions#new'
       get 'users/sign_up' => 'devise/sessions#new', as: 'new_user_registration'
@@ -13,7 +19,7 @@ Rails.application.routes.draw do
       put 'users' => 'devise/registrations#update', :as => 'user_registration'
     end
   else
-    devise_for :users, controllers: { registrations: 'users/registrations', omniauth_callbacks: 'users/omniauth' }
+    devise_for :users, controllers: { registrations: 'users/registrations', omniauth_callbacks: 'users/omniauth', sessions: 'users/sessions' }
   end
 
   authenticated :user, ->(u) { u.type == 'Admin' } do
@@ -37,11 +43,11 @@ Rails.application.routes.draw do
 
   authenticate :user do
     get 'pages', to:  'pages#home'
-    get 'pages/settings', to: 'pages#settings'
-    get 'pages/profiles', to: 'pages#profiles'
+    # get 'pages/settings', to: 'pages#settings'                   // removed by https://github.com/ComPlat/chemotion_ELN/commit/b553bdd8c73e77512258de7ccb1c0ed63fb1f6eb#diff-959bc9abc46a55332bb64d5155a79323afa75a50ec1a2137ddd22d926f62c6c5
+    # get 'pages/profiles', to: 'pages#profiles'                   // removed by https://github.com/ComPlat/chemotion_ELN/commit/b553bdd8c73e77512258de7ccb1c0ed63fb1f6eb#diff-959bc9abc46a55332bb64d5155a79323afa75a50ec1a2137ddd22d926f62c6c5
     patch 'pages/update_orcid', to: 'pages#update_orcid'
-    patch 'pages/update_profiles', to: 'pages#update_profiles'
-    patch 'pages/update_user', to: 'pages#update_user'
+    # patch 'pages/update_profiles', to: 'pages#update_profiles'  // removed by https://github.com/ComPlat/chemotion_ELN/commit/b553bdd8c73e77512258de7ccb1c0ed63fb1f6eb#diff-959bc9abc46a55332bb64d5155a79323afa75a50ec1a2137ddd22d926f62c6c5
+    # patch 'pages/update_user', to: 'pages#update_user'          // removed by https://github.com/ComPlat/chemotion_ELN/commit/b553bdd8c73e77512258de7ccb1c0ed63fb1f6eb#diff-959bc9abc46a55332bb64d5155a79323afa75a50ec1a2137ddd22d926f62c6c5
     get 'mydb/*any', to: 'pages#mydb'
     get 'mydb', to: 'pages#mydb'
     get 'sfn_cb', to: 'pages#sfn_cb'
@@ -60,7 +66,13 @@ Rails.application.routes.draw do
     get 'generic_datasets_admin', to: 'pages#gda'
   end
 
-  # get 'home/*any', to: 'pages#home'
+  namespace :users do
+    get  'two_factor_auth/request_enable'
+    get  'two_factor_auth/request_disable'
+    post 'two_factor_auth/verify'
+  end
+
+  get 'home/*any', to: 'pages#home'
   get 'home', to: 'pages#home'
 
   # Standalone page for ChemScanner
@@ -101,8 +113,8 @@ Rails.application.routes.draw do
         case pub.element_type
         when 'Sample'
           url = "#{url}molecules/#{pub.element.molecule_id}" if pub.state&.match(Regexp.union(%w[completed]))
-          url = "#{url}review/review_sample/#{pub.element_id}" if %w[pending reviewed accepted].include?(pub.state) && pub.ancestry.nil?
-          if %w[pending reviewed accepted].include?(pub.state) && !pub.ancestry.nil?
+          url = "#{url}review/review_sample/#{pub.element_id}" if %w[pending reviewed accepted].include?(pub.state) && pub.ancestry == '/'
+          if %w[pending reviewed accepted].include?(pub.state) && !pub.ancestry == '/'
             root = Publication.find_by(id: pub.ancestry, element_type: 'Reaction')
             url =  "#{url}review/review_reaction/#{root.element_id}" if root && %w[pending reviewed accepted].include?(root.state)
           end
@@ -115,7 +127,7 @@ Rails.application.routes.draw do
           end
         when 'Container'
           url =  "#{url}datasets/#{pub.element_id}" if pub.state&.match(Regexp.union(%w[completed]))
-          if %w[pending reviewed accepted].include?(pub.state) && !pub.ancestry.nil?
+          if %w[pending reviewed accepted].include?(pub.state) && !pub.ancestry == '/'
             root = pub.root
             url =  "#{url}review/review_#{root.element_type=='Reaction'? 'reaction' : 'sample'}/#{root.element_id}" if root && %w[pending reviewed accepted].include?(root.state)
           end

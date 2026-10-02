@@ -52,7 +52,8 @@ module Export
         DESC
 
         # create a zip buffer
-        zip = Zip::OutputStream.write_buffer do |zipping| # rubocop:disable Metrics/BlockLength
+        Zip.write_zip64_support = true
+        Zip::OutputStream.open(@file_path) do |zipping| # rubocop:disable Metrics/BlockLength
           # write the json file into the zip file
           export_json = to_json_data
           export_json_checksum = Digest::SHA256.hexdigest(export_json)
@@ -66,6 +67,8 @@ module Export
           zipping.put_next_entry 'schema.json'
           zipping.write schema_json
           description += "#{schema_json_checksum} schema.json\n"
+          # write all attachemnts into an attachments directory
+          dir_path = Pathname.new('attachments')
 
           # write the export metadata file if available
           if @export_metadata
@@ -78,17 +81,21 @@ module Export
 
           # write all attachments into an attachments directory
           @attachments.each do |attachment|
-            attachment_path = File.join('attachments', "#{attachment.identifier}#{File.extname(attachment.filename)}")
-            next if attachment.attachment_attacher.file.blank?
+            uploaded_file = attachment.attachment
+            next unless uploaded_file.exists?
 
-            zipping.put_next_entry attachment_path
-            zipping.write attachment.attachment_attacher.file.read if attachment.attachment_attacher.file.present?
+            attachment_path = dir_path.join("#{attachment.identifier}#{File.extname(attachment.filename)}")
+            zipping.put_next_entry attachment_path.to_s
+            uploaded_file.stream(zipping)
             description += "#{attachment.checksum} #{attachment_path}\n"
             next unless attachment.annotated_image?
 
-            annotation_path = attachment.attachment(:annotation).url
+            annotation = attachment.attachment(:annotation)
             zipping.put_next_entry "#{attachment_path}_annotation"
-            zipping.write File.read(annotation_path)
+            annotation.stream(zipping)
+          ensure
+            uploaded_file.to_io.close if uploaded_file.respond_to?(:to_io)
+            annotation.to_io.close if annotation.respond_to?(:to_io)
           end
           # write all the images into an images directory
           @images.each do |file_path|
@@ -104,18 +111,13 @@ module Export
           zipping.write description
         end
 
-        zip.set_encoding('UTF-8')
-        zip.rewind
-        # write the zip file to public/zip/
-        File.write(@file_path, zip.read)
         @file_path
       end
     end
-    # rubocop:enable Metrics/MethodLength,Metrics/CyclomaticComplexity
 
-    def prepare_data # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def prepare_data
       # get the collections from the database, in order of ancestry, but with empty ancestry first
-      collections = Collection.order(Arel.sql("NULLIF(ancestry, '') ASC NULLS FIRST")).find(@collection_ids)
+      collections = Collection.order(ancestry: :asc).find(@collection_ids)
       # add decendants for nested collections
       if @nested
         descendants = []
@@ -136,18 +138,237 @@ module Export
                   })
         fetch_samples collection
         fetch_chemicals collection
+        fetch_components collection
         fetch_reactions collection
         fetch_elements collection
-        fetch_wellplates collection if @gt == false
-        fetch_screens collection if @gt == false
-        fetch_research_plans collection if @gt == false
-        add_cell_line_material_to_package collection if @gt == false
-        add_cell_line_sample_to_package collection if @gt == false
+
+        if @gt == false
+          fetch_wellplates collection
+          fetch_screens collection
+          fetch_research_plans collection
+          add_cell_line_material_to_package collection
+          add_cell_line_sample_to_package collection
+          fetch_sequence_based_macromolecule_samples collection
+          fetch_device_descriptions collection
+        end
+
         fetch_segments
       end
     end
 
     private
+
+    def fetch_sequence_based_macromolecule_samples(collection)
+      # get sbmm samples in order of ancestry, but with empty ancestry first
+      sbmm_samples = collection.sequence_based_macromolecule_samples
+                               .order(ancestry: :asc)
+      # fetch sbmm samples
+      fetch_many(sbmm_samples, {
+                   'sequence_based_macromolecule_id' => 'SequenceBasedMacromolecule',
+                   'user_id' => 'User',
+                 })
+      fetch_many(collection.collections_sequence_based_macromolecule_samples, {
+                   'collection_id' => 'Collection',
+                   'sequence_based_macromolecule_sample_id' => 'SequenceBasedMacromoleculeSample',
+                 })
+
+      # loop over sbmm samples and fetch sbmm sample properties
+      sbmm_samples.each do |sbmm_sample|
+        fetch_sequence_based_macromolecule(sbmm_sample)
+
+        # fetch containers, attachments and literature
+        fetch_containers(sbmm_sample)
+
+        fetch_many(sbmm_sample.attachments, {
+                     'attachable_id' => 'SequenceBasedMacromoleculeSample',
+                     'created_by' => 'User',
+                     'created_for' => 'User',
+                   })
+
+        # add attachments to the list of attachments
+        @attachments += sbmm_sample.attachments
+      end
+    end
+
+    def fetch_sequence_based_macromolecule(sbmm_sample)
+      sbmm = sbmm_sample.sequence_based_macromolecule
+      fetch_sequence_based_macromolecule_or_parent_and_attachments(sbmm)
+
+      fetch_sequence_based_macromolecule_or_parent_and_attachments(sbmm.parent) if sbmm.parent
+
+      return unless sbmm_sample.sequence_based_macromolecule.post_translational_modification
+
+      fetch_one(sbmm.protein_sequence_modification)
+
+      return unless sbmm_sample.sequence_based_macromolecule.post_translational_modification
+
+      fetch_one(sbmm.post_translational_modification)
+    end
+
+    def fetch_sequence_based_macromolecule_or_parent_and_attachments(sbmm)
+      fetch_one(sbmm, {
+                  'parent_id' => 'SequenceBasedMacromolecule',
+                  'protein_sequence_modification_id' => 'ProteinSequenceModification',
+                  'post_translational_modification_id' => 'PostTranslationalModification',
+                })
+      fetch_many(sbmm.attachments, {
+                   'attachable_id' => 'SequenceBasedMacromolecule',
+                   'created_by' => 'User',
+                   'created_for' => 'User',
+                 })
+      # add sbmm attachments to the list of attachments
+      @attachments += sbmm.attachments
+    end
+
+    def fetch_device_descriptions(collection)
+      # get device descriptions in order of ancestry, but with empty ancestry first
+      device_descriptions = collection.device_descriptions.order(ancestry: :asc)
+
+      # fetch device descriptions
+      fetch_many(device_descriptions, { 'created_by' => 'User' })
+      fetch_many(collection.collections_device_descriptions, {
+                   'collection_id' => 'Collection',
+                   'device_description_id' => 'DeviceDescription',
+                 })
+
+      # loop over device descriptions to get container and attachments
+      device_descriptions.each do |device_description|
+        transform_device_description_special_fields(device_description)
+        fetch_device_description_containers_and_attachments(device_description)
+        fetch_device_description_segments(device_description)
+      end
+
+      # fetch related device descriptions from setup_descriptions
+      fetch_related_device_descriptions(device_descriptions, collection)
+    end
+
+    def fetch_device_description_containers_and_attachments(device_description)
+      fetch_containers(device_description)
+      fetch_many(device_description.attachments, {
+                   'attachable_id' => 'DeviceDescription',
+                   'created_by' => 'User',
+                   'created_for' => 'User',
+                 })
+
+      # add attachments to the list of attachments
+      @attachments += device_description.attachments
+    end
+
+    def fetch_device_description_segments(device_description)
+      segments =
+        Labimotion::Segment.where(element_id: device_description.id, element_type: 'DeviceDescription')
+      return if segments.blank?
+
+      fetch_many(segments, {
+                   'element_id' => 'DeviceDescription',
+                   'segment_klass_id' => 'Labimotion::SegmentKlass',
+                   'created_by' => 'User',
+                 })
+    end
+
+    def transform_device_description_special_fields(device_description)
+      dd_uuid = uuid('DeviceDescription', device_description.id)
+      return unless @data['DeviceDescription']&.key?(dd_uuid)
+
+      transform_device_description_setup_descriptions(dd_uuid)
+      transform_device_description_ontologies(dd_uuid)
+    end
+
+    def transform_device_description_setup_descriptions(dd_uuid)
+      setup_descriptions = @data['DeviceDescription'][dd_uuid]['setup_descriptions']
+      return if setup_descriptions.blank?
+
+      setup_descriptions.each_key do |setup_type|
+        next if setup_descriptions[setup_type].blank?
+
+        setup_descriptions[setup_type].each do |entry|
+          next if entry['device_description_id'].blank?
+
+          entry['device_description_id'] = uuid('DeviceDescription', entry['device_description_id'])
+        end
+      end
+    end
+
+    def transform_device_description_ontologies(dd_uuid)
+      ontologies = @data['DeviceDescription'][dd_uuid]['ontologies']
+      return if ontologies.blank?
+
+      ontologies.each do |ontology|
+        if ontology['data']['segment_ids'].present?
+          data_segment_ids = []
+          ontology['data']['segment_ids'].map do |id|
+            data_segment_ids << uuid('Labimotion::SegmentKlass', id)
+          end
+          ontology['data']['segment_ids'] = data_segment_ids if data_segment_ids.present?
+        end
+
+        next if ontology['segments'].present?
+
+        ontology['segments'].each do |entry|
+          entry['segment_klass_id'] = uuid('Labimotion::SegmentKlass', entry['segment_klass_id'])
+        end
+      end
+    end
+
+    # rubocop:disable Metrics/PerceivedComplexity
+    def fetch_related_device_descriptions(device_descriptions, collection, checked_ids = [])
+      setup_types = %w[setup component]
+      # IDs of device descriptions already being exported (in any collection)
+      exported_ids = @data['DeviceDescription']&.keys || []
+
+      device_descriptions.each do |device_description|
+        next if checked_ids.include?(device_description.id)
+
+        checked_ids << device_description.id
+        setup_type = device_description.device_class
+        next if setup_types.exclude?(setup_type) || device_description.setup_descriptions[setup_type].blank?
+
+        # get device_description_ids from setup_descriptions
+        related_ids = device_description.setup_descriptions[setup_type].pluck('device_description_id')
+        next if related_ids.blank?
+
+        # only fetch device descriptions that are not already exported
+        ids_to_fetch = related_ids - exported_ids - checked_ids
+        next if ids_to_fetch.empty?
+
+        export_related_device_descriptions(ids_to_fetch, collection, checked_ids)
+      end
+    end
+    # rubocop:enable Metrics/PerceivedComplexity
+
+    def export_related_device_descriptions(ids_to_fetch, collection, checked_ids)
+      related_device_descriptions = DeviceDescription.where(id: ids_to_fetch)
+      return if related_device_descriptions.empty?
+
+      # fetch the related device descriptions
+      fetch_many(related_device_descriptions, { 'created_by' => 'User' })
+
+      # create collections_device_descriptions entries for the same collection
+      related_device_descriptions.each do |related_device_description|
+        transform_device_description_special_fields(related_device_description)
+        fetch_collections_device_description(collection, related_device_description)
+        fetch_device_description_containers_and_attachments(related_device_description)
+        fetch_device_description_segments(related_device_description)
+      end
+
+      # recursively fetch related device descriptions
+      fetch_related_device_descriptions(related_device_descriptions, collection, checked_ids)
+    end
+
+    def fetch_collections_device_description(collection, device_description)
+      collection_device_description = CollectionsDeviceDescription.find_or_initialize_by(
+        collection_id: collection.id,
+        device_description_id: device_description.id,
+      )
+      if collection_device_description.new_record?
+        collection_device_description.id =
+          uuid('CollectionsDeviceDescription', "#{collection.id}-#{device_description.id}")
+      end
+      fetch_one(collection_device_description, {
+                  'collection_id' => 'Collection',
+                  'device_description_id' => 'DeviceDescription',
+                })
+    end
 
     def add_cell_line_material_to_package(collection)
       type = 'CelllineMaterial'
@@ -192,9 +413,17 @@ module Export
                  })
     end
 
+    def fetch_components(collection)
+      components = collection.samples.flat_map(&:components)
+      fetch_many(components, {
+                   'id' => 'Component',
+                   'sample_id' => 'Sample',
+                 })
+    end
+
     def fetch_samples(collection)
       # get samples in order of ancestry, but with empty ancestry first
-      samples = collection.samples.order(Arel.sql("NULLIF(ancestry, '') ASC NULLS FIRST"))
+      samples = collection.samples.order(ancestry: :asc)
       # fetch samples
       fetch_many(samples, {
                    'molecule_name_id' => 'MoleculeName',
@@ -349,12 +578,16 @@ module Export
       # loop over research plans and fetch research plan properties
       collection.research_plans.each do |research_plan|
         # fetch attachments
-        # attachments are directrly related to research plans so we don't need fetch_containers
+        # attachments are directly related to research plans so we don't need fetch_containers
         fetch_many(research_plan.attachments, {
                      'attachable_id' => 'ResearchPlan',
                      'created_by' => 'User',
                      'created_for' => 'User',
                    })
+
+        # Fetch attachments referenced in the body by public_name
+        fetch_research_plan_body_attachments(research_plan)
+
         upload_att = Labimotion::Export.fetch_segments(research_plan, @uuids, nil, &method(:fetch_one))
         @attachments += upload_att if upload_att&.length&.positive?
 
@@ -371,7 +604,45 @@ module Export
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
+    def fetch_research_plan_body_attachments(research_plan)
+      return if research_plan.body.blank?
+
+      image_fields = extract_image_fields(research_plan.body)
+      return if image_fields.empty?
+
+      attachments = Attachment.where(identifier: image_fields.keys,
+                                     attachable_id: nil,
+                                     attachable_type: 'ResearchPlan')
+
+      filter_missing_attachments(research_plan, attachments)
+      process_attachments(attachments, research_plan)
+    end
+
+    def extract_image_fields(body)
+      body.select { |field| field['type'] == 'image' }
+          .each_with_object({}) do |field, map|
+            public_name = field['value']['public_name']
+            map[public_name] = field if public_name.present?
+          end
+    end
+
+    def filter_missing_attachments(research_plan, attachments)
+      found_public_names = attachments.map(&:identifier)
+      research_plan.body = research_plan.body.reject do |field|
+        field['type'] == 'image' && found_public_names.exclude?(field['value']['public_name'])
+      end
+    end
+
+    def process_attachments(attachments, research_plan)
+      attachments.each { |attachment| attachment['attachable_id'] = research_plan.id }
+      fetch_many(attachments, {
+                   'attachable_id' => 'ResearchPlan',
+                   'created_by' => 'User',
+                   'created_for' => 'User',
+                 })
+      @attachments += attachments
+    end
+
     def fetch_containers(containable)
       containable_type = containable.class.name
       # fetch root container
@@ -421,7 +692,6 @@ module Export
         end
       end
     end
-    # rubocop:enable Metrics/MethodLength
 
     def fetch_literals(element)
       element_type = element.class.name
@@ -457,6 +727,25 @@ module Export
         lit.url = "https://doi.org/#{full_doi}"
       end
 
+      # Ensure refs carries both bibtex and bibliography entries built from the publication metadata
+      bibtex = build_publication_bibtex(publication, full_doi)
+      bibliography = nil
+      if bibtex.present?
+        # Try to parse BibTeX and generate bibliography string
+        begin
+          bib_hash = DataCite::LiteraturePaser.parse_bibtex!(bibtex, publication.id)
+          lit_struct = { id: publication.id, url: literature.url, doi: full_doi, title: literature.title }
+          bibliography = DataCite::LiteraturePaser.excel_string(lit_struct, bib_hash)
+        rescue StandardError => e
+          bibliography = nil
+        end
+      end
+      new_refs = (literature.refs || {}).merge('bibtex' => bibtex)
+      new_refs['bibliography'] = bibliography if bibliography.present?
+      if (literature.refs&.dig('bibtex') != bibtex) || (bibliography.present? && literature.refs&.dig('bibliography') != bibliography)
+        literature.update(refs: new_refs)
+      end
+
       # Find or create a literal linking this element to the literature
       element_type = element.class.name
       literal = Literal.find_or_create_by(
@@ -484,13 +773,54 @@ module Export
                           *e.backtrace].join($INPUT_RECORD_SEPARATOR)
     end
 
+    # Build a BibTeX entry for a publication's DOI.
+    # Prefers DataCite::LiteraturePaser (resolves the DOI to its canonical
+    # BibTeX record) and falls back to local taggable_data if the DOI is
+    # unreachable or not yet resolvable.
+    def build_publication_bibtex(publication, full_doi)
+      entry = DataCite::LiteraturePaser.get_metadata(nil, full_doi, publication.id)
+      return entry.to_s if entry.is_a?(BibTeX::Entry)
+
+      build_publication_bibtex_from_tag(publication, full_doi)
+    rescue StandardError => e
+      Rails.logger.error ["build_publication_bibtex failed for DOI: #{full_doi}", e.message,
+                          *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+      build_publication_bibtex_from_tag(publication, full_doi)
+    end
+
+    # Fallback BibTeX generator using only local publication metadata.
+    def build_publication_bibtex_from_tag(publication, full_doi)
+      tag = publication.taggable_data || {}
+      creators = tag['creators'] || []
+      authors = creators.map do |c|
+        [c['familyName'], c['givenName']].compact.reject(&:empty?).join(', ').presence || c['name']
+      end.compact.reject(&:empty?)
+      author_str = authors.join(' and ')
+
+      title = tag['title'].presence ||
+              (publication.element.respond_to?(:name) ? publication.element&.name : nil) ||
+              "Chemotion-Repository-#{publication.element_type}-#{publication.id}"
+
+      year = (publication.published_at || publication.updated_at || Time.current).year
+      key = "chemotion_#{publication.element_type.to_s.downcase}_#{publication.id}"
+      url = "https://doi.org/#{full_doi}"
+
+      fields = { author: author_str, title: title, year: year, doi: full_doi, url: url }
+      body = fields.reject { |_, v| v.blank? }
+                   .map { |k, v| "  #{k} = {#{v}}" }
+                   .join(",\n")
+      "@misc{#{key},\n#{body}\n}"
+    rescue StandardError
+      nil
+    end
+
     def fetch_many(instances, foreign_keys = {})
       instances.each do |instance|
         fetch_one(instance, foreign_keys)
       end
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+    # rubocop:disable Metrics/PerceivedComplexity
     def fetch_one(instance, foreign_keys = {})
       return if instance.nil?
 
@@ -512,7 +842,7 @@ module Export
         # replace ids in the ancestry field
         if instance.respond_to?(:ancestry)
           ancestor_uuids = []
-          instance.ancestor_ids.each do |ancestor_id|
+          instance.ancestor_ids.map do |ancestor_id|
             ancestor_uuids << uuid(type, ancestor_id)
           end
           update['ancestry'] = ancestor_uuids.join('/')
@@ -527,6 +857,7 @@ module Export
       end
       uuid
     end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def fetch_image(image_path, image_file_name)
       return if image_file_name.blank?
@@ -552,5 +883,5 @@ module Export
   end
 end
 
-# rubocop: enable Metrics/ClassLength, Performance/MethodObjectAsBlock
-# rubocop:enable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+# rubocop:enable Metrics/MethodLength, Metrics/ClassLength, Performance/MethodObjectAsBlock
+# rubocop:enable Metrics/AbcSize

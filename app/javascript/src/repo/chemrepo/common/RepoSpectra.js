@@ -1,0 +1,58 @@
+/* eslint-disable react/forbid-prop-types */
+/* eslint-disable react/require-default-props */
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Tooltip, Button, OverlayTrigger } from 'react-bootstrap';
+import PublicActions from 'src/repo/actions/PublicActions';
+import SpectraActions from 'src/stores/alt/actions/SpectraActions';
+import NotificationActions from 'src/stores/alt/actions/NotificationActions';
+
+function RepoSpectraBtn(props) {
+  const { element, spc, isLogin, isPublic } = props;
+  const toggleSpectraModal = e => {
+    e.stopPropagation();
+    if (!isLogin) {
+      NotificationActions.add({
+        title: 'View Spectra',
+        message: 'Please log in first.',
+        level: 'warning',
+        position: 'tc',
+      });
+    } else if (isPublic) {
+      PublicActions.loadSpectra.defer(spc, element);
+      SpectraActions.ToggleModal.defer();
+    } else {
+      SpectraActions.LoadSpectra.defer(spc, element);
+      SpectraActions.ToggleModal.defer();
+    }
+  };
+  return (
+    <span>
+      <Button
+        variant="outline-primary"
+        title="Click to view spectra"
+        size="xsm"
+        className="button-right"
+        onToggle={(open, event) => {
+          if (event) {
+            event.stopPropagation();
+          }
+        }}
+        onClick={toggleSpectraModal}
+        disabled={!(spc.length > 0)}
+      >
+        <i className="fa fa-area-chart" aria-hidden="true" />
+      </Button>
+    </span>
+  );
+}
+
+RepoSpectraBtn.propTypes = {
+  element: PropTypes.object,
+  spc: PropTypes.array,
+  isLogin: PropTypes.bool,
+  isPublic: PropTypes.bool,
+};
+RepoSpectraBtn.defaultProps = { isLogin: false, isPublic: false };
+
+export default RepoSpectraBtn;

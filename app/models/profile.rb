@@ -76,6 +76,8 @@ class Profile < ApplicationRecord
     data['is_templates_moderator'] = false
     data['molecule_editor'] = false
     data['converter_admin'] = false
+    data['inbox_auto'] = false
+    data['inbox_manual'] = true
   end
 
   def data_default_layout
@@ -88,6 +90,9 @@ class Profile < ApplicationRecord
                   'screen' => 4,
                   'research_plan' => 5,
                   'cell_line' => -1000,
+                  'device_description' => -1100,
+                  'sequence_based_macromolecule_sample' => -1200,
+                  'vessel' => -1300,
                 })
   end
 end

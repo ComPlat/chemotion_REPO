@@ -1,33 +1,65 @@
-# Chemotion Repository [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755759.svg)](https://doi.org/10.5281/zenodo.3755759)
+# Chemotion [![Badge DOI]][DOI]
 
-Empowering chemists with a comprehensive solution for storing, managing, and analyzing samples, reactions, and research data.
+An **Electronic Lab Notebook** for chemists!
 
-## Usage
+---
 
-Initiate your exploration of the Chemotion Repository by visiting our official website: **[Chemotion Repository](https://www.chemotion-repository.net/welcome)**.
+**⸢ [Installation] ⸥ ⸢ [Documentation] ⸥ ⸢ [Changelog] ⸥**
 
-For a comprehensive understanding of the Chemotion Repository, refer to our online **[Documentation](https://www.chemotion.net/docs/repo/)**.
+---
+
+## Tests
+
+![Badge CI]
+
+---
 
 ## Acknowledgments
 
-Funded by the [Deutsche Forschungsgemeinschaft (DFG, German Research Foundation)](https://www.dfg.de/) under the [National Research Data Infrastructure – NFDI4Chem](https://nfdi4chem.de/) – Projektnummer **441958208**.
+<a href="https://www.dfg.de/en/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/DFG-logo-blau.svg/330px-DFG-logo-blau.svg.png" alt="DFG Logo" height="60"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.helmholtz.de/en/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Helmholtz-Gemeinschaft_Logo_2019.svg/330px-Helmholtz-Gemeinschaft_Logo_2019.svg.png" alt="Helmholtz Logo" height="60"></a>
 
-<a href="https://www.dfg.de/" target="_blank"><img src="./public/images/repo/dfg_logo_schriftzug_blau_foerderung_en.jpg" width="50%" alt="DFG Logo"></a>
+Funded by the [Deutsche Forschungsgemeinschaft (DFG, German Research Foundation)](https://www.dfg.de/) under the [National Research Data Infrastructure – NFDI4Chem](https://nfdi4chem.de/) – Projektnummer **441958208** since 2020.
+
+Funded by the [Helmholtz Association](https://www.helmholtz.de/en/) under the program Biointerfaces (BIF-TM); currently supported by the Helmholtz program Information (until 2027).
+
+---
 
 ## License
 
-**Copyright © `2015` - `2024` [Nicole Jung](mailto:nicole.jung@kit.edu)** <br>
-of the **[Karlsruhe Institute of Technology](https://www.kit.edu/english/)**.
+**Copyright © `2015 - 2026` [Nicole Jung]** <br>
+of the **[Karlsruhe Institute of Technology]**.
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+> This program is free software:
+>
+> You can redistribute it and / or  modify it under the terms <br>
+> of the GNU Affero General Public License as published by <br>
+> the Free Software Foundation, either version 3 of the <br>
+> License, or (at your option) any later version.
+>
+> This program is distributed in the hope that it will be useful, but <br>
+> WITHOUT ANY WARRANTY; without even the implied warranty <br>
+> of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+>
+> See the GNU Affero General Public License for more details.
+>
+> You should have received a copy of the GNU Affero<br>
+> General Public License along with this program.
+>
+> If not, see <https://www.gnu.org/licenses/>.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+<!----------------------------------------------------------------------------->
+
+[Installation]: https://www.chemotion.net/docs/eln/install_configure
+[Documentation]: https://www.chemotion.net/docs/eln
+[Changelog]: CHANGELOG.md
+
+
+[Nicole Jung]: mailto:nicole.jung@kit.edu
+[Karlsruhe Institute of Technology]: https://www.kit.edu/english/
+
+[DOI]: https://doi.org/10.5281/zenodo.1054134
+
+[Badge CI]: https://github.com/ComPlat/chemotion_ELN/actions/workflows/ci.yml/badge.svg?branch=main
+[Badge DOI]: https://zenodo.org/badge/DOI/10.5281/zenodo.1054134.svg

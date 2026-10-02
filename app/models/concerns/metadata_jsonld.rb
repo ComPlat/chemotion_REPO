@@ -31,18 +31,24 @@ module MetadataJsonld
 
   def json_ld_study(pub = self, is_root = true)
     json = {}
-    json['@context'] = 'https://schema.org' if is_root == true
+    json['@context'] = json_ld_service.json_ld_context if is_root == true
     json['@type'] = 'Study'
     json['@id'] = "https://doi.org/#{doi.full_doi}"
-    json['dct:conformsTo'] = json_ld_service.conformance_declarations('Study').first
+    json['dct:conformsTo'] = json_ld_service.bioschemas_study_conformance
+    json['name'] = pub.element.respond_to?(:short_label) ? pub.element.short_label : nil
+    json['description'] = json_ld_service.json_ld_description_from_quill(pub.element.description)
+    json['keywords'] = json_ld_service.generate_keywords(pub) if is_root == true
+    json['license'] = pub.rights_data
+    json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
     json['publisher'] = json_ld_service.publisher_info
-    json['dateCreated'] = pub.published_at&.strftime('%Y-%m-%d')
-    json['datePublished'] = pub.published_at&.strftime('%Y-%m-%d')
+    json['dateCreated'] = json_ld_service.iso_timestamp(pub.element&.created_at)
+    json['dateModified'] = json_ld_service.iso_timestamp(pub.published_at)
+    json['datePublished'] = json_ld_service.iso_timestamp(pub.published_at)
     json['author'] = json_ld_service.authors_from_taggable_data(pub.taggable_data)
     json['contributor'] = json_ld_service.json_ld_contributor_from_taggable_data(pub.taggable_data&.dig("contributors"))
     json['citation'] = json_ld_service.citations(pub.element.literatures, pub.element.id)
     json['includedInDataCatalog'] = json_ld_service.data_catalog_info(pub) if is_root == true
-    json
+    json.compact
   end
 
   def json_ld_data_catalog(pub = self)
@@ -84,9 +90,9 @@ module MetadataJsonld
   def json_ld_sample(pub = self, ext = nil, is_root = true)
     # metadata_xml
     json = {}
-    json['@context'] = 'https://schema.org' if is_root == true
     json['@type'] = 'ChemicalSubstance'
     json['@id'] = pub.doi.full_doi
+    json['dct:conformsTo'] = json_ld_service.conformance_declarations('ChemicalSubstance')
     json['identifier'] = "CRS-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
     json['name'] = pub.element.molecule_name&.name
@@ -94,6 +100,8 @@ module MetadataJsonld
     # json['image'] = element.sample_svg_file
     json['image'] = 'https://www.chemotion-repository.net/images/samples/' + pub.element.sample_svg_file  if pub&.element&.sample_svg_file.present?
     json['description'] = json_ld_service.json_ld_description_from_quill(pub.element.description)
+    json['studyDomain'] = 'Chemistry'
+    json['studySubject'] = 'Small molecules'
     #json['author'] = json_ld_service.authors_from_taggable_data(pub.taggable_data)
     json['hasBioChemEntityPart'] = json_ld_service.json_ld_molecular_entity(pub.element.molecule, pub.element.molecule_name&.name)
     json['subjectOf'] = json_ld_subjectOf(pub) if is_root == true
@@ -113,9 +121,10 @@ module MetadataJsonld
 
   def json_ld_reaction(pub= self, ext = nil, is_root = true)
     json = {}
-    json['@context'] = 'https://schema.org' if is_root == true
+    json['@context'] = json_ld_service.json_ld_context if is_root == true
     json['@type'] = 'Study'
     json['@id'] = pub.doi.full_doi
+    json['dct:conformsTo'] = json_ld_service.bioschemas_study_conformance
     json['identifier'] = "CRR-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
     json['additionalType'] = 'Reaction'
@@ -124,12 +133,13 @@ module MetadataJsonld
     json['author'] = json['creator']
 
     json['description'] = json_ld_service.json_ld_description_from_quill(pub.element.description)
-    json['license'] = pub.rights_data[:rightsURI]
-    json['datePublished'] = pub.published_at&.strftime('%Y-%m-%d')
-    json['dateCreated'] = pub.created_at&.strftime('%Y-%m-%d')
+    json['license'] = pub.rights_data
+    json['dateCreated'] = json_ld_service.iso_timestamp(pub.element&.created_at || pub.created_at)
+    json['dateModified'] = json_ld_service.iso_timestamp(pub.published_at || pub.updated_at)
+    json['datePublished'] = json_ld_service.iso_timestamp(pub.published_at)
     json['publisher'] = json_ld_service.publisher_info
     json['provider'] = json['publisher']
-    json['keywords'] = 'chemical reaction: structures conditions'
+    json['keywords'] = reaction_keywords
     json['citation'] = json_ld_service.citations(pub.element.literatures, pub.element.id)
     json['subjectOf'] = json_ld_reaction_has_part(pub, ext, is_root) if is_root == true
 
@@ -194,14 +204,14 @@ module MetadataJsonld
 
   def json_ld_analysis(pub = self, root = true)
     json = {}
-    json['@context'] = 'https://schema.org' if root == true
+    json['@context'] = json_ld_service.json_ld_context if root == true
     json['@type'] = 'Dataset'
     json['@id'] = pub.doi.full_doi
     json['identifier'] = "CRD-#{pub.id}"
     json['url'] = "https://www.chemotion-repository.net/inchikey/#{pub.doi.suffix}"
-    json['dct:conformsTo'] = json_ld_service.conformance_declarations('Dataset').first
+    json['dct:conformsTo'] = json_ld_service.conformance_declarations('Dataset')
     json['publisher'] = json_ld_service.publisher_info
-    json['license'] = pub.rights_data[:rightsURI]
+    json['license'] = pub.rights_data
     json['name'] = (pub.element.extended_metadata['kind'] || '').split(' | ')&.last if pub&.element&.extended_metadata.present?
     measureInfo = json_ld_service.json_ld_measurement_technique(pub.element.extended_metadata) if pub&.element&.extended_metadata.present?
     variable_measured = json_ld_variable_measured(pub)
@@ -210,11 +220,31 @@ module MetadataJsonld
     json['creator'] = json_ld_service.authors_from_taggable_data(pub.taggable_data)
     json['author'] = json['creator']
     json['description'] = json_ld_analysis_description(pub)
+    json['dateCreated'] = json_ld_service.iso_timestamp(pub.element&.created_at || pub.created_at)
+    json['dateModified'] = json_ld_service.iso_timestamp(pub.published_at || pub.updated_at)
+    json['datePublished'] = json_ld_service.iso_timestamp(pub.published_at)
     if root == true
       json['includedInDataCatalog'] = json_ld_service.data_catalog_info(pub)
       json['isPartOf'] = is_part_of(pub)
     end
-    json
+    json.compact
+  end
+
+  # Structured keywords for the reaction Study (replaces the legacy
+  # "chemical reaction: structures conditions" string).
+  def reaction_keywords
+    sio = json_ld_service.json_ld_defined_term_set(
+      'Semanticscience Integrated Ontology',
+      nil,
+      'http://semanticscience.org/ontology/sio.owl'
+    )
+    [
+      json_ld_service.json_ld_defined_term(
+        'chemical reaction', nil, nil, sio,
+        'http://semanticscience.org/resource/SIO_010345'
+      ),
+      json_ld_service.json_ld_defined_term('reaction structures and conditions')
+    ]
   end
 
   def is_part_of(pub = self)

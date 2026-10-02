@@ -1,0 +1,74 @@
+// Features section
+// Relies on $home-* and $bs-* variables defined at the top of repo-home.scss.
+
+.feature-section {
+  margin-bottom: 12px;
+
+  .feature-block {
+    padding: 12px 14px;
+    text-align: center;
+    background-color: $home-surface;
+    border: 1px solid $home-border;
+    border-radius: $home-radius-card;
+    box-shadow: $home-shadow;
+    height: 100%;
+
+    h3 {
+      color: $bs-primarycolor;
+      margin-top: 0;
+      margin-bottom: 6px;
+      font-size: 1.125rem;
+      font-weight: 600;
+      line-height: $home-line-height-h;
+      letter-spacing: 0.01em;
+
+      div {
+        display: inline-block;
+        margin-right: 8px;
+
+        i {
+          font-size: 1.25rem;
+          color: $bs-primarycolor;
+        }
+      }
+    }
+
+    p {
+      font-size: $home-font-caption;
+      line-height: 1.4;
+      color: #555;
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Ensure proper spacing and alignment for responsive design
+@media (max-width: 992px) {
+  .feature-section {
+    .feature-block {
+      margin-bottom: 8px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .feature-section {
+    margin-bottom: 20px;
+
+    .feature-block {
+      padding: 18px 16px;
+
+      h3 {
+        font-size: 1.125rem;
+
+        div i {
+          font-size: 1.5rem;
+        }
+      }
+
+      p {
+        font-size: 0.9375rem;
+      }
+    }
+  }
+}

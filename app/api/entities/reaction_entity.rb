@@ -13,12 +13,17 @@ module Entities
       expose! :products,                                                                using: 'Entities::ReactionMaterialEntity'
       expose! :purification_solvents, anonymize_with: [],                               using: 'Entities::ReactionMaterialEntity'
       expose! :reactants,                                                               using: 'Entities::ReactionMaterialEntity'
+      expose! :reactant_sbmm_samples, anonymize_with: [],                               using: 'Entities::ReactionSbmmMaterialEntity'
       expose! :role
       expose! :solvents,                                                                using: 'Entities::ReactionMaterialEntity'
       expose! :starting_materials,                                                      using: 'Entities::ReactionMaterialEntity'
       expose! :type
       expose :comment_count
+      expose! :user_labels
+      ## For repo
+      expose! :doi,                                         unless: :displayed_in_list, using: Entities::DoiEntity
       expose! :embargo, if: -> (obj, opts) { obj.respond_to? :embargo}
+      expose! :publication,             unless: :displayed_in_list
 
     end
 
@@ -48,10 +53,11 @@ module Entities
       expose! :tlc_description,                             unless: :displayed_in_list
       expose! :tlc_solvents,                                unless: :displayed_in_list
       expose! :variations,            anonymize_with: [],                               using: 'Entities::ReactionVariationEntity'
-      ## For repo
-      expose! :doi,                                         unless: :displayed_in_list, using: Entities::DoiEntity
       expose! :vessel_size
+      expose! :volume
+      expose! :use_reaction_volume
       expose! :gaseous
+      expose! :weight_percentage
     end
 
     expose_timestamps
@@ -86,6 +92,10 @@ module Entities
       displayed_in_list? ? [] : object.reactions_reactant_samples
     end
 
+    def reactant_sbmm_samples
+      displayed_in_list? ? [] : object.reactions_reactant_sbmm_samples
+    end
+
     def segments
       displayed_in_list? ? [] : object.segments
     end
@@ -103,7 +113,7 @@ module Entities
     end
 
     def comment_count
-      0 # object.comments.count
+      object.comments.count
     end
 
     def variations
@@ -111,3 +121,4 @@ module Entities
     end
   end
 end
+# rubocop:enable Layout/ExtraSpacing, Layout/LineLength

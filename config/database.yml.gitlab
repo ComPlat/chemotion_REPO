@@ -1,16 +1,22 @@
 default: &default
   adapter: postgresql
-  pool: 5
   encoding: unicode
+  pool: 5
+  timeout: 5000
+  username: chemotion_test
+  password: "123456"
   host: postgres
-  password: 123456
+  port: 5432
+  template: template0
 
 development:
   <<: *default
-  database: chemotion_dev
-  username: chemotion_dev
+  database: chemotion_test
 
 test:
   <<: *default
-  username: chemotion_test
+  database: chemotion_test
+
+production:
+  <<: *default
   database: chemotion_test

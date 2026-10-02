@@ -103,7 +103,10 @@ module Chemotion
               policy: @element_policy,
               detail_levels: ElementDetailLevelCalculator.new(user: current_user, element: reaction).detail_levels,
             ),
-            literatures: Entities::LiteratureEntity.represent(citation_for_elements(params[:id], class_name)),
+            literatures: Entities::LiteratureEntity.represent(
+              citation_for_elements(params[:id], class_name),
+              with_user_info: true,
+            ),
             publication: Publication.find_by(element: reaction) || {},
           }
         end
@@ -147,8 +150,8 @@ module Chemotion
         optional :timestamp_start, type: String
         optional :timestamp_stop, type: String
         optional :observation, type: Hash
-        optional :purification, type: Array[String]
-        optional :dangerous_products, type: Array[String]
+        optional :purification, type: [String]
+        optional :dangerous_products, type: [String]
         optional :conditions, type: String
         optional :tlc_solvents, type: String
         optional :solvent, type: String
@@ -162,6 +165,7 @@ module Chemotion
 
         requires :materials, type: Hash
         optional :literatures, type: Hash
+
         requires :container, type: Hash
         optional :duration, type: String
         optional :rxno, type: String
@@ -169,7 +173,10 @@ module Chemotion
         optional :user_labels, type: Array
         optional :variations, type: [Hash]
         optional :vessel_size, type: Hash
+        optional :volume, type: BigDecimal
+        optional :use_reaction_volume, type: Boolean
         optional :gaseous, type: Boolean
+        optional :weight_percentage, type: Boolean
       end
       route_param :id do
         after_validation do
@@ -224,8 +231,8 @@ module Chemotion
         optional :timestamp_start, type: String
         optional :timestamp_stop, type: String
         optional :observation, type: Hash
-        optional :purification, type: Array[String]
-        optional :dangerous_products, type: Array[String]
+        optional :purification, type: [String]
+        optional :dangerous_products, type: [String]
         optional :conditions, type: String
         optional :tlc_solvents, type: String
         optional :solvent, type: String
@@ -245,7 +252,10 @@ module Chemotion
         optional :rxno, type: String
         optional :variations, type: [Hash]
         optional :vessel_size, type: Hash
+        optional :volume, type: BigDecimal
+        optional :use_reaction_volume, type: Boolean
         optional :gaseous, type: Boolean
+        optional :weight_percentage, type: Boolean
       end
 
       post do
@@ -259,37 +269,12 @@ module Chemotion
         attributes.delete(:segments)
         attributes.delete(:user_labels)
 
-        collection = current_user.collections.where(id: collection_id).take
+        collection = current_user.collections.find_by(id: collection_id)
         attributes[:created_by] = current_user.id
         reaction = Reaction.create!(attributes)
         recent_ols_term_update('rxno', [params[:rxno]]) if params[:rxno].present?
 
-        if literatures.present?
-          literatures.each do |literature|
-            next unless literature&.length&.> 1
-
-            refs = literature[1][:refs]
-            doi = literature[1][:doi]
-            url = literature[1][:url]
-            title = literature[1][:title]
-            isbn = literature[1][:isbn]
-
-            lit = Literature.find_or_create_by(doi: doi, url: url, title: title, isbn: isbn)
-            lit.update!(refs: (lit.refs || {}).merge(declared(refs))) if refs
-
-            lattributes = {
-              literature_id: lit.id,
-              user_id: current_user.id,
-              element_type: 'Reaction',
-              element_id: reaction.id,
-              category: 'detail',
-            }
-            unless Literal.find_by(lattributes)
-              Literal.create(lattributes)
-              reaction.touch
-            end
-          end
-        end
+        create_literatures_and_literals(reaction, literatures)
         reaction.container = update_datamodel(container_info)
         reaction.save!
         update_element_labels(reaction, params[:user_labels], current_user.id)
@@ -298,7 +283,7 @@ module Chemotion
 
         is_shared_collection = false
         if collection.blank?
-          sync_collection = current_user.all_sync_in_collections_users.where(id: collection_id).take
+          sync_collection = current_user.all_sync_in_collections_users.find_by(id: collection_id)
           if sync_collection.present?
             is_shared_collection = true
             sync_in_collection_receiver = Collection.find(sync_collection['collection_id'])
@@ -311,8 +296,10 @@ module Chemotion
         end
 
         unless is_shared_collection
-          CollectionsReaction.create(reaction: reaction,
-                                     collection: Collection.get_all_collection_for_user(current_user.id))
+          all_coll = Collection.get_all_collection_for_user(current_user.id)
+          if all_coll.present? && reaction.collections.exclude?(all_coll)
+            CollectionsReaction.create(reaction: reaction, collection: all_coll)
+          end
         end
         CollectionsReaction.update_tag_by_element_ids(reaction.id)
         if reaction
@@ -332,6 +319,10 @@ module Chemotion
             reaction_vessel_size,
           ).execute!
           reaction.reload
+
+          reaction.update!(variations: Usecases::Reactions::UpdateVariations.new(
+            reaction,
+          ).execute!)
 
           # save to profile
           kinds = reaction.container&.analyses&.pluck(Arel.sql("extended_metadata->'kind'"))

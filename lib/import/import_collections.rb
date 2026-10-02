@@ -3,10 +3,21 @@
 # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/BlockLength,Metrics/PerceivedComplexity,Metrics/CyclomaticComplexity, Layout/LineLength
 
 require 'json'
+require Rails.root.join('lib/chemotion/molfile_polymer_support')
 
 module Import
   class ImportCollections # rubocop:disable Metrics/ClassLength
-    def initialize(att, current_user_id, gate = false, col_id = nil, origin = nil) # rubocop:disable Style/OptionalBooleanParameter
+    attr_reader :log_file_path
+
+    # Labels of collections created in this import (from import_collections or gate).
+    def created_collection_labels
+      return [] unless @instances.key?('Collection')
+
+      @instances['Collection'].values.map(&:label).compact.sort
+    end
+
+    # rubocop:disable Style/OptionalBooleanParameter , Metrics/ParameterLists
+    def initialize(att, current_user_id, gate = false, col_id = nil, origin = nil, logger = nil)
       @att = att
       @current_user_id = current_user_id
       @gt = gate
@@ -16,13 +27,15 @@ module Import
       @attachments = []
       @col_id = col_id
       @col_all = Collection.get_all_collection_for_user(current_user_id)
-      @images = {}
-      @svg_files = []
+      @tmp_dir = Dir.mktmpdir
+      @logger, @log_file_path = initialize_logger(logger)
     end
+    # rubocop:enable Style/OptionalBooleanParameter , Metrics/ParameterLists
 
     def execute
       extract
       import
+    ensure
       cleanup
     end
 
@@ -38,12 +51,14 @@ module Import
           # do nothing for directory entry
           next if entry.ftype == :directory
 
-          data = entry.get_input_stream.read.force_encoding('UTF-8')
-          case entry.name
+          entry_name = entry.name
+          case entry_name
           when 'export.json'
+            data = entry.get_input_stream.read.force_encoding('UTF-8')
             @data = JSON.parse(data)
           when %r{attachments/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})}
-            file_name = entry.name.sub('attachments/', '')
+            data = entry.get_input_stream.read.force_encoding('UTF-8')
+            file_name = entry_name.sub('attachments/', '')
             attachment = Attachment.new(
               transferred: true,
               con_state: Labimotion::ConState::NONE,
@@ -68,10 +83,10 @@ module Import
               tmp.unlink # deletes the temp file
             end
           when %r{^images/(samples|reactions|molecules|research_plans)/(\w{1,128}\.\w{1,4})}
-            tmp_file = Tempfile.new
-            tmp_file.write(data)
-            tmp_file.rewind
-            @images["#{Regexp.last_match(1)}/#{Regexp.last_match(2)}"] = tmp_file
+            # write data to tmp dir with the same path
+            path = File.join(@tmp_dir, entry_name)
+            FileUtils.mkdir_p(File.dirname(path))
+            entry.extract(path) { |src, dest| IO.copy_stream(src, dest) }
           end
         end
       end
@@ -92,24 +107,31 @@ module Import
         gate_collection if @gt == true
         import_collections if @gt == false
         import_samples
-        import_chemicals if @gt == false
         import_residues
-        ## import_elemental_compositions if @gt == true
         import_reactions
         import_reactions_samples
-        CelllineImporter.new(@data, @current_user_id, @instances).execute if @gt == false
         import_elements
-        import_wellplates if @gt == false
-        import_wells if @gt == false
-        import_research_plans if @gt == false
-        import_screens if @gt == false
+
+        if @gt == false
+          import_chemicals
+          import_components
+          import_wellplates
+          import_wells
+          import_research_plans
+          import_screens
+          Import::Helpers::CelllineImporter.new(@data, @current_user_id, @instances).execute
+          Import::Helpers::SequenceBasedMacromoleculeSampleImporter.new(@data, @current_user_id, @instances).execute
+          Import::Helpers::DeviceDescriptionImporter.new(@data, @current_user_id, @instances).execute
+        end
+
         import_containers
         import_segments
         import_datasets
+        Import::Helpers::DeviceDescriptionImporter.new(@data, @current_user_id, @instances).update_ontologies
         import_attachments
-        import_datasets
         import_literals
       end
+      reprocess_reaction_svgs
     end
 
     def import!
@@ -126,13 +148,33 @@ module Import
     # desc: to destroy uploaded zip and sweep image tmp files
     def cleanup
       # @att.destroy!
-      @images.each_value do |tmp_file|
-        tmp_file.close
-        tmp_file.unlink
-      end
+      FileUtils.rm_rf(@tmp_dir)
     end
 
     private
+
+    def initialize_logger(logger = nil)
+      return [logger, extract_log_path(logger)] if logger
+
+      log_file = File.basename(generate_log_path)
+      url = File.join(Rails.application.config.root_url, 'import_logs', log_file)
+      [Logger.new(Rails.public_path.join('import_logs', log_file)), url]
+    end
+
+    def extract_log_path(logger)
+      logger.instance_variable_get(:@logdev)&.filename
+    end
+
+    def generate_log_path
+      # Create logs directory if it doesn't exist
+      logs_dir = Rails.public_path.join('import_logs')
+      FileUtils.mkdir_p(logs_dir)
+
+      # Generate unique log filename
+      timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+      random_string = SecureRandom.hex(4)
+      logs_dir.join("import_collections_#{timestamp}_#{random_string}.log")
+    end
 
     def import_annotation(zip_file, entry, attachment)
       annotation_entry = zip_file.find_entry("#{entry.name}_annotation")
@@ -144,55 +186,38 @@ module Import
     end
 
     def import_collections
-      # collection = Collection.find(@col_id)
-      collection = Collection.find_or_create_by(user_id: @current_user_id, label: 'Imported Data', is_locked: true, position: 3)
-
       @data.fetch('Collection', {}).each do |uuid, fields|
+        # create the collection
+        collection = Collection.create!(fields.slice(
+          'label',
+          'sample_detail_level',
+          'reaction_detail_level',
+          'wellplate_detail_level',
+          'screen_detail_level',
+          'researchplan_detail_level',
+          'created_at',
+          'updated_at',
+        ).merge(
+          user_id: @current_user_id,
+          parent: fetch_ancestry('Collection', fields.fetch('ancestry')),
+        ))
+
+        # add collection to @instances map
         update_instances!(uuid, collection)
       end
-
-      # @data.fetch('Collection', {}).each do |uuid, fields|
-      #   # create the collection
-      #   collection = Collection.create!(fields.slice(
-      #     'label',
-      #     'sample_detail_level',
-      #     'reaction_detail_level',
-      #     'wellplate_detail_level',
-      #     'screen_detail_level',
-      #     'researchplan_detail_level',
-      #     'created_at',
-      #     'updated_at'
-      #   ).merge(
-      #     user_id: @current_user_id,
-      #     parent: fetch_ancestry('Collection', fields.fetch('ancestry'))
-      #   ))
-        # add collection to @instances map
-      # update_instances!(uuid, collection)
-      # end
+      labels = created_collection_labels
     end
 
     def gate_collection
-      collection = Collection.find(@col_id)
+      # In gate mode, assign all imported records to a single "Imported Data" collection
+      collection = Collection.find_or_create_by(user_id: @current_user_id, label: 'Imported Data', is_locked: true, position: 3)
       @data.fetch('Collection', {}).each do |uuid, _fields|
         update_instances!(uuid, collection)
       end
     end
 
-    def fetch_bound(value)
-      bounds = value.to_s.split(/\.{2,3}/)
-      return nil if bounds.blank?
-
-      lower = BigDecimal(bounds[0])
-      upper = BigDecimal(bounds[1])
-      if lower == -Float::INFINITY && upper == Float::INFINITY
-        Range.new(-Float::INFINITY, Float::INFINITY, '()')
-      else
-        Range.new(lower, upper)
-      end
-    end
-
     def import_chemicals
-      @data.fetch('Chemical', {}).each do |_uuid, fields|
+      @data.fetch('Chemical', {}).each_value do |fields|
         sample = @instances.fetch('Sample').fetch(fields.fetch('sample_id'))
         next unless sample
 
@@ -206,8 +231,26 @@ module Import
       end
     end
 
+    def import_components
+      components_data = @data.fetch('Component', {})
+
+      return if components_data.empty?
+
+      samples = @instances.fetch('Sample')
+
+      components_data.each_value do |fields|
+        sample = samples[fields['sample_id']]
+        next unless sample
+
+        Component.create!(
+          fields.slice('name', 'position', 'component_properties')
+                .merge(sample_id: sample.id),
+        )
+      end
+    end
+
     def import_samples
-      @data.fetch('Sample', {}).each do |uuid, fields|
+      sort_data(@data.fetch('Sample', {})).each do |uuid, fields|
         # look for the molecule_name
         molecule_name_uuid = fields.fetch('molecule_name_id')
         if molecule_name_uuid.present?
@@ -217,12 +260,28 @@ module Import
         # look for the molecule for this sample and add the molecule name
         # neither the Molecule or the MoleculeName are created if they already exist
         molfile = fields.fetch('molfile')
-        molecule = if fields.fetch('decoupled',
-                                   nil) && molfile.blank?
-                     Molecule.find_or_create_dummy
-                   else
-                     Molecule.find_or_create_by_molfile(molfile)
-                   end
+
+        # Check the associated Molecule for cano_smiles
+        cano_smiles = nil
+        if fields.fetch('molecule_id').present?
+          molecule_uuid = fields.fetch('molecule_id')
+          molecule_data = @data.fetch('Molecule', {}).fetch(molecule_uuid, {})
+          cano_smiles = molecule_data.fetch('cano_smiles', nil) if molecule_data.present?
+        end
+
+        # Priority: molfile > cano_smiles > dummy (if decoupled and both blank)
+        # When molfile has > <PolymersList>, use full molfile and Molecule.svg_reprocess so polymers use SvgRenderer.
+        if molfile.present? && Chemotion::MolfilePolymerSupport.has_polymers_list_tag?(molfile)
+          molecule = find_or_create_molecule_for_polymer_molfile(molfile.to_s)
+        end
+        # Always use molfile if available (highest priority)
+        molecule ||= Molecule.find_or_create_by_molfile(molfile) if molfile.present?
+
+        # Use cano_smiles if molfile is missing or invalid but cano_smiles is available
+        molecule ||= Molecule.find_or_create_by_cano_smiles(cano_smiles) if cano_smiles.present?
+        # Create dummy only for decoupled samples with no structure data
+        molecule ||= Molecule.find_or_create_dummy if fields.fetch('decoupled', nil)
+
         unless (fields.fetch('decoupled', nil) && molfile.blank?) || molecule_name_name.blank?
           molecule.create_molecule_name_by_user(molecule_name_name, @current_user_id)
         end
@@ -248,6 +307,7 @@ module Import
           'is_top_secret',
           'dry_solvent',
           'external_label',
+          'short_label',
           'real_amount_value',
           'real_amount_unit',
           'imported_readout',
@@ -255,12 +315,13 @@ module Import
           'density',
           'xref',
           'stereo',
+          'created_at',
+          'updated_at',
           'decoupled',
-          'molarity_value',
-          'molarity_unit',
           'molecular_mass',
           'sum_formula',
           'inventory_sample',
+          'sample_type',
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
@@ -283,25 +344,12 @@ module Import
           end
         end
 
-        if sample.sample_svg_file.present?
-          # for same sample_svg_file case
-          s_svg_file = @svg_files.find { |s| s[:sample_svg_file] == fields.fetch('sample_svg_file') }
-          if s_svg_file.nil?
-            @svg_files.push(sample_svg_file: fields.fetch('sample_svg_file'), svg_file: sample.sample_svg_file)
-          end
-
-          sample.sample_svg_file = s_svg_file[:svg_file] unless s_svg_file.nil?
-        end
-
-        sample.reprocess_svg if sample.sample_svg_file.blank?
-
         # keep orig eln info
         if @gt == true
           et = sample.tag
           eln_info = {
             id: fields['id'],
             short_label: fields['short_label'],
-            tracking_item_name: fields['tracking_item_name'],
             origin: @origin,
           }
           et.update!(
@@ -320,30 +368,23 @@ module Import
 
     def import_residues
       @data.fetch('Residue', {}).each do |uuid, fields|
+        # create the sample
         residue = Residue.create!(fields.slice(
           'residue_type',
           'custom_info',
+          'created_at',
+          'updated_at',
         ).merge(
           sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id')),
         ))
+
+        # add reaction to the @instances map
         update_instances!(uuid, residue)
       end
     end
 
-    def import_elemental_compositions
-      @data.fetch('ElementalComposition', {}).each do |uuid, fields|
-        ec = ElementalComposition.find_or_create_by!(fields.slice(
-          'composition_type',
-        ).merge(
-          sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id'))
-        ))
-        ec.update_columns(fields.slice('data', 'loading'))
-        update_instances!(uuid, ec)
-      end
-    end
-
     def import_reactions
-      @data.fetch('Reaction', {}).each do |uuid, fields|
+      sort_data(@data.fetch('Reaction', {})).each do |uuid, fields|
         # create the sample
         reaction = Reaction.create!(fields.slice(
           'name',
@@ -365,29 +406,17 @@ module Import
           'rxno',
           'origin',
           'duration',
-          # 'created_at',
-          # 'updated_at',
+          'created_at',
+          'updated_at',
           'vessel_size',
           'gaseous',
+          'weight_percentage',
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
             'Collection', 'CollectionsReaction', 'reaction_id', 'collection_id', uuid
           ),
         ))
-        # keep orig eln info
-        if @gt == true
-          et = reaction.tag
-          eln_info = {
-            id: fields["id"],
-            short_label: fields["short_label"],
-            origin: @origin
-          }
-          et.update!(
-            taggable_data: (et.taggable_data || {}).merge(eln_info: eln_info)
-          )
-
-        end
 
         # add reaction to the @instances map
         update_instances!(uuid, reaction)
@@ -423,16 +452,12 @@ module Import
             'gas_type',
             'gas_phase_data',
             'conversion_rate',
+            'weight_percentage_reference',
+            'weight_percentage',
           ).merge(
             reaction: @instances.fetch('Reaction').fetch(fields.fetch('reaction_id')),
             sample: @instances.fetch('Sample').fetch(fields.fetch('sample_id')),
           ))
-
-          if reactions_sample.type == 'ReactionsProductSample'
-            onm = reactions_sample.reaction.tag&.taggable_data&.dig('eln_info', 'short_label')
-            nnm = reactions_sample.reaction.short_label
-            reactions_sample.sample.update!(name:reactions_sample.sample.name.sub!(onm, nnm)) if onm.present? && nnm.present? && reactions_sample.sample&.name.present?
-          end
 
           # add reactions_sample to the @instances map
           update_instances!(uuid, reactions_sample)
@@ -441,7 +466,7 @@ module Import
     end
 
     def import_wellplates
-      @data.fetch('Wellplate', {}).each do |uuid, fields|
+      sort_data(@data.fetch('Wellplate', {})).each do |uuid, fields|
         # create the wellplate
 
         wellplate = Wellplate.create!(fields.slice(
@@ -481,9 +506,11 @@ module Import
           'label',
           'color_code',
           'additive',
+          'created_at',
+          'updated_at',
         ).merge(
           wellplate: @instances.fetch('Wellplate').fetch(fields.fetch('wellplate_id')),
-          sample: @instances.fetch('Sample', nil)&.fetch(fields.fetch('sample_id'), nil),
+          sample: @instances.dig('Sample', fields.fetch('sample_id')),
         ))
 
         # add reaction to the @instances map
@@ -492,7 +519,7 @@ module Import
     end
 
     def import_screens
-      @data.fetch('Screen', {}).each do |uuid, fields|
+      sort_data(@data.fetch('Screen', {})).each do |uuid, fields|
         # create the screen
         screen = Screen.create!(fields.slice(
           'description',
@@ -502,6 +529,8 @@ module Import
           'collaborator',
           'conditions',
           'requirements',
+          'created_at',
+          'updated_at',
         ).merge(
           collections: fetch_many(
             'Collection', 'CollectionsScreen', 'screen_id', 'collection_id', uuid
@@ -524,12 +553,14 @@ module Import
     end
 
     def import_research_plans
-      @data.fetch('ResearchPlan', {}).each do |uuid, fields|
+      sort_data(@data.fetch('ResearchPlan', {})).each do |uuid, fields|
         # create the research_plan
         research_plan = ResearchPlan.create!(fields.slice(
           'name',
           'description',
           'body',
+          'created_at',
+          'updated_at',
         ).merge(
           created_by: @current_user_id,
           collections: fetch_many(
@@ -549,10 +580,10 @@ module Import
           # the root container was created when the containable was imported
           containable_type = fields.fetch('containable_type')
           containable_uuid = fields.fetch('containable_id')
-          containable = @instances.fetch(containable_type, nil)&.fetch(containable_uuid, nil)
+          containable = @instances.dig(containable_type, containable_uuid)
           container = containable&.container
         when 'analyses'
-          # get the analyses container from its parent (root) container
+          # get the analyses container from its parent (root) containers
           parent = @instances.fetch('Container').fetch(fields.fetch('parent_id'), nil)
           container = parent.children.where("container_type = 'analyses'")&.first if parent.present?
         else
@@ -566,7 +597,9 @@ module Import
                                                   'name',
                                                   'container_type',
                                                   'description',
-                                                  'extended_metadata'
+                                                  'extended_metadata',
+                                                  'created_at',
+                                                  'updated_at',
                                                 ))
           end
         end
@@ -579,11 +612,11 @@ module Import
     end
 
     def import_attachments
-      @data.fetch('Attachment', {}).each do |uuid, fields|
+      sort_data(@data.fetch('Attachment', {})).each do |uuid, fields|
         # get the attachable for this attachment
         attachable_type = fields.fetch('attachable_type', nil)
         attachable_uuid = fields.fetch('attachable_id')
-        attachable = @instances.fetch(attachable_type, nil)&.fetch(attachable_uuid, nil) if attachable_type.present?
+        attachable = @instances.dig(attachable_type, attachable_uuid) if attachable_type.present?
 
         attachment = Attachment.where(
           'id IN (?) AND filename LIKE ? ',
@@ -592,15 +625,30 @@ module Import
         ).first
 
         if attachable.present? && attachment.present?
-          attachment.update!(
-            attachable: attachable,
-            transferred: true,
-            aasm_state: fields.fetch('aasm_state'),
-            filename: fields.fetch('filename'),
-            # checksum: fields.fetch('checksum'),
-            # created_at: fields.fetch('created_at'),
-            # updated_at: fields.fetch('updated_at')
-          )
+          # Check source field to determine transferred status
+          source_value = @data['source'] || ''
+          transferred_status = source_value != 'smart-add'
+
+          # For ZIP files, reset aasm_state to allow processing if from smart-add
+          aasm_state = if attachment.content_type == 'application/zip' && source_value == 'smart-add'
+                         'queueing'
+                       else
+                         fields.fetch('aasm_state')
+                       end
+
+          if attachable_type == 'SequenceBasedMacromolecule' && attachable.attachments.present?
+            attachment.destroy
+          else
+            attachment.update!(
+              attachable: attachable,
+              transferred: transferred_status,
+              aasm_state: aasm_state,
+              filename: fields.fetch('filename'),
+              # checksum: fields.fetch('checksum'),
+              # created_at: fields.fetch('created_at'),
+              # updated_at: fields.fetch('updated_at')
+            )
+          end
         end
         # TODO: if attachment.checksum != fields.fetch('checksum')
 
@@ -629,7 +677,9 @@ module Import
     end
 
     def import_datasets
+      # rubocop:disable Performance/MethodObjectAsBlock
       Labimotion::Import.import_datasets(@data, @instances, @gt, @current_user_id, &method(:update_instances!))
+      # rubocop:enable Performance/MethodObjectAsBlock
     rescue StandardError => e
       Rails.logger.error(e.backtrace)
     end
@@ -654,7 +704,9 @@ module Import
                                             'title',
                                             'url',
                                             'refs',
-                                            'doi'
+                                            'doi',
+                                            'created_at',
+                                            'updated_at',
                                           ))
 
           # add literature to the @instances map
@@ -667,6 +719,8 @@ module Import
             'element_type',
             'category',
             'litype',
+            'created_at',
+            'updated_at',
           ).merge(
             user_id: @current_user_id,
             element: element,
@@ -679,26 +733,52 @@ module Import
       end
     end
 
+    def reprocess_reaction_svgs
+      return unless @instances.key?('Reaction')
+
+      source_value = @data['source'] || ''
+      return unless source_value == 'smart-add'
+
+      @instances['Reaction'].each_value do |reaction|
+        reaction.update_svg_file!
+        reaction.save!
+      rescue StandardError => e
+        Rails.logger.error("Failed to reprocess SVG for reaction #{reaction.id}: #{e.message}")
+        Rails.logger.error(e.backtrace)
+      end
+    end
+
     def fetch_ancestry(type, ancestry)
-      return if ancestry.blank?
+      return if ancestry == '/' || ancestry.blank?
 
       parents = ancestry.split('/')
       parent_uuid = parents[-1]
-      @instances.fetch(type, {}).fetch(parent_uuid, nil)
+      @instances.dig(type, parent_uuid)
     end
 
-    def fetch_image(image_path, image_file_name)
-      begin
-        svg = nil
-        if image_file_name.present? && (tmp_file = @images["#{image_path}/#{image_file_name}"]) && (tmp_file && !tmp_file.closed?)
-          svg = tmp_file.read
-        end
-      rescue StandardError => e
-        Rails.logger.error e
-      ensure
-        tmp_file.close! if tmp_file && !tmp_file.closed?
+    def fetch_bound(value)
+      bounds = value.to_s.split(/\.{2,3}/)
+      lower = BigDecimal(bounds[0])
+      upper = BigDecimal(bounds[1])
+      if lower == -Float::INFINITY && upper == Float::INFINITY
+        Range.new(-Float::INFINITY, Float::INFINITY, '()')
+      else
+        Range.new(lower, upper)
       end
-      svg || image_file_name
+    end
+
+    # read the image from the tmp dir/file
+    # @param [String] element_type: the image category (samples, reactions, molecules, research_plans)
+    # @param [String] image_file_name: the svg image file name
+    # @return [String, nil] the svg image content or nil if the image file does not exist or is not an svg
+    def fetch_image(element_type, image_file_name)
+      tmp_file = Pathname.new(@tmp_dir).join("images/#{element_type}/#{image_file_name}")
+      return nil unless File.exist?(tmp_file)
+
+      svg = File.read(tmp_file)
+      svg&.start_with?('<svg') ? svg : nil
+    rescue StandardError => e
+      Rails.logger.error e
     end
 
     def update_instances!(uuid, instance)
@@ -718,25 +798,113 @@ module Import
     # Follows a has_many relation to `foreign_type` through `association_type`
     def fetch_many(foreign_type, association_type, local_field, foreign_field, local_id)
       associations = []
-      @data.fetch(association_type, {}).each do |_uuid, fields|
+      @data.fetch(association_type, {}).each_value do |fields|
         next unless fields.fetch(local_field) == local_id
 
         foreign_id = fields.fetch(foreign_field)
-        instance = @instances.fetch(foreign_type, {}).fetch(foreign_id, nil)
+        instance = @instances.dig(foreign_type, foreign_id)
         associations << instance unless instance.nil?
       end
       associations
     end
 
     def update_researchplan_body(attachments)
-      @data['ResearchPlan']&.each do |_attr_name, attr_value|
+      @data['ResearchPlan']&.each_value do |attr_value|
         image_fields = attr_value['body'].select { |i| i['type'] == 'image' }
+
         image_fields.each do |field|
           new_att = attachments.find { |i| i['filename'].include? field['value']['public_name'] }
+
           field['value']['public_name'] = new_att['identifier']
           field['value']['file_name'] = new_att['filename']
+        rescue StandardError => _e
+          log_unassociated_attachment(attr_value['name'], field)
         end
       end
+    end
+
+    def log_unassociated_attachment(research_plan_name, field)
+      log_content = <<~LOG
+
+        Research Plan: #{research_plan_name}
+        File Name: #{field.dig('value', 'file_name')}
+        Error: Attachment not found
+        ----------------------------------------
+
+      LOG
+
+      @logger.error(log_content)
+    end
+
+    # When molfile has > <PolymersList>, find or create molecule and reprocess SVG so SvgRenderer can inject polymer images.
+    # Mirrors logic in Import::ImportSamples#get_data_from_molfile.
+    # @return [Molecule, nil] the molecule or nil if cleaned molfile is blank
+    def find_or_create_molecule_for_polymer_molfile(raw_molfile)
+      cleaned = Chemotion::MolfilePolymerSupport.clean_molfile_for_inchikey(raw_molfile)
+      return nil if cleaned.blank?
+
+      molfile_for_babel = cleaned.dup
+      molfile_for_babel = "\n#{molfile_for_babel}" unless molfile_for_babel.start_with?("\n")
+      molfile_for_babel = "#{molfile_for_babel}\n" unless molfile_for_babel.end_with?("\n")
+      babel_info = Chemotion::OpenBabelService.molecule_info_from_molfile(molfile_for_babel)
+      inchikey = babel_info[:inchikey]
+
+      molecule = if inchikey.present?
+                   Molecule.find_or_create_by_molfile(raw_molfile, babel_info)
+                 else
+                   find_or_create_polymer_molecule_without_inchikey(raw_molfile, babel_info)
+                 end
+      return molecule unless molecule.present?
+
+      reprocessed_svg = Molecule.svg_reprocess(nil, raw_molfile, service: :indigo)
+      if reprocessed_svg.present?
+        molecule.attach_svg(reprocessed_svg)
+        molecule.molfile = raw_molfile if molecule.molfile.to_s != raw_molfile
+        molecule.save
+      end
+      molecule
+    end
+
+    # Remove PolymersList, TextNode and other SDF blocks, then keep only CTAB (up to M  END).
+    def clean_molfile_for_inchikey(raw_molfile)
+      Chemotion::MolfilePolymerSupport.clean_molfile_for_inchikey(raw_molfile)
+    end
+
+    # Keep only the CTAB (up to and including M END). Strip SDF blocks that can break Open Babel.
+    def sanitize_molfile_for_import(molfile)
+      Chemotion::MolfilePolymerSupport.keep_only_ctab(molfile)
+    end
+
+    # When Open Babel returns blank inchikey for a PolymersList molfile, create a molecule with a synthetic inchikey.
+    def find_or_create_polymer_molecule_without_inchikey(raw_molfile, babel_info)
+      synthetic_inchikey = "POLYMER_#{Digest::SHA256.hexdigest(raw_molfile)}"
+      formula = babel_info[:formula].to_s.presence || ''
+      molecule = Molecule.find_by(inchikey: synthetic_inchikey, is_partial: true, sum_formular: formula)
+      if molecule
+        molecule.molfile = raw_molfile
+        molecule.save!
+      else
+        molecule = Molecule.new(
+          inchikey: synthetic_inchikey,
+          is_partial: true,
+          sum_formular: formula,
+          molfile: raw_molfile
+        )
+        molecule.save!
+      end
+      molecule
+    end
+
+    # Sort records by created_at timestamp
+    # @param [Hash] records: the records to sort
+    # @return [Hash] the sorted records
+    # @note: expect a hash with structure { uuid => { created_at: timestamp, ... }, ... }
+    #   with created_at being an ISO8601 string
+    def sort_data(records)
+      records.sort_by { |_, v| v[:created_at] }.to_h
+    rescue StandardError => e
+      Rails.logger.error(e.backtrace)
+      records
     end
   end
 end

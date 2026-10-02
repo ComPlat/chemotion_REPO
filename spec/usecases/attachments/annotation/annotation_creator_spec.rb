@@ -16,6 +16,8 @@ describe Usecases::Attachments::Annotation::AnnotationCreator do
       end
 
       it 'annotation file was created' do
+        skip_unless_binary_available('identify')
+
         expect(File.read(result[:annotation])).to eq(expected_annotation)
       end
     end

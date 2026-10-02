@@ -1,0 +1,96 @@
+.molecule svg {
+  width: 180px;
+  height: 90px;
+}
+
+.reaction-header svg {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+}
+
+.molecule rect {
+  fill: none;
+  fill-opacity: 0;
+}
+
+.well-molecule svg {
+  position: relative;
+  top: -2px;
+  width: 40px;
+  height: 40px;
+}
+
+.well-molecule rect {
+  opacity: 0;
+}
+
+.molecule-small svg {
+  width: 50px;
+  height: 50px;
+}
+
+.molecule-small rect {
+  opacity: 0;
+}
+
+.molecule-mid svg {
+  width: 100%;
+  height: 200px;
+}
+
+.molecule-fixed-data svg {
+  max-width: 100%;
+  height: 100px;
+}
+
+.molecule-mid rect {
+  opacity: 0;
+}
+
+.reaction-selected line,
+.reaction-selected text,
+.reaction-selected polygon,
+.molecule-selected line,
+.molecule-selected text {
+  stroke: white;
+  fill: white;
+}
+
+.reaction svg,
+.research_plan svg {
+  max-height: 90px;
+  height: 100%;
+  width: 90%;
+  margin-left: 10px;
+}
+
+.sample-details svg,
+.reaction-details svg {
+  max-width: 100%;
+  max-height: 200px;
+  width: 100%;
+}
+
+.preview-modal {
+  width: 90% !important;
+}
+
+.preview-popover svg {
+  max-width: 50vw;
+  max-height: calc(100vh - 200px);
+}
+
+.preview-popover-fixed svg {
+  width: 50vw;
+  height: 25vw;
+}
+
+.preview-modal svg {
+  width: 90%;
+  margin: 20px;
+}
+
+.preview-modal .svg-file-container {
+  height: calc(100vh - 200px);
+}

@@ -8,16 +8,13 @@ module SVG
     def structure_svg(editor, svg, hexdigest, is_centered = false)
       processor = case editor
                   when /marvinjs/i
-                  when /ketcher2/i
                     Chemotion::MarvinjsSvgProcessor.new(svg)
                   when /chemdraw/i
                     Chemotion::ChemdrawSvgProcessor.new(svg)
-                  when /ketcher2/i
-                    Chemotion::MarvinjsSvgProcessor.new(svg)
                   when /ketcher/i
-                    Ketcherails::SVGProcessor.new(svg)
+                    KetcherService::SVGProcessor.new(svg)
                   else
-                    Chemotion::OpenBabelSvgProcessor.new(svg)
+                    Chemotion::ChemdrawSvgProcessor.new(svg)
                   end
       svg = processor.centered_and_scaled_svg unless is_centered == true
       info = generate_svg_info('samples', hexdigest)

@@ -7,10 +7,12 @@ module Chemotion
       desc 'Find top 3 matched user names'
       params do
         requires :name, type: String
-        optional :type, type: [String], desc: 'user types',
-                        coerce_with: ->(val) { val.split(/[\s|,]+/) },
-                        values: %w[Group Person],
-                        default: %w[Group Person]
+        optional :type,
+                 type: [String],
+                 desc: 'user types',
+                 coerce_with: ->(val) { val.split(/[\s|,]+/) },
+                 values: %w[Group Person],
+                 default: %w[Group Person]
       end
       get 'name' do
         return { users: [] } if params[:name].blank?
@@ -24,20 +26,50 @@ module Chemotion
         present current_user, with: Entities::UserEntity, root: 'user'
       end
 
+      resource :two_factor do
+        desc 'Get 2FA QR code and status'
+        get do
+          {
+            otp_required_for_login: current_user.otp_required_for_login,
+          }
+        end
+
+        desc 'Enable 2FA by verifying OTP code'
+        put do
+          if current_user.otp_required_for_login
+            link = OtpWebToken.disable_link(current_user)
+            TwoFactorAuthMailer.disable_mail(current_user, link).deliver_now
+          else
+            link = OtpWebToken.enable_link(current_user)
+            TwoFactorAuthMailer.enable_mail(current_user, link).deliver_now
+          end
+
+          {
+            success: true,
+          }
+        end
+      end
+
       desc 'list user labels'
       get 'list_labels' do
-        labels = UserLabel.my_labels(current_user, false)
+        labels = UserLabel.my_labels(current_user)
         present labels || [], with: Entities::UserLabelEntity, root: 'labels'
       end
 
       desc 'list structure editors'
       get 'list_editors' do
         editors = []
-        %w[chemdrawEditor marvinjsEditor ketcher2Editor].each do |str|
+        %w[chemdrawEditor marvinjsEditor ketcherEditor].each do |str|
           editors.push(str) if current_user.matrix_check_by_name(str)
         end
-        present Matrice.where(name: editors).order('name'), with: Entities::MatriceEntity, root: 'matrices',
-                                                            unexpose_include_ids: true, unexpose_exclude_ids: true
+        matrices = Matrice.where(name: editors)
+                          .order(:name)
+
+        present matrices,
+                with: Entities::MatriceEntity,
+                root: 'matrices',
+                unexpose_include_ids: true,
+                unexpose_exclude_ids: true
       end
 
       namespace :omniauth_providers do
@@ -76,6 +108,43 @@ module Chemotion
         end
       end
 
+      desc 'delete a user label the current user created'
+      params do
+        requires :id, type: Integer
+      end
+      delete 'delete_label/:id' do
+        label = UserLabel.find(params[:id])
+        error!('401 Unauthorized', 401) unless label.user_id == current_user.id
+        error!('403 Global labels cannot be deleted', 403) if label.access_level == 2
+        label.destroy!
+        { id: label.id }
+      end
+
+      namespace :update_orcid do
+        desc 'validate and save the current user ORCID iD'
+        params do
+          requires :orcid, type: String, allow_blank: false
+        end
+        put do
+          orcid_val = params[:orcid].to_s.strip
+          error!('Invalid ORCID format. Please use the format: 0000-0000-0000-0000', 400) unless Chemotion::OrcidService.valid_format?(orcid_val)
+
+          orcid_data = Chemotion::OrcidService.record_person(orcid_val)
+          error!('Could not retrieve information for this ORCID iD. Please check the ID and try again.', 422) if orcid_data.nil?
+
+          unless Chemotion::OrcidService.names_match?(current_user, orcid_data)
+            record_name = [orcid_data.person&.given_names, orcid_data.person&.family_name].compact.join(' ').strip
+            user_name = [current_user.first_name, current_user.last_name].compact.join(' ').strip
+            error!("Name mismatch. ORCID record: '#{record_name}'. Your account: '#{user_name}'.", 422)
+          end
+
+          providers = current_user.providers || {}
+          providers['orcid'] = orcid_val
+          current_user.update!(providers: providers)
+          { orcid: orcid_val }
+        end
+      end
+
       namespace :update_counter do
         desc 'create or update user labels'
         params do
@@ -96,6 +165,20 @@ module Chemotion
         get do
           present(ScifinderNCredential.find_by(created_by: current_user.id) || {},
                   with: Entities::ScifinderNCredentialEntity)
+        end
+      end
+
+      namespace :reaction_short_label do
+        params do
+          requires :reactions_count, type: Integer
+          requires :reaction_name_prefix, type: String
+        end
+
+        put do
+          current_user.reaction_name_prefix = params[:reaction_name_prefix]
+          current_user.counters ||= {}
+          current_user.counters['reactions'] = params[:reactions_count].to_s
+          current_user.save!
         end
       end
 
@@ -121,7 +204,7 @@ module Chemotion
             requires :last_name, type: String
             optional :email, type: String, regexp: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
             requires :name_abbreviation, type: String
-            optional :users, type: Array[Integer]
+            optional :users, type: [Integer]
           end
         end
 
@@ -164,8 +247,10 @@ module Chemotion
         end
         route_param :device_id do
           get do
-            present DeviceMetadata.find_by(device_id: params[:device_id]), with: Entities::DeviceMetadataEntity,
-                                                                           root: 'device_metadata'
+            device_metadata = DeviceMetadata.find_by(device_id: params[:device_id])
+            present device_metadata,
+                    with: Entities::DeviceMetadataEntity,
+                    root: 'device_metadata'
           end
         end
       end
@@ -219,7 +304,6 @@ module Chemotion
     resource :devices do
       params do
         optional :id, type: String, regexp: /\d+/, default: '0'
-        optional :status, type: String
       end
 
       get :novnc do
@@ -231,13 +315,37 @@ module Chemotion
         present devices, with: Entities::DeviceNovncEntity, root: 'devices'
       end
 
+      desc 'Get current connection status for a device'
+      params do
+        requires :id, type: String, regexp: /\d+/
+        optional :status, type: String
+      end
+
       get 'current_connection' do
-        path = Rails.root.join('tmp/novnc_devices', params[:id])
-        cmd = "echo '#{current_user.id},#{params[:status] == 'true' ? 1 : 0}' >> #{path};"
+        # Authorize: ensure device is accessible to current user (cached for 1 minute)
+        cache_key = "device_access/#{current_user.id}/#{params[:id]}"
+
+        device = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+          Device.by_user_ids(user_ids).find_by(id: params[:id])
+        end
+
+        error!('Device not found', 404) unless device
+
+        path = NOVNC_DEVICES_DIR.join(params[:id])
+        status = params[:status] == 'true' ? 1 : 0
+
+        cmd = "echo '#{current_user.id},#{status}' >> #{path};"
         cmd += "LINES=$(tail -n 8 #{path});echo \"$LINES\" | tee #{path}"
-        { result: Open3.popen3(cmd) { |_i, o, _e, _t| o.read.split(/\s/) } }
+
+        result = Open3.popen3(cmd) { |_i, o, _e, _t| o.read.split(/\s+/) }.compact_blank
+
+        { result: result }
+      rescue SystemCallError => e
+        Rails.logger.error("current_connection: #{e.class} – #{e.message}")
+        error!('Internal server error', 500)
       end
     end
   end
+
   # rubocop:enable Metrics/ClassLength
 end

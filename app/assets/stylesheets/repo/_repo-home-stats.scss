@@ -1,0 +1,194 @@
+// Publication Statistics section (yearly chart + top contributors)
+// Relies on $home-* and $bs-* variables defined at the top of repo-home.scss.
+
+.repo-stats-section {
+  background-color: $home-surface-muted;
+  border-radius: $home-radius-card;
+}
+
+.repo-top-authors-row {
+  display: flex;
+}
+
+.repo-yearly-chart {
+  background-color: $home-surface;
+  border: 1px solid $home-border;
+  border-radius: $home-radius-card;
+  box-shadow: $home-shadow;
+  padding: 14px 18px;
+  height: 100%;
+
+  .repo-yearly-chart-header {
+    margin-bottom: 8px;
+
+    h3 {
+      margin: 0;
+      font-size: $home-font-card-h2;
+      color: $bs-primarycolor;
+      font-weight: 700;
+    }
+
+    .repo-yearly-chart-sub {
+      display: block;
+      margin-top: 2px;
+      font-size: $home-font-caption;
+      color: #6c757d;
+    }
+  }
+}
+
+.repo-top-authors {
+  background-color: $home-surface;
+  border: 1px solid $home-border;
+  border-radius: $home-radius-card;
+  box-shadow: $home-shadow;
+  display: flex;
+  flex-direction: column;
+
+  .card-header {
+    background: transparent;
+    padding: 10px 12px 4px;
+    flex: 0 0 auto;
+
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: $bs-primarycolor;
+      font-weight: 700;
+    }
+
+    .repo-top-authors-sub {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.7rem;
+      color: #6c757d;
+      line-height: 1.3;
+    }
+  }
+
+  .card-body {
+    padding: 6px 10px 12px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .repo-top-authors-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .top-author-row {
+    margin: 0;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+
+    .top-author-btn {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border: 1px solid transparent;
+      border-radius: $home-radius-btn;
+      background: $home-surface-muted;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease,
+        box-shadow 0.15s ease, transform 0.15s ease;
+
+      &:hover,
+      &:focus {
+        background: #ffffff;
+        border-color: $bs-primarycolor;
+        box-shadow: $home-shadow;
+        outline: none;
+        transform: translateY(-1px);
+      }
+    }
+
+    .top-author-rank {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e9eef4;
+      color: #6c757d;
+      font-weight: 700;
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .top-author-avatar {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: $bs-primarycolor;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .top-author-name {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #2b3a4a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-author-count {
+      flex: 0 0 auto;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.1;
+
+      .top-author-count-num {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: $statisticcolor;
+      }
+
+      .top-author-count-lbl {
+        font-size: 0.6rem;
+        color: #888;
+        text-transform: lowercase;
+      }
+    }
+
+    &.top-author-rank-1 .top-author-rank {
+      background: #f5c518;
+      color: #2b3a4a;
+    }
+
+    &.top-author-rank-2 .top-author-rank {
+      background: #c0c5cb;
+      color: #2b3a4a;
+    }
+
+    &.top-author-rank-3 .top-author-rank {
+      background: #cd7f32;
+      color: #ffffff;
+    }
+  }
+}

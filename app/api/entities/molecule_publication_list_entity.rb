@@ -19,7 +19,13 @@ module Entities
     end
 
     expose :publication do |obj|
-      obj[:publication] || {}
+      next obj[:publication] if obj.is_a?(Hash)
+
+      {
+        'id' => obj.try(:pub_id),
+        'published_at' => obj.try(:published_at)&.strftime('%Y-%m-%d'),
+        'author_name' => obj.try(:author_name)
+      }
     end
   end
 end

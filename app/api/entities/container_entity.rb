@@ -2,6 +2,8 @@
 
 module Entities
   class ContainerEntity < ApplicationEntity
+    include Entities::Concerns::RepoContainerHelper
+
     THUMBNAIL_CONTENT_TYPES = %w[image/jpg image/jpeg image/png image/tiff].freeze
     expose(
       :id,
@@ -11,29 +13,17 @@ module Entities
       :extended_metadata,
     )
 
-    expose :preview_img, if: ->(object, _options) do
-      object.container_type == 'analysis'
-    end
-    expose :attachments, using: 'Entities::AttachmentEntity'
-    expose :code_log, using: 'Entities::CodeLogEntity'
-    # expose :children  ## To be checked by Paggy
-    # expose :children, using: 'Entities::ContainerEntity'
-    expose :children, using: 'Entities::ContainerEntity' do |container, opts|
-      if container.children.present?
-        container.children.map do |child|
-          if child['container_type'] == 'link'
-            get_link(child)
-          else
-            child
-          end
-        end
-      else
-        []
-      end
-    end
-    expose :dataset, using: 'Labimotion::DatasetEntity'
-    expose :dataset_doi
-    expose :pub_id
+    expose :attachments, using: 'Entities::AttachmentEntity', if: lambda { |object, _options|
+                                                                    object.container_type == 'dataset'
+                                                                  }
+    expose :code_log, using: 'Entities::CodeLogEntity', if: ->(object, _options) { object.container_type == 'analysis' }
+    expose :children, using: 'Entities::ContainerEntity', unless: lambda { |object, _options|
+                                                                    object.container_type == 'dataset'
+                                                                  }
+    expose :dataset, using: 'Labimotion::DatasetEntity', if: ->(object, _options) { object.container_type == 'dataset' }
+
+    expose :dataset_doi ## Chemotion Repository DOI
+    expose :pub_id ## Chemotion Repository Publication ID
 
     # For Versioning
     if ENV['REPO_VERSIONING'] == 'true'
@@ -44,96 +34,18 @@ module Entities
       end
     end
 
-    ## To be checked by Paggy
-    # def children
-    #   if object.container_type == 'link'
-    #   else
-    #     Entities::ContainerEntity.represent(object.children, serializable: true)
-    #   end
-    # end
-
-    def get_link(container)
-      target_container = Container.find(container.extended_metadata['target_id'])
-      # Instead of using hash_tree, get the children directly
-      target_children = target_container.children
-      link = get_analysis(target_container, target_children)
-      link.link_id = container.id # attr_accessor link_id on Container
-      link
-    end
-
-    def get_analysis(container, children)
-      # Create a new Container object or use an existing one <- not sure about this
-      analysis = container
-      analysis.assign_attributes(container.attributes.slice('id', 'container_type', 'name', 'description'))
-      analysis.dataset_doi = container.full_doi if container.respond_to? :full_doi
-      analysis.pub_id = container.publication&.id if container.respond_to? :publication
-      analysis.extended_metadata = container.extended_metadata
-
-      dids = []
-
-      # Map children to Container objects as well
-      analysis.children = children.map do |child|
-        ds = child
-        ds.assign_attributes(child.attributes.slice('id', 'container_type', 'name', 'description'))
-        ds.dataset_doi = child.full_doi if child.respond_to? :full_doi
-        ds.pub_id = child.publication&.id if child.respond_to? :publication
-        ds.extended_metadata = child.extended_metadata
-        dids << ds.id
-        ds
-      end
-
-      # Assign preview_img
-      analysis.preview_img = dids
-
-      analysis
-    end
-
-    def get_extended_metadata(container)
-      ext_mdata = container.extended_metadata
-      return ext_mdata unless ext_mdata
-      ext_mdata['report'] = ext_mdata['report'] == 'true' || ext_mdata == true
-      unless ext_mdata['content'].blank?
-        ext_mdata['content'] = JSON.parse(container.extended_metadata['content'])
-      end
-      unless ext_mdata['hyperlinks'].blank?
-        ext_mdata['hyperlinks'] = JSON.parse(container.extended_metadata['hyperlinks'])
-      end
-      ext_mdata
-    end
-
-    def concept_doi
-      object.concept_doi
-    end
-
-    def versions
-      return nil unless object.container_type == 'analysis'
-
-      object.versions.map do |container|
-        { doi: container.full_doi, id: container.id }
-      end
-    end
-
-    def dataset_doi
-      object.full_doi
-    end
-
-    def pub_id
-      object.publication&.id
-    end
-
+    # rubocop:disable Metrics/AbcSize
     def extended_metadata
       return unless object.extended_metadata
 
-      report = (object.extended_metadata['report'] == 'true' || object.extended_metadata == 'true')
+      report = object.extended_metadata['report'] == 'true' || object.extended_metadata == 'true'
+
       {}.tap do |metadata|
         metadata[:report] = report
         metadata[:status] = object.extended_metadata['status']
         metadata[:kind] = object.extended_metadata['kind']
         metadata[:index] = object.extended_metadata['index']
         metadata[:instrument] = object.extended_metadata['instrument']
-        metadata[:dataset_doi] = object.full_doi  if object.respond_to? :full_doi
-        metadata[:pub_id] = object.publication&.id  if object.respond_to? :publication
-
         if object.extended_metadata['content'].present?
           metadata[:content] =
             JSON.parse(object.extended_metadata['content'])
@@ -142,49 +54,20 @@ module Entities
           metadata[:hyperlinks] =
             JSON.parse(object.extended_metadata['hyperlinks'])
         end
+        if object.extended_metadata && object.extended_metadata['general_description'].present?
+          general_desc = object.extended_metadata['general_description']
+          metadata[:general_description] = if general_desc.is_a?(String)
+                                             begin
+                                               JSON.parse(general_desc)
+                                             rescue JSON::ParserError
+                                               general_desc
+                                             end
+                                           else
+                                             general_desc
+                                           end
+        end
       end
     end
-
-    private
-
-    # The frontend assumes the analysis (no other container types) to have a preview image.
-    # Technically the images are attached to the analysis' dataset children though.
-    # Therefore we have to collect all eligible images from the dataset children and display the newest
-    # thumbnail available.
-    def preview_img
-      return unless object.container_type == 'analysis'
-
-      attachments_with_thumbnail = Attachment.where(
-        thumb: true,
-        attachable_type: 'Container',
-        attachable_id: object.children.where(container_type: :dataset),
-      )
-      return no_preview_image_available unless attachments_with_thumbnail.exists?
-
-      atts_with_thumbnail = attachments_with_thumbnail.where(
-        "attachment_data -> 'metadata' ->> 'mime_type' in (:value)",
-        value: THUMBNAIL_CONTENT_TYPES,
-      ).order(updated_at: :desc)
-
-      combined_image_attachment = atts_with_thumbnail.where(
-        'filename LIKE ?', '%combined%'
-      ).order(updated_at: :desc).first
-
-      latest_image_attachment = atts_with_thumbnail.first
-
-      attachment = combined_image_attachment || latest_image_attachment || attachments_with_thumbnail.first
-      preview_image = attachment.read_thumbnail
-      return no_preview_image_available unless preview_image
-
-      {
-        preview: Base64.encode64(preview_image),
-        id: attachment.id,
-        filename: attachment.filename,
-      }
-    end
-
-    def no_preview_image_available
-      { preview: 'not available', id: nil, filename: nil }
-    end
+    # rubocop:enable Metrics/AbcSize
   end
 end

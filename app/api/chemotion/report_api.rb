@@ -16,7 +16,7 @@ module Chemotion
       end
 
       def time_now
-        Time.now.strftime('%Y-%m-%dT%H-%M-%S')
+        Time.zone.now.strftime('%Y-%m-%dT%H-%M-%S')
       end
 
       def is_int?
@@ -36,25 +36,9 @@ module Chemotion
         env['api.format'] = :binary
         header(
           'Content-Disposition',
-          "attachment; filename*=UTF-8''#{CGI.escape(filename)}"
+          "attachment; filename*=UTF-8''#{CGI.escape(filename)}",
         )
         docx
-      end
-
-      desc "get DOI list"
-      params do
-        requires :elements
-      end
-      post :dois do
-        elements = params[:elements]
-        pub_list = []
-        elements.each do |element|
-          publication = Publication.find_by(element_id: element[:id], element_type: element[:type].capitalize)
-          pub_list.push(publication) unless publication.nil?
-          # publications = [publication] + publication.descendants
-        end
-        entities = Entities::PublicationEntity.represent(pub_list, serializable: true)
-        {dois: entities || []}
       end
 
       params do
@@ -78,12 +62,23 @@ module Chemotion
           c_id: c_id,
         }
 
+        ui_state = table_params[:ui_state].select do |_, v|
+          v.is_a?(Hash) && v.key?('checkedIds') && v.key?('checkedAll')
+        end
+
+        return status 204 if ui_state.all? { |_, v| v['checkedIds'].to_a.empty? && !v['checkedAll'] }
+
         if params[:columns][:chemicals].blank?
           generate_sheets_for_tables(%i[sample reaction wellplate], table_params, export)
         end
 
         if params[:exportType] == 1 && params[:columns][:analyses].present?
           generate_sheets_for_tables(%i[sample], table_params, export, params[:columns][:analyses], :analyses)
+        end
+
+        if params[:exportType] == 1 && params[:columns][:components].present?
+          generate_sheets_for_tables(%i[sample], table_params, export, params[:columns][:components],
+                                     :components)
         end
 
         if params[:exportType] == 1 && params[:columns][:chemicals].present?
@@ -104,7 +99,7 @@ module Chemotion
         header('Content-Disposition', "attachment; filename=\"#{filename}\"")
         # header 'Content-Disposition', "attachment; filename*=UTF-8''#{fileURI}"
 
-        export.read
+        export.read || ''
       end
 
       params do
@@ -119,12 +114,14 @@ module Chemotion
         real_coll_id = fetch_collection_id_w_current_user(
           params[:uiState][:currentCollection], params[:uiState][:isSync]
         )
-        return unless (p_t = params[:uiState][:reaction])
+
+        p_t = params[:uiState][:reaction]
+        return status 204 unless p_t && (p_t[:checkedAll] || p_t[:checkedIds].to_a.present?)
 
         results = reaction_smiles_hash(
           real_coll_id,
-          p_t[:checkedAll] && p_t[:uncheckedIds] || p_t[:checkedIds],
-          p_t[:checkedAll]
+          (p_t[:checkedAll] && p_t[:uncheckedIds]) || p_t[:checkedIds],
+          p_t[:checkedAll],
         ) || {}
         smiles_construct = "r_smiles_#{params[:exportType]}"
         results.map { |_, v| send(smiles_construct, v) }.join("\r\n")
@@ -139,7 +136,7 @@ module Chemotion
         header(
           'Content-Disposition',
           "attachment; filename*=UTF-8''#{CGI.escape("Wellplate_#{params[:id]}_\
-          Samples Excel.xlsx")}"
+          Samples Excel.xlsx")}",
         )
         export = Export::ExportExcel.new
         column_query = build_column_query(default_columns_wellplate, current_user.id)
@@ -148,7 +145,7 @@ module Chemotion
 
         result = db_exec_query(sql_query)
         export.generate_sheet_with_samples(:wellplate, result)
-        export.read
+        export.read || ''
       end
 
       params do
@@ -161,7 +158,7 @@ module Chemotion
         header(
           'Content-Disposition',
           "attachment; filename*=UTF-8''#{CGI.escape("Reaction_#{params[:id]}_\
-          Samples Excel.xlsx")}"
+          Samples Excel.xlsx")}",
         )
         export = Export::ExportExcel.new
         column_query = build_column_query(default_columns_reaction, current_user.id)
@@ -170,7 +167,7 @@ module Chemotion
 
         result = db_exec_query(sql_query)
         export.generate_sheet_with_samples(:reaction, result)
-        export.read
+        export.read || ''
       end
     end
 
@@ -190,7 +187,7 @@ module Chemotion
 
       desc 'return reports which can be downloaded now'
       params do
-        requires :ids, type: Array[Integer]
+        requires :ids, type: [Integer]
       end
       post :downloadable do
         reports = current_user.reports.where(id: params[:ids]).where.not(generated_at: nil)
@@ -214,15 +211,15 @@ module Chemotion
 
     desc 'returns a created report'
     params do
-      requires :objTags, type: Array[Hash]
-      requires :splSettings, type: Array[Hash]
-      requires :rxnSettings, type: Array[Hash]
-      requires :siRxnSettings, type: Array[Hash]
-      requires :configs, type: Array[Hash]
-      requires :molSerials, type: Array[Hash]
-      requires :prdAtts, type: Array[Hash]
+      requires :objTags, type: [Hash]
+      requires :splSettings, type: [Hash]
+      requires :rxnSettings, type: [Hash]
+      requires :siRxnSettings, type: [Hash]
+      requires :configs, type: [Hash]
+      requires :molSerials, type: [Hash]
+      requires :prdAtts, type: [Hash]
       requires :imgFormat, type: String, default: 'png', values: %w[png eps emf]
-      requires :fileName, type: String, default: 'ELN_Report_' + Time.now.strftime('%Y-%m-%dT%H-%M-%S')
+      requires :fileName, type: String, default: "ELN_Report_#{Time.zone.now.strftime('%Y-%m-%dT%H-%M-%S')}"
       requires :templateId, type: String
       optional :templateType, type: String, default: 'standard', values: ReportTemplate::REPORT_TYPES
       optional :fileDescription
@@ -245,13 +242,17 @@ module Chemotion
         objects: params[:objTags],
         img_format: params[:imgFormat],
         template: params[:templateType],
-        report_templates_id: !!/\A\d+\z/.match(params[:templateId]) ? params[:templateId].to_i : nil,
-        author_id: current_user.id
+        report_templates_id: /\A\d+\z/.match(params[:templateId]).nil? ? nil : params[:templateId].to_i,
+        author_id: current_user.id,
       }
 
       report = Report.create(attributes)
       current_user.reports << report
-      report.create_docx
+      begin
+        report.create_docx
+      rescue StandardError => e
+        report.file_description = "Report could not be generated: #{e.message}"
+      end
 
       present report, with: Entities::ReportEntity, root: :report
     end
@@ -265,7 +266,7 @@ module Chemotion
       end
 
       get :file do
-        ext = params[:ext]
+        params[:ext]
         report = current_user.reports.find(params[:id])
 
         if report
@@ -278,7 +279,7 @@ module Chemotion
           env['api.format'] = :binary
           header(
             'Content-Disposition',
-            "attachment; filename*=UTF-8''#{CGI.escape(att.filename)}"
+            "attachment; filename*=UTF-8''#{CGI.escape(att.filename)}",
           )
           att.read_file
         end

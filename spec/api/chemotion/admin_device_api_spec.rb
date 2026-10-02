@@ -1,6 +1,25 @@
 # frozen_string_literal: true
 
 RSpec.describe Chemotion::AdminDeviceAPI do
+  before(:all) do
+    keydir = Rails.configuration.datacollectors&.keydir
+    @stub_keyfile_path = nil
+    if keydir.present?
+      dir = keydir.start_with?('/') ? Pathname.new(keydir) : Rails.root.join(keydir)
+      FileUtils.mkdir_p(dir)
+      key_name = ENV['DATACOLLECTOR_FACTORY_SFTP_KEY'].presence || 'id_test'
+      key_path = dir.join(key_name)
+      unless key_path.exist?
+        FileUtils.touch(key_path)
+        @stub_keyfile_path = key_path
+      end
+    end
+  end
+
+  after(:all) do
+    File.delete(@stub_keyfile_path) if @stub_keyfile_path && File.exist?(@stub_keyfile_path)
+  end
+
   let!(:admin1) { create(:admin) }
   let(:warden_instance) { instance_double(WardenAuthentication) }
   let(:person) { create(:person) }
@@ -74,15 +93,7 @@ RSpec.describe Chemotion::AdminDeviceAPI do
       end
 
       it 'returns a valid connection' do
-        # allow(Net::SFTP).to receive(:start).with(
-        #  device_with_sftp.datacollector_host,
-        #  device_with_sftp.datacollector_user,
-        #  key_data: [],
-        #  keys: Pathname.new(device_with_sftp.datacollector_key_name),
-        #  keys_only: true,
-        #  non_interactive: true,
-        #  timeout: 5,
-        # ).and_return(sftp_double)
+        allow(Net::SFTP).to receive(:start).and_return(sftp_double)
 
         post '/api/v1/admin_devices/test_sftp', params: params
         expect(parsed_json_response['status']).to include('success')

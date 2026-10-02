@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_11_13_000000) do
+ActiveRecord::Schema.define(version: 2026_05_08_094008) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
@@ -18,6 +18,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "postgres_fdw"
+  enable_extension "rdkit"
   enable_extension "uuid-ossp"
 
   create_table "affiliations", id: :serial, force: :cascade do |t|
@@ -64,7 +65,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "storage", limit: 20, default: "tmp"
     t.integer "created_by", null: false
     t.integer "created_for"
-    t.string "version"
+    t.string "version", default: "/", null: false, collation: "C"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "content_type"
@@ -77,8 +78,13 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.bigint "filesize"
     t.integer "con_state"
     t.jsonb "attachment_data"
+    t.datetime "deleted_at"
+    t.jsonb "log_data"
+    t.string "created_by_type"
+    t.integer "edit_state", default: 0
     t.index ["attachable_type", "attachable_id"], name: "index_attachments_on_attachable_type_and_attachable_id"
     t.index ["identifier"], name: "index_attachments_on_identifier", unique: true
+    t.index ["version"], name: "index_attachments_on_version", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
   end
 
   create_table "authentication_keys", id: :serial, force: :cascade do |t|
@@ -135,6 +141,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.integer "created_by"
+    t.index ["name", "source"], name: "index_cellline_materials_on_name_and_source", unique: true
   end
 
   create_table "cellline_samples", force: :cascade do |t|
@@ -151,8 +159,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.string "short_label"
-    t.string "ancestry"
-    t.index ["ancestry"], name: "index_cellline_samples_on_ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
+    t.index ["ancestry"], name: "index_cellline_samples_on_ancestry", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
   end
 
   create_table "channels", id: :serial, force: :cascade do |t|
@@ -167,6 +175,11 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.integer "sample_id"
     t.text "cas"
     t.jsonb "chemical_data"
+    t.datetime "updated_at"
+    t.datetime "deleted_at"
+    t.jsonb "log_data"
+    t.bigint "sequence_based_macromolecule_sample_id"
+    t.index ["sequence_based_macromolecule_sample_id"], name: "idx_chemicals_sbmm_sample_id"
   end
 
   create_table "chemscanner_molecules", id: :serial, force: :cascade do |t|
@@ -273,7 +286,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
 
   create_table "collections", id: :serial, force: :cascade do |t|
     t.integer "user_id", null: false
-    t.string "ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
     t.text "label", null: false
     t.integer "shared_by_id"
     t.boolean "is_shared", default: false
@@ -293,7 +306,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.jsonb "tabs_segment", default: {}
     t.integer "celllinesample_detail_level", default: 10
     t.bigint "inventory_id"
-    t.index ["ancestry"], name: "index_collections_on_ancestry"
+    t.integer "devicedescription_detail_level", default: 10
+    t.integer "sequencebasedmacromoleculesample_detail_level", default: 10
+    t.index ["ancestry"], name: "index_collections_on_ancestry", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
     t.index ["deleted_at"], name: "index_collections_on_deleted_at"
     t.index ["inventory_id"], name: "index_collections_on_inventory_id"
     t.index ["user_id"], name: "index_collections_on_user_id"
@@ -306,6 +321,15 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.index ["cellline_sample_id", "collection_id"], name: "index_collections_celllines_on_cellsample_id_and_coll_id", unique: true
     t.index ["collection_id"], name: "index_collections_celllines_on_collection_id"
     t.index ["deleted_at"], name: "index_collections_celllines_on_deleted_at"
+  end
+
+  create_table "collections_device_descriptions", force: :cascade do |t|
+    t.integer "collection_id"
+    t.integer "device_description_id"
+    t.datetime "deleted_at"
+    t.index ["collection_id"], name: "index_collections_device_descriptions_on_collection_id"
+    t.index ["deleted_at"], name: "index_collections_device_descriptions_on_deleted_at"
+    t.index ["device_description_id", "collection_id"], name: "index_on_device_description_and_collection", unique: true
   end
 
   create_table "collections_elements", id: :serial, force: :cascade do |t|
@@ -354,6 +378,16 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.index ["screen_id", "collection_id"], name: "index_collections_screens_on_screen_id_and_collection_id", unique: true
   end
 
+  create_table "collections_sequence_based_macromolecule_samples", force: :cascade do |t|
+    t.bigint "collection_id"
+    t.bigint "sequence_based_macromolecule_sample_id"
+    t.datetime "deleted_at"
+    t.index ["collection_id", "sequence_based_macromolecule_sample_id"], name: "idx_collections_sbmm_sample_unique_joins", unique: true
+    t.index ["collection_id"], name: "idx_collections_sbmm_sample_collection"
+    t.index ["deleted_at"], name: "idx_collections_sbmm_sample_deleted_at"
+    t.index ["sequence_based_macromolecule_sample_id"], name: "idx_collections_sbmm_sample_sample"
+  end
+
   create_table "collections_vessels", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "collection_id"
     t.uuid "vessel_id"
@@ -395,6 +429,18 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable_type_and_commentable_id"
     t.index ["created_by"], name: "index_comments_on_user"
     t.index ["section"], name: "index_comments_on_section"
+  end
+
+  create_table "components", force: :cascade do |t|
+    t.bigint "sample_id", null: false
+    t.string "name"
+    t.integer "position"
+    t.jsonb "component_properties"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "deleted_at"
+    t.jsonb "log_data"
+    t.index ["sample_id"], name: "index_components_on_sample_id"
   end
 
   create_table "computed_props", id: :serial, force: :cascade do |t|
@@ -449,7 +495,10 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at", null: false
     t.integer "parent_id"
     t.text "plain_text_content"
+    t.datetime "deleted_at"
+    t.jsonb "log_data"
     t.index ["containable_type", "containable_id"], name: "index_containers_on_containable"
+    t.index ["parent_id"], name: "index_containers_on_parent_id", where: "(deleted_at IS NULL)"
     t.index ["parent_id"], name: "index_containers_parent_id"
   end
 
@@ -476,6 +525,10 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.jsonb "admin_ids", default: {}
     t.jsonb "user_ids", default: {}
     t.string "version"
+    t.jsonb "super_class_of", default: {}, null: false
+    t.index ["ols_term_id"], name: "dataset_klasses_on_ols_term_id_ukey", unique: true
+    t.index ["super_class_of"], name: "index_dataset_klasses_on_super_class_of", using: :gin
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_dataset_klasses_metadata"
   end
 
   create_table "dataset_klasses_revisions", id: :serial, force: :cascade do |t|
@@ -490,7 +543,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.string "version"
     t.integer "submitted", default: 0, null: false
+    t.jsonb "metadata", default: {}, null: false
     t.index ["dataset_klass_id"], name: "index_dataset_klasses_revisions_on_dataset_klass_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_dataset_klasses_revisions_metadata"
   end
 
   create_table "datasets", id: :serial, force: :cascade do |t|
@@ -504,6 +559,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "klass_uuid"
     t.datetime "deleted_at"
     t.jsonb "properties_release"
+    t.jsonb "metadata", default: {}, null: false
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_datasets_metadata"
   end
 
   create_table "datasets_revisions", id: :serial, force: :cascade do |t|
@@ -516,7 +573,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.jsonb "properties_release"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["dataset_id"], name: "index_datasets_revisions_on_dataset_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_datasets_revisions_metadata"
   end
 
   create_table "delayed_jobs", id: :serial, force: :cascade do |t|
@@ -533,6 +592,76 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at"
     t.string "cron"
     t.index ["priority", "run_at"], name: "delayed_jobs_priority"
+  end
+
+  create_table "device_descriptions", force: :cascade do |t|
+    t.string "access_comments"
+    t.string "access_options"
+    t.string "ancestry", default: "/", null: false, collation: "C"
+    t.string "application_name"
+    t.string "application_version"
+    t.string "building"
+    t.jsonb "contact_for_maintenance"
+    t.jsonb "consumables_needed_for_maintenance"
+    t.integer "created_by"
+    t.datetime "deleted_at"
+    t.text "description"
+    t.text "description_for_methods_part"
+    t.integer "device_id"
+    t.string "device_class"
+    t.string "device_class_detail"
+    t.string "general_tags", default: [], null: false, array: true
+    t.boolean "helpers_uploaded", default: false
+    t.string "infrastructure_assignment"
+    t.string "institute"
+    t.string "maintenance_contract_available"
+    t.string "maintenance_scheduling"
+    t.text "measures_after_full_shut_down"
+    t.text "measures_after_short_shut_down"
+    t.text "measures_to_plan_offline_period"
+    t.string "name"
+    t.string "operation_mode"
+    t.jsonb "operators"
+    t.jsonb "ontologies"
+    t.jsonb "planned_maintenance"
+    t.text "policies_and_user_information"
+    t.text "restart_after_planned_offline_period"
+    t.string "room"
+    t.string "serial_number"
+    t.jsonb "setup_descriptions"
+    t.string "size"
+    t.string "short_label"
+    t.jsonb "unexpected_maintenance"
+    t.string "university_campus"
+    t.string "vendor_id"
+    t.string "vendor_url"
+    t.text "version_characterization"
+    t.string "version_doi"
+    t.string "version_doi_url"
+    t.string "version_identifier_type"
+    t.datetime "version_installation_start_date"
+    t.datetime "version_installation_end_date"
+    t.string "version_number"
+    t.string "weight"
+    t.string "weight_unit"
+    t.string "vendor_device_name"
+    t.string "vendor_device_id"
+    t.string "vendor_company_name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.jsonb "log_data"
+    t.string "owner_institution"
+    t.string "owner_email"
+    t.string "owner_id"
+    t.string "inventory_id"
+    t.string "alternative_identifier"
+    t.string "vendor_id_type"
+    t.string "owner_id_type"
+    t.string "device_type_name"
+    t.string "device_type_id"
+    t.string "device_type_id_type"
+    t.index ["ancestry"], name: "index_device_descriptions_on_ancestry", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
+    t.index ["device_id"], name: "index_device_descriptions_on_device_id"
   end
 
   create_table "device_metadata", id: :serial, force: :cascade do |t|
@@ -638,6 +767,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.jsonb "admin_ids", default: {}
     t.jsonb "user_ids", default: {}
     t.string "version"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_element_klasses_metadata"
   end
 
   create_table "element_klasses_revisions", id: :serial, force: :cascade do |t|
@@ -652,7 +782,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.string "version"
     t.integer "submitted", default: 0, null: false
+    t.jsonb "metadata", default: {}, null: false
     t.index ["element_klass_id"], name: "index_element_klasses_revisions_on_element_klass_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_element_klasses_revisions_metadata"
   end
 
   create_table "element_tags", id: :serial, force: :cascade do |t|
@@ -671,6 +803,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.float "loading"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.jsonb "log_data"
     t.index ["sample_id"], name: "index_elemental_compositions_on_sample_id"
   end
 
@@ -686,7 +819,12 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "uuid"
     t.string "klass_uuid"
     t.jsonb "properties_release"
-    t.string "ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
+    t.jsonb "metadata", default: {}, null: false
+    t.index ["ancestry"], name: "index_elements_on_ancestry", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
+    t.index ["name"], name: "index_elements_on_name_trigram", opclass: :gin_trgm_ops, using: :gin
+    t.index ["short_label"], name: "index_elements_on_short_label_trigram", opclass: :gin_trgm_ops, using: :gin
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_elements_metadata"
   end
 
   create_table "elements_elements", force: :cascade do |t|
@@ -711,7 +849,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.jsonb "properties_release"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["element_id"], name: "index_elements_revisions_on_element_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_elements_revisions_metadata"
   end
 
   create_table "elements_samples", id: :serial, force: :cascade do |t|
@@ -787,8 +927,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
   end
 
   create_table "inventories", force: :cascade do |t|
-    t.string "prefix", null: false
-    t.string "name", null: false
+    t.string "prefix"
+    t.string "name"
     t.integer "counter", default: 0
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
@@ -1029,7 +1169,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.text "cas"
     t.string "molfile_version", limit: 20
     t.index ["deleted_at"], name: "index_molecules_on_deleted_at"
-    t.index ["inchikey", "is_partial"], name: "index_molecules_on_inchikey_and_is_partial", unique: true
+    t.index ["inchikey", "sum_formular", "is_partial"], name: "index_molecules_on_formula_and_inchikey_and_is_partial", unique: true
   end
 
   create_table "nmr_sim_nmr_simulations", id: :serial, force: :cascade do |t|
@@ -1056,7 +1196,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
   create_table "ols_terms", id: :serial, force: :cascade do |t|
     t.string "owl_name"
     t.string "term_id"
-    t.string "ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
     t.string "ancestry_term_id"
     t.string "label"
     t.string "synonym"
@@ -1066,7 +1206,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.boolean "is_enabled", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["ancestry"], name: "index_ols_terms_on_ancestry"
+    t.index ["ancestry"], name: "index_ols_terms_on_ancestry", opclass: :varchar_pattern_ops
     t.index ["owl_name", "term_id"], name: "index_ols_terms_on_owl_name_and_term_id", unique: true
   end
 
@@ -1077,6 +1217,45 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["searchable_type", "searchable_id"], name: "index_pg_search_documents_on_searchable_type_and_searchable_id"
+  end
+
+  create_table "post_translational_modifications", force: :cascade do |t|
+    t.boolean "phosphorylation_enabled", default: false, null: false
+    t.boolean "phosphorylation_ser_enabled", default: false, null: false
+    t.string "phosphorylation_ser_details", default: ""
+    t.boolean "phosphorylation_thr_enabled", default: false, null: false
+    t.string "phosphorylation_thr_details", default: ""
+    t.boolean "phosphorylation_tyr_enabled", default: false, null: false
+    t.string "phosphorylation_tyr_details", default: ""
+    t.boolean "glycosylation_enabled", default: false, null: false
+    t.boolean "glycosylation_n_linked_asn_enabled", default: false, null: false
+    t.string "glycosylation_n_linked_asn_details", default: ""
+    t.boolean "glycosylation_o_linked_lys_enabled", default: false, null: false
+    t.string "glycosylation_o_linked_lys_details", default: ""
+    t.boolean "glycosylation_o_linked_ser_enabled", default: false, null: false
+    t.string "glycosylation_o_linked_ser_details", default: ""
+    t.boolean "glycosylation_o_linked_thr_enabled", default: false, null: false
+    t.string "glycosylation_o_linked_thr_details", default: ""
+    t.boolean "acetylation_enabled", default: false, null: false
+    t.float "acetylation_lysin_number"
+    t.boolean "hydroxylation_enabled", default: false, null: false
+    t.boolean "hydroxylation_lys_enabled", default: false, null: false
+    t.string "hydroxylation_lys_details", default: "t"
+    t.boolean "hydroxylation_pro_enabled", default: false, null: false
+    t.string "hydroxylation_pro_details", default: "t"
+    t.boolean "methylation_enabled", default: false, null: false
+    t.boolean "methylation_arg_enabled", default: false, null: false
+    t.string "methylation_arg_details", default: ""
+    t.boolean "methylation_glu_enabled", default: false, null: false
+    t.string "methylation_glu_details", default: ""
+    t.boolean "methylation_lys_enabled", default: false, null: false
+    t.string "methylation_lys_details", default: ""
+    t.boolean "other_modifications_enabled", default: false, null: false
+    t.string "other_modifications_details", default: ""
+    t.datetime "deleted_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["deleted_at"], name: "idx_sbmm_ptm_deleted_at"
   end
 
   create_table "predictions", id: :serial, force: :cascade do |t|
@@ -1114,6 +1293,25 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
+  create_table "protein_sequence_modifications", force: :cascade do |t|
+    t.boolean "modification_n_terminal", default: false, null: false
+    t.string "modification_n_terminal_details", default: ""
+    t.boolean "modification_c_terminal", default: false, null: false
+    t.string "modification_c_terminal_details", default: ""
+    t.boolean "modification_insertion", default: false, null: false
+    t.string "modification_insertion_details", default: ""
+    t.boolean "modification_deletion", default: false, null: false
+    t.string "modification_deletion_details", default: ""
+    t.boolean "modification_mutation", default: false, null: false
+    t.string "modification_mutation_details", default: ""
+    t.boolean "modification_other", default: false, null: false
+    t.string "modification_other_details", default: ""
+    t.datetime "deleted_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["deleted_at"], name: "idx_sbmm_psm_deleted_at"
+  end
+
   create_table "publications", id: :serial, force: :cascade do |t|
     t.string "state"
     t.jsonb "metadata", default: {}
@@ -1127,7 +1325,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.string "original_element_type"
     t.integer "original_element_id"
-    t.string "ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
     t.text "metadata_xml"
     t.integer "published_by"
     t.datetime "published_at"
@@ -1138,6 +1336,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.index ["ancestry"], name: "index_publications_on_ancestry"
     t.index ["element_type", "element_id", "deleted_at"], name: "publications_element_idx"
     t.index ["element_type", "state"], name: "index_publications_element_type_state"
+    t.index ["published_at"], name: "index_publications_on_published_at"
   end
 
   create_table "reactions", id: :serial, force: :cascade do |t|
@@ -1169,16 +1368,37 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "duration"
     t.string "rxno"
     t.string "conditions"
-    t.jsonb "variations", default: []
+    t.jsonb "variations", default: {}
     t.text "plain_text_description"
     t.text "plain_text_observation"
     t.boolean "gaseous", default: false
     t.jsonb "vessel_size", default: {"unit"=>"ml", "amount"=>nil}
+    t.jsonb "log_data"
+    t.boolean "weight_percentage", default: false
+    t.decimal "volume", precision: 10, scale: 4
+    t.boolean "use_reaction_volume", default: false, null: false
     t.index ["deleted_at"], name: "index_reactions_on_deleted_at"
     t.index ["rinchi_short_key"], name: "index_reactions_on_rinchi_short_key", order: :desc
     t.index ["rinchi_web_key"], name: "index_reactions_on_rinchi_web_key"
     t.index ["role"], name: "index_reactions_on_role"
     t.index ["rxno"], name: "index_reactions_on_rxno", order: :desc
+  end
+
+  create_table "reactions_reactant_sbmm_samples", force: :cascade do |t|
+    t.integer "reaction_id", null: false
+    t.bigint "sequence_based_macromolecule_sample_id", null: false
+    t.integer "position"
+    t.datetime "deleted_at"
+    t.boolean "show_label", default: false, null: false
+    t.boolean "reference", default: false, null: false
+    t.float "equivalent"
+    t.float "weight_percentage"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.jsonb "log_data"
+    t.index ["deleted_at"], name: "idx_rxn_reactant_sbmm_on_deleted"
+    t.index ["reaction_id"], name: "idx_rxn_reactant_sbmm_on_rxn_id"
+    t.index ["sequence_based_macromolecule_sample_id"], name: "idx_rxn_reactant_sbmm_on_sbmm_id"
   end
 
   create_table "reactions_samples", id: :serial, force: :cascade do |t|
@@ -1196,7 +1416,13 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.float "conversion_rate"
     t.integer "gas_type", default: 0
     t.jsonb "gas_phase_data", default: {"time"=>{"unit"=>"h", "value"=>nil}, "temperature"=>{"unit"=>"°C", "value"=>nil}, "turnover_number"=>nil, "part_per_million"=>nil, "turnover_frequency"=>{"unit"=>"TON/h", "value"=>nil}}
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.jsonb "log_data"
+    t.boolean "weight_percentage_reference", default: false
+    t.float "weight_percentage"
     t.index ["reaction_id"], name: "index_reactions_samples_on_reaction_id"
+    t.index ["sample_id", "type"], name: "index_reactions_samples_on_sample_id_type"
     t.index ["sample_id"], name: "index_reactions_samples_on_sample_id"
   end
 
@@ -1278,6 +1504,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.text "subject"
     t.jsonb "alternate_identifier"
     t.jsonb "related_identifier"
+    t.jsonb "log_data"
     t.index ["deleted_at"], name: "index_research_plan_metadata_on_deleted_at"
     t.index ["research_plan_id"], name: "index_research_plan_metadata_on_research_plan_id"
   end
@@ -1298,6 +1525,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "body"
+    t.jsonb "log_data"
   end
 
   create_table "research_plans_screens", force: :cascade do |t|
@@ -1316,6 +1544,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.datetime "deleted_at"
+    t.jsonb "log_data"
     t.index ["research_plan_id"], name: "index_research_plans_wellplates_on_research_plan_id"
     t.index ["wellplate_id"], name: "index_research_plans_wellplates_on_wellplate_id"
   end
@@ -1326,6 +1555,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.hstore "custom_info"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "log_data"
     t.index ["sample_id"], name: "index_residues_on_sample_id"
   end
 
@@ -1355,7 +1585,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "impurities", default: ""
     t.string "location", default: ""
     t.boolean "is_top_secret", default: false
-    t.string "ancestry"
+    t.string "ancestry", default: "/", null: false, collation: "C"
     t.string "external_label", default: ""
     t.integer "created_by"
     t.string "short_label"
@@ -1383,11 +1613,16 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.jsonb "solvent"
     t.boolean "dry_solvent", default: false
     t.boolean "inventory_sample", default: false
+    t.string "sample_type", default: "Micromolecule"
+    t.jsonb "sample_details"
+    t.jsonb "log_data"
+    t.index ["ancestry"], name: "index_samples_on_ancestry", opclass: :varchar_pattern_ops, where: "(deleted_at IS NULL)"
     t.index ["deleted_at"], name: "index_samples_on_deleted_at"
     t.index ["identifier"], name: "index_samples_on_identifier"
     t.index ["inventory_sample"], name: "index_samples_on_inventory_sample"
     t.index ["molecule_id"], name: "index_samples_on_sample_id"
     t.index ["molecule_name_id"], name: "index_samples_on_molecule_name_id"
+    t.index ["short_label"], name: "index_samples_on_short_label"
     t.index ["user_id"], name: "index_samples_on_user_id"
   end
 
@@ -1423,6 +1658,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.jsonb "component_graph_data", default: {}
     t.text "plain_text_description"
+    t.jsonb "log_data"
     t.index ["deleted_at"], name: "index_screens_on_deleted_at"
   end
 
@@ -1458,6 +1694,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.jsonb "admin_ids", default: {}
     t.jsonb "user_ids", default: {}
     t.string "version"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_segment_klasses_metadata"
   end
 
   create_table "segment_klasses_revisions", id: :serial, force: :cascade do |t|
@@ -1472,7 +1709,9 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.string "version"
     t.integer "submitted", default: 0, null: false
+    t.jsonb "metadata", default: {}, null: false
     t.index ["segment_klass_id"], name: "index_segment_klasses_revisions_on_segment_klass_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_segment_klasses_revisions_metadata"
   end
 
   create_table "segments", id: :serial, force: :cascade do |t|
@@ -1487,6 +1726,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "uuid"
     t.string "klass_uuid"
     t.jsonb "properties_release"
+    t.jsonb "metadata", default: {}, null: false
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_segments_metadata"
   end
 
   create_table "segments_revisions", id: :serial, force: :cascade do |t|
@@ -1499,7 +1740,102 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at"
     t.datetime "deleted_at"
     t.jsonb "properties_release"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["segment_id"], name: "index_segments_revisions_on_segment_id"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "chk_segments_revisions_metadata"
+  end
+
+  create_table "sequence_based_macromolecule_samples", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "deleted_at"
+    t.string "external_label"
+    t.string "short_label", null: false
+    t.string "function_or_application"
+    t.float "concentration_value"
+    t.string "concentration_unit", default: "ng/L", null: false
+    t.float "molarity_value"
+    t.string "molarity_unit", default: "mol/L", null: false
+    t.float "activity_per_volume_value"
+    t.string "activity_per_volume_unit", default: "U/L", null: false
+    t.float "activity_per_mass_value"
+    t.string "activity_per_mass_unit", default: "U/g", null: false
+    t.float "volume_as_used_value"
+    t.string "volume_as_used_unit", default: "L", null: false
+    t.float "amount_as_used_mol_value"
+    t.string "amount_as_used_mol_unit", default: "mol", null: false
+    t.float "amount_as_used_mass_value"
+    t.string "amount_as_used_mass_unit", default: "g", null: false
+    t.float "activity_value"
+    t.string "activity_unit", default: "U", null: false
+    t.bigint "sequence_based_macromolecule_id"
+    t.bigint "user_id"
+    t.string "ancestry", default: "/", null: false, collation: "C"
+    t.string "heterologous_expression", default: "unknown", null: false
+    t.string "organism", default: ""
+    t.string "taxon_id", default: ""
+    t.string "strain", default: ""
+    t.string "tissue", default: ""
+    t.string "localisation", default: ""
+    t.string "obtained_by", default: ""
+    t.string "supplier", default: ""
+    t.string "formulation", default: ""
+    t.float "purity"
+    t.string "purity_detection", default: ""
+    t.string "purification_method", default: ""
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.float "concentration_rt_value"
+    t.string "concentration_rt_unit", default: "mol/L", null: false
+    t.boolean "inventory_sample", default: false, null: false
+    t.index ["ancestry"], name: "idx_sbmm_samples_ancestry", opclass: :varchar_pattern_ops
+    t.index ["deleted_at"], name: "idx_sbmm_samples_deleted_at"
+    t.index ["inventory_sample"], name: "idx_sbmm_samples_inventory_sample"
+    t.index ["sequence_based_macromolecule_id"], name: "idx_sbmm_samples_sbmm"
+    t.index ["user_id"], name: "idx_sbmm_samples_user"
+  end
+
+  create_table "sequence_based_macromolecules", force: :cascade do |t|
+    t.jsonb "uniprot_source"
+    t.bigint "parent_id"
+    t.string "sbmm_type", null: false
+    t.string "sbmm_subtype"
+    t.string "uniprot_derivation", null: false
+    t.string "primary_accession"
+    t.string "accessions", array: true
+    t.string "ec_numbers", array: true
+    t.string "pdb_doi"
+    t.string "systematic_name"
+    t.string "short_name", null: false
+    t.float "molecular_weight"
+    t.string "sequence", null: false
+    t.string "link_uniprot"
+    t.string "link_pdb"
+    t.bigint "protein_sequence_modification_id"
+    t.string "heterologous_expression", default: "unknown", null: false
+    t.string "organism", default: ""
+    t.string "taxon_id", default: ""
+    t.string "strain", default: ""
+    t.string "tissue", default: ""
+    t.string "localisation", default: ""
+    t.string "protein_source_details_comments", default: ""
+    t.string "protein_source_details_expression_system", default: ""
+    t.string "own_identifier", default: ""
+    t.string "other_identifier", default: ""
+    t.bigint "post_translational_modification_id"
+    t.datetime "deleted_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["accessions"], name: "idx_sbmm_accessions"
+    t.index ["deleted_at"], name: "idx_sbmm_deleted_at"
+    t.index ["ec_numbers"], name: "idx_sbmm_ec_numbers"
+    t.index ["parent_id"], name: "idx_sbmm_parent"
+    t.index ["pdb_doi"], name: "idx_sbmm_pdb_doi"
+    t.index ["post_translational_modification_id"], name: "idx_sbmm_ptm_id"
+    t.index ["primary_accession"], name: "idx_sbmm_primary_accession"
+    t.index ["protein_sequence_modification_id"], name: "idx_sbmm_psm_id"
+    t.index ["sequence"], name: "idx_sbmm_sequence"
+    t.index ["short_name"], name: "idx_sbmm_short_name"
+    t.index ["systematic_name"], name: "idx_sbmm_systematic_name"
   end
 
   create_table "subscriptions", id: :serial, force: :cascade do |t|
@@ -1526,6 +1862,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "updated_at"
     t.integer "element_detail_level", default: 10
     t.integer "celllinesample_detail_level", default: 10
+    t.integer "devicedescription_detail_level", default: 10
+    t.integer "sequencebasedmacromoleculesample_detail_level", default: 10
     t.index ["collection_id"], name: "index_sync_collections_users_on_collection_id"
     t.index ["shared_by_id", "user_id", "fake_ancestry"], name: "index_sync_collections_users_on_shared_by_id"
     t.index ["user_id", "fake_ancestry"], name: "index_sync_collections_users_on_user_id_and_fake_ancestry"
@@ -1622,6 +1960,14 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.boolean "account_active"
     t.integer "matrix", default: 0
     t.jsonb "providers"
+    t.bigint "used_space", default: 0
+    t.bigint "allocated_space", default: 0
+    t.string "encrypted_otp_secret"
+    t.string "encrypted_otp_secret_iv"
+    t.string "encrypted_otp_secret_salt"
+    t.integer "consumed_timestep"
+    t.boolean "otp_required_for_login"
+    t.string "otp_backup_codes", array: true
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -1669,6 +2015,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.float "weight_amount"
     t.string "weight_unit"
     t.index ["deleted_at"], name: "index_vessel_templates_on_deleted_at"
+    t.index ["name"], name: "index_vessel_templates_on_name", unique: true
   end
 
   create_table "vessels", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1682,6 +2029,8 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.datetime "deleted_at"
     t.string "bar_code"
     t.string "qr_code"
+    t.float "weight_amount"
+    t.string "weight_unit"
     t.index ["deleted_at"], name: "index_vessels_on_deleted_at"
     t.index ["user_id"], name: "index_vessels_on_user_id"
     t.index ["vessel_template_id"], name: "index_vessels_on_vessel_template_id"
@@ -1717,6 +2066,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.text "plain_text_description"
     t.integer "width", default: 12
     t.integer "height", default: 8
+    t.jsonb "log_data"
     t.index ["deleted_at"], name: "index_wellplates_on_deleted_at"
   end
 
@@ -1732,18 +2082,27 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
     t.string "label", default: "Molecular structure", null: false
     t.string "color_code"
     t.jsonb "readouts", default: [{"unit"=>"", "value"=>""}]
+    t.jsonb "log_data"
     t.index ["deleted_at"], name: "index_wells_on_deleted_at"
     t.index ["sample_id"], name: "index_wells_on_sample_id"
     t.index ["wellplate_id"], name: "index_wells_on_wellplate_id"
   end
 
+  add_foreign_key "chemicals", "sequence_based_macromolecule_samples"
   add_foreign_key "collections", "inventories"
+  add_foreign_key "collections_sequence_based_macromolecule_samples", "collections"
+  add_foreign_key "collections_sequence_based_macromolecule_samples", "sequence_based_macromolecule_samples"
+  add_foreign_key "components", "samples"
   add_foreign_key "dois", "molecules"
   add_foreign_key "layer_tracks", "layers", column: "identifier", primary_key: "identifier"
   add_foreign_key "literals", "literatures"
+  add_foreign_key "reactions_reactant_sbmm_samples", "reactions"
+  add_foreign_key "reactions_reactant_sbmm_samples", "sequence_based_macromolecule_samples"
   add_foreign_key "report_templates", "attachments"
   add_foreign_key "sample_tasks", "samples"
   add_foreign_key "sample_tasks", "users", column: "creator_id"
+  add_foreign_key "sequence_based_macromolecule_samples", "sequence_based_macromolecules"
+  add_foreign_key "sequence_based_macromolecule_samples", "users"
   create_function :collection_shared_names, sql_definition: <<-'SQL'
       CREATE OR REPLACE FUNCTION public.collection_shared_names(user_id integer, collection_id integer)
        RETURNS json
@@ -2047,19 +2406,719 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
              order by extended_metadata -> 'instrument' limit 10
            $function$
   SQL
+  create_function :set_samples_mol_rdkit, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.set_samples_mol_rdkit()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+      begin
+      	if (TG_OP='INSERT') then
+      		insert into rdkit.mols values (new.id, mol_from_ctab(encode(new.molfile, 'escape')::cstring));
+      	end if;
+      	if (TG_OP='UPDATE') then
+      		if new.MOLFILE <> old.MOLFILE then
+      			update rdkit.mols set m = mol_from_ctab(encode(new.molfile, 'escape')::cstring) where id = new.id;
+      		end if;
+      	end if;
+      	return new;
+      end
+      $function$
+  SQL
+  create_function :calculate_dataset_space, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.calculate_dataset_space(cid integer)
+       RETURNS bigint
+       LANGUAGE plpgsql
+      AS $function$
+      declare
+          used_space bigint default 0;
+      begin
+          select sum((attachment_data->'metadata'->'size')::bigint) into used_space
+          from attachments
+          where attachable_type = 'Container' and attachable_id = cid
+              and attachable_id in (select id from containers where container_type = 'dataset');
+          return COALESCE(used_space,0);
+      end;$function$
+  SQL
+  create_function :calculate_element_space, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.calculate_element_space(el_id integer, el_type text)
+       RETURNS bigint
+       LANGUAGE plpgsql
+      AS $function$
+      declare
+          used_space_attachments bigint default 0;
+          used_space_datasets bigint default 0;
+          used_space bigint default 0;
+      begin
+          select sum((attachment_data->'metadata'->'size')::bigint) into used_space_attachments
+          from attachments
+          where attachable_type = el_type and attachable_id = el_id;
+          used_space = COALESCE(used_space_attachments, 0);
+
+          select sum(calculate_dataset_space(descendant_id)) into used_space_datasets
+          from container_hierarchies where ancestor_id = (select id from containers where containable_id = el_id and containable_type = el_type);
+          used_space = used_space + COALESCE(used_space_datasets, 0);
+
+          return COALESCE(used_space, 0);
+      end;$function$
+  SQL
+  create_function :calculate_collection_space, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.calculate_collection_space(collectionid integer)
+       RETURNS bigint
+       LANGUAGE plpgsql
+      AS $function$
+      declare
+          used_space bigint default 0;
+          element_types text[] := array['Sample', 'Reaction', 'Wellplate', 'Screen', 'ResearchPlan'];
+          element_table text;
+          element_space bigint;
+      begin
+          foreach element_table in array element_types loop
+              execute format('select sum(calculate_element_space(id, $1)) from collections_%s where collection_id = $2', lower(element_table))
+              into element_space
+              using element_table, collectionId;
+              used_space := used_space + coalesce(element_space, 0);
+          end loop;
+          return coalesce(used_space, 0);
+      end;
+      $function$
+  SQL
+  create_function :calculate_used_space, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.calculate_used_space(userid integer)
+       RETURNS bigint
+       LANGUAGE plpgsql
+      AS $function$
+      declare
+          used_space_samples bigint default 0;
+          used_space_reactions bigint default 0;
+          used_space_wellplates bigint default 0;
+          used_space_screens bigint default 0;
+          used_space_research_plans bigint default 0;
+          used_space_reports bigint default 0;
+          used_space_inbox bigint default 0;
+          used_space bigint default 0;
+      begin
+          select sum(calculate_element_space(s.sample_id, 'Sample')) into used_space_samples from (
+              select distinct sample_id
+              from collections_samples
+              where collection_id in (select id from collections where user_id = userId)
+          ) s;
+          used_space = COALESCE(used_space_samples,0);
+          
+          select sum(calculate_element_space(r.reaction_id, 'Reaction')) into used_space_reactions from (
+              select distinct reaction_id
+              from collections_reactions
+              where collection_id in (select id from collections where user_id = userId)
+          ) r;
+          used_space = used_space + COALESCE(used_space_reactions,0);
+
+          select sum(calculate_element_space(wp.wellplate_id, 'Wellplate')) into used_space_wellplates from (
+              select distinct wellplate_id
+              from collections_wellplates
+              where collection_id in (select id from collections where user_id = userId)
+          ) wp;
+          used_space = used_space + COALESCE(used_space_wellplates,0);
+
+          select sum(calculate_element_space(wp.screen_id, 'Screen')) into used_space_screens from (
+              select distinct screen_id
+              from collections_screens
+              where collection_id in (select id from collections where user_id = userId)
+          ) wp;
+          used_space = used_space + COALESCE(used_space_screens,0);
+
+          select sum(calculate_element_space(rp.research_plan_id, 'ResearchPlan')) into used_space_research_plans from (
+              select distinct research_plan_id
+              from collections_research_plans
+              where collection_id in (select id from collections where user_id = userId)
+          ) rp;
+          used_space = used_space + COALESCE(used_space_research_plans,0);
+
+          select sum(calculate_element_space(id, 'Report')) into used_space_reports
+          from reports
+          where author_id = userId;
+          used_space = used_space + COALESCE(used_space_reports,0);
+
+          select sum((attachment_data->'metadata'->'size')::bigint) into used_space_inbox
+          from attachments
+          where attachable_type = 'Container'
+              and attachable_id is null and created_for = userId;
+              -- attachable_id is missing (why?), if this is a bug (and was fixed) change statement to
+              -- and attachable_id = (select id from containers where containable_type='User' and containable_id=UserID);
+          used_space = used_space + COALESCE(used_space_inbox,0);
+
+          return COALESCE(used_space,0);
+      end;$function$
+  SQL
+  create_function :logidze_version, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_version(v bigint, data jsonb, ts timestamp with time zone)
+       RETURNS jsonb
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 2
+        DECLARE
+          buf jsonb;
+        BEGIN
+          data = data - 'log_data';
+          buf := jsonb_build_object(
+                    'ts',
+                    (extract(epoch from ts) * 1000)::bigint,
+                    'v',
+                    v,
+                    'c',
+                    data
+                    );
+          IF coalesce(current_setting('logidze.meta', true), '') <> '' THEN
+            buf := jsonb_insert(buf, '{m}', current_setting('logidze.meta')::jsonb);
+          END IF;
+          RETURN buf;
+        END;
+      $function$
+  SQL
+  create_function :logidze_filter_keys, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_filter_keys(obj jsonb, keys text[], include_columns boolean DEFAULT false)
+       RETURNS jsonb
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 1
+        DECLARE
+          res jsonb;
+          key text;
+        BEGIN
+          res := '{}';
+
+          IF include_columns THEN
+            FOREACH key IN ARRAY keys
+            LOOP
+              IF obj ? key THEN
+                res = jsonb_insert(res, ARRAY[key], obj->key);
+              END IF;
+            END LOOP;
+          ELSE
+            res = obj;
+            FOREACH key IN ARRAY keys
+            LOOP
+              res = res - key;
+            END LOOP;
+          END IF;
+
+          RETURN res;
+        END;
+      $function$
+  SQL
+  create_function :logidze_compact_history, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_compact_history(log_data jsonb, cutoff integer DEFAULT 1)
+       RETURNS jsonb
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 1
+        DECLARE
+          merged jsonb;
+        BEGIN
+          LOOP
+            merged := jsonb_build_object(
+              'ts',
+              log_data#>'{h,1,ts}',
+              'v',
+              log_data#>'{h,1,v}',
+              'c',
+              (log_data#>'{h,0,c}') || (log_data#>'{h,1,c}')
+            );
+
+            IF (log_data#>'{h,1}' ? 'm') THEN
+              merged := jsonb_set(merged, ARRAY['m'], log_data#>'{h,1,m}');
+            END IF;
+
+            log_data := jsonb_set(
+              log_data,
+              '{h}',
+              jsonb_set(
+                log_data->'h',
+                '{1}',
+                merged
+              ) - 0
+            );
+
+            cutoff := cutoff - 1;
+
+            EXIT WHEN cutoff <= 0;
+          END LOOP;
+
+          return log_data;
+        END;
+      $function$
+  SQL
+  create_function :logidze_capture_exception, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_capture_exception(error_data jsonb)
+       RETURNS boolean
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 1
+      BEGIN
+        -- Feel free to change this function to change Logidze behavior on exception.
+        --
+        -- Return `false` to raise exception or `true` to commit record changes.
+        --
+        -- `error_data` contains:
+        --   - returned_sqlstate
+        --   - message_text
+        --   - pg_exception_detail
+        --   - pg_exception_hint
+        --   - pg_exception_context
+        --   - schema_name
+        --   - table_name
+        -- Learn more about available keys:
+        -- https://www.postgresql.org/docs/9.6/plpgsql-control-structures.html#PLPGSQL-EXCEPTION-DIAGNOSTICS-VALUES
+        --
+
+        return false;
+      END;
+      $function$
+  SQL
+  create_function :logidze_snapshot, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_snapshot(item jsonb, ts_column text DEFAULT NULL::text, columns text[] DEFAULT NULL::text[], include_columns boolean DEFAULT false)
+       RETURNS jsonb
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 3
+        DECLARE
+          ts timestamp with time zone;
+          k text;
+        BEGIN
+          item = item - 'log_data';
+          IF ts_column IS NULL THEN
+            ts := statement_timestamp();
+          ELSE
+            ts := coalesce((item->>ts_column)::timestamp with time zone, statement_timestamp());
+          END IF;
+
+          IF columns IS NOT NULL THEN
+            item := logidze_filter_keys(item, columns, include_columns);
+          END IF;
+
+          FOR k IN (SELECT key FROM jsonb_each(item))
+          LOOP
+            IF jsonb_typeof(item->k) = 'object' THEN
+               item := jsonb_set(item, ARRAY[k], to_jsonb(item->>k));
+            END IF;
+          END LOOP;
+
+          return json_build_object(
+            'v', 1,
+            'h', jsonb_build_array(
+                    logidze_version(1, item, ts)
+                  )
+            );
+        END;
+      $function$
+  SQL
+  create_function :logidze_logger, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_logger()
+       RETURNS trigger
+       LANGUAGE plpgsql
+      AS $function$
+        -- version: 3
+        DECLARE
+          changes jsonb;
+          version jsonb;
+          snapshot jsonb;
+          new_v integer;
+          size integer;
+          history_limit integer;
+          debounce_time integer;
+          current_version integer;
+          k text;
+          iterator integer;
+          item record;
+          columns text[];
+          include_columns boolean;
+          ts timestamp with time zone;
+          ts_column text;
+          err_sqlstate text;
+          err_message text;
+          err_detail text;
+          err_hint text;
+          err_context text;
+          err_table_name text;
+          err_schema_name text;
+          err_jsonb jsonb;
+          err_captured boolean;
+        BEGIN
+          ts_column := NULLIF(TG_ARGV[1], 'null');
+          columns := NULLIF(TG_ARGV[2], 'null');
+          include_columns := NULLIF(TG_ARGV[3], 'null');
+
+          IF TG_OP = 'INSERT' THEN
+            IF columns IS NOT NULL THEN
+              snapshot = logidze_snapshot(to_jsonb(NEW.*), ts_column, columns, include_columns);
+            ELSE
+              snapshot = logidze_snapshot(to_jsonb(NEW.*), ts_column);
+            END IF;
+
+            IF snapshot#>>'{h, -1, c}' != '{}' THEN
+              NEW.log_data := snapshot;
+            END IF;
+
+          ELSIF TG_OP = 'UPDATE' THEN
+
+            IF OLD.log_data is NULL OR OLD.log_data = '{}'::jsonb THEN
+              IF columns IS NOT NULL THEN
+                snapshot = logidze_snapshot(to_jsonb(NEW.*), ts_column, columns, include_columns);
+              ELSE
+                snapshot = logidze_snapshot(to_jsonb(NEW.*), ts_column);
+              END IF;
+
+              IF snapshot#>>'{h, -1, c}' != '{}' THEN
+                NEW.log_data := snapshot;
+              END IF;
+              RETURN NEW;
+            END IF;
+
+            history_limit := NULLIF(TG_ARGV[0], 'null');
+            debounce_time := NULLIF(TG_ARGV[4], 'null');
+
+            current_version := (NEW.log_data->>'v')::int;
+
+            IF ts_column IS NULL THEN
+              ts := statement_timestamp();
+            ELSE
+              ts := (to_jsonb(NEW.*)->>ts_column)::timestamp with time zone;
+              IF ts IS NULL OR ts = (to_jsonb(OLD.*)->>ts_column)::timestamp with time zone THEN
+                ts := statement_timestamp();
+              END IF;
+            END IF;
+
+            IF NEW = OLD THEN
+              RETURN NEW;
+            END IF;
+
+            IF current_version < (NEW.log_data#>>'{h,-1,v}')::int THEN
+              iterator := 0;
+              FOR item in SELECT * FROM jsonb_array_elements(NEW.log_data->'h')
+              LOOP
+                IF (item.value->>'v')::int > current_version THEN
+                  NEW.log_data := jsonb_set(
+                    NEW.log_data,
+                    '{h}',
+                    (NEW.log_data->'h') - iterator
+                  );
+                END IF;
+                iterator := iterator + 1;
+              END LOOP;
+            END IF;
+
+            changes := '{}';
+
+            IF (coalesce(current_setting('logidze.full_snapshot', true), '') = 'on') THEN
+              BEGIN
+                changes = hstore_to_jsonb_loose(hstore(NEW.*));
+              EXCEPTION
+                WHEN NUMERIC_VALUE_OUT_OF_RANGE THEN
+                  changes = row_to_json(NEW.*)::jsonb;
+                  FOR k IN (SELECT key FROM jsonb_each(changes))
+                  LOOP
+                    IF jsonb_typeof(changes->k) = 'object' THEN
+                      changes = jsonb_set(changes, ARRAY[k], to_jsonb(changes->>k));
+                    END IF;
+                  END LOOP;
+              END;
+            ELSE
+              WITH
+                new_kv AS (
+                  SELECT key, value FROM jsonb_each(row_to_json(NEW)::jsonb)
+                ),
+                old_kv AS (
+                  SELECT key, value FROM jsonb_each(row_to_json(OLD)::jsonb)
+                ),
+                all_keys AS (
+                  SELECT key FROM new_kv
+                  UNION
+                  SELECT key FROM old_kv
+                )
+              SELECT COALESCE(jsonb_object_agg(key, value), '{}'::jsonb)
+              INTO changes
+              FROM (
+                SELECT
+                  k.key,
+                  CASE
+                    WHEN n.value IS NULL THEN
+                      -- key missing in NEW → mark deleted
+                      to_jsonb('deleted'::text)
+                    WHEN o.value IS NULL THEN
+                      -- key missing in OLD → addition
+                      n.value
+                    WHEN n.value <> o.value THEN
+                      -- key present in both but different → changed
+                      n.value
+                    ELSE
+                      -- identical → exclude by returning NULL (will be filtered out)
+                      NULL
+                  END AS value
+                FROM all_keys k
+                LEFT JOIN new_kv n ON k.key = n.key
+                LEFT JOIN old_kv o ON k.key = o.key
+              ) t
+              WHERE value IS NOT NULL;
+
+              FOR k IN SELECT key FROM jsonb_each(changes)
+                LOOP
+                  IF jsonb_typeof(changes->k) = 'object' THEN
+                    changes := jsonb_set(
+                      changes,
+                      ARRAY[k],
+                      jsonb_diff(
+                        row_to_json(OLD)::jsonb -> k,
+                        row_to_json(NEW)::jsonb -> k
+                      )
+                    );
+                  END IF;
+                END LOOP;
+            END IF;
+
+            changes = changes - 'log_data';
+
+            IF columns IS NOT NULL THEN
+              changes = logidze_filter_keys(changes, columns, include_columns);
+            END IF;
+
+            IF changes = '{}' THEN
+              RETURN NEW;
+            END IF;
+
+            new_v := (NEW.log_data#>>'{h,-1,v}')::int + 1;
+
+            size := jsonb_array_length(NEW.log_data->'h');
+            version := logidze_version(new_v, changes, ts);
+
+            IF (
+              debounce_time IS NOT NULL AND
+              (version->>'ts')::bigint - (NEW.log_data#>'{h,-1,ts}')::text::bigint <= debounce_time
+            ) THEN
+              -- merge new version with the previous one
+              new_v := (NEW.log_data#>>'{h,-1,v}')::int;
+              version := logidze_version(new_v, (NEW.log_data#>'{h,-1,c}')::jsonb || changes, ts);
+              -- remove the previous version from log
+              NEW.log_data := jsonb_set(
+                NEW.log_data,
+                '{h}',
+                (NEW.log_data->'h') - (size - 1)
+              );
+            END IF;
+
+            NEW.log_data := jsonb_set(
+              NEW.log_data,
+              ARRAY['h', size::text],
+              version,
+              true
+            );
+
+            NEW.log_data := jsonb_set(
+              NEW.log_data,
+              '{v}',
+              to_jsonb(new_v)
+            );
+
+            IF history_limit IS NOT NULL AND history_limit <= size THEN
+              NEW.log_data := logidze_compact_history(NEW.log_data, size - history_limit + 1);
+            END IF;
+          END IF;
+
+          return NEW;
+        EXCEPTION
+          WHEN OTHERS THEN
+            GET STACKED DIAGNOSTICS err_sqlstate = RETURNED_SQLSTATE,
+                                    err_message = MESSAGE_TEXT,
+                                    err_detail = PG_EXCEPTION_DETAIL,
+                                    err_hint = PG_EXCEPTION_HINT,
+                                    err_context = PG_EXCEPTION_CONTEXT,
+                                    err_schema_name = SCHEMA_NAME,
+                                    err_table_name = TABLE_NAME;
+            err_jsonb := jsonb_build_object(
+              'returned_sqlstate', err_sqlstate,
+              'message_text', err_message,
+              'pg_exception_detail', err_detail,
+              'pg_exception_hint', err_hint,
+              'pg_exception_context', err_context,
+              'schema_name', err_schema_name,
+              'table_name', err_table_name
+            );
+            err_captured = logidze_capture_exception(err_jsonb);
+            IF err_captured THEN
+              return NEW;
+            ELSE
+              RAISE;
+            END IF;
+        END;
+      $function$
+  SQL
+  create_function :logidze_create_trigger_on_table, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.logidze_create_trigger_on_table(table_name text, trigger_name text, timestamp_column text)
+       RETURNS void
+       LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+          -- CREATE TRIGGER logidze_on_{table_name}
+          -- Parameters: history_size_limit (integer), timestamp_column (text), filtered_columns (text[]),
+          -- include_columns (boolean), debounce_time_ms (integer)
+          EXECUTE format( '
+              CREATE TRIGGER %I
+              BEFORE UPDATE OR INSERT ON %I
+              FOR EACH ROW
+              WHEN (coalesce(current_setting(''logidze.disabled'', true), '''') <> ''on'')
+              EXECUTE PROCEDURE logidze_logger(null, %L)', trigger_name, table_name, timestamp_column);
+      END;
+      $function$
+  SQL
+  create_function :jsonb_diff, sql_definition: <<-'SQL'
+      CREATE OR REPLACE FUNCTION public.jsonb_diff(old jsonb, new jsonb)
+       RETURNS jsonb
+       LANGUAGE plpgsql
+      AS $function$
+      DECLARE
+        result jsonb := '{}'::jsonb;
+        v RECORD;
+        nested_diff jsonb;
+        new_length int;
+        old_length int;
+      BEGIN
+        -- If old is NULL, return the new object as the full difference
+        IF old IS NULL OR jsonb_typeof(old) = 'null' THEN
+          RETURN new;
+        END IF;
+
+        -- If new is NULL, return an empty JSON
+        IF new IS NULL OR jsonb_typeof(new) = 'null' THEN
+          RETURN '{}'::jsonb;
+        END IF;
+
+        -- Handle top-level arrays
+        IF jsonb_typeof(old) = 'array' AND jsonb_typeof(new) = 'array' THEN
+          IF result = '{}' THEN
+            result := '[]';
+          END IF;
+
+          -- If arrays are equal, return an empty JSON
+          IF old = new THEN
+            RETURN '[]'::jsonb;
+          ELSE
+            -- Return the new array as the diff
+            -- Get array lengths
+            new_length := JSONB_ARRAY_LENGTH(new);
+            old_length := JSONB_ARRAY_LENGTH(old);
+
+            -- Loop through the array using an index
+            FOR i IN 0..new_length-1 LOOP
+              IF i <= old_length THEN
+                IF jsonb_typeof(new[i]) IN ('object','array') AND jsonb_typeof(old[i]) IN ('object','array') THEN
+                  nested_diff := jsonb_diff(old[i], new[i]);
+                  IF nested_diff <> '{}'::jsonb THEN
+                    result := result || nested_diff;
+                  END IF;
+                ELSIF new[i] IS DISTINCT FROM old[i] THEN
+                  result := result || new[i];
+                END IF;
+              ELSE
+                RETURN new[i];
+              END IF;
+            END LOOP;
+            RETURN result;
+          END IF;
+        END IF;
+
+        -- If types differ (object vs. array), return the full new value
+        IF jsonb_typeof(old) <> jsonb_typeof(new) THEN
+          RETURN new;
+        END IF;
+
+        -- Iterate through each key-value pair in new
+        FOR v IN SELECT * FROM jsonb_each(new) LOOP
+          -- If the key is an object in both old and new, recurse
+          IF jsonb_typeof(old -> v.key) = 'object' AND jsonb_typeof(new -> v.key) = 'object' THEN
+            nested_diff := jsonb_diff(old -> v.key, new -> v.key);
+            IF nested_diff <> '{}'::jsonb THEN
+              result := result || jsonb_build_object(v.key, nested_diff);
+            END IF;
+          -- If values are different, add to the result
+          ELSIF (old -> v.key) IS DISTINCT FROM v.value THEN
+            result := result || jsonb_build_object(v.key, v.value);
+          END IF;
+        END LOOP;
+
+        -- Iterate through each key-value pair in old
+        FOR v in SELECT * from jsonb_each(old) LOOP
+          -- If value was deleted
+          IF new -> v.key IS NULL AND jsonb_typeof(v.value) = 'object' THEN
+            -- Append to result with value 'deleted'
+            result := result || jsonb_build_object(v.key, 'deleted');
+          END IF;
+        END LOOP;
+
+        RETURN result;
+      END;
+      $function$
+  SQL
 
 
+  create_trigger :logidze_on_attachments, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_attachments BEFORE INSERT OR UPDATE ON public.attachments FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_chemicals, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_chemicals BEFORE INSERT OR UPDATE ON public.chemicals FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_containers, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_containers BEFORE INSERT OR UPDATE ON public.containers FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
   create_trigger :set_dataset_klasses_identifier, sql_definition: <<-SQL
       CREATE TRIGGER set_dataset_klasses_identifier AFTER INSERT ON public.dataset_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_dataset_klasses_identifier()
   SQL
   create_trigger :set_element_klasses_identifier, sql_definition: <<-SQL
       CREATE TRIGGER set_element_klasses_identifier AFTER INSERT ON public.element_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_element_klasses_identifier()
   SQL
+  create_trigger :logidze_on_elemental_compositions, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_elemental_compositions BEFORE INSERT OR UPDATE ON public.elemental_compositions FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_reactions, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_reactions BEFORE INSERT OR UPDATE ON public.reactions FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_samples, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_samples BEFORE INSERT OR UPDATE ON public.samples FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :set_samples_mol_rdkit_trg, sql_definition: <<-SQL
+      CREATE TRIGGER set_samples_mol_rdkit_trg BEFORE INSERT OR UPDATE ON public.samples FOR EACH ROW EXECUTE FUNCTION set_samples_mol_rdkit()
+  SQL
   create_trigger :update_users_matrix_trg, sql_definition: <<-SQL
       CREATE TRIGGER update_users_matrix_trg AFTER INSERT OR UPDATE ON public.matrices FOR EACH ROW EXECUTE FUNCTION update_users_matrix()
   SQL
+  create_trigger :logidze_on_reactions_samples, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_reactions_samples BEFORE INSERT OR UPDATE ON public.reactions_samples FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_research_plan_metadata, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_research_plan_metadata BEFORE INSERT OR UPDATE ON public.research_plan_metadata FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_research_plans, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_research_plans BEFORE INSERT OR UPDATE ON public.research_plans FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_research_plans_wellplates, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_research_plans_wellplates BEFORE INSERT OR UPDATE ON public.research_plans_wellplates FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_residues, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_residues BEFORE INSERT OR UPDATE ON public.residues FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_screens, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_screens BEFORE INSERT OR UPDATE ON public.screens FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
   create_trigger :set_segment_klasses_identifier, sql_definition: <<-SQL
       CREATE TRIGGER set_segment_klasses_identifier AFTER INSERT ON public.segment_klasses FOR EACH STATEMENT EXECUTE FUNCTION set_segment_klasses_identifier()
+  SQL
+  create_trigger :logidze_on_wellplates, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_wellplates BEFORE INSERT OR UPDATE ON public.wellplates FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_wells, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_wells BEFORE INSERT OR UPDATE ON public.wells FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_device_descriptions, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_device_descriptions BEFORE INSERT OR UPDATE ON public.device_descriptions FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
+  SQL
+  create_trigger :logidze_on_components, sql_definition: <<-SQL
+      CREATE TRIGGER logidze_on_components BEFORE INSERT OR UPDATE ON public.components FOR EACH ROW WHEN ((COALESCE(current_setting('logidze.disabled'::text, true), ''::text) <> 'on'::text)) EXECUTE FUNCTION logidze_logger('null', 'updated_at')
   SQL
 
   create_view "compound_open_data_locals", sql_definition: <<-SQL
@@ -2132,6 +3191,20 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
       users
     WHERE ((channels.id = messages.channel_id) AND (messages.id = notifications.message_id) AND (users.id = messages.created_by));
   SQL
+  create_view "v_samples_collections", sql_definition: <<-SQL
+      SELECT cols.id AS cols_id,
+      cols.user_id AS cols_user_id,
+      cols.sample_detail_level AS cols_sample_detail_level,
+      cols.wellplate_detail_level AS cols_wellplate_detail_level,
+      cols.shared_by_id AS cols_shared_by_id,
+      cols.is_shared AS cols_is_shared,
+      samples.id AS sams_id,
+      samples.name AS sams_name
+     FROM ((collections cols
+       JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
+       JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
+    WHERE (cols.deleted_at IS NULL);
+  SQL
   create_view "publication_authors", sql_definition: <<-SQL
       SELECT DISTINCT (jsonb_array_elements((taggable_data -> 'creators'::text)) ->> 'id'::text) AS author_id,
       element_id,
@@ -2168,7 +3241,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
      FROM publications root,
       publications sub,
       containers
-    WHERE (((root.state)::text ~~ 'complete%'::text) AND ((root.element_type)::text = ANY (ARRAY[('Sample'::character varying)::text, ('Reaction'::character varying)::text])) AND ((sub.element_type)::text = 'Container'::text) AND (root.id = ANY ((string_to_array((sub.ancestry)::text, '/'::text))::integer[])) AND (root.deleted_at IS NULL) AND (sub.element_id = containers.id));
+    WHERE (((root.state)::text ~~ 'complete%'::text) AND ((root.element_type)::text = ANY (ARRAY[('Sample'::character varying)::text, ('Reaction'::character varying)::text])) AND ((sub.element_type)::text = 'Container'::text) AND (root.id = ANY ((array_remove(string_to_array((sub.ancestry)::text, '/'::text), ''::text))::integer[])) AND (root.deleted_at IS NULL) AND (sub.element_id = containers.id));
   SQL
   create_view "publication_statics", sql_definition: <<-SQL
       SELECT 'sample'::text AS el_type,
@@ -2193,7 +3266,7 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
       'xvial'::text AS ex_type,
       count(publications.id) AS e_cnt
      FROM (publications
-       JOIN element_tags et ON ((((et.taggable_type)::text = 'Sample'::text) AND (((et.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((et.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text)) AND (et.taggable_id = publications.element_id))))
+       JOIN element_tags et ON ((((et.taggable_type)::text = 'Sample'::text) AND ((et.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((et.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text) AND (et.taggable_id = publications.element_id))))
     WHERE (((publications.state)::text ~~ 'completed%'::text) AND ((publications.element_type)::text = 'Sample'::text) AND (publications.deleted_at IS NULL))
   UNION
    SELECT 'reaction'::text AS el_type,
@@ -2237,18 +3310,343 @@ ActiveRecord::Schema.define(version: 2025_11_13_000000) do
             GROUP BY (containers.extended_metadata -> 'kind'::text)) summ
     GROUP BY summ.g_type;
   SQL
-  create_view "v_samples_collections", sql_definition: <<-SQL
-      SELECT cols.id AS cols_id,
-      cols.user_id AS cols_user_id,
-      cols.sample_detail_level AS cols_sample_detail_level,
-      cols.wellplate_detail_level AS cols_wellplate_detail_level,
-      cols.shared_by_id AS cols_shared_by_id,
-      cols.is_shared AS cols_is_shared,
-      samples.id AS sams_id,
-      samples.name AS sams_name
-     FROM ((collections cols
-       JOIN collections_samples col_samples ON (((col_samples.collection_id = cols.id) AND (col_samples.deleted_at IS NULL))))
-       JOIN samples ON (((samples.id = col_samples.sample_id) AND (samples.deleted_at IS NULL))))
-    WHERE (cols.deleted_at IS NULL);
+  create_view "v_publication_search_delta", sql_definition: <<-SQL
+      SELECT p.id AS publication_id,
+      p.element_type,
+      p.element_id,
+      p.published_by,
+      p.published_at,
+      (EXTRACT(year FROM p.published_at))::integer AS year_published,
+      p.doi_id,
+      COALESCE(((p.taggable_data ->> 'scheme_only'::text))::boolean, false) AS scheme_only,
+          CASE
+              WHEN ((p.element_type)::text = 'Reaction'::text) THEN r.rxno
+              ELSE NULL::character varying
+          END AS reaction_rxno,
+      m.id AS molecule_id,
+      m.iupac_name AS mol_iupac_name,
+      m.inchikey AS mol_inchikey,
+      m.inchistring AS mol_inchistring,
+      m.cano_smiles AS mol_cano_smiles,
+      m.sum_formular AS mol_sum_formular,
+      COALESCE(( SELECT array_agg(DISTINCT (pa.author_id)::integer) AS array_agg
+             FROM publication_authors pa
+            WHERE (((pa.element_type)::text = (p.element_type)::text) AND (pa.element_id = p.element_id) AND ((pa.state)::text = 'completed'::text) AND (pa.author_id ~ '^\\d+$'::text))), ARRAY[]::integer[]) AS author_ids,
+      COALESCE(( SELECT array_agg(DISTINCT po.term_id) AS array_agg
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id) AND (po.term_id IS NOT NULL))), ARRAY[]::text[]) AS ontology_term_ids,
+      COALESCE(( SELECT jsonb_object_agg(t.term_id, t.label) AS jsonb_object_agg
+             FROM ( SELECT po.term_id,
+                      min(po.label) AS label
+                     FROM publication_ontologies po
+                    WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id) AND (po.term_id IS NOT NULL))
+                    GROUP BY po.term_id) t), '{}'::jsonb) AS ontology_term_labels,
+      COALESCE(( SELECT array_agg(DISTINCT TRIM(BOTH FROM aff.value)) AS array_agg
+             FROM jsonb_each_text(COALESCE((p.taggable_data -> 'affiliations'::text), '{}'::jsonb)) aff(key, value)
+            WHERE (COALESCE(TRIM(BOTH FROM aff.value), ''::text) <> ''::text)), ARRAY[]::text[]) AS institution_names,
+      COALESCE(
+          CASE
+              WHEN ((p.element_type)::text = 'Sample'::text) THEN ( SELECT c.label
+                 FROM (collections_samples j
+                   JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+                WHERE ((j.sample_id = p.element_id) AND (EXISTS ( SELECT 1
+                         FROM collections pe
+                        WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+                ORDER BY c."position"
+               LIMIT 1)
+              WHEN ((p.element_type)::text = 'Reaction'::text) THEN ( SELECT c.label
+                 FROM (collections_reactions j
+                   JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+                WHERE ((j.reaction_id = p.element_id) AND (j.deleted_at IS NULL) AND (EXISTS ( SELECT 1
+                         FROM collections pe
+                        WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+                ORDER BY c."position"
+               LIMIT 1)
+              ELSE NULL::text
+          END, ''::text) AS embargo_label,
+      ( SELECT (count(*))::integer AS count
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id))) AS ana_count
+     FROM (((publications p
+       LEFT JOIN samples s ON ((((p.element_type)::text = 'Sample'::text) AND (s.id = p.element_id) AND (s.deleted_at IS NULL))))
+       LEFT JOIN molecules m ON ((((p.element_type)::text = 'Sample'::text) AND (m.id = s.molecule_id) AND (m.deleted_at IS NULL))))
+       LEFT JOIN reactions r ON ((((p.element_type)::text = 'Reaction'::text) AND (r.id = p.element_id) AND (r.deleted_at IS NULL))))
+    WHERE ((p.deleted_at IS NULL) AND ((p.state)::text = 'completed'::text) AND ((p.element_type)::text = ANY ((ARRAY['Sample'::character varying, 'Reaction'::character varying])::text[])) AND (p.published_at >= (now() - 'PT36H'::interval)));
+  SQL
+  create_view "mv_publication_search_snapshot", materialized: true, sql_definition: <<-SQL
+      SELECT p.id AS publication_id,
+      p.element_type,
+      p.element_id,
+      p.published_by,
+      p.published_at,
+      (EXTRACT(year FROM p.published_at))::integer AS year_published,
+      p.doi_id,
+      COALESCE(((p.taggable_data ->> 'scheme_only'::text))::boolean, false) AS scheme_only,
+          CASE
+              WHEN ((p.element_type)::text = 'Reaction'::text) THEN r.rxno
+              ELSE NULL::character varying
+          END AS reaction_rxno,
+      m.id AS molecule_id,
+      m.iupac_name AS mol_iupac_name,
+      m.inchikey AS mol_inchikey,
+      m.inchistring AS mol_inchistring,
+      m.cano_smiles AS mol_cano_smiles,
+      m.sum_formular AS mol_sum_formular,
+      COALESCE(( SELECT array_agg(DISTINCT (pa.author_id)::integer) AS array_agg
+             FROM publication_authors pa
+            WHERE (((pa.element_type)::text = (p.element_type)::text) AND (pa.element_id = p.element_id) AND ((pa.state)::text = 'completed'::text) AND (pa.author_id ~ '^\\d+$'::text))), ARRAY[]::integer[]) AS author_ids,
+      COALESCE(( SELECT array_agg(DISTINCT po.term_id) AS array_agg
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id) AND (po.term_id IS NOT NULL))), ARRAY[]::text[]) AS ontology_term_ids,
+      COALESCE(( SELECT jsonb_object_agg(t.term_id, t.label) AS jsonb_object_agg
+             FROM ( SELECT po.term_id,
+                      min(po.label) AS label
+                     FROM publication_ontologies po
+                    WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id) AND (po.term_id IS NOT NULL))
+                    GROUP BY po.term_id) t), '{}'::jsonb) AS ontology_term_labels,
+      COALESCE(( SELECT array_agg(DISTINCT TRIM(BOTH FROM aff.value)) AS array_agg
+             FROM jsonb_each_text(COALESCE((p.taggable_data -> 'affiliations'::text), '{}'::jsonb)) aff(key, value)
+            WHERE (COALESCE(TRIM(BOTH FROM aff.value), ''::text) <> ''::text)), ARRAY[]::text[]) AS institution_names,
+      COALESCE(
+          CASE
+              WHEN ((p.element_type)::text = 'Sample'::text) THEN ( SELECT c.label
+                 FROM (collections_samples j
+                   JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+                WHERE ((j.sample_id = p.element_id) AND (EXISTS ( SELECT 1
+                         FROM collections pe
+                        WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+                ORDER BY c."position"
+               LIMIT 1)
+              WHEN ((p.element_type)::text = 'Reaction'::text) THEN ( SELECT c.label
+                 FROM (collections_reactions j
+                   JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+                WHERE ((j.reaction_id = p.element_id) AND (j.deleted_at IS NULL) AND (EXISTS ( SELECT 1
+                         FROM collections pe
+                        WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+                ORDER BY c."position"
+               LIMIT 1)
+              ELSE NULL::text
+          END, ''::text) AS embargo_label,
+      ( SELECT (count(*))::integer AS count
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = (p.element_type)::text) AND (po.element_id = p.element_id))) AS ana_count
+     FROM (((publications p
+       LEFT JOIN samples s ON ((((p.element_type)::text = 'Sample'::text) AND (s.id = p.element_id) AND (s.deleted_at IS NULL))))
+       LEFT JOIN molecules m ON ((((p.element_type)::text = 'Sample'::text) AND (m.id = s.molecule_id) AND (m.deleted_at IS NULL))))
+       LEFT JOIN reactions r ON ((((p.element_type)::text = 'Reaction'::text) AND (r.id = p.element_id) AND (r.deleted_at IS NULL))))
+    WHERE ((p.deleted_at IS NULL) AND ((p.state)::text = 'completed'::text) AND ((p.element_type)::text = ANY ((ARRAY['Sample'::character varying, 'Reaction'::character varying])::text[])));
+  SQL
+  add_index "mv_publication_search_snapshot", ["author_ids"], name: "idx_mv_pub_search_snapshot_author_ids", using: :gin
+  add_index "mv_publication_search_snapshot", ["element_type", "element_id"], name: "idx_mv_pub_search_snapshot_element"
+  add_index "mv_publication_search_snapshot", ["embargo_label"], name: "idx_mv_pub_search_snapshot_embargo_label"
+  add_index "mv_publication_search_snapshot", ["institution_names"], name: "idx_mv_pub_search_snapshot_institution_names", using: :gin
+  add_index "mv_publication_search_snapshot", ["molecule_id"], name: "idx_mv_pub_search_snapshot_molecule_id"
+  add_index "mv_publication_search_snapshot", ["ontology_term_ids"], name: "idx_mv_pub_search_snapshot_ontology_term_ids", using: :gin
+  add_index "mv_publication_search_snapshot", ["publication_id"], name: "idx_mv_pub_search_snapshot_pub_id", unique: true
+  add_index "mv_publication_search_snapshot", ["published_at"], name: "idx_mv_pub_search_snapshot_published_at"
+  add_index "mv_publication_search_snapshot", ["published_by"], name: "idx_mv_pub_search_snapshot_published_by"
+  add_index "mv_publication_search_snapshot", ["reaction_rxno"], name: "idx_mv_pub_search_snapshot_rxno"
+  add_index "mv_publication_search_snapshot", ["year_published"], name: "idx_mv_pub_search_snapshot_year"
+
+  create_view "v_publication_search", sql_definition: <<-SQL
+      SELECT mv_publication_search_snapshot.publication_id,
+      mv_publication_search_snapshot.element_type,
+      mv_publication_search_snapshot.element_id,
+      mv_publication_search_snapshot.published_by,
+      mv_publication_search_snapshot.published_at,
+      mv_publication_search_snapshot.year_published,
+      mv_publication_search_snapshot.doi_id,
+      mv_publication_search_snapshot.scheme_only,
+      mv_publication_search_snapshot.reaction_rxno,
+      mv_publication_search_snapshot.molecule_id,
+      mv_publication_search_snapshot.mol_iupac_name,
+      mv_publication_search_snapshot.mol_inchikey,
+      mv_publication_search_snapshot.mol_inchistring,
+      mv_publication_search_snapshot.mol_cano_smiles,
+      mv_publication_search_snapshot.mol_sum_formular,
+      mv_publication_search_snapshot.author_ids,
+      mv_publication_search_snapshot.ontology_term_ids,
+      mv_publication_search_snapshot.ontology_term_labels,
+      mv_publication_search_snapshot.institution_names,
+      mv_publication_search_snapshot.embargo_label,
+      mv_publication_search_snapshot.ana_count
+     FROM mv_publication_search_snapshot
+    WHERE ((mv_publication_search_snapshot.published_at IS NULL) OR (mv_publication_search_snapshot.published_at < (now() - 'PT36H'::interval)))
+  UNION ALL
+   SELECT v_publication_search_delta.publication_id,
+      v_publication_search_delta.element_type,
+      v_publication_search_delta.element_id,
+      v_publication_search_delta.published_by,
+      v_publication_search_delta.published_at,
+      v_publication_search_delta.year_published,
+      v_publication_search_delta.doi_id,
+      v_publication_search_delta.scheme_only,
+      v_publication_search_delta.reaction_rxno,
+      v_publication_search_delta.molecule_id,
+      v_publication_search_delta.mol_iupac_name,
+      v_publication_search_delta.mol_inchikey,
+      v_publication_search_delta.mol_inchistring,
+      v_publication_search_delta.mol_cano_smiles,
+      v_publication_search_delta.mol_sum_formular,
+      v_publication_search_delta.author_ids,
+      v_publication_search_delta.ontology_term_ids,
+      v_publication_search_delta.ontology_term_labels,
+      v_publication_search_delta.institution_names,
+      v_publication_search_delta.embargo_label,
+      v_publication_search_delta.ana_count
+     FROM v_publication_search_delta;
+  SQL
+  create_view "v_molecule_archive_delta", sql_definition: <<-SQL
+      SELECT m.id AS molecule_id,
+      m.iupac_name AS mol_iupac_name,
+      m.inchikey AS mol_inchikey,
+      m.inchistring AS mol_inchistring,
+      m.cano_smiles AS mol_cano_smiles,
+      m.sum_formular AS mol_sum_formular,
+      max(p.published_at) AS max_published_at,
+      (EXTRACT(year FROM max(p.published_at)))::integer AS year_published,
+      count(DISTINCT p.id) AS publication_count,
+      array_agg(DISTINCT p.id) AS publication_ids,
+      array_agg(DISTINCT s.id) AS sample_ids,
+      array_remove(array_agg(DISTINCT p.published_by), NULL::integer) AS contributor_ids,
+      (count(DISTINCT s.id) FILTER (WHERE (EXISTS ( SELECT 1
+             FROM element_tags e
+            WHERE (((e.taggable_type)::text = 'Sample'::text) AND (e.taggable_id = s.id) AND ((e.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((e.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text))))))::integer AS xvial_count,
+      ( SELECT (cod.x_data ->> 'provided_by'::text)
+             FROM (element_tags et
+               JOIN compound_open_data_locals cod ON (((cod.x_data ->> 'xid'::text) = ((et.taggable_data -> 'xvial'::text) ->> 'num'::text))))
+            WHERE (((et.taggable_type)::text = 'Sample'::text) AND (et.taggable_id IN ( SELECT s2.id
+                     FROM samples s2
+                    WHERE ((s2.molecule_id = m.id) AND (s2.deleted_at IS NULL)))) AND (COALESCE((cod.x_data ->> 'provided_by'::text), ''::text) <> ''::text))
+           LIMIT 1) AS provider,
+      ( SELECT (cod.x_data ->> 'group'::text)
+             FROM (element_tags et
+               JOIN compound_open_data_locals cod ON (((cod.x_data ->> 'xid'::text) = ((et.taggable_data -> 'xvial'::text) ->> 'num'::text))))
+            WHERE (((et.taggable_type)::text = 'Sample'::text) AND (et.taggable_id IN ( SELECT s2.id
+                     FROM samples s2
+                    WHERE ((s2.molecule_id = m.id) AND (s2.deleted_at IS NULL)))) AND (COALESCE((cod.x_data ->> 'group'::text), ''::text) <> ''::text))
+           LIMIT 1) AS group_label,
+      (EXISTS ( SELECT 1
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = 'Sample'::text) AND (po.element_id IN ( SELECT s3.id
+                     FROM samples s3
+                    WHERE ((s3.molecule_id = m.id) AND (s3.deleted_at IS NULL))))))) AS has_analyses,
+      ( SELECT c.label
+             FROM (collections_samples j
+               JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+            WHERE ((j.sample_id IN ( SELECT s4.id
+                     FROM samples s4
+                    WHERE ((s4.molecule_id = m.id) AND (s4.deleted_at IS NULL)))) AND (EXISTS ( SELECT 1
+                     FROM collections pe
+                    WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+            ORDER BY c."position"
+           LIMIT 1) AS embargo_label
+     FROM ((molecules m
+       JOIN samples s ON (((s.molecule_id = m.id) AND (s.deleted_at IS NULL))))
+       JOIN publications p ON ((((p.element_type)::text = 'Sample'::text) AND (p.element_id = s.id) AND (p.deleted_at IS NULL) AND ((p.state)::text = 'completed'::text))))
+    WHERE (m.deleted_at IS NULL)
+    GROUP BY m.id
+   HAVING (max(p.published_at) >= (now() - 'PT36H'::interval));
+  SQL
+  create_view "mv_molecule_archive_snapshot", materialized: true, sql_definition: <<-SQL
+      SELECT m.id AS molecule_id,
+      m.iupac_name AS mol_iupac_name,
+      m.inchikey AS mol_inchikey,
+      m.inchistring AS mol_inchistring,
+      m.cano_smiles AS mol_cano_smiles,
+      m.sum_formular AS mol_sum_formular,
+      max(p.published_at) AS max_published_at,
+      (EXTRACT(year FROM max(p.published_at)))::integer AS year_published,
+      count(DISTINCT p.id) AS publication_count,
+      array_agg(DISTINCT p.id) AS publication_ids,
+      array_agg(DISTINCT s.id) AS sample_ids,
+      array_remove(array_agg(DISTINCT p.published_by), NULL::integer) AS contributor_ids,
+      (count(DISTINCT s.id) FILTER (WHERE (EXISTS ( SELECT 1
+             FROM element_tags e
+            WHERE (((e.taggable_type)::text = 'Sample'::text) AND (e.taggable_id = s.id) AND ((e.taggable_data -> 'xvial'::text) IS NOT NULL) AND (((e.taggable_data -> 'xvial'::text) ->> 'num'::text) <> ''::text))))))::integer AS xvial_count,
+      ( SELECT (cod.x_data ->> 'provided_by'::text)
+             FROM (element_tags et
+               JOIN compound_open_data_locals cod ON (((cod.x_data ->> 'xid'::text) = ((et.taggable_data -> 'xvial'::text) ->> 'num'::text))))
+            WHERE (((et.taggable_type)::text = 'Sample'::text) AND (et.taggable_id IN ( SELECT s2.id
+                     FROM samples s2
+                    WHERE ((s2.molecule_id = m.id) AND (s2.deleted_at IS NULL)))) AND (COALESCE((cod.x_data ->> 'provided_by'::text), ''::text) <> ''::text))
+           LIMIT 1) AS provider,
+      ( SELECT (cod.x_data ->> 'group'::text)
+             FROM (element_tags et
+               JOIN compound_open_data_locals cod ON (((cod.x_data ->> 'xid'::text) = ((et.taggable_data -> 'xvial'::text) ->> 'num'::text))))
+            WHERE (((et.taggable_type)::text = 'Sample'::text) AND (et.taggable_id IN ( SELECT s2.id
+                     FROM samples s2
+                    WHERE ((s2.molecule_id = m.id) AND (s2.deleted_at IS NULL)))) AND (COALESCE((cod.x_data ->> 'group'::text), ''::text) <> ''::text))
+           LIMIT 1) AS group_label,
+      (EXISTS ( SELECT 1
+             FROM publication_ontologies po
+            WHERE (((po.element_type)::text = 'Sample'::text) AND (po.element_id IN ( SELECT s3.id
+                     FROM samples s3
+                    WHERE ((s3.molecule_id = m.id) AND (s3.deleted_at IS NULL))))))) AS has_analyses,
+      ( SELECT c.label
+             FROM (collections_samples j
+               JOIN collections c ON (((c.id = j.collection_id) AND (c.deleted_at IS NULL))))
+            WHERE ((j.sample_id IN ( SELECT s4.id
+                     FROM samples s4
+                    WHERE ((s4.molecule_id = m.id) AND (s4.deleted_at IS NULL)))) AND (EXISTS ( SELECT 1
+                     FROM collections pe
+                    WHERE ((pe.label = 'Published Elements'::text) AND (pe.deleted_at IS NULL) AND ((c.ancestry)::text ~~ (('%/'::text || (pe.id)::text) || '/%'::text))))))
+            ORDER BY c."position"
+           LIMIT 1) AS embargo_label
+     FROM ((molecules m
+       JOIN samples s ON (((s.molecule_id = m.id) AND (s.deleted_at IS NULL))))
+       JOIN publications p ON ((((p.element_type)::text = 'Sample'::text) AND (p.element_id = s.id) AND (p.deleted_at IS NULL) AND ((p.state)::text = 'completed'::text))))
+    WHERE (m.deleted_at IS NULL)
+    GROUP BY m.id;
+  SQL
+  add_index "mv_molecule_archive_snapshot", ["embargo_label"], name: "idx_mv_mol_archive_snapshot_embargo"
+  add_index "mv_molecule_archive_snapshot", ["group_label"], name: "idx_mv_mol_archive_snapshot_group"
+  add_index "mv_molecule_archive_snapshot", ["has_analyses"], name: "idx_mv_mol_archive_snapshot_has_analyses"
+  add_index "mv_molecule_archive_snapshot", ["max_published_at"], name: "idx_mv_mol_archive_snapshot_max_published_at"
+  add_index "mv_molecule_archive_snapshot", ["molecule_id"], name: "idx_mv_mol_archive_snapshot_molecule_id", unique: true
+  add_index "mv_molecule_archive_snapshot", ["provider"], name: "idx_mv_mol_archive_snapshot_provider"
+  add_index "mv_molecule_archive_snapshot", ["year_published"], name: "idx_mv_mol_archive_snapshot_year"
+
+  create_view "v_molecule_archive", sql_definition: <<-SQL
+      SELECT snap.molecule_id,
+      snap.mol_iupac_name,
+      snap.mol_inchikey,
+      snap.mol_inchistring,
+      snap.mol_cano_smiles,
+      snap.mol_sum_formular,
+      snap.max_published_at,
+      snap.year_published,
+      snap.publication_count,
+      snap.publication_ids,
+      snap.sample_ids,
+      snap.contributor_ids,
+      snap.xvial_count,
+      snap.provider,
+      snap.group_label,
+      snap.has_analyses,
+      snap.embargo_label
+     FROM mv_molecule_archive_snapshot snap
+    WHERE (NOT (EXISTS ( SELECT 1
+             FROM v_molecule_archive_delta d
+            WHERE (d.molecule_id = snap.molecule_id))))
+  UNION ALL
+   SELECT v_molecule_archive_delta.molecule_id,
+      v_molecule_archive_delta.mol_iupac_name,
+      v_molecule_archive_delta.mol_inchikey,
+      v_molecule_archive_delta.mol_inchistring,
+      v_molecule_archive_delta.mol_cano_smiles,
+      v_molecule_archive_delta.mol_sum_formular,
+      v_molecule_archive_delta.max_published_at,
+      v_molecule_archive_delta.year_published,
+      v_molecule_archive_delta.publication_count,
+      v_molecule_archive_delta.publication_ids,
+      v_molecule_archive_delta.sample_ids,
+      v_molecule_archive_delta.contributor_ids,
+      v_molecule_archive_delta.xvial_count,
+      v_molecule_archive_delta.provider,
+      v_molecule_archive_delta.group_label,
+      v_molecule_archive_delta.has_analyses,
+      v_molecule_archive_delta.embargo_label
+     FROM v_molecule_archive_delta;
   SQL
 end

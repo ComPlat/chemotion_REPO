@@ -13,7 +13,7 @@ class PagesController < ApplicationController
 
   def docx; end
 
-  def welcome;
+  def welcome
     flash.clear
   end
 
@@ -28,9 +28,11 @@ class PagesController < ApplicationController
       provider_authorize = Chemotion::ScifinderNService.provider_authorize(code, sf_verifer)
       sfc = ScifinderNCredential.find_by(created_by: current_user.id)
       ScifinderNCredential.create!(provider_authorize.merge(created_by: current_user.id)) if sfc.blank?
-      sfc.update!(provider_authorize) unless sfc.blank?
-      redirect_to root_path
-    rescue StandardError => e
+      sfc.update!(provider_authorize) if sfc.present?
+      # After successfully obtaining and storing the SciFinder-n token,
+      # redirect the user to close the popup window
+      render "oauth/token_registration_success"
+    rescue StandardError
       redirect_to '/500.html'
     end
   end
@@ -88,21 +90,21 @@ class PagesController < ApplicationController
       flash[:danger] = 'Invalid ORCID format. Please use the format: 0000-0000-0000-0000'
       return render 'settings'
     end
-    
+
     # Fetch ORCID data from API
     orcid_data = Chemotion::OrcidService.record_person(orcid)
-    
+
     if orcid_data.nil?
       flash[:danger] = 'Could not retrieve information for this ORCID iD. Please check the ID and try again.'
       return render 'settings'
     end
-    
+
     # Check if names match
     if Chemotion::OrcidService.names_match?(current_user, orcid_data)
       # Update the user's providers hash with the ORCID
       providers = current_user.providers || {}
       providers['orcid'] = orcid
-      
+
       if current_user.update(providers: providers)
         flash[:success] = 'ORCID iD successfully validated and saved!'
         return render 'settings'

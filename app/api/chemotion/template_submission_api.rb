@@ -126,7 +126,7 @@ module Chemotion
       get do
         submissions = TemplateSubmission.recent
 
-        submissions = submissions.by_template_type(params[:template_klass]) if params[:template_klass].present?
+        submissions = submissions.by_template_klass(params[:template_klass]) if params[:template_klass].present?
         submissions = submissions.by_state(params[:state]) if params[:state].present?
         submissions = submissions.by_origin(params[:origin]) if params[:origin].present?
 

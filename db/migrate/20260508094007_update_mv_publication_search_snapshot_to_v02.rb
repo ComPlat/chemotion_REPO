@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+class UpdateMvPublicationSearchSnapshotToV02 < ActiveRecord::Migration[6.1]
+  # No-op: the create migration already builds mv_publication_search_snapshot and its
+  # delta/union views at version 2. Kept rather than deleted so databases that
+  # recorded it stay consistent and `rails db:migrate:status` shows no
+  # "NO FILE" gaps.
+  def up; end
+
+  def down; end
+end

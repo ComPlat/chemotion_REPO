@@ -2,11 +2,9 @@
 
 module Entities
   class CollectionEntity < ApplicationEntity
-    USER_COLS = ['Embargoed Publications from', 'Pending Publication from', 'Group Lead Review from', 'Published by', 'Reviewing Publication from'].freeze
-
     expose(
       :descendant_ids,
-           :id,
+      :id,
       :is_locked,
       :is_remote,
       :is_shared,
@@ -34,17 +32,12 @@ module Entities
     end
 
     def children
-      chemotion_user = User.chemotion_user
-      if chemotion_user&.id == current_user&.id && USER_COLS.include?(object.label)
-        return nil
-      end
-
       object.children.ordered
     end
 
     def is_remote
       object.is_shared &&
-        (object.shared_by_id != current_user&.id)
+        (object.shared_by_id != current_user.id)
     end
 
     def descendant_ids

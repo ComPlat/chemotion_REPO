@@ -26,7 +26,11 @@ module Repo
     end
 
     def self.find_embargo_collection(root_publication)
-      has_embargo_col = root_publication.element&.collections&.select { |c| c['ancestry'].to_i == User.with_deleted.find(root_publication.published_by).publication_embargo_collection.id }
+      owner = User.with_deleted.find(root_publication.published_by)
+      embargo_root_id = owner.publication_embargo_collection&.id
+      return OpenStruct.new(label: '') unless embargo_root_id
+
+      has_embargo_col = root_publication.element&.collections&.select { |c| c.parent_id == embargo_root_id }
       has_embargo_col && has_embargo_col.length > 0 ? has_embargo_col.first : OpenStruct.new(label: '')
     rescue StandardError => e
       Rails.logger.error(e.message)

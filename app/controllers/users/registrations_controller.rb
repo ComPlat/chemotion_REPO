@@ -2,6 +2,8 @@
 
 module Users
   class RegistrationsController < Devise::RegistrationsController
+    before_action :check_otp, only: %i[destroy update]
+
     def new
       build_resource({})
       @affiliation = resource.affiliations.build
@@ -13,46 +15,34 @@ module Users
     end
 
     def create
-      # Extract ORCID value first to prevent "unknown attribute" error
-      orcid_value = params[:user] && params[:user].delete(:orcid)
-      
-      # Normal resource building
       build_resource(sign_up_params)
       find_affiliation
       default_password
-      
-      # Set up providers with ORCID if provided
-      setup_providers(orcid_value)
+      providers
 
       yield resource if block_given?
-      begin
-        if resource.save
-          resource_saved_handler
-        else
-          resource_not_saved_handler
-        end
-      rescue Errno::ECONNREFUSED => e
-        # Handle email delivery error gracefully
-        Rails.logger.error "Mail delivery failed: #{e.message}"
-        
-        # Still create the user but inform about mail delivery failure
-        if resource.persisted?
-          set_flash_message :notice, :signed_up_mail_error if is_flashing_format?
-          sign_up(resource_name, resource)
-          respond_with resource, location: after_sign_up_path_for(resource)
-        else
-          resource_not_saved_handler
-        end
+      if resource.save
+        resource_saved_handler
+      else
+        resource_not_saved_handler
       end
     end
 
     protected
 
+    def check_otp
+      return unless resource.otp_required_for_login &&
+                    !resource.validate_and_consume_otp!(params[:user][:otp_attempt])
+
+      resource.assign_attributes(account_update_params.except(:current_password))
+      resource.errors.add(:base, :invalid_otp)
+      render json: { otp_required: true, otp_wrong: params[:user][:otp_attempt].present? },
+             status: :unprocessable_entity
+    end
+
     def providers
-      provider = resource.providers || {}
-      if resource.provider.present?
-        provider[resource.provider] = resource.uid
-      end
+      provider = {}
+      provider[resource.provider] = resource.uid
       resource.providers = provider
     end
 
@@ -120,26 +110,10 @@ module Users
     end
 
     def affiliation_handler
-      # First try to get affiliation from session if available
-      if session['devise.omniauth.data'] && session['devise.omniauth.data']['affiliation'].present?
-        aff = assign_affiliation(resource.affiliations[0]) if resource.affiliations&.length.positive?
-        resource.affiliations[0] = aff if aff.present?
-      end
-    end
+      return if session['devise.omniauth.data']['affiliation'].blank?
 
-    def setup_providers(orcid_value = nil)
-      # Initialize providers hash if needed
-      resource.providers ||= {}
-      
-      # Add OAuth provider/uid if present
-      if resource.provider.present? && resource.uid.present?
-        resource.providers[resource.provider] = resource.uid
-      end
-      
-      # Add ORCID if provided
-      if orcid_value.present?
-        resource.providers['orcid'] = orcid_value
-      end
+      aff = assign_affiliation(resource.affiliations[0]) if resource.affiliations&.length.positive? # rubocop: disable Lint/SafeNavigationChain
+      resource.affiliations[0] = aff if aff.present?
     end
 
     # GET /resource/edit

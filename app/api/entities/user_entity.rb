@@ -2,14 +2,22 @@
 
 module Entities
   class UserEntity < Grape::Entity
+    include Entities::Concerns::RepoUserHelper
+
     expose :id, documentation: { type: 'Integer', desc: "User's unique id" }
     expose :name, documentation: { type: 'String', desc: "User's name" }
     expose :first_name, documentation: { type: 'String', desc: "User's name" }
     expose :last_name, documentation: { type: 'String', desc: "User's name" }
     expose :initials, documentation: { type: 'String', desc: 'initials' }
+    expose :used_space, documentation: { type: 'Integer', desc: "User's used storage space" }
+    expose :allocated_space, documentation: { type: 'Integer', desc: "User's allocated storage space (0=infinite)" }
     expose :samples_count, documentation: { type: 'Integer', desc: 'Sample count' }
     expose :reactions_count, documentation: { type: 'Integer', desc: 'Reactions count' }
     expose :cell_lines_count, documentation: { type: 'Integer', desc: 'Cellline Samples count' }
+    expose :device_descriptions_count, documentation: { type: 'Integer', desc: 'Device Descriptions count' }
+    expose :vessels_count, documentation: { type: 'Integer', desc: 'Vessel instances count' }
+    expose :sequence_based_macromolecule_samples_count,
+           documentation: { type: 'Integer', desc: 'Sequence-based macromolecule samples count' }
     expose :type, if: ->(obj, _opts) { obj.respond_to? :type }
     expose :reaction_name_prefix, if: ->(obj, _opts) { obj.respond_to? :reaction_name_prefix }
     expose :layout, if: ->(obj, _opts) { obj.respond_to? :layout }
@@ -25,31 +33,14 @@ module Entities
     expose :matrix, documentation: { type: 'Integer', desc: "User's matrix" }
     expose :counters
     expose :generic_admin, documentation: { type: 'Hash', desc: 'Generic administrator' }
+    expose :otp_required_for_login, documentation: { type: 'Boolean', desc: 'If 2fa is enabled' }
+    expose :profile
+
+    ## Chemotion Repository specific fields
     expose :affiliations, :current_affiliations
     expose :is_article_editor, :is_howto_editor, :is_reviewer
     expose :orcid
 
-    def affiliations
-      a = {}
-      object.affiliations.select(
-        'id',
-        'affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country as aff'
-      ).reduce(a){|acc, affiliation| a[affiliation.id] = affiliation.aff}
-      a
-    end
-
-    def orcid
-      object.orcid
-    end
-
-    def current_affiliations
-      a = {}
-      object.current_affiliations.select(
-        'id',
-        'affiliations.department || chr(44)|| chr(32) || affiliations.organization || chr(44)|| chr(32) || affiliations.country as aff'
-      ).reduce(a){|acc, affiliation| a[affiliation.id] = affiliation.aff}
-      a
-    end
 
     def samples_count
       object.counters['samples'].to_i
@@ -61,6 +52,18 @@ module Entities
 
     def cell_lines_count
       object.counters['celllines'].to_i
+    end
+
+    def device_descriptions_count
+      object.counters['device_descriptions'].to_i
+    end
+
+    def vessels_count
+      object.counters['vessels'].to_i
+    end
+
+    def sequence_based_macromolecule_samples_count
+      object.counters['sequence_based_macromolecule_samples'].to_i
     end
 
     expose :current_sign_in_at do |obj|

@@ -1,0 +1,386 @@
+/* eslint-disable react/forbid-prop-types */
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { Button, Card, Collapse } from 'react-bootstrap';
+import { AffiliationMap } from 'src/repo/repoHome/RepoReviewCommon';
+import ArrayUtils from 'src/utilities/ArrayUtils';
+import {
+  AffiliationList,
+  AnalysesTypeJoinLabel,
+  AuthorList,
+  CommentBtn,
+  ContributorInfo,
+  ClipboardCopyBtn,
+  IconToMyDB,
+  PubQRCode,
+  SidToPubChem,
+  ToggleIndicator,
+} from 'src/repo/repoHome/RepoCommon';
+import DateInfo from 'src/repo/chemrepo/DateInfo';
+import LicenseIcon from 'src/repo/chemrepo/LicenseIcon';
+import MAPanel from 'src/repo/chemrepo/MoleculeArchive';
+import StateLabel, {
+  StateLabelDetail,
+} from 'src/repo/chemrepo/common/StateLabel';
+import PublicActions from 'src/repo/actions/PublicActions';
+import PublicAnchor from 'src/repo/chemrepo/PublicAnchor';
+import PublicSample from 'src/repo/chemrepo/PublicSample';
+import PublicCommentModal from 'src/repo/chemrepo/PublicCommentModal';
+import RepoSegment from 'src/repo/repoHome/RepoSegment';
+import Sample from 'src/models/Sample';
+import UserCommentModal from 'src/repo/chemrepo/UserCommentModal';
+import PublicLabels from 'src/repo/chemrepo/PublicLabels';
+import { ExtIcon, ExtInfo } from 'src/repo/chemrepo/ExtIcon';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import ViewSpectra from 'src/apps/mydb/elements/details/ViewSpectra';
+import AnalysisRenderer from 'src/repo/chemrepo/analysis/AnalysisRenderer';
+
+import NewVersionModal from 'src/repo/chemrepo/NewVersionModal';
+import VersionDropdown from 'src/repo/chemrepo/VersionDropdown';
+import PublicStore from 'src/repo/stores/PublicStore';
+
+const scrollView = () => {
+  const anchor = window.location.hash.split('#')[1];
+  if (anchor) {
+    const anchorElement = document.getElementById(anchor);
+    if (anchorElement) {
+      anchorElement.scrollIntoView({ block: 'start', behavior: 'auto' });
+    }
+  }
+};
+export default class RepoSample extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      expandSA: true,
+      repoVersioning: PublicStore.getState().repoVersioning,
+    };
+    this.panelRef = React.createRef();
+    this.materialRef = React.createRef();
+    this.handleAnalysesLink = this.handleAnalysesLink.bind(this);
+    this.handleMaterialLink = this.handleMaterialLink.bind(this);
+    this.toggleSA = this.toggleSA.bind(this);
+    this.renderAnalyses = this.renderAnalyses.bind(this);
+  }
+
+  componentDidMount() {
+    scrollView();
+  }
+
+  componentDidUpdate() {
+    scrollView();
+  }
+
+  handleAnalysesLink() {
+    this.panelRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  handleMaterialLink() {
+    this.materialRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  toggleSA() {
+    const { expandSA } = this.state;
+    this.setState({ expandSA: !expandSA });
+  }
+
+  updateRepoXvial(elementId) {
+    const { listType } = this.props;
+    PublicActions.displayMolecule(elementId, '', '', false, '', '', listType);
+    PublicActions.refreshPubElements(`Molecules=${listType}`);
+  }
+
+  renderAnalyses(analyses) {
+    const { sample } = this.props;
+    const specSample = new Sample(sample);
+    const orderAnalyses = ArrayUtils.sortArrByIndex(analyses);
+    return orderAnalyses.map((analysis) => {
+      const userInfo =
+        (sample.ana_infos && sample.ana_infos[analysis.id]) || '';
+      const kind = (analysis.extended_metadata['kind'] || '')
+        .split('|')
+        .pop()
+        .trim();
+      return (
+        <span key={`analysis_${analysis.id}`}>
+          <CommentBtn
+            {...this.props}
+            field={`Analysis_${analysis.id}`}
+            orgInfo={kind}
+            onShow={this.props.handleCommentBtn}
+          />
+          <AnalysisRenderer
+            key={analysis.id}
+            userInfo={userInfo}
+            analysis={analysis}
+            isPublic={this.props.isPublished}
+            isLogin={this.props.isLogin}
+            isReviewer={this.props.isReviewer}
+            type="Container"
+            pageType="molecules"
+            pageId={sample.molecule_id}
+            element={specSample}
+          />
+        </span>
+      );
+    });
+  }
+
+  render() {
+    const {
+      sample,
+      pubData,
+      tagData,
+      isPublished,
+      isLogin,
+      isCI,
+      isReviewer,
+      isPublisher,
+      element,
+    } = this.props;
+    const { xvialCom } = element || {};
+    const { expandSA, repoVersioning } = this.state;
+    const affiliationMap = AffiliationMap(sample.affiliation_ids, sample.affiliations);
+
+    const iupacUserDefined =
+      sample.showed_name == sample.molecule_iupac ||
+      sample.showed_name == null ? (
+        null
+      ) : (
+        <h5>
+          <b>Molecule/Material name: </b> {sample.showed_name}{' '}
+        </h5>
+      );
+    const userInfo = sample.pub_info || '';
+    const analysesContainer = sample.container.children?.find((container) => container?.container_type === 'analyses');
+    const analyses = analysesContainer?.children?.filter((container) => container?.container_type === 'analysis') || [];
+    let embargo = null;
+    let colDoiPrefix = sample?.doi || '';
+    colDoiPrefix =
+      typeof colDoiPrefix === 'object' ? sample.doi?.full_doi : colDoiPrefix;
+    colDoiPrefix = colDoiPrefix.split('/')[0];
+    if (sample.embargo) {
+      const embargoLink = isPublished
+        ? `/inchikey/collection/${sample.embargo}`
+        : `/embargo/sample/${sample.id}`;
+      embargo = (
+        <span>
+          <b>Access to the DOI and metadata for the whole data collection: </b>{' '}
+          &nbsp;
+          <Button
+            key="embargo-link-btn"
+            variant="link"
+            href={embargoLink}
+            target="_blank"
+            style={{ padding: '0px 0px' }}
+          >
+            <i className="fa fa-database" />
+            &nbsp;&nbsp;{sample.embargo}
+          </Button>&nbsp;
+          <ClipboardCopyBtn
+            text={`https://dx.doi.org/${colDoiPrefix}/collection/${sample.embargo}`}
+            tooltip="retrieve and copy collection DOI"
+          />
+        </span>
+      );
+    }
+    return (
+      <div className="jumbotron" key={`sample-${sample.id}`}>
+        <PublicAnchor doi={sample.doi} isPublished={isPublished} />
+        <span className="repo-pub-sample-header">
+          <span className="repo-pub-title">
+            <IconToMyDB
+              isLogin={isLogin}
+              isCI={isCI}
+              isPublished={isPublished}
+              id={sample.id}
+              type="sample"
+            />
+          </span>
+          &nbsp;
+          <span className="repo-pub-title">
+            <DateInfo
+              isPublished={isPublished}
+              preText="Sample"
+              pubData={pubData}
+              tagData={tagData}
+            />
+          </span>
+          &nbsp;
+          <SidToPubChem sid={sample.sid} />
+          &nbsp;
+          <span className="repo-public-user-comment">
+            {ExtIcon(sample.embargo)}
+            <span>{PublicLabels(sample.labels)}</span>
+            <PublicCommentModal
+              isReviewer={isReviewer}
+              id={sample.id}
+              type="Sample"
+              title={sample.showed_name}
+              userInfo={userInfo}
+              pageType="molecules"
+              pageId={sample.molecule_id}
+            />
+            &nbsp;
+            <UserCommentModal
+              isPublished={isPublished}
+              isLogin={isLogin}
+              id={sample.id}
+              type="Sample"
+              title={sample.showed_name}
+              pageType="molecules"
+              pageId={sample.molecule_id}
+            />
+            &nbsp;
+            <NewVersionModal
+              type="Sample"
+              element={sample}
+              repoVersioning={repoVersioning}
+              parentId={sample.reaction_ids.length > 0 ? sample.reaction_ids[0] : null}
+              isPublisher={isPublisher}
+              isLatestVersion={!sample.new_version}
+            />
+          </span>
+          {StateLabel(sample.embargo)}
+          <StateLabelDetail state={pubData.state} />
+        </span>
+        <VersionDropdown
+          type="Sample"
+          element={sample}
+          onChange={version => PublicActions.selectSampleVersion(version)}
+        />
+        <br />
+        {iupacUserDefined}
+        <div className="d-flex align-items-start gap-2">
+          <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+            <ContributorInfo contributor={sample.contributors} affiliationMap={affiliationMap} />
+            <div className="fw-bold fs-6">
+              Author{sample.author_ids.length > 1 ? 's' : ''}:{' '}
+              <AuthorList
+                creators={sample.creators}
+                affiliationMap={affiliationMap}
+                affiliations={sample.affiliations}
+                contributor={sample.contributors}
+              />
+            </div>
+            <AffiliationList
+              affiliations={sample.affiliations}
+              affiliationMap={affiliationMap}
+              rorMap={sample.ror_ids}
+            />
+          </div>
+          {isPublished && (
+            <div style={{ flex: '0 0 auto' }}>
+              <PubQRCode
+                doi={typeof sample.doi === 'string' ? sample.doi : sample.doi?.full_doi}
+                publicationId={pubData.id}
+              />
+            </div>
+          )}
+        </div>
+        {ExtInfo(sample.embargo)}
+        <br />
+        <PublicSample
+          {...this.props}
+          embargo={embargo}
+          handleAnalysesLink={this.handleAnalysesLink}
+          handleMaterialLink={this.handleMaterialLink}
+        />
+        <br />
+        <div ref={this.materialRef}>
+          <MAPanel
+            compNum={sample.comp_num}
+            isEditable={isReviewer}
+            isLogin={isLogin}
+            allowRequest
+            elementId={sample.id}
+            data={sample.xvial}
+            saveCallback={() => this.updateRepoXvial(sample.molecule_id)}
+            xvialCom={xvialCom}
+          />
+        </div>
+        {
+          sample.description && <div>
+            <b>Sample description:</b>
+            <Card style={{ border: 'none' }} id="sample-description-panel">
+              <Card.Body style={{ fontSize: '90%', backgroundColor: '#f5f5f5', padding: '4', whiteSpace: 'pre-wrap' }}>
+                {sample.description}
+              </Card.Body>
+            </Card>
+          </div>
+        }
+        <RepoSegment segments={sample.segments} isPublic={isPublished} />
+        <span className="repo-pub-sample-header">
+          <div ref={this.panelRef}>
+            <ToggleIndicator
+              onClick={this.toggleSA}
+              name="Analyses"
+              indicatorStyle={expandSA ? 'down' : 'right'}
+            />
+          </div>
+          <span
+            className="label ms-2"
+            style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}
+          >
+            {AnalysesTypeJoinLabel(
+              ArrayUtils.sortArrByIndex(analyses),
+              'Sample'
+            )}
+          </span>
+          <LicenseIcon
+            license={sample.license}
+            hasCoAuthors={sample.author_ids.length > 1}
+          />
+        </span>
+        <Card
+          style={{ border: 'none' }}
+          id="collapsible-panel-sample-analyses"
+          className="fs-6 fw-normal"
+        >
+          <Collapse in={expandSA}>
+            <Card.Body
+              style={{
+                backgroundColor: '#f5f5f5',
+                padding: '4',
+              }}
+            >
+              {this.renderAnalyses(analyses)}
+            </Card.Body>
+          </Collapse>
+        </Card>
+        <NMRiumDisplayer
+          sample={new Sample(sample)}
+          handleSampleChanged={() => {}}
+          handleSubmit={() => {}}
+          readOnly
+        />
+        <ViewSpectra
+          sample={new Sample(sample)}
+          handleSampleChanged={() => {}}
+          handleSubmit={() => {}}
+          isPublic
+        />
+      </div>
+    );
+  }
+}
+
+RepoSample.propTypes = {
+  sample: PropTypes.object.isRequired,
+  pubData: PropTypes.object.isRequired,
+  tagData: PropTypes.object.isRequired,
+  isPublished: PropTypes.bool.isRequired,
+  canComment: PropTypes.bool,
+  handleCommentBtn: PropTypes.func,
+  isLogin: PropTypes.bool,
+  isReviewer: PropTypes.bool,
+  isPublisher: PropTypes.bool,
+};
+
+RepoSample.defaultProps = {
+  canComment: false,
+  isLogin: false,
+  isReviewer: false,
+  isPublisher: false,
+  handleCommentBtn: () => {},
+};

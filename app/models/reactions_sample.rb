@@ -2,27 +2,35 @@
 #
 # Table name: reactions_samples
 #
-#  id             :integer          not null, primary key
-#  reaction_id    :integer
-#  sample_id      :integer
-#  reference      :boolean
-#  equivalent     :float
-#  position       :integer
-#  type           :string
-#  deleted_at     :datetime
-#  waste          :boolean          default(FALSE)
-#  coefficient    :float            default(1.0)
-#  show_label     :boolean          default(FALSE), not null
-#  gas_type       :integer          default("off")
-#  gas_phase_data :jsonb
+#  id                          :integer          not null, primary key
+#  coefficient                 :float            default(1.0)
+#  conversion_rate             :float
+#  deleted_at                  :datetime
+#  equivalent                  :float
+#  gas_phase_data              :jsonb
+#  gas_type                    :integer          default("off")
+#  position                    :integer
+#  reference                   :boolean
+#  scheme_yield                :float
+#  show_label                  :boolean          default(FALSE), not null
+#  type                        :string
+#  waste                       :boolean          default(FALSE)
+#  weight_percentage           :float
+#  weight_percentage_reference :boolean          default(FALSE)
+#  created_at                  :datetime
+#  updated_at                  :datetime
+#  reaction_id                 :integer
+#  sample_id                   :integer
 #
 # Indexes
 #
-#  index_reactions_samples_on_reaction_id  (reaction_id)
-#  index_reactions_samples_on_sample_id    (sample_id)
+#  index_reactions_samples_on_reaction_id     (reaction_id)
+#  index_reactions_samples_on_sample_id       (sample_id)
+#  index_reactions_samples_on_sample_id_type  (sample_id,type)
 #
 
 class ReactionsSample < ApplicationRecord
+  has_logidze
   acts_as_paranoid
   belongs_to :reaction, optional: true
   belongs_to :sample, optional: true
@@ -71,7 +79,7 @@ class ReactionsProductSample < ReactionsSample
   include Tagging
 
   def formatted_yield
-    eq = self.equivalent
-    eq && !eq.nan? ? "#{(eq * 100).round.to_s} %" : "0 %"
+    eq = equivalent
+    eq && !eq.nan? ? "#{(eq * 100).round} %" : '0 %'
   end
 end

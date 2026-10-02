@@ -11,12 +11,16 @@ describe Usecases::Attachments::Annotation::AnnotationUpdater do
       let(:attachment_id) { -1 }
 
       it 'raises an error' do
-        expect { update_process }.to raise_error "Couldn't find Attachment with 'id'=#{attachment_id}"
+        expect { update_process }.to raise_error(
+          "Couldn't find Attachment with 'id'=#{attachment_id} [WHERE \"attachments\".\"deleted_at\" IS NULL]",
+        )
       end
     end
 
     context 'when attachment does exist' do
       context 'when annotation is valide' do # rubocop:disable RSpec/NestedGroups
+        before { skip_unless_binary_available('convert') }
+
         let(:svg_filename) { '20221207_valide_annotation.svg' }
         let(:svg_filename2) { '20221207_valide_annotation_edited.svg' }
         let(:attachment) { create(:attachment, :with_png_image) }

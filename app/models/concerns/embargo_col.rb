@@ -4,8 +4,8 @@ module EmbargoCol
     return if element_type != 'Collection' || element.nil?
 
     # Fetch publications for samples and reactions with preloaded doi
-    ps = Publication.where(element_type: 'Sample', ancestry: nil, element_id: element.samples&.pluck(:id)).includes(:doi)
-    pr = Publication.where(element_type: 'Reaction', ancestry: nil, element_id: element.reactions&.pluck(:id)).includes(:doi)
+    ps = Publication.where(element_type: 'Sample', ancestry: '/', element_id: element.samples&.pluck(:id)).includes(:doi)
+    pr = Publication.where(element_type: 'Reaction', ancestry: '/', element_id: element.reactions&.pluck(:id)).includes(:doi)
 
     creators = []
     author_ids = []
@@ -32,9 +32,15 @@ module EmbargoCol
       creators << et_taggable_data['publication']["creators"] if et_taggable_data['publication']["creators"] .present?
       author_ids << et_taggable_data['publication']["author_ids"] if et_taggable_data['publication']["author_ids"] .present?
       affiliation_ids << et_taggable_data['publication']["affiliation_ids"] if et_taggable_data['publication']["affiliation_ids"] .present?
+
+      # TODO: Review is needed
+      # Preserve the Collection's explicit contributors metadata, rather than randomly inheriting the last child's contributors.
+      if et_taggable_data['publication']["contributors"].present?
+        contributors = et_taggable_data['publication']["contributors"]
+      end
     end
 
-    affiliations = Affiliation.where(id: affiliation_ids.flatten)
+    affiliations = Affiliation.where(id: affiliation_ids.flatten.compact.uniq)
     affiliations_output = {}
     affiliations.each do |aff|
       affiliations_output[aff.id] = aff.output_full

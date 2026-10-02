@@ -1,0 +1,432 @@
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import {
+  Form, Row, Col,
+  Tabs, Tab
+} from 'react-bootstrap';
+import { unionBy, findIndex } from 'lodash';
+import Immutable from 'immutable';
+
+import DetailActions from 'src/stores/alt/actions/DetailActions';
+import ElementActions from 'src/stores/alt/actions/ElementActions';
+import ElementDetailCard from 'src/apps/mydb/elements/details/ElementDetailCard';
+import ElementDetailSortTab from 'src/apps/mydb/elements/details/ElementDetailSortTab';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import PrivateNoteElement from 'src/apps/mydb/elements/details/PrivateNoteElement';
+import QuillEditor from 'src/components/QuillEditor';
+import ResearchPlansFetcher from 'src/fetchers/ResearchPlansFetcher';
+import Screen from 'src/models/Screen';
+import ScreenDetailsContainers from 'src/apps/mydb/elements/details/screens/analysesTab/ScreenDetailsContainers';
+import ScreenResearchPlans from 'src/apps/mydb/elements/details/screens/researchPlansTab/ScreenResearchPlans';
+import ScreenWellplates from 'src/apps/mydb/elements/details/screens/ScreenWellplates';
+import ResearchplanFlowDisplay from 'src/apps/mydb/elements/details/screens/ResearchplanFlowDisplay';
+import UIActions from 'src/stores/alt/actions/UIActions';
+import UIStore from 'src/stores/alt/stores/UIStore';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import MatrixCheck from 'src/components/common/MatrixCheck';
+import { addSegmentTabs } from 'src/components/generic/SegmentDetails';
+import CommentSection from 'src/components/comments/CommentSection';
+import CommentActions from 'src/stores/alt/actions/CommentActions';
+import CommentModal from 'src/components/common/CommentModal';
+import { commentActivation } from 'src/utilities/CommentHelper';
+import { formatTimeStampsOfElement } from 'src/utilities/timezoneHelper';
+// eslint-disable-next-line import/no-named-as-default
+import VersionsTable from 'src/apps/mydb/elements/details/VersionsTable';
+import { EditUserLabels } from 'src/components/UserLabels';
+
+export default class ScreenDetails extends Component {
+  constructor(props) {
+    super(props);
+    const { screen } = props;
+    this.state = {
+      screen,
+      activeTab: UIStore.getState().screen.activeTab,
+      visible: Immutable.List(),
+      expandedResearchPlanId: null,
+      currentUser: (UserStore.getState() && UserStore.getState().currentUser) || {},
+    };
+    this.onUIStoreChange = this.onUIStoreChange.bind(this);
+    this.onTabPositionChanged = this.onTabPositionChanged.bind(this);
+    this.handleSegmentsChange = this.handleSegmentsChange.bind(this);
+    this.updateComponentGraphData = this.updateComponentGraphData.bind(this);
+    this.handleScreenChanged = this.handleScreenChanged.bind(this);
+  }
+
+  componentDidMount() {
+    const { screen } = this.props;
+    const { currentUser } = this.state;
+
+    UIStore.listen(this.onUIStoreChange);
+    if (MatrixCheck(currentUser.matrix, commentActivation) && !screen.isNew) {
+      CommentActions.fetchComments(screen);
+    }
+  }
+
+  componentWillUnmount() {
+    UIStore.unlisten(this.onUIStoreChange);
+  }
+
+  componentDidUpdate(prevProps) {
+    const { screen } = this.props;
+    if (screen !== prevProps.screen) {
+      this.setState({ screen });
+    }
+  }
+
+  onUIStoreChange(state) {
+    if (state.screen.activeTab !== this.state.activeTab) {
+      this.setState({
+        activeTab: state.screen.activeTab
+      });
+    }
+  }
+
+  onUIStoreChange(state) {
+    if (state.screen.activeTab != this.state.activeTab) {
+      this.setState({
+        activeTab: state.screen.activeTab
+      });
+    }
+  }
+
+  onTabPositionChanged(visible) {
+    this.setState({ visible });
+  }
+
+  handleSubmit(closeView = false) {
+    const { screen } = this.state;
+    LoadingActions.start();
+
+    if (screen.isNew) {
+      ElementActions.createScreen(screen);
+    } else {
+      ElementActions.updateScreen(screen, closeView);
+    }
+    if (screen.is_new) {
+      const force = true;
+      DetailActions.close(screen, force);
+    }
+  }
+
+  handleInputChange(type, event) {
+    const types = ['name', 'requirements', 'collaborator', 'conditions', 'result', 'description'];
+    if (types.indexOf(type) !== -1) {
+      const { screen } = this.state;
+      const { value } = event.target;
+
+      screen[type] = value;
+      this.setState({ screen });
+    }
+  }
+
+  handleSegmentsChange(se) {
+    const { screen } = this.state;
+    const { segments } = screen;
+    const idx = findIndex(segments, (o) => o.segment_klass_id === se.segment_klass_id);
+    if (idx >= 0) { segments.splice(idx, 1, se); } else { segments.push(se); }
+    screen.segments = segments;
+    screen.changed = true;
+    this.setState({ screen });
+  }
+
+  handleScreenChanged(screen) {
+    this.setState({ screen });
+  }
+
+  dropResearchPlan(researchPlan) {
+    const { screen } = this.state;
+    screen.research_plans = unionBy(screen.research_plans, [researchPlan], 'id');
+    this.forceUpdate();
+  }
+
+  deleteResearchPlan(researchPlanID) {
+    const { screen } = this.state;
+    const researchPlanIndex = screen.research_plans.findIndex((rp) => rp.id === researchPlanID);
+    screen.research_plans.splice(researchPlanIndex, 1);
+
+    this.setState({ screen });
+  }
+
+  updateResearchPlan(researchPlan) {
+    const { screen } = this.state;
+    const researchPlanIndex = screen.research_plans.findIndex((rp) => rp.id === researchPlan.id);
+    screen.research_plans[researchPlanIndex] = researchPlan;
+  }
+
+  saveResearchPlan(researchPlan) {
+    const { screen } = this.state;
+    LoadingActions.start();
+
+    ResearchPlansFetcher.update(researchPlan)
+      .then((result) => {
+        const researchPlanIndex = screen.research_plans.findIndex((rp) => rp.id === researchPlan.id);
+        screen.research_plans[researchPlanIndex] = result;
+        ElementActions.updateEmbeddedResearchPlan(result);
+      }).catch((errorMessage) => {
+        console.log(errorMessage);
+      });
+  }
+
+  dropWellplate(wellplate) {
+    const { screen } = this.state;
+    screen.wellplates = unionBy(screen.wellplates, [wellplate], 'id');
+    this.forceUpdate();
+  }
+
+  deleteWellplate(wellplate) {
+    const { screen } = this.state;
+    const wellplateIndex = screen.wellplates.indexOf(wellplate);
+    screen.wellplates.splice(wellplateIndex, 1);
+
+    this.setState({ screen });
+  }
+
+  propertiesFields(screen) {
+    const {
+      wellplates, name, collaborator, result, conditions, requirements, description
+    } = screen;
+
+    return (
+      <Form>
+        <Row className="mb-4">
+          <Col>
+            <Form.Group>
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={name || ''}
+                onChange={(event) => this.handleInputChange('name', event)}
+                disabled={screen.isMethodDisabled('name')}
+              />
+            </Form.Group>
+          </Col>
+          <Col>
+            <Form.Group>
+              <Form.Label>Collaborator</Form.Label>
+              <Form.Control
+                type="text"
+                value={collaborator || ''}
+                onChange={(event) => this.handleInputChange('collaborator', event)}
+                disabled={screen.isMethodDisabled('collaborator')}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col>
+            <Form.Group>
+              <Form.Label>Requirements</Form.Label>
+              <Form.Control
+                type="text"
+                value={requirements || ''}
+                onChange={(event) => this.handleInputChange('requirements', event)}
+                disabled={screen.isMethodDisabled('requirements')}
+              />
+            </Form.Group>
+          </Col>
+          <Col>
+            <Form.Group>
+              <Form.Label>Conditions</Form.Label>
+              <Form.Control
+                type="text"
+                value={conditions || ''}
+                onChange={(event) => this.handleInputChange('conditions', event)}
+                disabled={screen.isMethodDisabled('conditions')}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col>
+            <Form.Group>
+              <Form.Label>Result</Form.Label>
+              <Form.Control
+                type="text"
+                value={result || ''}
+                onChange={(event) => this.handleInputChange('result', event)}
+                disabled={screen.isMethodDisabled('result')}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col>
+            <Form.Group>
+              <Form.Label>Description</Form.Label>
+              <QuillEditor
+                value={description}
+                onChange={(event) => this.handleInputChange('description', { target: { value: event } })}
+                disabled={screen.isMethodDisabled('description')}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col>
+            <EditUserLabels
+              element={screen}
+              fnCb={this.handleScreenChanged}
+            />
+            <PrivateNoteElement element={screen} disabled={screen.can_update} />
+          </Col>
+        </Row>
+        <hr />
+        <h4 className="list-group-item-heading">Wellplates</h4>
+        <ScreenWellplates
+          wellplates={wellplates}
+          dropWellplate={(wellplate) => this.dropWellplate(wellplate)}
+          deleteWellplate={(wellplate) => this.deleteWellplate(wellplate)}
+        />
+      </Form>
+    );
+  }
+
+  handleSelect(eventKey) {
+    UIActions.selectTab({ tabKey: eventKey, type: 'screen' });
+    this.setState({
+      activeTab: eventKey
+    });
+  }
+
+  updateComponentGraphData(data) {
+    const { screen } = this.state;
+    screen.componentGraphData = data;
+    this.setState({ screen });
+  }
+
+  switchToResearchPlanTab() {
+    if (this.state.activeTab == 'researchPlans') { return; }
+    // call the pre-existing method to act as if a user had clicked on the research plans tab
+    this.handleSelect('researchPlans');
+  }
+
+  expandResearchPlan(researchPlanId) {
+    this.setState({ expandedResearchPlanId: researchPlanId });
+  }
+
+  scrollToResearchPlan(researchPlanId) {
+
+  }
+
+  render() {
+    const { screen, visible } = this.state;
+
+    const tabContentsMap = {
+      properties: (
+        <Tab eventKey="properties" title="Properties" key={`properties_${screen.id}`}>
+          {
+            !screen.isNew && <CommentSection section="screen_properties" element={screen} />
+          }
+          {this.propertiesFields(screen)}
+        </Tab>
+      ),
+      analyses: (
+        <Tab eventKey="analyses" title="Analyses" key={`analyses_${screen.id}`}>
+          {
+            !screen.isNew && <CommentSection section="screen_analyses" element={screen} />
+          }
+          <ScreenDetailsContainers
+            screen={screen}
+            handleScreenChanged={this.handleScreenChanged}
+          />
+        </Tab>
+      ),
+      research_plans: (
+        <Tab eventKey="researchPlans" title="Research Plans" key={`research_plans_${screen.id}`}>
+          <ScreenResearchPlans
+            researchPlans={screen.research_plans}
+            expandedResearchPlanId={this.state.expandedResearchPlanId}
+            dropResearchPlan={(researchPlan) => this.dropResearchPlan(researchPlan)}
+            deleteResearchPlan={(researchPlan) => this.deleteResearchPlan(researchPlan)}
+            updateResearchPlan={(researchPlan) => this.updateResearchPlan(researchPlan)}
+            saveResearchPlan={(researchPlan) => this.saveResearchPlan(researchPlan)}
+          />
+        </Tab>
+      ),
+      history: (
+        <Tab
+          eventKey="history"
+          title="History"
+          key={`History_Reaction_${screen.id.toString()}`}
+        >
+          <VersionsTable
+            type="screens"
+            id={screen.id}
+            element={screen}
+            parent={this}
+            isEdited={screen.isEdited}
+          />
+        </Tab>
+      ),
+    };
+
+    addSegmentTabs(screen, this.handleSegmentsChange, tabContentsMap);
+
+    const tabContents = [];
+    visible.forEach((value) => {
+      const tabContent = tabContentsMap[value];
+      if (tabContent) { tabContents.push(tabContent); }
+    });
+
+    const activeTab = (this.state.activeTab !== 0 && this.state.activeTab) || visible[0];
+
+    const flowConfiguration = {
+      preview: {
+        onNodeDoubleClick: (_mouseEvent, node) => {
+          const researchPlanId = parseInt(node.id);
+          this.switchToResearchPlanTab();
+          this.expandResearchPlan(researchPlanId);
+          this.scrollToResearchPlan(researchPlanId);
+        }
+      },
+      editor: {
+        onSave: this.updateComponentGraphData
+      }
+    };
+
+    return (
+      <ElementDetailCard
+        element={screen}
+        isPendingToSave={screen.isPendingToSave}
+        title={screen.name}
+        titleTooltip={formatTimeStampsOfElement(screen || {})}
+        onSave={(closeView) => this.handleSubmit(closeView)}
+        showPrintCode
+      >
+        <ResearchplanFlowDisplay
+          initialData={screen.componentGraphData}
+          researchplans={screen.research_plans}
+          flowConfiguration={flowConfiguration}
+        />
+        <div className="tabs-container--with-borders">
+          <ElementDetailSortTab
+            type="screen"
+            availableTabs={Object.keys(tabContentsMap)}
+            onTabPositionChanged={this.onTabPositionChanged}
+            openedFromCollectionId={this.props.openedFromCollectionId}
+          />
+          <Tabs
+            mountOnEnter
+            unmountOnExit
+            activeKey={activeTab}
+            onSelect={(key) => this.handleSelect(key)}
+            id="screen-detail-tab"
+            className="has-config-overlay"
+          >
+            {tabContents}
+          </Tabs>
+        </div>
+        <CommentModal element={screen} />
+      </ElementDetailCard>
+    );
+  }
+}
+
+ScreenDetails.propTypes = {
+  screen: PropTypes.instanceOf(Screen).isRequired,
+  openedFromCollectionId: PropTypes.number,
+};
+
+ScreenDetails.defaultProps = {
+  openedFromCollectionId: null,
+};

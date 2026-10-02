@@ -1,12 +1,11 @@
 require 'resolv-replace'
 
+# rubocop:disable Metrics/ModuleLength
 module PubChem
   include HTTParty
 
   # debug_output $stderr
   PUBCHEM_HOST = 'pubchem.ncbi.nlm.nih.gov'
-  DEPOSITOR_NAME = 'Chemotion'
-
 
   def self.http_s
     (Rails.env.test? && 'http://') || 'https://'
@@ -26,7 +25,11 @@ module PubChem
   def self.get_record_from_inchikey(inchikey)
     @auth = { username: '', password: '' }
     options = { timeout: 10, headers: { 'Content-Type' => 'text/json' } }
-    HTTParty.get(http_s + PUBCHEM_HOST + '/rest/pug/compound/inchikey/' + inchikey + '/record/JSON', options)
+    response = HTTParty.get(
+      "#{http_s}#{PUBCHEM_HOST}/rest/pug/compound/inchikey/#{inchikey}/record/JSON",
+      options,
+    )
+    response.success? ? response : nil
   rescue StandardError => e
     Rails.logger.error ["with inchikey: #{inchikey}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
     nil
@@ -78,54 +81,6 @@ module PubChem
     nil
   end
 
-  def self.get_sid_from_doi(doi)
-    options = {
-      :timeout => 10,
-      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
-      :body => { 'sourceid' => doi }
-    }
-    begin
-      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
-      return nil unless resp.success?
-      resp.body.presence&.strip
-    rescue => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
-      return nil
-    end
-  end
-
-  def self.get_sid_from_doi(doi)
-    options = {
-      :timeout => 10,
-      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
-      :body => { 'sourceid' => doi }
-    }
-    begin
-      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
-      return nil unless resp.success?
-      resp.body.presence&.strip
-    rescue => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
-      return nil
-    end
-  end
-
-  def self.get_sid_from_doi(doi)
-    options = {
-      :timeout => 10,
-      :headers => {'Content-Type' => 'application/x-www-form-urlencoded'},
-      :body => { 'sourceid' => doi }
-    }
-    begin
-      resp = HTTParty.post(http_s + PUBCHEM_HOST + '/rest/pug/substance/sourceid/' + DEPOSITOR_NAME + '/sids/TXT', options)
-      return nil unless resp.success?
-      resp.body.presence&.strip
-    rescue => e
-      Rails.logger.error "[RESCUE EXCEPTION] of [get_sid_from_doi] with doi [#{doi}], exception [#{e.inspect}]"
-      return nil
-    end
-  end
-
   def self.get_molfile_by_smiles(smiles)
     @auth = { username: '', password: '' }
     options = { timeout: 10, headers: { 'Content-Type' => 'text/json' } }
@@ -162,12 +117,20 @@ module PubChem
     end
   end
 
+  # @param cid [String] the cid to be converted
+  # @note cid can be a multiple line string with each line containing a cid
+  #   However, only the last cid will be used
+  # @return [Array<String>] the cas number(s) of the cid
   def self.get_cas_from_cid(cid)
-    return [] unless cid
+    return [] if cid.blank?
 
+    cid = cid.to_s.split(/\s+|,/).compact_blank.last
     options = { timeout: 10, headers: { 'Content-Type' => 'text/json' } }
     page = "https://#{PUBCHEM_HOST}/rest/pug_view/data/compound/#{cid}/XML?heading=CAS"
-    resp_xml = HTTParty.get(page, options).body
+    resp = HTTParty.get(page, options)
+    return [] unless resp.success?
+
+    resp_xml = resp.body
     resp_doc = Nokogiri::XML(resp_xml)
     cas_values = resp_doc.css('Value').css('StringWithMarkup').css('String').map(&:text).flatten
     cas = most_occurance(cas_values)
@@ -175,30 +138,53 @@ module PubChem
   end
 
   def self.get_smiles_from_identifier(identifier)
-    return nil unless identifier.is_a?(String)
-    return nil if identifier.strip.empty?
+    return nil unless valid_identifier?(identifier)
 
+    fetch_smiles_from_pubchem(identifier.strip)
+  rescue StandardError => e
+    Rails.logger.error ["with identifier: #{identifier}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+    nil
+  end
+
+  def self.valid_identifier?(identifier)
+    identifier.is_a?(String) && !identifier.strip.empty?
+  end
+
+  def self.fetch_smiles_from_pubchem(identifier)
+    url = build_smiles_url(identifier)
     options = { timeout: 10, headers: { 'Content-Type' => 'application/json' } }
-    encoded_id = URI.encode_www_form_component(identifier.strip)
-    url = "#{http_s}#{PUBCHEM_HOST}/rest/pug/compound/name/#{encoded_id}/property/IsomericSMILES,CanonicalSMILES,SMILES,ConnectivitySMILES/JSON"
 
-    begin
-      resp = HTTParty.get(url, options)
-      return nil unless resp.success?
+    resp = HTTParty.get(url, options)
+    return nil unless resp.success?
 
-      result = JSON.parse(resp.body)
-      if result['Fault']
-        Rails.logger.warn "PubChem API error: #{result['Fault']['Code']} - #{result['Fault']['Message']}"
-        return nil
-      end
-      props = result.dig('PropertyTable', 'Properties', 0)
-      return nil unless props.is_a?(Hash)
+    parse_smiles_response(resp.body)
+  end
 
-      props['IsomericSMILES'] || props['CanonicalSMILES'] || props['SMILES'] || props['ConnectivitySMILES']
-    rescue StandardError => e
-      Rails.logger.error ["with identifier: #{identifier}", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
-      nil
-    end
+  def self.build_smiles_url(identifier)
+    encoded_id = URI.encode_www_form_component(identifier)
+    properties = 'IsomericSMILES,CanonicalSMILES,SMILES,ConnectivitySMILES'
+    "#{http_s}#{PUBCHEM_HOST}/rest/pug/compound/name/#{encoded_id}/property/#{properties}/JSON"
+  end
+
+  def self.parse_smiles_response(response_body)
+    result = JSON.parse(response_body)
+    return nil if fault_response?(result)
+
+    extract_smiles_property(result)
+  end
+
+  def self.fault_response?(result)
+    return false unless result['Fault']
+
+    Rails.logger.warn "PubChem API error: #{result['Fault']['Code']} - #{result['Fault']['Message']}"
+    true
+  end
+
+  def self.extract_smiles_property(result)
+    props = result.dig('PropertyTable', 'Properties', 0)
+    return nil unless props.is_a?(Hash)
+
+    props['IsomericSMILES'] || props['CanonicalSMILES'] || props['SMILES'] || props['ConnectivitySMILES']
   end
 
   def self.get_lcss_from_cid(cid)
@@ -307,3 +293,4 @@ module PubChem
     arr.group_by(&:to_s).values.max_by(&:size).try(:first)
   end
 end
+# rubocop:enable Metrics/ModuleLength

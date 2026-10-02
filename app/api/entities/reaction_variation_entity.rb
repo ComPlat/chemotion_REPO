@@ -4,44 +4,52 @@ module Entities
   class ReactionVariationEntity < ApplicationEntity
     expose(
       :id,
-      :notes,
+      :uuid,
       :properties,
-      :analyses,
+      :metadata,
       :reactants,
       :products,
       :solvents,
+      :segments,
     )
     expose :starting_materials, as: :startingMaterials
 
     def properties
-      {}.tap do |properties|
-        properties[:temperature] = ReactionVariationPropertyEntity.represent(object[:properties][:temperature])
-        properties[:duration] = ReactionVariationPropertyEntity.represent(object[:properties][:duration])
+      object[:properties].slice(:duration, :temperature).transform_values do |value|
+        ReactionVariationPropertyEntity.represent(value)
       end
     end
 
-    def materials(material_type)
+    def metadata
+      object[:metadata]&.slice(:notes, :analyses, :group) || {}
+    end
+
+    def segments
+      object[:segments] || {}
+    end
+
+    def materials(material_type, entity)
       {}.tap do |materials|
         object[material_type]&.each do |k, v|
-          materials[k] = ReactionVariationMaterialEntity.represent(v)
+          materials[k] = entity.represent(v)
         end
       end
     end
 
     def starting_materials
-      materials(:startingMaterials)
+      materials(:startingMaterials, StartingMaterialEntity)
     end
 
     def reactants
-      materials(:reactants)
+      materials(:reactants, StartingMaterialEntity)
     end
 
     def products
-      materials(:products)
+      materials(:products, ProductMaterialEntity)
     end
 
     def solvents
-      materials(:solvents)
+      materials(:solvents, SolventMaterialEntity)
     end
   end
 
@@ -52,10 +60,35 @@ module Entities
     )
   end
 
-  class ReactionVariationMaterialEntity < ApplicationEntity
+  class SolventMaterialEntity < ApplicationEntity
+    expose :volume, using: 'Entities::ReactionVariationMaterialEntryEntity'
+
+    expose :aux, using: 'Entities::ReactionVariationMaterialAuxEntity'
+  end
+
+  class ProductMaterialEntity < ApplicationEntity
+    IS_GAS = ->(object, _) { (object[:aux][:gasType] == 'gas') }.freeze
+
     expose :mass, using: 'Entities::ReactionVariationMaterialEntryEntity'
     expose :amount, using: 'Entities::ReactionVariationMaterialEntryEntity'
     expose :volume, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :yield, using: 'Entities::ReactionVariationMaterialEntryEntity'
+
+    expose :duration, if: IS_GAS, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :temperature, if: IS_GAS, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :concentration, if: IS_GAS, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :turnoverNumber, if: IS_GAS, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :turnoverFrequency, if: IS_GAS, using: 'Entities::ReactionVariationMaterialEntryEntity'
+
+    expose :aux, using: 'Entities::ReactionVariationMaterialAuxEntity'
+  end
+
+  class StartingMaterialEntity < ApplicationEntity
+    expose :mass, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :amount, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :volume, using: 'Entities::ReactionVariationMaterialEntryEntity'
+    expose :equivalent, using: 'Entities::ReactionVariationMaterialEntryEntity'
+
     expose :aux, using: 'Entities::ReactionVariationMaterialAuxEntity'
   end
 
@@ -68,8 +101,10 @@ module Entities
       :molarity,
       :molecularWeight,
       :sumFormula,
-      :yield,
-      :equivalent,
+      :gasType,
+      :vesselVolume,
+      :materialType,
+      :density,
     )
   end
 

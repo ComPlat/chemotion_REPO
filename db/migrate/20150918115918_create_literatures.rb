@@ -5,6 +5,6 @@ class CreateLiteratures < ActiveRecord::Migration[4.2]
       t.string :title
       t.string :url
       t.timestamps null: false
-    end
+    end unless table_exists?(:literatures)
   end
 end

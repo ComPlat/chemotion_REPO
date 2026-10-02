@@ -5,11 +5,17 @@ require 'rails_helper'
 # rubocop: disable Style/OpenStructUse
 
 describe Export::ExportChemicals do
-  describe '.format_chemical_amount' do
+  describe '.format_chemical_fields' do
     it 'formats chemical amount correctly' do
       input_value = '{"value": 50, "unit": "mg"}'
-      formatted_amount = described_class.format_chemical_amount(input_value)
-      expect(formatted_amount).to eq('50mg')
+      formatted_amount = described_class.format_chemical_fields(input_value)
+      expect(formatted_amount).to eq('50 mg')
+    end
+
+    it 'formats chemical storage temperature correctly' do
+      input_value = '{"value": 30, "unit": "°C"}'
+      formatted_amount = described_class.format_chemical_fields(input_value)
+      expect(formatted_amount).to eq('30 °C')
     end
   end
 
@@ -129,9 +135,9 @@ describe Export::ExportChemicals do
       formatted_row = described_class.format_row(row, columns_index, indexes_to_delete)
 
       expect(indexes_to_delete).to eq([5, 7])
-      expect(formatted_row).to eq(%w[value1 key1-key2 key3-key4 300g
-                                     safety_link_value-safety_link_value2 safety_link_value2
-                                     product_link_value-product_next_value product_next_value])
+      expect(formatted_row).to eq(['value1', 'key1-key2', 'key3-key4', '300 g',
+                                   'safety_link_value-safety_link_value2', 'safety_link_value2',
+                                   'product_link_value-product_next_value', 'product_next_value'])
     end
 
     describe '.construct_column_name' do
@@ -157,6 +163,18 @@ describe Export::ExportChemicals do
         resulting_columns_index = ['p statements', { 'p_statements' => 2, 'safety_sheet_link' => [],
                                                      'product_link' => [] }]
         expect(result).to eq(resulting_columns_index)
+      end
+
+      it 'constructs column name (delivery_date)' do
+        columns_index = { 'safety_sheet_link' => [], 'product_link' => [] }
+        result = described_class.construct_column_name('delivery_date', 5, columns_index)
+        expect(result).to eq(['delivery date', { 'safety_sheet_link' => [], 'product_link' => [] }])
+      end
+
+      it 'constructs column name (opening_date)' do
+        columns_index = { 'safety_sheet_link' => [], 'product_link' => [] }
+        result = described_class.construct_column_name('opening_date', 6, columns_index)
+        expect(result).to eq(['opening date', { 'safety_sheet_link' => [], 'product_link' => [] }])
       end
     end
 

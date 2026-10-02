@@ -16,6 +16,16 @@ class SharedMethods
          .order('molecules.sum_formular')
   end
 
+  def order_and_group_for_sequence_based_macromolecule(scope)
+    scope.order('sequence_based_macromolecules.short_name ASC')
+         .group('sequence_based_macromolecule_samples.id, sequence_based_macromolecules.short_name,
+                sequence_based_macromolecule_samples.sequence_based_macromolecule_id')
+  end
+
+  def order_by_created_at_desc(scope, model)
+    scope.order("#{model.model_name.plural}.created_at DESC")
+  end
+
   def pages(total_elements, per_page)
     total_elements.fdiv(per_page).ceil
   end

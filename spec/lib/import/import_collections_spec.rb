@@ -80,14 +80,14 @@ RSpec.describe 'ImportCollection' do
         expect(reaction.timestamp_stop).to eq('23/08/2022 16:16:33')
         expect(reaction.observation.to_s).to eq('{"ops"=>[{"insert"=>"\\nThe obtained crude product was purified via HPLC using MeCN/H₂O 10:1."}]}') # rubocop:disable Layout/LineLength
         expect(reaction.purification).to match_array(%w[TLC HPLC])
-        expect(reaction.dangerous_products).to match_array([])
+        expect(reaction.dangerous_products).to be_empty
         expect(reaction.tlc_solvents).to eq('')
         expect(reaction.tlc_description).to eq('')
         expect(reaction.rf_value).to eq('0')
         expect(reaction.temperature.to_s).to eq('{"data"=>[], "userText"=>"30", "valueUnit"=>"°C"}')
         expect(reaction.status).to eq('Done')
         expect(reaction.solvent).to eq('')
-        expect(reaction.short_label).to eq('UU-R1')
+        expect(reaction.short_label).to eq('FM-R2')
         expect(reaction.role).to eq('gp')
         expect(reaction.duration).to eq('1 Day(s)')
         expect(reaction.conditions).to eq('')
@@ -149,6 +149,8 @@ RSpec.describe 'ImportCollection' do
       let(:attachment) { create(:attachment, :with_researchplan_collection_zip) }
 
       it 'successfully imported 1 researchplan' do # rubocop:disable RSpec/MultipleExpectations
+        skip_unless_binary_available('convert')
+
         importer.execute
 
         collection = Collection.find_by(label: 'collection-with-rp')
@@ -179,6 +181,23 @@ RSpec.describe 'ImportCollection' do
         collection = Collection.find_by(label: 'collection_with_chemical')
         expect(collection).to be_present
         expect(collection.samples.map(&:chemical).length).to eq(1)
+      end
+    end
+
+    describe 'import a collection with a sample with components' do
+      let(:import_id) { 'collection_components' }
+      let(:attachment) { create(:attachment, :with_components_collection_zip) }
+
+      before do
+        stub_request(:get, /pubchem.ncbi.nlm.nih.gov/).to_return(status: 200, body: '{}', headers: {})
+      end
+
+      it 'successfully imported components' do
+        importer.execute
+
+        collection = Collection.find_by(label: 'collection_with_components')
+        expect(collection).to be_present
+        expect(collection.samples.map(&:components).flatten.length).to eq(2)
       end
     end
 
@@ -227,6 +246,102 @@ RSpec.describe 'ImportCollection' do
         expect(Wellplate.count).to be 1
         expect(Wellplate.first.width).to be 12
         expect(Wellplate.first.height).to be 8
+      end
+    end
+
+    describe 'import a collection with 4 different sbmm samples' do
+      let(:imported_collection) { Collection.find_by(label: 'sbmm test') }
+      let(:sbmm_sample_with_ancestry) { SequenceBasedMacromoleculeSample.where.not(ancestry: '/') }
+      let(:sbmm_sample_uniprot) { SequenceBasedMacromoleculeSample.where(name: 'uniprot') }
+      let(:sbmm_with_parent) { SequenceBasedMacromolecule.where.not(parent_id: nil) }
+      let(:import_id) { 'collection_sbmm_samples' }
+      let(:attachment) { create(:attachment, :with_sbmm_sample_collection_zip) }
+
+      before do
+        stub_request(:get, 'https://rest.uniprot.org/uniprotkb/P12345')
+          .to_return(
+            status: 200,
+            body: file_fixture('uniprot/P12345.json'),
+            headers: { 'Content-Type' => 'application/json' },
+          )
+        stub_request(:get, 'https://rest.uniprot.org/uniprotkb/P12346')
+          .to_return(
+            status: 200,
+            body: file_fixture('uniprot/P12346.json'),
+            headers: { 'Content-Type' => 'application/json' },
+          )
+
+        importer.execute
+      end
+
+      it 'has created a collection with 4 sbmm samples' do
+        expect(imported_collection).to be_present
+        expect(imported_collection.sequence_based_macromolecule_samples.length).to be 4
+      end
+
+      it 'has successfully imported 4 sbmm samples' do
+        expect(SequenceBasedMacromoleculeSample.count).to be 4
+        expect(sbmm_sample_with_ancestry.count).to be 1
+      end
+
+      it 'has successfully imported 5 sbmms' do
+        expect(SequenceBasedMacromolecule.count).to be 5
+      end
+
+      it 'has successfully imported 1 sbmm with parent' do
+        expect(sbmm_with_parent.count).to be 1
+        expect(sbmm_with_parent.first.post_translational_modification).to be_present
+        expect(sbmm_with_parent.first.protein_sequence_modification).to be_present
+      end
+
+      it 'has successfully imported analyses' do
+        expect(sbmm_sample_with_ancestry.first.analyses.count).to be 1
+      end
+
+      it 'has successfully imported sbmm sample and sbmm attachments' do
+        expect(sbmm_sample_with_ancestry.first.attachments.count).to be 1
+        expect(sbmm_sample_uniprot.first.sequence_based_macromolecule.attachments.count).to be 2
+        expect(sbmm_with_parent.first.parent.attachments.count).to be 1
+      end
+    end
+
+    describe 'import a collection with device descriptions' do
+      let(:imported_collection) { Collection.find_by(label: 'device description test') }
+      let(:device_description_with_ancestry) { DeviceDescription.where.not(ancestry: '/') }
+      let(:device_description_with_ontology) do
+        DeviceDescription.where.not(ontologies: nil).where('jsonb_array_length(ontologies) > 0')
+      end
+      let(:device_description_setup_descriptions) do
+        DeviceDescription.where.not(setup_descriptions: nil).where("setup_descriptions != '{}'")
+      end
+      let(:import_id) { 'collection_device_descriptions' }
+      let(:attachment) { create(:attachment, :with_device_description_zip) }
+
+      before do
+        importer.execute
+      end
+
+      it 'has created a collection with 5 device descriptions' do
+        expect(imported_collection).to be_present
+        expect(imported_collection.device_descriptions.length).to be 5
+      end
+
+      it 'has successfully imported 5 device descriptions' do
+        expect(DeviceDescription.count).to be 5
+      end
+
+      it 'has successfully imported device descriptions with ancestry, ontologies and setup descriptions' do
+        expect(device_description_with_ancestry.count).to be 1
+        expect(device_description_with_ontology.count).to be 1
+        expect(device_description_setup_descriptions.count).to be 2
+      end
+
+      it 'has successfully imported analyses' do
+        expect(device_description_with_ontology.first.analyses.count).to be 1
+      end
+
+      it 'has successfully imported device description attachments' do
+        expect(device_description_with_ontology.first.attachments.count).to be 1
       end
     end
   end

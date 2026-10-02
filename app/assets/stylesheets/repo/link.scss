@@ -1,0 +1,14 @@
+// Remove underline by default
+a,
+.btn-link {
+  text-decoration: none;
+}
+
+// Add underline on hover/focus
+a:hover,
+a:focus,
+.btn-link:hover,
+.btn-link:focus {
+  text-decoration: underline;
+}
+

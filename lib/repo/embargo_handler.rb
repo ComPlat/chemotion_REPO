@@ -6,7 +6,10 @@ module Repo
         new_col_label = current_user.initials + '_' + Time.now.strftime('%Y-%m-%d')
         col_check = Collection.where([' label like ? ', new_col_label + '%'])
         new_col_label = new_col_label << '_' << (col_check&.length + 1)&.to_s if col_check&.length.positive?
-        new_embargo_col = Collection.create!(user: chemotion_user, label: new_col_label, ancestry: current_user.publication_embargo_collection.id)
+        parent_col = current_user.publication_embargo_collection
+        # Compose full ancestry path: parent's ancestry + parent id + '/'
+        full_ancestry = (parent_col.ancestry || '/') + parent_col.id.to_s + '/'
+        new_embargo_col = Collection.create!(user: chemotion_user, label: new_col_label, ancestry: full_ancestry)
         SyncCollectionsUser.find_or_create_by(user: current_user, shared_by_id: chemotion_user.id, collection_id: new_embargo_col.id,
         permission_level: 0, sample_detail_level: 10, reaction_detail_level: 10,
         fake_ancestry: current_user.publication_embargo_collection.sync_collections_users.first.id.to_s)
@@ -41,8 +44,8 @@ module Repo
 
       col_pub.update(accepted_at: Time.now.utc)
       col_pub.refresh_embargo_metadata
-      pub_samples = Publication.where(ancestry: nil, element: embargo_collection.samples).order(updated_at: :desc)
-      pub_reactions = Publication.where(ancestry: nil, element: embargo_collection.reactions).order(updated_at: :desc)
+      pub_samples = Publication.where(ancestry: '/', element: embargo_collection.samples).order(updated_at: :desc)
+      pub_reactions = Publication.where(ancestry: '/', element: embargo_collection.reactions).order(updated_at: :desc)
       pub_list = pub_samples + pub_reactions
 
       check_state = pub_list.select { |pub| pub.state != Publication::STATE_ACCEPTED }

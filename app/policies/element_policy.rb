@@ -15,11 +15,11 @@ class ElementPolicy
   # 2. there exists a shared collection, containing the sample, which he owns and where the user has
   # the required permission_level
   def read?
-    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections,user_scollections) >= 0
+    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections, user_scollections) >= 0
   end
 
   def update?
-    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections,user_scollections) >= 1
+    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections, user_scollections) >= 1
   end
 
   def copy?
@@ -29,11 +29,11 @@ class ElementPolicy
   def share?
     return true unless record
 
-    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections,user_scollections) >= 2
+    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections, user_scollections) >= 2
   end
 
   def destroy?
-    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections,user_scollections) >= 3
+    any_unshared_collection?(user_collections) || maximum_permission_level(user_collections, user_scollections) >= 3
   end
 
   def scope
@@ -68,7 +68,7 @@ class ElementPolicy
   end
 
   def user_collections
-    record&.collections&.where(user_id: user_ids)
+    record.collections.where(user_id: user_ids)
   end
 
   def user_scollections
@@ -78,8 +78,6 @@ class ElementPolicy
 
   # TODO move to appropriate class
   def any_unshared_collection?(collections)
-    return false if collections.nil?
-
     collections.pluck(:is_shared).map(&:!).any?
   end
 end

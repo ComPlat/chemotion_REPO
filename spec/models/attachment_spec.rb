@@ -3,6 +3,41 @@
 # rubocop:disable RSpec/NestedGroups
 # rubocop:disable RSpec/MessageSpies
 
+# == Schema Information
+#
+# Table name: attachments
+#
+#  id              :integer          not null, primary key
+#  aasm_state      :string
+#  attachable_type :string
+#  attachment_data :jsonb
+#  bucket          :string
+#  checksum        :string
+#  con_state       :integer
+#  content_type    :string
+#  created_by      :integer          not null
+#  created_by_type :string
+#  created_for     :integer
+#  deleted_at      :datetime
+#  edit_state      :integer          default("not_editing")
+#  filename        :string
+#  filesize        :bigint
+#  folder          :string
+#  identifier      :uuid
+#  key             :string(500)
+#  storage         :string(20)       default("tmp")
+#  thumb           :boolean          default(FALSE)
+#  version         :string           default("/"), not null
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#  attachable_id   :integer
+#
+# Indexes
+#
+#  index_attachments_on_attachable_type_and_attachable_id  (attachable_type,attachable_id)
+#  index_attachments_on_identifier                         (identifier) UNIQUE
+#  index_attachments_on_version                            (version) WHERE (deleted_at IS NULL)
+#
 require 'rails_helper'
 
 RSpec.describe Attachment do
@@ -28,6 +63,8 @@ RSpec.describe Attachment do
     end
 
     context 'when thumbnail exists' do
+      before { skip_unless_binary_available('convert') }
+
       let(:attachment) { create(:attachment, :with_image) }
 
       it 'returns content of thumbnail file' do
@@ -40,13 +77,6 @@ RSpec.describe Attachment do
     it 'returns the absolute path of file' do
       expected_path = Rails.root.join("uploads/test/1/#{attachment.identifier}").to_s
       expect(attachment.abs_path).to eq(expected_path)
-    end
-  end
-
-  describe '#add_checksum' do
-    it 'returns a MD5 checksum' do
-      expect(attachment.add_checksum).to be_present
-      expect(attachment['checksum']).to be_present
     end
   end
 
@@ -182,105 +212,6 @@ RSpec.describe Attachment do
     end
   end
 
-  describe '#rewrite_file_data!' do
-    context 'when file_path leads to an existing file' do
-      let(:old_file_content) { 'Foo Bar' }
-      let(:attachment) { create(:attachment, file_data: old_file_content) }
-
-      let(:new_file_path) { Rails.root.join('spec/fixtures/upload.txt') }
-      let(:new_file_content) { File.binread(new_file_path) }
-
-      it 'overwrites the attachment file with the new file' do
-        attachment.file_path = new_file_path
-        attachment.rewrite_file_data!
-
-        expect(attachment.read_file).to eq new_file_content
-      end
-    end
-  end
-
-  #  describe '#update_filesize' do
-  #    before do
-  #      # this is just to have an easier base to compare from
-  #      attachment.filesize = 0
-  #    end
-  #
-  #    context 'when attachment has file_path set' do
-  #      let(:expected_filesize) { File.size(attachment.file_path) }
-  #
-  #      before do
-  #        attachment.file_path = File.join("#{Rails.root}/spec/fixtures/upload.txt")
-  #      end
-  #
-  #      it 'sets the filesize attributes to the filesize of the pointed file' do
-  #        expect { attachment.update_filesize }.to change(attachment, :filesize).from(0).to(expected_filesize)
-  #      end
-  #    end
-  #
-  #
-  #    context 'when attachment has file_data set' do
-  #      let(:file_data) { 'Foo Bar' }
-  #      let(:expected_filesize) { file_data.bytesize }
-  #
-  #      before do
-  #        attachment.file_data = file_data
-  #        attachment.file_path = nil
-  #      end
-  #
-  #      it 'sets the filesize attribute to the size of the file_data accessor\'s content' do
-  #        expect { attachment.update_filesize }.to change(attachment, :filesize).from(0).to(expected_filesize)
-  #      end
-  #    end
-  #
-  #    context 'when attachment has both file_path and file_data set' do
-  #      let(:new_file_data) { 'Foo Bar' }
-  #      let(:file_path) { File.join("#{Rails.root}/spec/fixtures/upload.txt") }
-  #      let(:expected_filesize) { File.size(file_path) }
-  #
-  #      # this has to match the logic in attachment.store.write_file, so the correct filesize is used
-  #      it 'sets the filesize to the size of the file pointed at by file_path' do
-  #        expect { attachment.update_filesize }.to change(attachment, :filesize).from(0).to(expected_filesize)
-  #      end
-  #    end
-  #
-  #    context 'when attachment has neither file nor file_data' do
-  #      before do
-  #        attachment.file_path = nil
-  #        attachment.file_data = nil
-  #      end
-  #
-  #      it 'does not change the filesize attribute' do
-  #        expect { attachment.update_filesize }.not_to change(attachment, :filesize)
-  #      end
-  #    end
-  #  end
-  #
-  #  describe '#add_content_type' do
-  #    context 'when content_type is present' do
-  #      before do
-  #        attachment.content_type = 'foobar'
-  #      end
-  #
-  #      it 'does not change the content_type field' do
-  #        attachment.add_content_type
-  #
-  #        expect(attachment.content_type).to eq 'foobar'
-  #      end
-  #    end
-  #
-  #    context 'when content_type is missing' do
-  #      before do
-  #        attachment.content_type = nil
-  #      end
-  #
-  #      it 'guesses the content_type based on the file extension' do
-  #        attachment.add_content_type
-  #
-  #        expect(attachment.content_type).to eql 'text/plain'
-  #      end
-  #    end
-  #  end
-
   describe 'type_image?' do
     let(:image_attachment) { create(:attachment, :with_image) }
     let(:text_attachment) { create(:attachment) }
@@ -292,6 +223,8 @@ RSpec.describe Attachment do
   end
 
   describe 'type_image_tiff?' do
+    before { skip_unless_binary_available('convert') }
+
     let(:image_attachment) { create(:attachment, :with_tif_file) }
 
     it 'returns true if the attachment is a tiff image, or false if not' do
@@ -356,6 +289,8 @@ RSpec.describe Attachment do
         end
 
         it 'saves the thumbnail' do
+          skip_unless_binary_available('convert')
+
           expect(attachment.read_thumbnail).not_to be_nil
         end
       end
@@ -412,6 +347,8 @@ RSpec.describe Attachment do
     end
 
     it 'deletes the thumbnail' do
+      skip_unless_binary_available('convert')
+
       attachment.destroy
       expect(File.exist?(attachment.attachment(:thumbnail).url)).to be false
     end
@@ -914,6 +851,123 @@ RSpec.describe Attachment do
 
       it 'attachment_data should be present' do
         expect(attachment.annotated_file_location).to eq attachment.attachment.url
+      end
+    end
+  end
+
+  describe '#resolve_unique_match' do
+    let(:user) { create(:person) }
+    let(:collection) { create(:collection, user: user) }
+    let(:attachment) do
+      create(:attachment, :with_pdf, filename: 'JB-R23.pdf').tap do |a|
+        a.update_columns(created_for: user.id) # rubocop:disable Rails/SkipsModelValidations
+      end
+    end
+
+    context 'when exactly one reaction matches and no samples match' do
+      let!(:reaction) do
+        create(:reaction, name: 'JB-R23', creator: user).tap do |r|
+          CollectionsReaction.create!(reaction: r, collection: collection)
+        end
+      end
+
+      it 'auto-transfers to the reaction' do
+        match, variation = attachment.resolve_unique_match
+        expect(match).to eq(reaction)
+        expect(variation).to be_nil
+      end
+    end
+
+    context 'when filename includes a variation suffix and one reaction matches' do
+      let(:attachment) do
+        create(:attachment, :with_pdf, filename: 'JB-R23-v2.pdf').tap do |a|
+          a.update_columns(created_for: user.id) # rubocop:disable Rails/SkipsModelValidations
+        end
+      end
+      let!(:reaction) do
+        create(:reaction, name: 'JB-R23', creator: user).tap do |r|
+          CollectionsReaction.create!(reaction: r, collection: collection)
+        end
+      end
+
+      it 'auto-transfers to the reaction with extracted variation' do
+        match, variation = attachment.resolve_unique_match
+        expect(match).to eq(reaction)
+        expect(variation).to eq('2')
+      end
+    end
+
+    context 'when multiple reactions match' do
+      before do
+        [create(:reaction, name: 'JB-R23-A', creator: user),
+         create(:reaction, name: 'JB-R23-B', creator: user)].each do |r|
+          CollectionsReaction.create!(reaction: r, collection: collection)
+        end
+      end
+
+      it 'does not auto-transfer (ambiguous)' do
+        expect(attachment.resolve_unique_match).to eq([nil, nil])
+      end
+    end
+
+    context 'when no reactions match and multiple samples match but only one is a product' do
+      let(:product_sample) { create(:sample, name: 'JB-R23-A', creator: user, collections: [collection]) }
+      let(:reactant_sample) { create(:sample, name: 'JB-R23-B', creator: user, collections: [collection]) }
+      let(:reaction) { create(:reaction, name: 'unrelated reaction', creator: user) }
+
+      before do
+        CollectionsReaction.create!(reaction: reaction, collection: collection)
+        create(:reactions_product_sample, reaction: reaction, sample: product_sample)
+        create(:reactions_reactant_sample, reaction: reaction, sample: reactant_sample)
+      end
+
+      it 'auto-transfers to the product sample' do
+        match, variation = attachment.resolve_unique_match
+        expect(match).to eq(product_sample)
+        expect(variation).to be_nil
+      end
+    end
+
+    context 'when no reactions match and multiple samples match and multiple are products' do
+      let(:product_a) { create(:sample, name: 'JB-R23-A', creator: user, collections: [collection]) }
+      let(:product_b) { create(:sample, name: 'JB-R23-B', creator: user, collections: [collection]) }
+      let(:reaction) { create(:reaction, name: 'unrelated reaction', creator: user) }
+
+      before do
+        CollectionsReaction.create!(reaction: reaction, collection: collection)
+        create(:reactions_product_sample, reaction: reaction, sample: product_a)
+        create(:reactions_product_sample, reaction: reaction, sample: product_b)
+      end
+
+      it 'does not auto-transfer (ambiguous)' do
+        expect(attachment.resolve_unique_match).to eq([nil, nil])
+      end
+    end
+
+    context 'when no reactions match and multiple samples match but none is a product' do
+      before do
+        create(:sample, name: 'JB-R23-A', creator: user, collections: [collection])
+        create(:sample, name: 'JB-R23-B', creator: user, collections: [collection])
+      end
+
+      it 'does not auto-transfer' do
+        expect(attachment.resolve_unique_match).to eq([nil, nil])
+      end
+    end
+
+    context 'when a reaction also matches alongside a single product sample' do
+      let(:product_sample) { create(:sample, name: 'JB-R23-A', creator: user, collections: [collection]) }
+      let(:reactant_sample) { create(:sample, name: 'JB-R23-B', creator: user, collections: [collection]) }
+      let(:matching_reaction) { create(:reaction, name: 'JB-R23', creator: user) }
+
+      before do
+        CollectionsReaction.create!(reaction: matching_reaction, collection: collection)
+        create(:reactions_product_sample, reaction: matching_reaction, sample: product_sample)
+        create(:reactions_reactant_sample, reaction: matching_reaction, sample: reactant_sample)
+      end
+
+      it 'does not auto-transfer (reaction precedence preserved)' do
+        expect(attachment.resolve_unique_match).to eq([nil, nil])
       end
     end
   end

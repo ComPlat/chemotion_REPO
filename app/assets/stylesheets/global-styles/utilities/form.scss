@@ -1,0 +1,37 @@
+.multiple-row-fields {
+  @extend .d-flex;
+  @extend .justify-content-between;
+  @extend .align-items-end;
+  @extend .flex-nowrap;
+  @extend .gap-2;
+  @extend .mb-4;
+}
+
+.multiple-row-fields.components:last-child {
+  @extend .mb-3;
+}
+
+.multiple-row-fields > div {
+  flex: 1;
+}
+
+.multiple-row-fields .dnd-zone + button {
+  @extend .my-auto;
+}
+
+.secondary-toggle-headline {
+  @extend .rounded;
+  @extend .surface-lighten4;
+  @extend .text-body;
+  @extend .py-2;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.secondary-toggle-headline.active {
+  @extend .surface-lighten2;
+}
+
+.ant-select-dropdown {
+  z-index: 2000 !important; /* higher than modal */
+}

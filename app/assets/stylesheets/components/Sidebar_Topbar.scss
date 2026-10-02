@@ -1,0 +1,161 @@
+$topbar-height: 35px;
+
+.topbar {
+  background-color: $chemstrap-graphite;
+}
+
+.tree-view_container {
+  background-color: #eef1f2 !important;
+}
+
+.tree-view_container--scrollable {
+  max-height: 60vh;
+}
+
+.sidebar-appinfo-wrapper {
+  flex-shrink: 0;
+  max-height: 35vh;
+  overflow-y: auto;
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0px 10px;
+  margin: 5px 0px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.sidebar {
+  @extend .d-flex;
+  @extend .flex-shrink-0;
+  @extend .surface-lighten4;
+  width: 260px;
+  &.sidebar--collapsed {
+    width: 44px;
+    .sidebar-logo {
+      margin-left: 0.25rem;
+      margin-right: 0.25rem;
+      padding: 8px 0;
+      border-top: none;
+    }
+  }
+  &-logo {
+    padding-bottom: 4px;
+    border-top: 1px solid #dbe4ef;
+    @extend .d-flex;
+    @extend .align-items-center;
+    @extend .justify-content-center;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+
+    svg {
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.08));
+    }
+
+    &:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+  }
+  &-content {
+    @extend .h-100;
+    @extend .d-flex;
+    @extend .flex-column;
+    @extend .flex-grow-1;
+    @extend .pb-3;
+  }
+  &-collapse-button-container {
+    margin-top: $topbar-height; //align under topbar
+    @extend .d-flex;
+    @extend .flex-column;
+    @extend .justify-content-center;
+  }
+  &-button-frame {
+    @extend .d-flex;
+    @extend .column-gap-1;
+  }
+  &-button {
+    @extend .mt-1;
+    @extend .d-flex;
+    @extend .align-items-center;
+    @extend .rounded-0;
+    min-height: 44px;
+    min-width: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 16px;
+    i {
+      font-size: 18px;
+    }
+    &:first-child {
+      @extend .mt-0;
+    }
+    &__badge {
+      font-size: 10px;
+      z-index: 2;
+      top: 40px !important;
+      @extend .position-absolute;
+      @extend .start-50;
+      @extend .translate-middle;
+    }
+  }
+}
+
+.btn-sidebar {
+  @include button-variant(
+    map-get($silicon-shades, lighten4),
+    map-get($silicon-shades, lighten4),
+    $body-color,
+    $chemstrap-silicon-hover,
+    $chemstrap-silicon-hover,
+    $body-color,
+    $chemstrap-silicon-active,
+    $chemstrap-silicon-active,
+    $body-color
+  );
+  &.sidebar-button--expandable {
+    .expand-icon {
+      @extend .d-none;
+      @extend .text-lighten1;
+      &:hover {
+        @extend .text-active;
+      }
+    }
+    &:hover {
+      .expand-icon {
+        @extend .d-inline-block;
+      }
+      .type-icon {
+        @extend .d-none;
+      }
+    }
+  }
+}
+
+.btn-topbar {
+  @include button-variant(
+    transparent,
+    transparent,
+    $white,
+    $chemstrap-graphite-hover,
+    $chemstrap-graphite-hover,
+    $white,
+    $chemstrap-graphite-active,
+    $chemstrap-graphite-active,
+    $white
+  );
+  @extend .rounded-0;
+  height: $topbar-height;
+}
+
+.collection-management-button {
+  @extend .rounded-0;
+}

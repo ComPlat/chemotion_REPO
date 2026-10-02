@@ -1,8 +1,21 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: metadata
+#
+#  id            :bigint           not null, primary key
+#  deleted_at    :datetime
+#  metadata      :jsonb
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  collection_id :integer
+#
 require 'rails_helper'
 
 RSpec.describe Metadata do
+  let(:radar_configured?) { Rails.configuration.respond_to?(:radar) && Rails.configuration.radar.present? }
+
   describe 'creation' do
     let(:metadata) { create(:metadata) }
 
@@ -15,6 +28,8 @@ RSpec.describe Metadata do
     let(:metadata) { create(:metadata) }
 
     it 'is possible to convert to a radar json' do
+      skip 'RADAR credentials not configured' unless radar_configured?
+
       radar_metadata = metadata.to_radar_json
       radar_metadata_json = JSON.parse(radar_metadata)
       expect(radar_metadata_json['descriptiveMetadata']['title']).to eq('A test collection')
@@ -33,6 +48,8 @@ RSpec.describe Metadata do
     let(:metadata) { create(:metadata) }
 
     it 'is possible to set the radar ids' do # rubocop: disable RSpec/MultipleExpectations
+      skip 'RADAR credentials not configured' unless radar_configured?
+
       metadata.set_radar_ids('test_dataset_id', 'test_file_id')
 
       expect(metadata.metadata['datasetId']).to eq('test_dataset_id')

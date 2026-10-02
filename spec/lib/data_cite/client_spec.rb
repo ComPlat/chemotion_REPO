@@ -6,6 +6,9 @@ describe DataCite::Client do
   subject(:client) { described_class.new }
 
   let(:doi) { '10.5438/0012' }
+  let(:data_cite_configured?) do
+    ENV['DATA_CITE_PREFIX'].present? && ENV['DATA_CITE_BASE_URI'].present?
+  end
 
   before do
     stub_request(:get, 'https://api.test.datacite.org/dois/10.5438/0012')
@@ -17,6 +20,10 @@ describe DataCite::Client do
   end
 
   describe '#get' do
-    specify { expect(client.get(doi)).to be_a(Hash) }
+    specify do
+      skip 'DataCite not configured (requires DATA_CITE_PREFIX and DATA_CITE_BASE_URI)' unless data_cite_configured?
+
+      expect(client.get(doi)).to be_a(Hash)
+    end
   end
 end

@@ -1,66 +1,70 @@
+# frozen_string_literal: true
+
 # == Schema Information
 #
 # Table name: samples
 #
 #  id                  :integer          not null, primary key
+#  ancestry            :string           default("/"), not null
+#  boiling_point       :numrange
+#  created_by          :integer
+#  decoupled           :boolean          default(FALSE), not null
+#  deleted_at          :datetime
+#  density             :float            default(0.0)
+#  description         :text             default("")
+#  dry_solvent         :boolean          default(FALSE)
+#  external_label      :string           default("")
+#  identifier          :string
+#  imported_readout    :string
+#  impurities          :string           default("")
+#  inventory_sample    :boolean          default(FALSE)
+#  is_top_secret       :boolean          default(FALSE)
+#  location            :string           default("")
+#  melting_point       :numrange
+#  metrics             :string           default("mmm")
+#  molarity_unit       :string           default("M")
+#  molarity_value      :float            default(0.0)
+#  molecular_mass      :float
+#  molfile             :binary
+#  molfile_version     :string(20)
 #  name                :string
-#  target_amount_value :float            default(0.0)
+#  purity              :float            default(1.0)
+#  real_amount_unit    :string
+#  real_amount_value   :float
+#  sample_details      :jsonb
+#  sample_svg_file     :string
+#  sample_type         :string           default("Micromolecule")
+#  short_label         :string
+#  solvent             :jsonb
+#  stereo              :jsonb
+#  sum_formula         :string
 #  target_amount_unit  :string           default("g")
+#  target_amount_value :float            default(0.0)
+#  xref                :jsonb
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
-#  description         :text             default("")
-#  molecule_id         :integer
-#  molfile             :binary
-#  purity              :float            default(1.0)
-#  impurities          :string           default("")
-#  location            :string           default("")
-#  is_top_secret       :boolean          default(FALSE)
-#  ancestry            :string
-#  external_label      :string           default("")
-#  created_by          :integer
-#  short_label         :string
-#  real_amount_value   :float
-#  real_amount_unit    :string
-#  imported_readout    :string
-#  deleted_at          :datetime
-#  sample_svg_file     :string
-#  user_id             :integer
-#  identifier          :string
-#  density             :float            default(0.0)
-#  melting_point       :numrange
-#  boiling_point       :numrange
 #  fingerprint_id      :integer
-#  xref                :jsonb
-#  molarity_value      :float            default(0.0)
-#  molarity_unit       :string           default("M")
+#  molecule_id         :integer
 #  molecule_name_id    :integer
-#  molfile_version     :string(20)
-#  stereo              :jsonb
-#  metrics             :string           default("mmm")
-#  decoupled           :boolean          default(FALSE), not null
-#  molecular_mass      :float
-#  sum_formula         :string
-#  solvent             :jsonb
-#  dry_solvent         :boolean          default(FALSE)
-#  inventory_sample    :boolean          default(FALSE)
+#  user_id             :integer
 #
 # Indexes
 #
+#  index_samples_on_ancestry          (ancestry) WHERE (deleted_at IS NULL)
 #  index_samples_on_deleted_at        (deleted_at)
 #  index_samples_on_identifier        (identifier)
 #  index_samples_on_inventory_sample  (inventory_sample)
 #  index_samples_on_molecule_name_id  (molecule_name_id)
 #  index_samples_on_sample_id         (molecule_id)
+#  index_samples_on_short_label       (short_label)
 #  index_samples_on_user_id           (user_id)
 #
 
 # rubocop:disable Metrics/ClassLength
 class Sample < ApplicationRecord
-
-  require 'erb'
-  require 'ostruct'
   attr_accessor :skip_inventory_label_update
 
+  has_logidze
   acts_as_paranoid
   include ElementUIStateScopes
   include PgSearch::Model
@@ -71,116 +75,161 @@ class Sample < ApplicationRecord
   include Taggable
   include Labimotion::Segmentable
   include Publishing
+  include RepoSample
 
   STEREO_ABS = ['any', 'rac', 'meso', 'delta', 'lambda', '(S)', '(R)', '(Sp)', '(Rp)', '(Sa)', '(Ra)'].freeze
-  STEREO_REL = ['any', 'syn', 'anti', 'p-geminal', 'p-ortho', 'p-meta', 'p-para', 'cis', 'trans', 'fac', 'mer'].freeze
+  STEREO_REL = %w[any syn anti p-geminal p-ortho p-meta p-para cis trans fac mer].freeze
   STEREO_DEF = { 'abs' => 'any', 'rel' => 'any' }.freeze
 
-  multisearchable against: [
-    :name, :short_label, :external_label, :molecule_sum_formular,
-    :molecule_iupac_name, :molecule_inchistring, :molecule_inchikey, :molecule_cano_smiles,
-    :sample_xref_cas
+  SAMPLE_TYPE_MIXTURE = 'Mixture'
+  SAMPLE_TYPE_MICROMOLECULE = 'Micromolecule'
+
+  SAMPLE_TYPES = [
+    SAMPLE_TYPE_MICROMOLECULE,
+    SAMPLE_TYPE_MIXTURE,
+  ].freeze
+
+  multisearchable against: %i[
+    name short_label external_label molecule_sum_formular
+    molecule_iupac_name molecule_inchistring molecule_inchikey molecule_cano_smiles
+    sample_xref_cas
   ]
 
-  attr_accessor :previous_version
-
   # search scopes for exact matching
-  pg_search_scope :search_by_sum_formula,  against: :sum_formula, associated_against: {
-    molecule: :sum_formular
+  pg_search_scope :search_by_sum_formula, against: :sum_formula, associated_against: {
+    molecule: :sum_formular,
   }
 
   pg_search_scope :search_by_iupac_name, associated_against: {
-    molecule: :iupac_name
+    molecule: :iupac_name,
   }
 
   pg_search_scope :search_by_inchistring, associated_against: {
-    molecule: :inchistring
+    molecule: :inchistring,
   }
 
   pg_search_scope :search_by_inchikey, associated_against: {
-    molecule: :inchikey
+    molecule: :inchikey,
   }
 
   pg_search_scope :search_by_cano_smiles, associated_against: {
-    molecule: :cano_smiles
+    molecule: :cano_smiles,
   }
 
   pg_search_scope :search_by_substring, against: %i[
     name short_label external_label
   ], associated_against: {
-    molecule: %i[sum_formular iupac_name inchistring inchikey cano_smiles]
+    molecule: %i[sum_formular iupac_name inchistring inchikey cano_smiles],
   }, using: { trigram: { threshold: 0.0001 } }
 
   pg_search_scope :search_by_sample_name, against: :name
   pg_search_scope :search_by_sample_short_label, against: :short_label
   pg_search_scope :search_by_sample_external_label, against: :external_label
   pg_search_scope :search_by_cas, against: { xref: 'cas' }
+  pg_search_scope :search_by_molecule_name, associated_against: {
+    molecule_name: :name,
+  }
 
   # scopes for suggestions
-  scope :by_residues_custom_info, ->(info, val) { joins(:residues).where("residues.custom_info -> '#{info}' ILIKE ?", "%#{sanitize_sql_like(val)}%")}
+  scope :by_residues_custom_info, lambda { |info, val|
+                                    joins(:residues).where("residues.custom_info -> '#{info}' ILIKE ?",
+                                                           "%#{sanitize_sql_like(val)}%")
+                                  }
   scope :by_name, ->(query) { where('name ILIKE ?', "%#{sanitize_sql_like(query)}%") }
   scope :by_sample_xref_cas,
         ->(query) { where("xref ? 'cas'").where("xref ->> 'cas' ILIKE ?", "%#{sanitize_sql_like(query)}%") }
-  scope :by_exact_name, ->(query) { where('lower(name) ~* lower(?) or lower(external_label) ~* lower(?)', "^([a-zA-Z0-9]+-)?#{sanitize_sql_like(query)}(-?[a-zA-Z])$", "^([a-zA-Z0-9]+-)?#{sanitize_sql_like(query)}(-?[a-zA-Z])$") }
+  scope :by_molecule_name, lambda { |query|
+    joins(:molecule_name)
+      .where('molecule_names.name ILIKE ?', "%#{sanitize_sql_like(query)}%")
+  }
+  scope :by_exact_name, lambda { |query|
+                          sanitized_query = "^([a-zA-Z0-9]+-)?#{sanitize_sql_like(query)}(-?[a-zA-Z])?$"
+                          where('lower(samples.name) ~* lower(?) or lower(samples.external_label) ~* lower(?)',
+                                sanitized_query, sanitized_query)
+                        }
   scope :by_short_label, ->(query) { where('short_label ILIKE ?', "%#{sanitize_sql_like(query)}%") }
   scope :by_external_label, ->(query) { where('external_label ILIKE ?', "%#{sanitize_sql_like(query)}%") }
-  scope :by_molecule_sum_formular, ->(query) {
+  scope :by_molecule_sum_formular, lambda { |query|
     decoupled_collection = where(decoupled: true).where('sum_formula ILIKE ?', "%#{sanitize_sql_like(query)}%")
-    coupled_collection = where(decoupled: false).joins(:molecule).where('molecules.sum_formular ILIKE ?', "%#{sanitize_sql_like(query)}%")
+    coupled_collection = where(decoupled: false).joins(:molecule).where('molecules.sum_formular ILIKE ?',
+                                                                        "%#{sanitize_sql_like(query)}%")
     where(id: decoupled_collection + coupled_collection)
   }
-  scope :with_reactions, -> {
+  scope :with_reactions, lambda {
     joins(:reactions_samples)
   }
-  scope :with_wellplates, -> {
+  scope :with_wellplates, lambda {
     joins(:well)
   }
-  scope :by_wellplate_ids,         ->(ids) { joins(:wellplates).where('wellplates.id in (?)', ids) }
-  scope :by_reaction_reactant_ids, ->(ids) { joins(:reactions_reactant_samples).where('reactions_samples.reaction_id in (?)', ids) }
-  scope :by_reaction_product_ids,  ->(ids) { joins(:reactions_product_samples).where('reactions_samples.reaction_id in (?)', ids) }
-  scope :by_reaction_material_ids, ->(ids) { joins(:reactions_starting_material_samples).where('reactions_samples.reaction_id in (?)', ids) }
-  scope :by_reaction_solvent_ids,  ->(ids) { joins(:reactions_solvent_samples).where('reactions_samples.reaction_id in (?)', ids) }
-  scope :by_reaction_ids,          ->(ids) { joins(:reactions_samples).where('reactions_samples.reaction_id in (?)', ids) }
+  scope :by_wellplate_ids,         ->(ids) { joins(:wellplates).where(wellplates: { id: ids }) }
+  scope :by_reaction_reactant_ids, lambda { |ids|
+                                     joins(:reactions_reactant_samples).where(reactions_samples: { reaction_id: ids })
+                                   }
+  scope :by_reaction_product_ids,  lambda { |ids|
+                                     joins(:reactions_product_samples).where(reactions_samples: { reaction_id: ids })
+                                   }
+  scope :by_reaction_material_ids, lambda { |ids|
+                                     joins(:reactions_starting_material_samples)
+                                       .where(reactions_samples: { reaction_id: ids })
+                                   }
+  scope :by_reaction_solvent_ids,  lambda { |ids|
+                                     joins(:reactions_solvent_samples).where(reactions_samples: { reaction_id: ids })
+                                   }
+  scope :by_reaction_ids,          lambda { |ids|
+                                     joins(:reactions_samples).where(reactions_samples: { reaction_id: ids })
+                                   }
   scope :by_literature_ids,        ->(ids) { joins(:literals).where(literals: { literature_id: ids }) }
   scope :includes_for_list_display, -> { includes(:molecule_name, :tag, :comments, molecule: :tag) }
 
   scope :product_only, -> { joins(:reactions_samples).where("reactions_samples.type = 'ReactionsProductSample'") }
-  scope :sample_or_startmat_or_products, -> {
-    joins("left join reactions_samples rs on rs.sample_id = samples.id").where("rs.id isnull or rs.\"type\" in ('ReactionsProductSample', 'ReactionsStartingMaterialSample')")
+  scope :sample_or_startmat_or_products, lambda {
+    where(<<~SQL)
+      NOT EXISTS (
+        SELECT 1 FROM reactions_samples rs
+        WHERE rs.sample_id = samples.id
+      )
+      OR EXISTS (
+        SELECT 1 FROM reactions_samples rs
+        WHERE rs.sample_id = samples.id
+          AND rs.type IN ('ReactionsProductSample', 'ReactionsStartingMaterialSample')
+      )
+    SQL
   }
 
-  scope :search_by_fingerprint_sim, ->(molfile, threshold = 0.01) {
+  scope :search_by_fingerprint_sim, lambda { |molfile, threshold = 0.01|
     joins(:fingerprint).merge(
-      Fingerprint.search_similar(nil, threshold, false, molfile)
+      Fingerprint.search_similar(nil, threshold, false, molfile),
     ).order('tanimoto desc')
   }
 
-  scope :search_by_fingerprint_sub, ->(molfile, as_array = false) {
-    fp_vector = Chemotion::OpenBabelService.bin_fingerprint_from_molfile(molfile)
-    smarts_query = Chemotion::OpenBabelService.get_smiles_from_molfile(molfile)
-    samples = joins(:fingerprint).merge(Fingerprint.screen_sub(fp_vector))
-    samples = samples.select do |sample|
-      Chemotion::OpenBabelService.substructure_match(smarts_query, sample.molfile)
+  scope :search_by_fingerprint_sub, lambda { |molfile, as_array = false|
+    if Chemotion::Application.config.pg_cartridge == 'rdkit'
+      where("samples.id in (select id from rdkit.mols
+        where m operator(@>) qmol_from_ctab(encode('#{molfile}', 'escape')::cstring) )")
+    else
+      fp_vector = Chemotion::OpenBabelService.bin_fingerprint_from_molfile(molfile)
+      smarts_query = Chemotion::OpenBabelService.get_smiles_from_molfile(molfile)
+      samples = joins(:fingerprint).merge(Fingerprint.screen_sub(fp_vector))
+      samples = samples.select do |sample|
+        Chemotion::OpenBabelService.substructure_match(smarts_query, sample.molfile)
+      end
+      return samples if as_array
+
+      Sample.where(id: samples.map(&:id))
     end
-    return samples if as_array
-
-    Sample.where(id: samples.map(&:id))
   }
-
 
   before_save :auto_set_molfile_to_molecules_molfile
   before_save :find_or_create_molecule_based_on_inchikey
   before_save :update_molecule_name
-  before_save :check_molfile_polymer_section
   before_save :find_or_create_fingerprint
   before_save :attach_svg, :init_elemental_compositions,
               :set_loading_from_ea
   before_save :auto_set_short_label
   before_create :check_molecule_name
   before_create :set_boiling_melting_points
-  after_save :update_counter
   after_create :create_root_container
-  before_destroy :remove_from_previous_version
+  after_save :update_counter
   after_save :update_equivalent_for_reactions
   after_save :update_gas_material
   after_save :update_svg_for_reactions, unless: :skip_reaction_svg_update?
@@ -209,6 +258,8 @@ class Sample < ApplicationRecord
   has_many :private_notes, as: :noteable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
 
+  has_many :components, dependent: :destroy
+
   belongs_to :fingerprint, optional: true
   belongs_to :user, optional: true
   belongs_to :molecule_name, optional: true
@@ -220,7 +271,6 @@ class Sample < ApplicationRecord
   has_many :wellplates, through: :wells
   has_many :residues, dependent: :destroy
   has_many :elemental_compositions, dependent: :destroy
-  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   has_many :sync_collections_users, through: :collections
   composed_of :amount, mapping: %w[amount_value amount_unit]
@@ -236,9 +286,9 @@ class Sample < ApplicationRecord
   accepts_nested_attributes_for :residues, :elemental_compositions, :container,
                                 :tag, allow_destroy: true
 
-  validates :purity, :numericality => { :greater_than_or_equal_to => 0.0, :less_than_or_equal_to => 1.0, :allow_nil => true }
+  validates :purity,
+            numericality: { greater_than_or_equal_to: 0.0, less_than_or_equal_to: 1.0, allow_nil: true }
   validate :has_collections
-  validates :creator, presence: true
 
   delegate :computed_props, to: :molecule, prefix: true
   delegate :inchikey, to: :molecule, prefix: true, allow_nil: true
@@ -253,21 +303,12 @@ class Sample < ApplicationRecord
     @skip_reaction_svg_update.present?
   end
 
-  def molfile_pubchem
-    version = Chemotion::OpenBabelService.molfile_version(self.molfile)
-    mf = Chemotion::OpenBabelService.mofile_clear_coord_bonds(self.molfile, version)
-    mf = molfile unless mf
-
-    mf&.split(/^\$\$\$\$/).first
-  end
-
-
   def molecule_sum_formular
     (decoupled? ? sum_formula : molecule&.sum_formular) || ''
   end
 
   def molecule_iupac_name
-    self.molecule ? self.molecule.iupac_name : ''
+    molecule ? molecule.iupac_name : ''
   end
 
   def molecule_molecular_weight
@@ -275,7 +316,7 @@ class Sample < ApplicationRecord
   end
 
   def molecule_inchistring
-    self.molecule ? self.molecule.inchistring : ''
+    molecule ? molecule.inchistring : ''
   end
 
   def sample_xref_cas
@@ -283,35 +324,19 @@ class Sample < ApplicationRecord
   end
 
   def molecule_inchikey
-    self.molecule ? self.molecule.inchikey : ''
+    molecule ? molecule.inchikey : ''
   end
 
   def molecule_cano_smiles
-    self.molecule ? self.molecule.cano_smiles : ''
+    molecule ? molecule.cano_smiles : ''
   end
 
   def analyses
-    self.container ? self.container.analyses : Container.none
-  end
-
-  def links
-    self.container ? self.container.links : Container.none
-  end
-
-  #TODO move to molecule (chemotion_ELN)
-  def pubchem_cid
-    mol = self.molecule
-    cid = mol.tag && mol.tag.taggable_data && mol.tag.taggable_data['pubchem_cid']
-    if cid
-      cid
-    else
-      mol.update_tag!(pubchem_tag: true)
-      mol.tag.taggable_data['pubchem_cid']
-    end
+    container ? container.analyses : Container.none
   end
 
   def self.associated_by_user_id_and_reaction_ids(user_id, reaction_ids)
-    (for_user(user_id).by_reaction_ids(reaction_ids)).distinct
+    for_user(user_id).by_reaction_ids(reaction_ids).distinct
   end
 
   def self.associated_by_user_id_and_wellplate_ids(user_id, wellplate_ids)
@@ -377,36 +402,48 @@ class Sample < ApplicationRecord
     end
   end
 
+  def create_components_for_mixture_subsample(subsample)
+    return if components.blank?
+
+    components.each do |component|
+      subsample.components.create!(
+        name: component.name,
+        position: component.position,
+        component_properties: component.component_properties,
+      )
+    end
+  end
+
   # rubocop:disable Metrics/AbcSize
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/PerceivedComplexity
   # rubocop:disable Style/MethodDefParentheses
   # rubocop:disable Style/OptionalBooleanParameter
-  # rubocop:disable Layout/TrailingWhitespace
   def create_subsample user, collection_ids, copy_ea = false, type = nil
-    subsample = self.dup
+    subsample = dup
     subsample.xref['inventory_label'] = nil
     subsample.skip_inventory_label_update = true
-    subsample.name = self.name if self.name.present?
-    subsample.external_label = self.external_label if self.external_label.present?
+    subsample.name = name if name.present?
+    subsample.external_label = external_label if external_label.present?
 
     # Ex(p|t)ensive method to get a proper counter:
     # take into consideration sample children that have been hard/soft deleted
-    children_count = self.children.with_deleted.count
-    last_child_label = self.children.with_deleted.order('created_at')
-                     .where('short_label LIKE ?', "#{self.short_label}-%").last&.short_label
-    last_child_counter = last_child_label &&
-      last_child_label.match(/^#{self.short_label}-(\d+)/) && $1.to_i || 0
+    children_count = children.with_deleted.count
+    last_child_label = children.with_deleted.order('created_at')
+                               .where('short_label LIKE ?', "#{short_label}-%").last&.short_label
+    last_child_counter = (last_child_label&.match(/^#{short_label}-(\d+)/) && ::Regexp.last_match(1).to_i) || 0
 
     counter = [last_child_counter, children_count].max
-    subsample.short_label = "#{self.short_label}-#{counter + 1}"
+    subsample.short_label = "#{short_label}-#{counter + 1}"
 
     subsample.parent = self
     subsample.created_by = user.id
-    subsample.residues_attributes = self.residues.select(:custom_info, :residue_type).as_json
-    subsample.elemental_compositions_attributes = self.elemental_compositions.select(
-      :composition_type, :data, :loading
-    ).as_json if copy_ea
+    subsample.residues_attributes = residues.select(:custom_info, :residue_type).as_json
+    if copy_ea
+      subsample.elemental_compositions_attributes = elemental_compositions.select(
+        :composition_type, :data, :loading
+      ).as_json
+    end
 
     # associate to arg collections and creator's All collection
     collections = (
@@ -415,24 +452,25 @@ class Sample < ApplicationRecord
     subsample.collections << collections
 
     subsample.container = Container.create_root_container
-    subsample.mol_rdkit = nil if subsample.respond_to?(:mol_rdkit)
     subsample.save!
+
+    create_components_for_mixture_subsample(subsample)
     create_chemical_entry_for_subsample(id, subsample.id, type) unless type.nil?
+
     subsample
   end
+
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/PerceivedComplexity
   # rubocop:enable Style/MethodDefParentheses
   # rubocop:enable Style/OptionalBooleanParameter
-  # rubocop:enable Layout/TrailingWhitespace
-
   def reaction_description
     reactions.first.try(:description)
   end
 
   def auto_set_molfile_to_molecules_molfile
-    self.molfile = self.molfile.presence || molecule&.molfile
+    self.molfile = molfile.presence || molecule&.molfile
   end
 
   def validate_stereo(_stereo = {})
@@ -444,33 +482,32 @@ class Sample < ApplicationRecord
   end
 
   def find_or_create_molecule_based_on_inchikey
-    return unless molfile.present?
+    return if molfile.blank?
 
     return if molecule.present?
 
     babel_info = Chemotion::OpenBabelService.molecule_info_from_molfile(molfile)
     inchikey = babel_info[:inchikey]
-    return unless inchikey.present?
+    return if inchikey.blank?
 
     is_partial = babel_info[:is_partial]
-    molfile_version = babel_info[:version]
-    if molecule&.inchikey != inchikey || molecule.is_partial != is_partial
-      self.molecule = Molecule.find_or_create_by_molfile(molfile, babel_info)
-    end
+    self.molfile_version = babel_info[:version]
+    return unless molecule&.inchikey != inchikey || molecule.is_partial != is_partial
+
+    self.molecule = Molecule.find_or_create_by_molfile(molfile, babel_info)
   end
 
   def find_or_create_fingerprint
     return unless molecule_id_changed? || molfile_changed? || fingerprint_id.nil?
+
     self.fingerprint_id = Fingerprint.find_or_create_by_molfile(molfile.clone)&.id
   end
 
   def get_svg_path
-    if self.sample_svg_file.present?
-      "/images/samples/#{self.sample_svg_file}"
-    elsif self.molecule&.molecule_svg_file&.present?
-      "/images/molecules/#{self.molecule.molecule_svg_file}"
-    else
-      nil
+    if sample_svg_file.present?
+      "/images/samples/#{sample_svg_file}"
+    elsif molecule&.molecule_svg_file&.present?
+      "/images/molecules/#{molecule.molecule_svg_file}"
     end
   end
 
@@ -486,34 +523,36 @@ class Sample < ApplicationRecord
   end
 
   def loading
-    self.residues[0] && self.residues[0].custom_info['loading'].to_f
+    residues[0] && residues[0].custom_info['loading'].to_f
   end
 
   def attach_svg(svg = sample_svg_file)
-    return unless svg.present?
+    return if svg.blank?
 
+    svg = File.basename(svg) if svg.include?('/')
     svg_file_name = "#{SecureRandom.hex(64)}.svg"
-    if svg =~ /\ATMPFILE[0-9a-f]{64}.svg\z/
+
+    if /\ATMPFILE[0-9a-f]{64}.svg\z/.match?(svg)
       src = full_svg_path(svg.to_s)
       return unless File.file?(src)
 
       svg = File.read(src)
       FileUtils.remove(src)
     end
-    if svg.start_with?(/\s*\<\?xml/, /\s*\<svg/)
-      File.write(full_svg_path(svg_file_name), Chemotion::Sanitizer.scrub_svg(svg))
+    if svg.start_with?(/\s*<\?xml/, /\s*<svg/)
+      File.write(full_svg_path(svg_file_name), Chemotion::Sanitizer.scrub_svg(svg, remap_glyph_ids: true))
       self.sample_svg_file = svg_file_name
     end
-    unless sample_svg_file =~ /\A[0-9a-f]{128}.svg\z/
-      self.sample_svg_file = nil
-    end
+    return if /\A[0-9a-f]{128}.svg\z/.match?(sample_svg_file)
+
+    self.sample_svg_file = nil
   end
 
   def init_elemental_compositions
-    residue = self.residues[0]
-    return unless molecule_sum_formular.present?
+    residue = residues[0]
+    return if molecule_sum_formular.blank?
 
-    if residue.present? && self.molfile.include?(' R# ') # case when residue will be deleted
+    if residue.present? && molfile.include?(' R# ') # case when residue will be deleted
       p_formula = residue.custom_info['formula']
       p_loading = residue.custom_info['loading'].try(:to_d)
 
@@ -523,7 +562,7 @@ class Sample < ApplicationRecord
       end
 
       if p_formula.present?
-        d = Chemotion::Calculations.get_composition(molecule_sum_formular, p_formula, (p_loading || 0.0))
+        d = Chemotion::Calculations.get_composition(molecule_sum_formular, p_formula, p_loading || 0.0)
         # if it is reaction product then loading has been calculated
         l_type = if residue['custom_info']['loading_type'] == 'mass_diff'
                    'mass_diff'
@@ -531,9 +570,7 @@ class Sample < ApplicationRecord
                    'loading'
                  end
 
-        unless p_loading.to_f == 0.0
-          set_elem_composition_data l_type, d, p_loading
-        end
+        set_elem_composition_data l_type, d, p_loading unless p_loading.to_f == 0.0
       else
         {}
       end
@@ -544,55 +581,27 @@ class Sample < ApplicationRecord
     end
 
     # init empty object keys for user-calculated composition input
-    unless self.elemental_compositions.find { |i| i.composition_type == 'found' }
-      clone_data = (d || {}).keys.map do |key|
-        [key, nil]
-      end.to_h
+    return if elemental_compositions.find { |i| i.composition_type == 'found' }
 
-      set_elem_composition_data 'found', clone_data, 0.0
+    clone_data = (d || {}).keys.index_with do |_key|
+      nil
     end
-  end
 
-  def regenerate_svg
-    molecule&.regenerate_svg
-
-    if sample_svg_file.present? && File.exist?(full_svg_path)
-      svg = File.read(full_svg_path)
-      fetch_svg if svg&.include?('Open Babel')
-    else
-      fetch_svg
-    end
-  end
-
-  def reprocess_svg
-    return if sample_svg_file.present?
-
-    fetch_svg
-  end
-
-  def fetch_svg
-    svg_digest = "#{molecule.inchikey}#{Time.now}"
-    svg = Molecule.svg_reprocess(svg, molfile || molecule.molfile)
-    svg_process = SVG::Processor.new.structure_svg('ketcher', svg, svg_digest, true) if svg.present?
-    if svg.present? && svg_process.present? && svg_process[:svg_file_name].present? && File.exist?(svg_process[:svg_file_path])
-      _svg = svg_process[:svg_file_name]
-      attach_svg(_svg)
-      update_columns(sample_svg_file: self.sample_svg_file) unless new_record?
-    end
+    set_elem_composition_data 'found', clone_data, 0.0
   end
 
   def contains_residues
-    self.residues.any?
+    residues.any?
   end
 
   def preferred_label
-    self.external_label.presence || self.molecule_name_hash[:label].presence ||
-      self.molecule.iupac_name
+    external_label.presence || molecule_name_hash[:label].presence ||
+      molecule.iupac_name
   end
 
   def preferred_tag
-    if (tag = self.preferred_label) && tag && tag.length > 20
-      tag[0, 20] + '...'
+    if (tag = preferred_label) && tag && tag.length > 20
+      "#{tag[0, 20]}..."
     else
       tag
     end
@@ -619,33 +628,22 @@ class Sample < ApplicationRecord
     mnl && !is_sum_form ? mnl : molecule_iupac_name
   end
 
-  def user_labels
-    tag&.taggable_data&.fetch('user_labels', nil)
-  end
-
   def detect_amount_type
-    condition = real_amount_value.nil? || real_amount_unit.nil?
-    return { 'value' => target_amount_value, 'unit' => target_amount_unit } if condition
+    target_amount_condition = target_amount_value.nil? || target_amount_value.zero? || target_amount_unit.nil?
+    real_amount_condition = real_amount_value.nil? || real_amount_value.zero? || real_amount_unit.nil?
+
+    if real_amount_condition && !target_amount_condition
+      return { 'value' => target_amount_value,
+               'unit' => target_amount_unit }
+    end
 
     { 'value' => real_amount_value, 'unit' => real_amount_unit }
   end
 
   def amount_mol
-    mol = nil
     amount_value = detect_amount_type['value']
-    case detect_amount_type['unit']
-    when 'l'
-      mol = if has_molarity
-              amount_value * molarity_value
-            else
-              amount_value * density * 1000 * purity / molecule.molecular_weight
-            end
-    when 'mol'
-      mol = amount_value
-    when 'g'
-      mol = (amount_value * purity) / molecule.molecular_weight
-    end
-    mol
+    unit = detect_amount_type['unit']
+    convert_amount_to_mol(amount_value, unit)
   end
 
   def update_inventory_label(inventory_label, collection_id = nil)
@@ -656,61 +654,83 @@ class Sample < ApplicationRecord
     self['xref']['inventory_label'] = inventory.label if inventory.update_incremented_counter
   end
 
-  private
+  # Compute number of moles from given amount and unit
+  # Supports units: 'l', 'mol', 'g'
+  # - 'l': if `has_molarity` uses molarity, otherwise uses density and molecular weight
+  # - 'mol': returns amount_value
+  # - 'g': converts mass to moles using molecular weight and purity
+  def convert_amount_to_mol(amount_value, unit)
+    amount = coerce_amount(amount_value)
+    return nil if amount.nil?
 
-  def has_collections
-    if self.collections_samples.blank?
-      errors.add(:base, 'must have least one collection')
+    case unit
+    when 'l'
+      return convert_liters_to_moles(amount)
+    when 'mol'
+      return amount
+    when 'g'
+      return convert_grams_to_moles(amount)
     end
+    nil
   end
 
-  def set_elem_composition_data d_type, d_values, loading = nil
-    attrs = {
-      composition_type: d_type,
-      data: d_values,
-      loading: loading
-    }
-
-    if item = self.elemental_compositions.find{|i| i.composition_type == d_type}
-      item.assign_attributes attrs
-    else
-      self.elemental_compositions << ElementalComposition.new(attrs)
-    end
-  end
-
-  def check_molfile_polymer_section
-    return if decoupled
-    return unless self.molfile.include? 'R#'
-
-    lines = self.molfile.lines
-    polymers = []
-    m_end_index = nil
-    lines[4..-1].each_with_index do |line, index|
-      polymers << index if line.include? 'R#'
-      (m_end_index = index) && break if line.match /M\s+END/
+  # Refreshes SVG from molfile and overwrites the file at svg_path.
+  # @param svg_path [String] Filename or path for the SVG (e.g. "TMPFILEabc.svg")
+  # @param molfile [String] The molfile to generate SVG from
+  # @return [Hash] { success:, filename:, error:, status: }
+  def self.refresh_smaple_svg(svg_path, molfile)
+    if molfile.blank? || svg_path.blank?
+      return { success: false, error: 'molfile and svg_path are required.', status: 400 }
     end
 
-    reg = /(> <PolymersList>[\W\w.\n]+[\d]+)/m
-    unless (lines[5 + m_end_index].to_s + lines[6 + m_end_index].to_s).match reg
-      if lines[5 + m_end_index].to_s.include? '> <PolymersList>'
-        lines.insert(6 + m_end_index, polymers.join(' ') + "\n")
-      else
-        lines.insert(4 + m_end_index, "> <PolymersList>\n")
-        lines.insert(5 + m_end_index, polymers.join(' ') + "\n")
+    filename = File.basename(svg_path)
+    return { success: false, error: 'Invalid filename', status: 400 } if filename.match?(%r{\.\.|/|\\})
+
+    target_path = Rails.public_path.join('images', 'samples', filename)
+    if File.file?(target_path)
+      existing_svg = File.read(target_path)
+      if existing_svg.include?('<image') || existing_svg.include?('epam-ketcher-ssc')
+        return { success: true, filename: filename }
       end
     end
 
-    self.molfile = lines.join
-    self.fingerprint_id = Fingerprint.find_or_create_by_molfile(molfile.clone)&.id
+    svg = Molecule.svg_reprocess(nil, molfile)
+    return { success: false, error: 'Failed to generate SVG from molfile', status: 422 } if svg.blank?
+
+    FileUtils.mkdir_p(File.dirname(target_path))
+    File.write(target_path, svg)
+    { success: true, filename: filename }
+  rescue StandardError => e
+    { success: false, error: e.message, status: 500 }
+  end
+
+  private
+
+  def has_collections
+    errors.add(:base, 'must have least one collection') if collections_samples.blank?
+  end
+
+  def set_elem_composition_data(d_type, d_values, loading = nil)
+    attrs = {
+      composition_type: d_type,
+      data: d_values,
+      loading: loading,
+    }
+
+    if (item = elemental_compositions.find { |i| i.composition_type == d_type })
+      item.assign_attributes attrs
+    else
+      elemental_compositions << ElementalComposition.new(attrs)
+    end
   end
 
   def set_loading_from_ea
-    return unless residue = self.residues.first
+    return unless residues.first
 
     # select from cached attributes, don't make a SQL query
-    return unless el_composition = self.elemental_compositions.find do |i|
+    return unless (el_composition = elemental_compositions.find do |i|
       i.composition_type == 'found'
-    end
+    end)
 
     el_composition.set_loading self
   end
@@ -719,7 +739,9 @@ class Sample < ApplicationRecord
     rel_reaction_id = reactions_samples.first&.reaction_id
     return unless rel_reaction_id
 
-    ReactionsSample.where(reaction_id: rel_reaction_id, type: %w[ReactionsProductSample ReactionsReactantSample ReactionsStartingMaterialSample]).each(&:update_equivalent)
+    ReactionsSample.where(reaction_id: rel_reaction_id,
+                          type: %w[ReactionsProductSample ReactionsReactantSample
+                                   ReactionsStartingMaterialSample]).find_each(&:update_equivalent)
   end
 
   def update_svg_for_reactions
@@ -731,43 +753,37 @@ class Sample < ApplicationRecord
   # rubocop: disable Metrics/PerceivedComplexity
 
   def auto_set_short_label
-    unless self.previous_version.present?
-      sh_label = self['short_label']
-      return if sh_label =~ /solvents?|reactants?/
-      return if short_label && !short_label_changed?
+    sh_label = self['short_label']
+    return if /solvents?|reactants?/.match?(sh_label)
+    return if short_label && !short_label_changed?
 
-      if sh_label && Sample.find_by(short_label: sh_label)
-        if parent && !((parent_label = parent.short_label) =~ /solvents?|reactants?/)
-          self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
-        elsif creator && creator.counters['samples']
-          abbr = self.creator.name_abbreviation
-          self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
-        end
-      elsif !sh_label && creator && creator.counters['samples']
-        abbr = self.creator.name_abbreviation
-        self.short_label = "#{abbr}-#{self.creator.counters['samples'].to_i.succ}"
+    if sh_label && (Sample.find_by(short_label: sh_label) || sh_label.eql?('NEW SAMPLE'))
+      if parent && (parent_label = parent.short_label) !~ /solvents?|reactants?/
+        self.short_label = "#{parent_label}-#{parent.children.count.to_i.succ}"
+      elsif creator && creator.counters['samples']
+        abbr = creator.name_abbreviation
+        self.short_label = "#{abbr}-#{creator.counters['samples'].to_i.succ}"
       end
-    else
-      self.short_label = get_new_version_short_label
+    elsif !sh_label && creator && creator.counters['samples']
+      abbr = creator.name_abbreviation
+      self.short_label = "#{abbr}-#{creator.counters['samples'].to_i.succ}"
     end
   end
-
 
   # rubocop: enable Metrics/AbcSize
   # rubocop: enable Metrics/CyclomaticComplexity
   # rubocop: enable Metrics/PerceivedComplexity
 
   def update_counter
-    return if short_label =~ /solvents?|reactants?/ || self.parent
+    return if short_label =~ /solvents?|reactants?/ || parent
     return unless saved_change_to_short_label?
-    return unless short_label =~ /^#{self.creator.name_abbreviation}-\d+$/
-    self.creator.increment_counter 'samples'
+    return unless /^#{creator.name_abbreviation}-\d+$/.match?(short_label)
+
+    creator.increment_counter 'samples'
   end
 
   def create_root_container
-    if self.container == nil
-      self.container = Container.create_root_container
-    end
+    self.container = Container.create_root_container if container.nil?
   end
 
   def assign_molecule_name
@@ -783,7 +799,8 @@ class Sample < ApplicationRecord
   end
 
   def check_molecule_name
-    return unless molecule_name_id.blank?
+    return if molecule_name_id.present?
+
     assign_molecule_name
   end
 
@@ -794,6 +811,7 @@ class Sample < ApplicationRecord
 
   def update_molecule_name
     return unless molecule_id_changed? && molecule_name&.molecule_id != molecule_id
+
     assign_molecule_name
   end
 
@@ -802,15 +820,7 @@ class Sample < ApplicationRecord
   end
 
   def has_density
-    density.present? && density.positive? && (!molarity_value.present? || molarity_value.zero?)
-  end
-
-  def remove_from_previous_version
-    previous_version = self.tag&.taggable_data['previous_version']
-      if previous_version
-        previous_element = Sample.find_by(id: previous_version['id'])
-        previous_element.untag_as_previous_version
-      end
+    density.present? && density.positive? && (molarity_value.blank? || molarity_value.zero?)
   end
 
   # build a full path of the sample svg, nil if not buildable
@@ -835,6 +845,43 @@ class Sample < ApplicationRecord
     ).find_each do |material|
       material.update_gas_material(catalyst_mol_value)
     end
+  end
+
+  def coerce_amount(value)
+    return nil if value.nil?
+
+    amount = value.to_f
+    return nil unless amount&.finite?
+
+    amount
+  end
+
+  def convert_liters_to_moles(amount)
+    return convert_liters_using_molarity(amount) if has_molarity
+
+    return nil unless density_and_mw_valid?
+
+    amount * density.to_f * 1000 * purity.to_f / molecule.molecular_weight.to_f
+  end
+
+  def convert_liters_using_molarity(amount)
+    return nil unless molarity_value.present? && molarity_value.to_f.positive?
+
+    amount * molarity_value.to_f
+  end
+
+  def density_and_mw_valid?
+    density.present? && density.to_f.positive? && valid_molecular_weight?
+  end
+
+  def convert_grams_to_moles(amount)
+    return nil unless valid_molecular_weight?
+
+    (amount * purity.to_f) / molecule.molecular_weight.to_f
+  end
+
+  def valid_molecular_weight?
+    molecule&.molecular_weight.present? && molecule.molecular_weight.to_f.positive?
   end
 end
 # rubocop:enable Metrics/ClassLength

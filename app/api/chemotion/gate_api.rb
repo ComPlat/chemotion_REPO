@@ -4,7 +4,6 @@
 module Chemotion
   # API: GateAPI to exchange data between two ELN servers
   class GateAPI < Grape::API
-    helpers GateHelpers
     class UriHTTPType
       def self.parse(value)
         URI.parse value
@@ -103,7 +102,11 @@ module Chemotion
             @resp_body
           end
           post do
-            TransferRepoJob.perform_later(@collection.id, current_user.id, @url, @req_headers)
+            if Rails.env.development?
+              TransferRepoJob.perform_now(@collection.id, current_user.id, @url, @req_headers)
+            else
+              TransferRepoJob.perform_later(@collection.id, current_user.id, @url, @req_headers)
+            end
             status 202
           end
         end
@@ -117,9 +120,26 @@ module Chemotion
         params do
           requires :data, type: File
         end
+
         before do
-          @user, @collection, @origin = prepare_for_receiving(request)
+          http_token = (request.headers['Authorization'].split(' ').last if request.headers['Authorization'].present?) # rubocop: disable Style/RedundantArgument
+          error!('Unauthorized', 401) unless http_token
+          secret = Rails.application.secrets.secret_key_base
+          begin
+            @auth_token = ActiveSupport::HashWithIndifferentAccess.new(
+              JWT.decode(http_token, secret)[0],
+            )
+          rescue JWT::VerificationError, JWT::DecodeError, JWT::ExpiredSignature => e
+            error!("#{e}", 401)
+          end
+          @user = Person.find_by(email: @auth_token[:iss])
+          error!('Unauthorized', 401) unless @user
+          @collection = Collection.find_by(
+            id: @auth_token[:collection], user_id: @user.id, is_shared: false,
+          )
+          error!('Unauthorized access to collection', 401) unless @collection
         end
+
         post do
           db_file = params[:data]&.fetch('tempfile', nil)
           imp = Import::ImportJson.new(
@@ -139,128 +159,6 @@ module Chemotion
             new_attachments << att
           end
           status(200)
-        end
-      end
-
-      desc <<~DESC
-        receive sample and reaction data from a remote eln and import them into a designated
-        collection according to JWT info. (authentication through JWT)
-      DESC
-      namespace :receiving_zip do
-        params do
-          requires :data, type: File
-        end
-        before do
-          @user, @collection, @origin = prepare_for_receiving(request)
-        end
-
-        post do
-          db_file = params[:data]&.fetch('tempfile', nil)
-          # file = params[:file]
-          tempfile = db_file
-          att = Attachment.new(
-            filename: params[:data][:filename],
-            key: File.basename(tempfile.path),
-            file_path: tempfile,
-            created_by: @user.id,
-            created_for: @user.id,
-            content_type: 'application/zip'
-          )
-          begin
-            att.save!
-          ensure
-            tempfile.close
-            tempfile.unlink
-          end
-
-          begin
-            ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
-            Message.create_msg_notification(
-              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
-              message_from: @user&.id,
-              autoDismiss: 5,
-              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
-            )
-          rescue => e
-            log_exception('receiving_zip', e, @user&.id)
-            Message.create_msg_notification(
-              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
-              message_from: @user&.id,
-              autoDismiss: 5,
-              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
-            )
-            @success = false
-          end
-          status 200
-          { message: "Job ID: #{att&.id}" }
-        end
-      end
-
-      desc <<~DESC
-        receive sample and reaction data from a remote eln and import them into a designated
-        collection according to JWT info. (authentication through JWT)
-      DESC
-      namespace :receiving_chunk do
-        before do
-          @user, @collection, @origin = prepare_for_receiving(request)
-        end
-        post do
-          save_chunk(@user.id, @collection.id, params)
-          status(200)
-        rescue StandardError => e
-          log_exception('receiving_chunk', e, @user.id)
-          raise e
-        end
-      end
-
-      desc <<~DESC
-        receive sample and reaction data from a remote eln and import them into a designated
-        collection according to JWT info. (authentication through JWT)
-      DESC
-      namespace :received do
-        before do
-          @user, @collection, @origin = prepare_for_receiving(request)
-        end
-        post do
-          filepath = save_chunk(@user.id, @collection.id, params)
-          att = Attachment.new(
-            filename: File.basename(filepath),
-            key: File.basename(filepath),
-            file_path: filepath,
-            created_by: @user.id,
-            created_for: @user.id,
-            content_type: 'application/zip'
-          )
-          begin
-            att.save!
-          ensure
-            FileUtils.rm_f(filepath)
-          end
-
-          begin
-            if Rails.env.development?
-              ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_now(att, @user.id, true, @collection.id, @origin)
-            else
-              ImportCollectionsJob.set(queue: "gate_receiving_#{@user.id}").perform_later(att, @user.id, true, @collection.id, @origin)
-            end
-            Message.create_msg_notification(
-              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
-              message_from: @user&.id,
-              autoDismiss: 5,
-              message_content: { 'data': "We have received the data transfer from ELN and is currently being processed. You will receive another message once the processing is completed. JobID: [#{att&.id}]" },
-            )
-          rescue => e
-            log_exception('receiving_completed', e, @user.id)
-            Message.create_msg_notification(
-              channel_id: Channel.find_by(subject: Channel::GATE_TRANSFER_NOTIFICATION)&.id,
-              message_from: @user&.id,
-              autoDismiss: 5,
-              message_content: { 'data': "Data received from ELN failed to be processed. Please try again. Job ID: [#{att&.id}]" }
-            )
-            raise e
-          end
-          status 200
-          { message: "Job ID: #{att&.id}" }
         end
       end
 
@@ -342,40 +240,6 @@ module Chemotion
           # TODO: add a boolean on collection to allow AuthenticationKey
           # or use sync_collections_users ??
           { jwt: token }
-        end
-      end
-
-      namespace :register_eln do
-        params do
-          requires :origin, type: UriHTTPType, desc: 'remote eln adress'
-        end
-
-        after_validation do
-          error!('401 Unauthorized - no ELN Gate collection', 401) unless (@collec = Collection.find_by(
-            user_id: current_user.id, is_locked: true, label: 'ELN Gate'
-          ))
-        end
-
-        post do
-          origin = URI.join(params[:origin], '/').to_s
-          payload = {
-            collection: @collec.id,
-            # label: @collec.label[0..20],
-            iss: current_user.email,
-            exp: (Time.now + 28.days).to_i,
-            origin: origin
-          }
-          secret = Rails.application.secrets.secret_key_base
-          token = JWT.encode payload, secret
-          AuthenticationKey.create!(
-            user_id: current_user.id,
-            fqdn: origin,
-            role: 'gate in',
-            token: token
-          )
-          # TODO: add a boolean on collection to allow AuthenticationKey
-          # or use sync_collections_users ??
-          redirect(URI.join(origin, "/api/v1/gate/register_repo?token=#{token}").to_s)
         end
       end
     end

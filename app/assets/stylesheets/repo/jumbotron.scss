@@ -1,0 +1,7 @@
+.jumbotron {
+  @extend .p-5;          // Bootstrap padding
+  @extend .mb-4;         // bottom margin
+  @extend .rounded-3;     // rounded corners
+  @extend .text-dark;     // default text color
+  background-color: rgb(238, 238, 238); // light grey background
+}

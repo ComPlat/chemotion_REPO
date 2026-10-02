@@ -6,32 +6,34 @@
 #
 # Table name: collections
 #
-#  id                          :integer          not null, primary key
-#  user_id                     :integer          not null
-#  ancestry                    :string
-#  label                       :text             not null
-#  shared_by_id                :integer
-#  is_shared                   :boolean          default(FALSE)
-#  permission_level            :integer          default(0)
-#  sample_detail_level         :integer          default(10)
-#  reaction_detail_level       :integer          default(10)
-#  wellplate_detail_level      :integer          default(10)
-#  created_at                  :datetime         not null
-#  updated_at                  :datetime         not null
-#  position                    :integer
-#  screen_detail_level         :integer          default(10)
-#  is_locked                   :boolean          default(FALSE)
-#  deleted_at                  :datetime
-#  is_synchronized             :boolean          default(FALSE), not null
-#  researchplan_detail_level   :integer          default(10)
-#  element_detail_level        :integer          default(10)
-#  tabs_segment                :jsonb
-#  celllinesample_detail_level :integer          default(10)
-#  inventory_id                :bigint
+#  id                                            :integer          not null, primary key
+#  ancestry                                      :string           default("/"), not null
+#  celllinesample_detail_level                   :integer          default(10)
+#  deleted_at                                    :datetime
+#  devicedescription_detail_level                :integer          default(10)
+#  element_detail_level                          :integer          default(10)
+#  is_locked                                     :boolean          default(FALSE)
+#  is_shared                                     :boolean          default(FALSE)
+#  is_synchronized                               :boolean          default(FALSE), not null
+#  label                                         :text             not null
+#  permission_level                              :integer          default(0)
+#  position                                      :integer
+#  reaction_detail_level                         :integer          default(10)
+#  researchplan_detail_level                     :integer          default(10)
+#  sample_detail_level                           :integer          default(10)
+#  screen_detail_level                           :integer          default(10)
+#  sequencebasedmacromoleculesample_detail_level :integer          default(10)
+#  tabs_segment                                  :jsonb
+#  wellplate_detail_level                        :integer          default(10)
+#  created_at                                    :datetime         not null
+#  updated_at                                    :datetime         not null
+#  inventory_id                                  :bigint
+#  shared_by_id                                  :integer
+#  user_id                                       :integer          not null
 #
 # Indexes
 #
-#  index_collections_on_ancestry      (ancestry)
+#  index_collections_on_ancestry      (ancestry) WHERE (deleted_at IS NULL)
 #  index_collections_on_deleted_at    (deleted_at)
 #  index_collections_on_inventory_id  (inventory_id)
 #  index_collections_on_user_id       (user_id)
@@ -43,31 +45,37 @@
 
 class Collection < ApplicationRecord
   acts_as_paranoid
+
+  include RepoCollection
+  include Publishing
+
   belongs_to :user, optional: true
   belongs_to :inventory, optional: true
   has_ancestry
-  include Publishing
 
   has_many :collections_samples, dependent: :destroy
   has_many :collections_reactions, dependent: :destroy
   has_many :collections_wellplates, dependent: :destroy
   has_many :collections_screens, dependent: :destroy
   has_many :collections_research_plans, dependent: :destroy
+  has_many :collections_device_descriptions, dependent: :destroy
   has_many :collections_elements, dependent: :destroy, class_name: 'Labimotion::CollectionsElement'
   has_many :collections_vessels, dependent: :destroy
   has_many :collections_celllines, dependent: :destroy
+  has_many :collections_sequence_based_macromolecule_samples, dependent: :destroy
   has_many :samples, through: :collections_samples
   has_many :reactions, through: :collections_reactions
   has_many :wellplates, through: :collections_wellplates
   has_many :screens, through: :collections_screens
   has_many :research_plans, through: :collections_research_plans
   has_many :vessels, through: :collections_vessels
+  has_many :device_descriptions, through: :collections_device_descriptions
   has_many :elements, through: :collections_elements
   has_many :cellline_samples, through: :collections_celllines
+  has_many :sequence_based_macromolecule_samples, through: :collections_sequence_based_macromolecule_samples
 
   has_many :sync_collections_users, dependent: :destroy, inverse_of: :collection
   has_many :shared_users, through: :sync_collections_users, source: :user
-  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   has_one :metadata
 
@@ -113,55 +121,6 @@ class Collection < ApplicationRecord
             .from(SQL_INVENT_FROM)
             .group(:inventory_id, :inventories)
   }
-
-  def self.public_collection_id
-    ENV['PUBLIC_COLL_ID']&.to_i
-  end
-
-  def self.public_collection
-    find_by(id: ENV['PUBLIC_COLL_ID']) || find_by(
-      user_id: User.chemotion_user.id,
-      label: ENV['PUBLIC_COLL']
-    )
-  end
-
-  def self.scheme_only_reactions_collection
-    find_by(id: ENV['SCHEME_ONLY_REACTIONS_COLL_ID']) || find_by(
-      user_id: User.chemotion_user.id,
-      label: ENV['SCHEME_ONLY_REACTIONS_COLL']
-    ) || find_by(
-      user_id: User.chemotion_user.id,
-      label: 'Scheme-only reactions'
-    )
-  end
-
-  def self.scheme_only_reactions_collection_id
-    ENV['SCHEME_ONLY_REACTIONS_COLL_ID']&.to_i
-  end
-
-  def self.embargo_accepted_collection
-    find_by(
-      user_id: User.chemotion_user.id,
-      label: 'Embargo Accepted',
-      is_synchronized: true
-    )
-  end
-
-  def self.element_to_review_collection
-    where(
-      user_id: User.chemotion_user.id,
-      label: 'Element To Review',
-      is_synchronized: true
-    )
-  end
-
-  def self.reviewed_collection
-    where(
-      user_id: User.chemotion_user.id,
-      label: 'Reviewed',
-      is_synchronized: true
-    )
-  end
 
   def self.get_all_collection_for_user(user_id)
     find_by(user_id: user_id, label: 'All', is_locked: true)
@@ -232,25 +191,5 @@ class Collection < ApplicationRecord
     Collection.where(id: collection_id, user_id: user_id, is_shared: true)
               .find_each(&:destroy)
   end
-
-  def self.all_embargos(user_id)
-    if user_id.nil?
-        Collection.where(
-          <<~SQL
-            id in (select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements'))
-          SQL
-        )
-    else
-      Collection.where(
-        <<~SQL
-          id in (
-            select c2.id from collections c2 where c2.ancestry in (select c.id::text from collections c where c.label = 'Published Elements') union
-            select co.id from collections co where co.ancestry in (select c.id::text from collections c, sync_collections_users scu
-            where c.label = 'Embargoed Publications' and scu.collection_id = c.id and scu.user_id = #{user_id}))
-        SQL
-      )
-    end
-  end
-
 end
 # rubocop:enable Metrics/AbcSize, Rails/HasManyOrHasOneDependent,Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity

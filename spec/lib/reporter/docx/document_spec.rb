@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 describe 'Reporter::Docx::Document instance' do
+  before { skip_unless_binary_available('inkscape') }
+
   let(:svg_fixt_path) { Rails.root.join('spec', 'fixtures', 'images', 'molecule.svg') }
   let(:svg_image_path) { Rails.root.join('public', 'images', 'molecules', 'molecule.svg') }
 

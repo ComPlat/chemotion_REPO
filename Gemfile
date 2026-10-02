@@ -9,20 +9,21 @@ gem 'ancestry'
 gem 'api-pagination'
 gem 'caxlsx'
 
-gem 'backup'
 gem 'barby'
 gem 'bcrypt_pbkdf'
 gem 'bibtex-ruby'
 gem 'bootsnap'
-gem 'bootstrap-sass'
+gem 'bootstrap', '~> 5.3'
 gem 'charlock_holmes'
 gem 'closure_tree'
 gem 'countries'
 
+gem 'daemons'
 gem 'delayed_cron_job'
 gem 'delayed_job_active_record'
-gem 'activejob_dj_overrides'
 gem 'devise'
+gem 'devise-two-factor'
+gem 'encryptor' # Needed for devise-two-factor
 gem 'dotenv-rails', require: 'dotenv/rails-now'
 
 gem 'ed25519'
@@ -33,8 +34,9 @@ gem 'faraday-follow_redirects'
 gem 'faraday-multipart'
 gem 'font-awesome-rails'
 gem 'fugit'
-gem 'fun_sftp', git: 'https://github.com/fl9/fun_sftp.git', branch: 'allow-port-option'
 gem 'fx'
+
+gem 'active_model_serializers', '~> 0.10.0'
 
 gem 'grape'
 gem 'grape-entity'
@@ -49,23 +51,26 @@ gem 'haml-rails'
 gem 'hashie-forbidden_attributes'
 gem 'httparty'
 
+gem 'icalendar'
 gem 'image_processing', '~> 1.8'
-gem 'inchi-gem', '1.06.1', git: 'https://github.com/ComPlat/inchi-gem.git', branch: 'main'
+gem 'inchi-gem', git: 'https://github.com/ComPlat/inchi-gem.git', branch: 'main'
+
+# RDF gems
+gem 'linkeddata'
 
 gem 'jquery-rails' # must be in, otherwise the views lack jquery, even though the gem is supplied by ketcher-rails
 gem 'jwt'
 
 gem 'kaminari'
 gem 'kaminari-grape'
-# gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', branch: 'upgrade-to-rails-6'
-gem 'ketcherails', git: 'https://github.com/complat/ketcher-rails.git', ref: 'd4ae864a0e2d9e853eac8e4fc4ce7e3ab8174f80'
 
-gem 'labimotion', '2.0.3'
+gem 'labimotion', '2.1.1'
+gem 'logidze'
 
 gem 'mimemagic', '0.3.10'
 gem 'mime-types'
+gem 'moneta'
 
-gem 'net-ftp'
 # locked to enforce latest version of net-scp. without lock net-ssh would be updated first which locks
 # out newer net-scp versions
 gem 'net-scp', '3.0.0'
@@ -94,8 +99,7 @@ gem 'pundit'
 gem 'rack'
 gem 'rack-cors', require: 'rack/cors'
 gem 'rails', '~> 6.1.7.7'
-gem 'rdkit_chem', git: 'https://github.com/ptrxyz/rdkit_chem.git', branch: 'pk01'
-gem 'rinchi-gem', '1.0.2', git: 'https://github.com/ComPlat/rinchi-gem.git', branch: 'main'
+gem 'rinchi-gem', git: 'https://github.com/ComPlat/rinchi-gem.git', branch: 'main'
 gem 'rmagick'
 gem 'roo'
 gem 'rqrcode' # required for Barby to work but not listed as its dependency -_-
@@ -109,11 +113,15 @@ gem 'sassc-rails'
 gem 'scenic'
 gem 'schmooze'
 gem 'semacode', git: 'https://github.com/toretore/semacode.git', branch: 'master' # required for Barby but not listed...
+gem 'shakapacker', '~> 9.5.0'
 
 gem 'sentry-delayed_job'
 gem 'sentry-rails'
 gem 'sentry-ruby'
 gem 'shrine', '~> 3.0'
+# Pin stringio below 3.1 — 3.1.x dropped Ruby 2.7 support and uses the
+# rb_io_mode_t API that doesn't exist in 2.7, breaking native-ext build.
+gem 'stringio', '< 3.1', require: false
 gem 'sys-filesystem'
 
 gem 'thor'
@@ -121,16 +129,9 @@ gem 'thumbnailer', git: 'https://github.com/merlin-p/thumbnailer.git'
 gem 'turbo-sprockets-rails4'
 gem 'tzinfo-data'
 
-gem 'webpacker', git: 'https://github.com/rails/webpacker', branch: 'master'
 gem 'whenever', require: false
 
 gem 'yaml_db'
-gem 'moneta'
-
-gem 'icalendar'
-
-# RDF gems
-gem 'linkeddata'
 
 group :development do
   gem 'better_errors' # allows to debug exception on backend from browser
@@ -153,7 +154,7 @@ group :vscode do
 end
 
 group :development, :test do
-  gem 'annotate'
+  gem 'annotaterb'
   gem 'awesome_print'
 
   gem 'binding_of_caller'
@@ -166,6 +167,7 @@ group :development, :test do
 
   gem 'meta_request'
 
+  gem 'pry', '>= 0.14.2'
   gem 'pry-byebug'
   gem 'pry-rails'
 

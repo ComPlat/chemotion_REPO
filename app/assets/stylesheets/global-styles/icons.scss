@@ -1,0 +1,227 @@
+// Icon Font: chemstrap-icons
+
+// The chemstrap-icons font contains chemotion specific icons, that are not available in font-awesome.
+// The font is generated via fontello (https://fontello.com/).
+// In order to extend the font
+// 1. upload the svg version of the font (chemstrap-icons.svg) to fontello
+// 2. set the name to "chemstrap-icons"
+// 3. add new icons (ideally as 32x32px svg files)
+// 4. download the new font and css files
+// 5. replace the existing font files in the assets/fonts folder
+// 6. update the glyphcodes in this file with the contents from chemstrap-icons-codes.css
+// 7. place your new svg source files in images/svg_icons for reference
+//
+
+@include font-face("chemstrap-icons", normal, normal, "chemstrap-icons");
+
+// Override Font Awesome metrics globally to align icon centering across browsers.
+@include font-face("FontAwesome", normal, normal, "fontawesome-webfont");
+
+[data-icon]:before {
+  content: attr(data-icon);
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+  display: inline-block;
+  font-family: "chemstrap-icons";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-decoration: inherit;
+  text-rendering: optimizeLegibility;
+  text-transform: none;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+}
+
+// glyph codes
+
+.icon-arrow-down-to-bracket:before {
+  content: "\e82b";
+} /* '' */
+.icon-research-plan,
+.icon-research_plan {
+  // underscore notation nescessary for classname from db
+  &:before {
+    content: "\e82a";
+  }
+} /* '' */
+.icon-arrow-up-from-bracket:before {
+  content: "\e827";
+} /* '' */
+.icon-pubchem:before {
+  content: "\e826";
+} /* '' */
+.icon-abc:before {
+  content: "\e824";
+} /* '' */
+.icon-incoming:before {
+  content: "\e820";
+} /* '' */
+.icon-outgoing:before {
+  content: "\e821";
+} /* '' */
+.icon-collection:before {
+  content: "\e822";
+} /* '' */
+.icon-reaction:before {
+  content: "\f100";
+} /* '' */
+.icon-sample:before {
+  content: "\f101";
+} /* '' */
+.icon-wellplate:before {
+  content: "\f102";
+} /* '' */
+.icon-screen:before {
+  content: "\f103";
+} /* '' */
+.icon-polymer:before {
+  content: "\f104";
+} /* '' */
+.icon-hand-stop:before {
+  content: "\f105";
+} /* '' */
+.icon-water-free:before {
+  content: "\f106";
+} /* '' */
+.icon-reaction-procedure:before {
+  content: "\f107";
+} /* '' */
+.icon-resin-solvent:before {
+  content: "\f108";
+} /* '' */
+.icon-resin-solvent-reagent:before {
+  content: "\f109";
+} /* '' */
+.icon-acidified-hcl:before {
+  content: "\f10a";
+} /* '' */
+.icon-gpx-a:before {
+  content: "\f10c";
+} /* '' */
+.icon-gpx-b:before {
+  content: "\f10d";
+} /* '' */
+.icon-isolated:before {
+  content: "\f10e";
+} /* '' */
+.icon-residue-adsorbed:before {
+  content: "\f10f";
+} /* '' */
+.icon-residue-dissolved:before {
+  content: "\f110";
+} /* '' */
+.icon-residue-purified:before {
+  content: "\f111";
+} /* '' */
+.icon-tlc-control:before {
+  content: "\f112";
+} /* '' */
+.icon-washed-nahco3:before {
+  content: "\f113";
+} /* '' */
+.icon-dried:before {
+  content: "\f115";
+} /* '' */
+.icon-c-nmr:before {
+  content: "\f116";
+} /* '' */
+.icon-ea:before {
+  content: "\f117";
+} /* '' */
+.icon-ei:before {
+  content: "\f118";
+} /* '' */
+.icon-h-nmr:before {
+  content: "\f119";
+} /* '' */
+.icon-hr:before {
+  content: "\f11a";
+} /* '' */
+.icon-ir:before {
+  content: "\f11b";
+} /* '' */
+.icon-uv:before {
+  content: "\f11c";
+} /* '' */
+.icon-xvial:before {
+  content: "\f11d";
+} /* '' */
+.icon-hr1:before {
+  content: "\f11e";
+} /* '' */
+.icon-hr2:before {
+  content: "\f11f";
+} /* '' */
+
+// Icon Font: Font Awesome
+
+//make .fa-fw work in flex containers
+
+.fa-fw {
+  min-width: $input-btn-line-height;
+}
+
+// recontextualisation of standard icons
+
+.icon-cell_line,
+.icon-device_description,
+.icon-vessel,
+.icon-vessel_template,
+.icon-sequence_based_macromolecule,
+.icon-sequence_based_macromolecule_sample,
+.icon-report,
+.icon-literature,
+.icon-literature_map {
+  font-style: inherit;
+  &:before {
+    font-family: FontAwesome;
+  }
+}
+
+.icon-cell_line:before {
+  content: "\f0a3";
+}
+
+.icon-device_description:before {
+  content: "\f1b2";
+}
+
+.icon-vessel:before {
+  content: "\f1fb";
+}
+
+.icon-vessel_template:before {
+  content: "\f0ae";
+}
+
+.icon-sequence_based_macromolecule,
+.icon-sequence_based_macromolecule_sample {
+  &:before {
+    content: "\f0c1";
+  }
+}
+
+.icon-report:before {
+  content: "\f0f6";
+}
+
+.icon-literature,
+.icon-literature_map {
+  &:before {
+    content: "\f02d";
+  }
+}
+
+.fa.combi-icon-close {
+  @extend .flex-row;
+  @extend .w-auto;
+  @extend .gap-1;
+  &:after {
+    content: "\f00d";
+  }
+}

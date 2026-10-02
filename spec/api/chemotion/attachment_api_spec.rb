@@ -23,8 +23,8 @@ describe Chemotion::AttachmentAPI do
         'identifier' => attachment.identifier,
         'thumb' => attachment.thumb,
         # 'thumbnail' => attachment.thumb ? Base64.encode64(attachment.read_thumbnail) : nil,
-        'created_at' => kind_of(String),
-        'updated_at' => kind_of(String),
+        # 'created_at' => kind_of(String),
+        # 'updated_at' => kind_of(String),
       },
     }
   end
@@ -70,7 +70,8 @@ describe Chemotion::AttachmentAPI do
       end
 
       it 'returns the deleted attachment' do
-        expect(parsed_json_response).to include(expected_response)
+        response = parsed_json_response['attachment'].except('created_at', 'updated_at')
+        expect(response).to include(expected_response['attachment'])
       end
 
       it 'deletes the attachment on database', :enable_usecases_attachments_delete do
@@ -119,7 +120,8 @@ describe Chemotion::AttachmentAPI do
       end
 
       it 'returns the deleted attachment' do
-        expect(parsed_json_response).to include(expected_response)
+        response = parsed_json_response['attachment'].except('created_at', 'updated_at')
+        expect(response).to include(expected_response['attachment'])
       end
 
       it 'unlinks the attachment from container', :enable_usecases_attachments_unlink do
@@ -277,7 +279,34 @@ describe Chemotion::AttachmentAPI do
   end
 
   describe 'POST /api/v1/attachments/upload_to_inbox' do
-    pending 'not yet implemented'
+    let(:user) { create(:person) }
+    let(:file_upload) do
+      {
+        file: fixture_file_upload(Rails.root.join('spec/fixtures/upload.txt'), 'text/plain'),
+      }
+    end
+
+    context 'when upload works' do
+      before do
+        post '/api/v1/attachments/upload_to_inbox', params: file_upload
+      end
+
+      it 'expecting return code 201' do
+        expect(response).to have_http_status :created
+      end
+    end
+
+    context 'when upload is not allowed' do
+      before do
+        user.allocated_space = 1
+        user.save!
+        post '/api/v1/attachments/upload_to_inbox', params: file_upload
+      end
+
+      it 'expecting return code 413' do
+        expect(response).to have_http_status 413
+      end
+    end
   end
 
   describe 'GET /api/v1/attachments/{attachment_id}' do
@@ -558,11 +587,11 @@ describe Chemotion::AttachmentAPI do
     end
   end
 
-  describe 'GET /api/v1/attachments/{attachment_id}/annotated_image' do
+  describe 'GET /api/v1/attachments/{attachment_id}?annotated=true' do
     let(:attachment) { create(:attachment, :with_image, created_for: user.id, attachable_type: '') }
 
     before do
-      get "/api/v1/attachments/#{attachment_id}/annotated_image"
+      get "/api/v1/attachments/#{attachment_id}?annotated=true"
     end
 
     context 'when attachment not exists' do
@@ -586,23 +615,17 @@ describe Chemotion::AttachmentAPI do
     end
 
     context 'when image attachment has an annotation' do
-      let(:attachment_id) { attachment.id }
-
-      let(:annotation_updater) { Usecases::Attachments::Annotation::AnnotationUpdater.new }
-      let(:annotation_location) do
-        Rails.root.join('spec/fixtures/annotations/20221207_valide_annotation_edited.svg')
-      end
-      let(:expected_annotated_image_size) do
-        annotation_location = "#{updated_attachment.attachment.storage.directory}/#{updated_attachment.attachment_data['derivatives']['annotation']['annotated_file_location']}" # rubocop:disable Layout/LineLength
-        File.open(annotation_location).size
-      end
-      let(:updated_attachment) { Attachment.find(attachment.id) }
+      let(:attachment) { create(:attachment, :with_annotation, created_for: user.id, attachable_type: '') }
+      let(:fixture_path) { Rails.root.join('spec/fixtures/annotations/20221207_valide_annotation_edited.svg') }
 
       before do
-        annotation = File.read(annotation_location)
-        annotation = annotation.gsub('/46', "/#{attachment_id}")
-        annotation_updater.update_annotation(annotation, attachment.id)
-        get "/api/v1/attachments/#{attachment_id}/annotated_image"
+        # TODO: move this to the factory: handling of fixture files for derivatives
+        # should be done in the factory
+        annotation_path = attachment.annotated_file_location
+        FileUtils.rm_f(annotation_path)
+        FileUtils.ln_s(fixture_path, annotation_path)
+
+        get "/api/v1/attachments/#{attachment_id}?annotate=true"
       end
 
       it('returning status 200') do
@@ -610,7 +633,7 @@ describe Chemotion::AttachmentAPI do
       end
 
       it('expecting that size of returned data equals annotated file size') do
-        expect(response.header['Content-Length'].to_i).to be expected_annotated_image_size
+        expect(response.header['Content-Length'].to_i).to be File.size(fixture_path)
       end
     end
 
@@ -729,11 +752,14 @@ describe Chemotion::AttachmentAPI do
         end
 
         it 'creates thumbnail localy' do
+          skip_unless_binary_available('convert')
+
           expect(File.exist?(img_attachments.last.attachment(:thumbnail).url)).to be true
         end
 
         describe 'Return Base64 encoded thumbnail' do
           before do
+            skip_unless_binary_available('convert')
             get "/api/v1/attachments/thumbnail/#{img_attachments.last.id}"
           end
 
@@ -745,6 +771,7 @@ describe Chemotion::AttachmentAPI do
 
         describe 'Return Base64 encoded thumbnails' do
           before do
+            skip_unless_binary_available('convert')
             params = { ids: [img_attachments.reload.last.id] }
             post '/api/v1/attachments/thumbnails', params: params
           end

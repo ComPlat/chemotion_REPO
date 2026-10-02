@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 describe 'Reporter::Docx::DetailSample instance' do
+  before { skip_unless_binary_available('inkscape') }
+
   let(:s1) { create(:sample) }
 
   let(:instance) do

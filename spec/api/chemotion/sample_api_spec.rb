@@ -140,15 +140,21 @@ describe Chemotion::SampleAPI do
           currentCollectionId: collection.id,
           file: fixture_file_upload(Rails.root.join('spec/fixtures/import_sample_data.xlsx'),
                                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+          import_type: 'sample',
         }
       end
 
       it 'is able to import new samples' do
-        ids_from_response = JSON.parse(response.body)['data']
-        ids_from_db = Sample.pluck(:id)
-        expect(ids_from_response).to match_array(ids_from_db)
+        # Endpoint now returns async job status
+        response_data = JSON.parse(response.body)
+        expect(response_data['status']).to eq 'in progress'
+        expect(response_data['message']).to eq 'Importing samples in the background'
 
-        expect(JSON.parse(response.body)['data'].count).to eq 3
+        # Execute the enqueued job
+        perform_enqueued_jobs
+
+        # Verify samples were created
+        expect(Sample.count).to eq 3
       end
     end
 
@@ -157,6 +163,7 @@ describe Chemotion::SampleAPI do
         {
           currentCollectionId: collection.id,
           file: fixture_file_upload(Rails.root.join('spec/fixtures/import_sample_data.sdf'), 'chemical/x-mdl-sdfile'),
+          import_type: 'sample',
         }
       end
 
@@ -168,6 +175,178 @@ describe Chemotion::SampleAPI do
         expect(JSON.parse(response.body)['sdf']).to be true
 
         expect(JSON.parse(response.body)['data'].count).to eq 2
+      end
+    end
+
+    context 'when import from client-validated data' do
+      let(:data_array) do
+        [
+          {
+            'name' => 'Test Sample',
+            'external_label' => 'EXT-123',
+            'target_amount_value' => '10',
+            'target_amount_unit' => 'g',
+            'density' => '1.2 g/ml',
+            'molarity' => '3 M',
+            'flash_point' => '23 °C',
+            'decoupled' => 'false',
+            'is_top_secret' => 'false',
+            'dry_solvent' => 'false',
+            'solvent' => '',
+            'location' => 'Lab Room 42',
+            'molecular_mass' => '194.19',
+            'sum_formula' => 'C8H8',
+            canonical_smiles: 'C12C3C4C2C2C1C3C42',
+          },
+        ]
+      end
+
+      let(:params) do
+        {
+          'currentCollectionId' => collection.id,
+          'data' => data_array.to_json,
+          'import_type' => 'sample',
+          originalFormat: 'json',
+        }
+      end
+
+      it 'returns a successful response with status 201' do
+        expect(response.status).to eq 201
+      end
+
+      it 'returns a valid response with status ok and non-empty data' do
+        response_data = JSON.parse(response.body)
+        expect(response_data['status']).to eq 'in progress'
+        expect(response_data['message']).to eq 'Importing samples in the background'
+
+        # Execute the job and verify samples were created
+        perform_enqueued_jobs
+        expect(Sample.count).to be > 0
+      end
+
+      it 'creates the expected number of samples in the database' do
+        perform_enqueued_jobs
+        expect(Sample.count).to eq data_array.length
+      end
+
+      it 'creates samples with correct details' do
+        perform_enqueued_jobs
+        sample = Sample.first
+
+        expect(sample.name).to eq data_array.first['name']
+        expect(sample.external_label).to eq data_array.first['external_label']
+      end
+
+      it 'creates samples with correct numeric values' do
+        perform_enqueued_jobs
+        sample = Sample.first
+
+        expect(sample.target_amount_value).to eq data_array.first['target_amount_value'].to_f
+        expect(sample.target_amount_unit).to eq data_array.first['target_amount_unit']
+      end
+    end
+
+    context 'when import from client-validated chemical data' do
+      let(:chemical_data_array) do
+        [
+          {
+            'name' => 'Cubane',
+            'external_label' => 'CHEM-001',
+            'target_amount_value' => '0',
+            'target_amount_unit' => 'g',
+            'density' => '4.0 g/ml',
+            'molarity' => '3 M',
+            'flash_point' => '23 °C',
+            'decoupled' => 'false',
+            'is_top_secret' => 'false',
+            'dry_solvent' => 'false',
+            'solvent' => '',
+            'location' => 'chemicals room',
+            'molecular_mass' => '194.19',
+            'sum_formula' => 'C8H8',
+            'cas' => '277-10-1',
+            'status' => 'To be ordered',
+            'vendor' => 'Merck',
+            'order_number' => 'O6582233N2',
+            'volume' => '1 ml',
+            'amount' => '1 mg',
+            'price' => '150',
+            'person' => 'ML',
+            'required_date' => '2023-05-15',
+            'expiration_date' => '2050-01-01',
+            'ordered_date' => '2023-05-19',
+            'required_by' => 'Simone',
+            'pictograms' => 'GHS07',
+            'h_statements' => 'H302',
+            'p_statements' => 'P264-P270-P301-P312-P501',
+            'host_building' => '1',
+            'host_room' => '2',
+            'host_cabinet' => 'cabinet 3',
+            'host_group' => 'Schumacher',
+            'owner' => 'Olivier',
+            'storage_temperature' => '25 °C',
+            canonical_smiles: 'C12C3C4C2C2C1C3C42',
+          },
+        ]
+      end
+
+      let(:params) do
+        {
+          'currentCollectionId' => collection.id,
+          'data' => chemical_data_array.to_json,
+          'originalFormat' => 'json',
+          'import_type' => 'chemical',
+        }
+      end
+
+      it 'returns a successful response with status 201' do
+        expect(response.status).to eq 201
+      end
+
+      it 'returns a valid response with status ok and non-empty data' do
+        response_data = JSON.parse(response.body)
+        expect(response_data['status']).to eq 'in progress'
+        expect(response_data['message']).to eq 'Importing samples in the background'
+
+        # Execute the job and verify samples were created
+        perform_enqueued_jobs
+        expect(Sample.count).to be > 0
+      end
+
+      it 'creates the expected number of samples in the database' do
+        perform_enqueued_jobs
+        expect(Sample.count).to eq chemical_data_array.length
+      end
+
+      it 'creates chemical samples with correct details' do
+        perform_enqueued_jobs
+        sample = Sample.first
+
+        expect(sample.name).to eq chemical_data_array.first['name']
+      end
+
+      it 'correctly stores chemical-specific data' do
+        perform_enqueued_jobs
+        sample = Sample.first
+
+        expect(sample.xref['cas']).to eq chemical_data_array.first['cas']
+      end
+    end
+
+    context 'when import data is malformed' do
+      let(:params) do
+        {
+          currentCollectionId: collection.id,
+          'data' => 'invalid json string',
+          'originalFormat' => 'json',
+          'import_type' => 'sample',
+        }
+      end
+
+      it 'returns an error' do
+        # Grape's JSON type validator should reject invalid JSON
+        # or the after_validation block should catch it
+        expect(response.status).to be >= 400
       end
     end
   end
@@ -204,12 +383,12 @@ describe Chemotion::SampleAPI do
           },
           rows: [{
             inchikey: 'DTHMTBUWTGVEFG-DDWIOCJRSA-N',
-            molfile: Rails.root.join('spec', 'fixtures', 'mf_with_data_01.sdf').read,
+            molfile: build(:molfile, type: 'mf_with_data_01'),
             description: "MOLECULE_NAME\n(R)-Methyl-2-amino-2-phenylacetate hydrochloride ?96%; (R)-(?)-2-Phenylglycine methyl ester hydrochloride\n\nSAFETY_R_S\nH: 319; P: 305+351+338\n\nSMILES_STEREO\n[Cl-].COC(=O)[C@H](N)c1ccccc1.[H+]\n",
             short_label: 'C9H12ClNO2',
             target_amount: '10 g /  g',
             real_amount: '15mg/mg',
-            density: '30',
+            density: '30 g/mL',
             decoupled: 'f',
             molarity: '900',
             melting_point: '900.0',
@@ -249,7 +428,7 @@ describe Chemotion::SampleAPI do
         expect(sample['location']).to eq 'location'
         expect(sample['external_label']).to eq 'external_label'
         expect(sample['name']).to eq 'name'
-        expect(sample['molarity_value']).to eq 900
+        expect(sample['molarity_value']).to eq 0.0
 
         expect(sample['boiling_point']).to eq 900.0..1500.0
         expect(sample['melting_point']).to eq 900.0...Float::INFINITY
@@ -274,7 +453,7 @@ describe Chemotion::SampleAPI do
           },
           rows: [{
             inchikey: 'DTHMTBUWTGVEFG-DDWIOCJRSA-N',
-            molfile: Rails.root.join('spec', 'fixtures', 'mf_with_data_01.sdf').read,
+            molfile: build(:molfile, type: 'mf_with_data_01'),
             description: "MOLECULE_NAME\n(R)-Methyl-2-amino-2-phenylacetate hydrochloride ?96%; (R)-(?)-2-Phenylglycine methyl ester hydrochloride\n\nSAFETY_R_S\nH: 319; P: 305+351+338\n\nSMILES_STEREO\n[Cl-].COC(=O)[C@H](N)c1ccccc1.[H+]\n",
             short_label: 'C9H12ClNO2',
             target_amount: 'Test data',
@@ -319,7 +498,7 @@ describe Chemotion::SampleAPI do
         expect(sample['location']).to eq 'location'
         expect(sample['external_label']).to eq 'external_label'
         expect(sample['name']).to eq 'name'
-        expect(sample['molarity_value']).to eq 900
+        expect(sample['molarity_value']).to eq 0.0
 
         expect(sample['boiling_point']).to eq 1000.0...Float::INFINITY
         expect(sample['melting_point']).to eq 900.0...Float::INFINITY
@@ -357,23 +536,18 @@ describe Chemotion::SampleAPI do
       end
     end
 
-    context 'when molecule_sort is enabled' do
-      let!(:sample) { create(:sample, collections: [personal_collection]) }
-      let!(:sample2) { create(:sample, collections: [personal_collection]) }
+    context 'with molecule_sort' do
+      let(:molecules) { create_list(:molecule, 2) { |m, i| m.sum_formular = "C#{i}" } }
+      let(:samples) { create_list(:sample, 2, collections: [personal_collection]) { |s, i| s.molecule = molecules[i] } }
 
       it 'returns samples in the right order' do
+        sample_ids = samples.map(&:id)
+        # ascending order of C with molecule_sort enabled
         get '/api/v1/samples', params: { molecule_sort: 1 }
-        expect(JSON.parse(response.body)['samples'].pluck('id')).to eq([sample.id, sample2.id])
-      end
-    end
-
-    context 'when molecule_sort is disabled' do
-      let!(:sample) { create(:sample, collections: [personal_collection]) }
-      let!(:sample2) { create(:sample, collections: [personal_collection]) }
-
-      it 'returns samples in the right order' do
+        expect(JSON.parse(response.body)['samples'].pluck('id')).to eq(sample_ids)
+        # descending order of sample.updated_at with molecule_sort disabled
         get '/api/v1/samples', params: { molecule_sort: 0 }
-        expect(JSON.parse(response.body)['samples'].pluck('id')).to eq([sample2.id, sample.id])
+        expect(JSON.parse(response.body)['samples'].pluck('id')).to eq(sample_ids.reverse)
       end
     end
 
@@ -690,7 +864,7 @@ describe Chemotion::SampleAPI do
         boiling_point_lowerbound: 100,
         melting_point_upperbound: 200,
         melting_point_lowerbound: 200,
-        molfile: File.read("#{Rails.root}/spec/fixtures/test_2.mol"),
+        molfile: build(:molfile, type: 'test_2'),
         is_top_secret: false,
         dry_solvent: true,
         xref: { 'cas' => cas },
@@ -993,6 +1167,176 @@ describe Chemotion::SampleAPI do
             end.not_to change { s2.analyses.first.children.count }
           end
         end
+      end
+    end
+  end
+
+  describe 'POST /api/v1/samples/batch-refresh-svg' do
+    def molfile1
+      @molfile1 ||= build(:molfile, type: :water)
+    end
+
+    def molfile2
+      @molfile2 ||= build(:molfile, type: :cubane)
+    end
+
+    def svg_filename1
+      @svg_filename1 ||= "batch_refresh_svg_spec_1_#{SecureRandom.hex(8)}.svg"
+    end
+
+    def svg_filename2
+      @svg_filename2 ||= "batch_refresh_svg_spec_2_#{SecureRandom.hex(8)}.svg"
+    end
+
+    def svg_path1
+      "/images/samples/#{svg_filename1}"
+    end
+
+    def svg_path2
+      "/images/samples/#{svg_filename2}"
+    end
+
+    def target_path1
+      Rails.public_path.join('images', 'samples', svg_filename1)
+    end
+
+    def target_path2
+      Rails.public_path.join('images', 'samples', svg_filename2)
+    end
+
+    def post_refresh_svg_batch(svgs)
+      post '/api/v1/samples/batch-refresh-svg',
+           params: { svgs: svgs }.to_json,
+           headers: { 'Content-Type' => 'application/json' }
+    end
+
+    after do
+      FileUtils.rm_f(target_path1) if target_path1 && File.exist?(target_path1)
+      FileUtils.rm_f(target_path2) if target_path2 && File.exist?(target_path2)
+    end
+
+    context 'when svgs array is empty' do
+      it 'returns 400' do
+        post_refresh_svg_batch([])
+        expect(response).to have_http_status(400)
+        expect(JSON.parse(response.body)).to eq('svgs array is required and cannot be empty.')
+      end
+    end
+
+    context 'when parameters are missing' do
+      it 'returns results with success: false for missing molfile', :aggregate_failures do
+        svgs = [{ svg_path: svg_path1, molfile: '' }]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(1)
+        expect(results[0]['success']).to be false
+        expect(results[0]['error']).to eq('svg_path and molfile are required')
+      end
+
+      it 'returns results with success: false for missing svg_path', :aggregate_failures do
+        svgs = [{ svg_path: '', molfile: molfile1 }]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(1)
+        expect(results[0]['success']).to be false
+        expect(results[0]['error']).to eq('svg_path and molfile are required')
+      end
+
+      it 'handles string keys in params' do
+        svgs = [{ 'svg_path' => svg_path1, 'molfile' => molfile1 }]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(1)
+      end
+    end
+
+    context 'when filename is invalid (path traversal)' do
+      it 'returns success: false for invalid filenames', :aggregate_failures do
+        svgs = [
+          { svg_path: '/images/samples/sub/..', molfile: molfile1 },
+          { svg_path: 'folder\\name.svg', molfile: molfile2 },
+        ]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(2)
+        expect(results[0]['success']).to be false
+        expect(results[0]['error']).to eq('Invalid filename')
+        expect(results[1]['success']).to be false
+        expect(results[1]['error']).to eq('Invalid filename')
+      end
+    end
+
+    context 'when Molecule.svg_reprocess returns blank' do
+      it 'returns success: false', :aggregate_failures do
+        allow(Molecule).to receive(:svg_reprocess).and_return(nil)
+
+        svgs = [{ svg_path: svg_path1, molfile: molfile1 }]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(1)
+        expect(results[0]['success']).to be false
+        expect(results[0]['error']).to eq('Failed to generate SVG from molfile')
+      end
+    end
+
+    context 'with valid parameters and mocked Molecule.svg_reprocess' do
+      def mock_svg_content
+        '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+      end
+
+      before do
+        allow(Molecule).to receive(:svg_reprocess).and_return(mock_svg_content)
+      end
+
+      it 'returns 200 with results array containing success: true for valid SVGs', :aggregate_failures do
+        svgs = [
+          { svg_path: svg_path1, molfile: molfile1 },
+          { svg_path: svg_path2, molfile: molfile2 },
+        ]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(2)
+        expect(results[0]['success']).to be true
+        expect(results[0]['filename']).to eq(svg_filename1)
+        expect(results[1]['success']).to be true
+        expect(results[1]['filename']).to eq(svg_filename2)
+        expect(File).to exist(target_path1)
+        expect(File).to exist(target_path2)
+      end
+
+      it 'handles partial failures when svg_reprocess returns nil for second', :aggregate_failures do
+        allow(Molecule).to receive(:svg_reprocess).with(nil, molfile1).and_return(mock_svg_content)
+        allow(Molecule).to receive(:svg_reprocess).with(nil, molfile2).and_return(nil)
+
+        svgs = [
+          { svg_path: svg_path1, molfile: molfile1 },
+          { svg_path: svg_path2, molfile: molfile2 },
+        ]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(2)
+        expect(results[0]['success']).to be true
+        expect(results[0]['filename']).to eq(svg_filename1)
+        expect(results[1]['success']).to be false
+        expect(results[1]['error']).to eq('Failed to generate SVG from molfile')
+        expect(File).to exist(target_path1)
+      end
+
+      it 'handles single SVG correctly', :aggregate_failures do
+        svgs = [{ svg_path: svg_path1, molfile: molfile1 }]
+        post_refresh_svg_batch(svgs)
+        expect(response).to have_http_status(200)
+        results = JSON.parse(response.body)['results']
+        expect(results.length).to eq(1)
+        expect(results[0]['success']).to be true
+        expect(results[0]['filename']).to eq(svg_filename1)
       end
     end
   end

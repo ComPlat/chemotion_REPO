@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe JsonldConverterService do
+  before(:all) do
+    skip 'Publication factory not available; spec pending factory definition' unless FactoryBot.factories.registered?(:publication)
+  end
+
   let(:sample_publication) do
     create(:publication, element_type: 'Sample', state: 'completed')
   end

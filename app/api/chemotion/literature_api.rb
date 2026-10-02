@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/ClassLength, Rails/SkipsModelValidations, Style/MultilineIfThen
+# rubocop:disable Metrics/ClassLength, Rails/SkipsModelValidations
 
 module Chemotion
   class LiteratureAPI < Grape::API
@@ -8,7 +8,10 @@ module Chemotion
     helpers ParamsHelpers
 
     helpers do
-      def citation_for_elements(id = params[:element_id], type = @element_klass, cat = 'detail')
+      # Issue #325: references added from a publication page are stored with
+      # category 'public'. The detail/References tab must still see them next
+      # to the private 'detail' refs, so query both categories by default.
+      def citation_for_elements(id = params[:element_id], type = @element_klass, cat = %w[detail public])
         return Literature.none if id.blank?
 
         Literature.by_element_attributes_and_cat(id, type, cat).with_user_info
@@ -17,8 +20,6 @@ module Chemotion
 
     resource :literatures do
       after_validation do
-        @is_owned = nil
-        @is_public = nil
         unless %r{doi/metadata|ui_state|collection}.match?(request.url)
           klass = API::ELEMENT_CLASS[params[:element_type]]
           element = klass.find_by(id: params[:element_id])
@@ -30,22 +31,29 @@ module Chemotion
           # or delegate methods to CelllineSample
           @element_klass = klass == CelllineSample ? CelllineMaterial.name : klass.name
           @element       = klass == CelllineSample ? element.cellline_material : element
-          params[:element_id] = @element.id if @element
+          params[:element_id] = @element.id
           #################################
 
-          allowed = if /get/i.match?(request.env['REQUEST_METHOD'])
+          http_method = request.env['REQUEST_METHOD']
+          publication = @element&.publication
+          is_publisher = current_user.present? && publication.present? &&
+                         publication.published_by == current_user.id
+          is_reviewer = current_user.present? && User.reviewer_ids.include?(current_user.id)
+          is_published_page = current_user.present? &&
+                              publication&.state == Publication::STATE_COMPLETED
+          allowed = if /get/i.match?(http_method)
                       @element_policy.read?
+                    elsif /post/i.match?(http_method) && (is_publisher || is_reviewer || is_published_page)
+                      # Issue #325: publisher may always add refs.
+                      # Issue #344: any logged-in user may add refs on the public
+                      # publication page (state == completed). Review and embargo
+                      # pages remain reviewer-only. The contributor is recorded
+                      # via Literal#user_id for audit.
+                      true
                     else
                       @element_policy.update?
                     end
-
-          @is_public = "Collections#{params[:element_type].classify}".constantize.where(
-            "#{params[:element_type]}_id = ? and collection_id in (?)",
-            params[:element_id],
-            [Collection.public_collection_id, Collection.scheme_only_reactions_collection.id]
-          ).presence
           error!('401 Unauthorized', 401) unless allowed
-          @cat = @is_public ? 'public' : 'detail'
         end
       end
 
@@ -60,7 +68,7 @@ module Chemotion
         Literal.find(params[:id])&.update(litype: params[:litype])
 
         present(
-          citation_for_elements(params[:element_id], @element_klass, @cat),
+          citation_for_elements,
           with: Entities::LiteratureEntity,
           root: :literatures,
           with_element_count: false,
@@ -71,41 +79,23 @@ module Chemotion
       desc 'Return the literature list for the given element'
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
-        optional :is_all, type: Boolean, default: false
+        requires :element_type, type: String, values: API::ELEMENT_CLASS.keys
       end
 
       get do
-        if (params[:is_all] && params[:is_all] == true && params[:element_type] == 'reaction')
-          literatures = citation_for_elements(params[:element_id], @element_klass, @cat) || []
-          reaction = Reaction.find(params[:element_id])
-          reaction.products.each do |p|
-            literatures = literatures + citation_for_elements(p.id, 'Sample', @cat)
-          end
-          present(
-            literatures,
-            with: Entities::LiteratureEntity,
-            root: :literatures,
-            with_element_count: false,
-            with_user_info: true,
-          )
-        else
-          present(
-            citation_for_elements(params[:element_id], @element_klass, @cat),
-            with: Entities::LiteratureEntity,
-            root: :literatures,
-            with_element_count: false,
-            with_user_info: true,
-          )
-        end
-      #  literatures = Literature.by_element_attributes_and_cat(params[:element_id], @element_klass, %w[detail public])
-      #  { literatures: literatures }
+        present(
+          citation_for_elements,
+          with: Entities::LiteratureEntity,
+          root: :literatures,
+          with_element_count: false,
+          with_user_info: true,
+        )
       end
 
       desc 'create a literature entry'
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
+        requires :element_type, type: String, values: API::ELEMENT_CLASS.keys
         requires :ref, type: Hash do
           optional :is_new, type: Boolean
           optional :id, types: [Integer, String]
@@ -134,13 +124,19 @@ module Chemotion
               end
 
         lit.update!(refs: (lit.refs || {}).merge(declared(params)[:ref][:refs])) if params[:ref][:refs]
+        # Issue #325: references added from a publication page must surface on
+        # the public view. The public fetcher filters by category == 'public',
+        # so creating with 'detail' would hide newly added refs from everyone
+        # except the owner's private view.
+        is_published_element = @element&.publication&.state == Publication::STATE_COMPLETED
+        category = is_published_element ? 'public' : 'detail'
         attributes = {
           literature_id: lit.id,
           user_id: current_user.id,
           element_type: @element_klass,
           element_id: params[:element_id],
           litype: params[:ref][:litype],
-          category: @cat
+          category: category,
         }
         unless Literal.find_by(attributes)
           Literal.create(attributes)
@@ -148,7 +144,7 @@ module Chemotion
         end
 
         present(
-          citation_for_elements(params[:element_id], @element_klass, @cat),
+          citation_for_elements,
           with: Entities::LiteratureEntity,
           root: :literatures,
           with_element_count: false,
@@ -158,7 +154,7 @@ module Chemotion
 
       params do
         requires :element_id, type: Integer
-        requires :element_type, type: String, values: %w[sample reaction research_plan cell_line]
+        requires :element_type, type: String, values: API::ELEMENT_CLASS.keys
         requires :id, type: Integer
       end
 
@@ -168,8 +164,12 @@ module Chemotion
           # user_id: current_user.id,
           element_type: @element_klass,
           element_id: params[:element_id],
-          category: @cat
-        )&.destroy!
+        )
+
+        error!('Literal not found', 400) unless literal
+
+        literal.destroy!
+        status 200
       end
 
       namespace :collection do
@@ -181,21 +181,9 @@ module Chemotion
         after_validation do
           set_var(params[:id], params[:is_sync_to_me])
           error!(404) unless @c
-          if !@is_owned
-            obj = fetch_collection_w_current_user(params[:id], params[:is_sync_to_me])
-            @is_public = obj['shared_by'] && obj['shared_by']['initials'] == 'CI'
-          end
         end
 
         get do
-          if @is_public
-            return {
-              collectionRefs: Literature.none,
-              sampleRefs: Literature.by_element_attributes_and_cat(sample_ids, 'Sample', 'public').group('literatures.id'),
-              reactionRefs: Literature.by_element_attributes_and_cat(reaction_ids, 'Reaction', 'public').group('literatures.id'),
-              researchPlanRefs: Literature.none,
-            }
-          end
           sample_ids = @dl_s > 1 ? @c.sample_ids : []
           reaction_ids = @dl_r > 1 ? @c.reaction_ids : []
           research_plan_ids = @dl_rp > 1 ? @c.research_plan_ids : []
@@ -244,16 +232,11 @@ module Chemotion
           error!(404) unless @c
           @sids = @dl_s > 1 ? @c.samples.by_ui_state(declared(params)[:sample]).pluck(:id) : []
           @rids = @dl_r > 1 ? @c.reactions.by_ui_state(declared(params)[:reaction]).pluck(:id) : []
-          @cat = "detail"
-          if !@is_owned
-            obj = fetch_collection_w_current_user(params[:id], params[:is_sync_to_me])
-            @is_public = obj['shared_by_id'] && obj['shared_by_id'] == User.chemotion_user.id
-          end
+          @cat = 'detail'
         end
 
         post do
-          @cat = @is_public ? 'public' : 'detail'
-          if params[:ref] && (@pl >= 1 || @is_public)
+          if params[:ref] && @pl >= 1
             lit = if params[:ref][:is_new]
                     Literature.find_or_create_by(
                       doi: params[:ref][:doi],
@@ -274,7 +257,7 @@ module Chemotion
                     element_type: type,
                     element_id: id,
                     litype: params[:ref][:litype],
-                    category: @cat
+                    category: 'detail',
                   )
                 end
               end
@@ -326,4 +309,4 @@ module Chemotion
   end
 end
 # rubocop:enable Metrics/ClassLength
-# rubocop:enable Rails/SkipsModelValidations, Style/MultilineIfThen
+# rubocop:enable Rails/SkipsModelValidations

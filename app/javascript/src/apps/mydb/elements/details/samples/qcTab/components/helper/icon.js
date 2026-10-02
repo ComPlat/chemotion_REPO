@@ -1,0 +1,78 @@
+import React from 'react';
+import { Tooltip, OverlayTrigger, Badge } from 'react-bootstrap';
+
+const iconTp = margin => (
+  <Tooltip id="ans-tp">
+    max { margin } failure allowed.
+  </Tooltip>
+);
+
+const iconByBool = (result) => (
+  result
+    ? <Badge className="mx-2" bg="success">Pass</Badge>
+    : <Badge className="mx-2" bg="danger">Fail</Badge>
+);
+
+const iconByMargin = (result, margin = 0) => (
+  <OverlayTrigger placement="right" overlay={iconTp(margin)}>
+    { iconByBool(result) }
+  </OverlayTrigger>
+);
+
+const iconTpMs = (
+  <Tooltip id="ans-tp-ms">
+    Whether exact molecular mass is matched in the scan?
+  </Tooltip>
+);
+
+const iconMs = result => (
+  <OverlayTrigger placement="right" overlay={iconTpMs}>
+    { iconByBool(result) }
+  </OverlayTrigger>
+);
+
+const statusTp = txt => <Tooltip id="status-tp">{ txt }</Tooltip>;
+
+const iconStatus = (status) => {
+  switch (status) {
+    case 'accept':
+      return (
+        <OverlayTrigger placement="top" overlay={statusTp(status)}>
+          <i className="fa fa-check-circle-o" style={{ color: '#4caf50' }} />
+        </OverlayTrigger>
+      );
+    case 'warning':
+      return (
+        <OverlayTrigger placement="top" overlay={statusTp(status)}>
+          <i className="fa fa-exclamation-circle" style={{ color: '#ffc107' }} />
+        </OverlayTrigger>
+      );
+    case 'reject':
+      return (
+        <OverlayTrigger placement="top" overlay={statusTp(status)}>
+          <i className="fa fa-times-circle-o" style={{ color: '#e91e63' }} />
+        </OverlayTrigger>
+      );
+    case 'missing':
+      return (
+        <OverlayTrigger placement="top" overlay={statusTp(status)}>
+          <i className="fa fa-question-circle-o" style={{ color: '#5d4037' }} />
+        </OverlayTrigger>
+      );
+    case 'unknown':
+      return (
+        <OverlayTrigger placement="top" overlay={statusTp(status)}>
+          <i className="fa fa-question-circle-o" style={{ color: '#5d4037' }} />
+        </OverlayTrigger>
+      );
+    default:
+      return null;
+  }
+};
+
+export {
+  iconByMargin,
+  iconByBool,
+  iconMs,
+  iconStatus,
+};

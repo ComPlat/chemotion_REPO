@@ -15,6 +15,8 @@
 
 # Publish-Subscription Model
 class Channel < ApplicationRecord
+  include RepoChannel
+
   has_many :subscriptions
   SYSTEM_UPGRADE = 'System Upgrade'
   SYSTEM_NOTIFICATION = 'System Notification'
@@ -27,7 +29,6 @@ class Channel < ApplicationRecord
   SEND_IMPORT_NOTIFICATION = 'Import Notification'
   COMPUTED_PROPS_NOTIFICATION = 'Computed Prop Notification'
   GATE_TRANSFER_NOTIFICATION = 'Gate Transfer Completed'
-  CHEMSCANNER_NOTIFICATION = 'ChemScanner Notification'
   COLLECTION_TAKE_OWNERSHIP = 'Collection Take Ownership'
   EDITOR_CALLBACK = 'EditorCallback'
   COLLECTION_ZIP = 'Collection Import and Export'
@@ -41,12 +42,6 @@ class Channel < ApplicationRecord
   COMMENT_ON_MY_COLLECTION = 'New comment on synchronized collection'
   COMMENT_RESOLVED = 'Comment resolved in synchronized collection'
   SEND_TPA_ATTACHMENT_NOTIFICATION = 'Send TPA attachment arrival notification'
-
-
-  # REPOSITORY ONLY
-  PUBLICATION_REVIEW = 'Publication Review'
-  PUBLICATION_PUBLISHED = 'Publication Published'
-  SUBMITTING = 'Publication Submission'
 
   class << self
     def build_message(**args)

@@ -1,0 +1,388 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { orderBy } from 'lodash';
+import { Constants, Designer } from 'chem-generic-ui';
+import LoadingModal from 'src/components/common/LoadingModal';
+import Notifications from 'src/components/Notifications';
+import UsersFetcher from 'src/fetchers/UsersFetcher';
+import GenericSgsFetcher from 'src/fetchers/GenericSgsFetcher';
+import GenericElsFetcher from 'src/fetchers/GenericElsFetcher';
+import GenericKlassFetcher from 'src/fetchers/GenericKlassFetcher';
+import LoadingActions from 'src/stores/alt/actions/LoadingActions';
+import { GenericMenu, Unauthorized } from 'src/apps/generic/GenericUtils';
+import { notification, submit } from 'src/apps/generic/Utils';
+
+const FN_ID = 'GenericSegments';
+
+export default class GenericSegmentsAdmin extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      elements: [],
+      klasses: [],
+      show: { tab: '', modal: '' },
+      revisions: [],
+      currentUser: {},
+    };
+
+    this.fetchElements = this.fetchElements.bind(this);
+    this.handleShowState = this.handleShowState.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+    this.handleCreateKlass = this.handleCreateKlass.bind(this);
+    this.handleUpdateKlass = this.handleUpdateKlass.bind(this);
+    this.handleActivateKlass = this.handleActivateKlass.bind(this);
+    this.handleDeleteKlass = this.handleDeleteKlass.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.delRevision = this.delRevision.bind(this);
+    this.fetchRevisions = this.fetchRevisions.bind(this);
+    this.fetchElementKlasses = this.fetchElementKlasses.bind(this);
+    this.handleUploadKlass = this.handleUploadKlass.bind(this);
+    this.handleDownloadKlass = this.handleDownloadKlass.bind(this);
+  }
+
+  componentDidMount() {
+    const fetchData = async () => {
+      LoadingActions.start();
+      try {
+        const [segmentResult, klassResult, userResult] = await Promise.all([
+          GenericSgsFetcher.listSegmentKlass(),
+          GenericElsFetcher.fetchElementKlasses(),
+          UsersFetcher.fetchCurrentUser()
+        ]);
+        const klasses = klassResult.error ? [] : klassResult?.klass?.sort((a, b) => a.place - b.place) || [];
+        this.setState({
+          elements: segmentResult.error ? [] : segmentResult.klass,
+          klasses,
+          currentUser: userResult.error ? {} : userResult.user
+        });
+      } catch (error) {
+        console.log(error);
+      } finally {
+        LoadingActions.stop();
+      }
+    };
+    fetchData();
+  }
+
+  handleShowState(att, val, cb = () => {}) {
+    this.setState({ show: this.getShowState(att, val) }, cb);
+  }
+
+  handleCreateKlass(_response) {
+    const { element, notify } = _response;
+    if (!notify.isSuccess) {
+      notification(notify);
+      return;
+    }
+    GenericSgsFetcher.createKlass(element)
+      .then((result) => {
+        if (result.error) {
+          notification({
+            title: 'Create Segment fail',
+            lvl: 'error',
+            msg: result.error,
+          });
+        } else {
+          notification({
+            title: 'Create Segment successfully',
+            lvl: 'info',
+            msg: 'Created successfully',
+          });
+          this.fetchElements();
+        }
+      })
+      .catch((errorMessage) => {
+        console.log(errorMessage);
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  handleUpdateKlass(_response) {
+    const { element, notify } = _response;
+    if (!notify.isSuccess) {
+      notification(notify);
+      return;
+    }
+    const inputs = element;
+    GenericSgsFetcher.updateSegmentKlass(inputs)
+      .then((result) => {
+        if (result.error) {
+          notification({
+            title: 'Update Segment fail',
+            lvl: 'error',
+            msg: result.error,
+          });
+        } else {
+          notification({
+            title: 'Update Segment successfully',
+            lvl: 'info',
+            msg: 'Updated successfully',
+          });
+          this.fetchElements();
+        }
+      })
+      .catch((errorMessage) => {
+        console.log(errorMessage);
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  closeModal(cb = () => {}) {
+    this.handleShowState('modal', '', cb);
+  }
+
+  delRevision(params) {
+    const { id, data, uuid } = params;
+    LoadingActions.start();
+    GenericSgsFetcher.deleteKlassRevision({
+      id,
+      klass_id: data?.id,
+      klass: 'SegmentKlass',
+    })
+      .then((response) => {
+        if (response.error) {
+          notification({
+            title: 'Delete Revision',
+            lvl: 'error',
+            msg: response.error,
+          });
+        } else {
+          this.fetchRevisions(data);
+          notification({
+            title: `Revision [${uuid}] deleted successfully`,
+            lvl: 'info',
+            msg: 'Deleted successfully',
+          });
+        }
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  handleActivateKlass(e) {
+    const act = e.is_active ? 'De-activate' : 'Activate';
+    GenericSgsFetcher.deActivateKlass({
+      id: e.id,
+      is_active: !e.is_active,
+      klass: 'SegmentKlass',
+    })
+      .then(result => {
+        if (result.error) {
+          notification({
+            title: `${act} Segment fail`,
+            lvl: 'error',
+            msg: result.error,
+          });
+        } else {
+          notification({
+            title: `${act} Segment successfully`,
+            lvl: 'info',
+            msg: `Segment is ${act.toLowerCase()} now`,
+          });
+          this.fetchElements();
+        }
+      })
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  handleDeleteKlass(element) {
+    if (element.is_active) {
+      notification({
+        title: 'Delete Segment fail',
+        lvl: 'error',
+        msg: `You cannot delete an active segment [${element.label}]. Please make it [inactive] first.`,
+      });
+      return;
+    }
+    const confirmed = confirm('Are you sure you want to delete this record?');
+    if (confirmed) {
+      GenericSgsFetcher.deleteKlass({
+        id: element.id,
+        klass: 'SegmentKlass',
+      })
+        .then(result => {
+          if (result.error) {
+            notification({
+              title: 'Delete Segment fail',
+              lvl: 'error',
+              msg: result.error,
+            });
+          } else {
+            notification({
+              title: `Segment [${element.label}]`,
+              lvl: 'info',
+              msg: 'Deleted successfully',
+            });
+            this.fetchElements();
+            this.handleShowState('tab', '');
+          }
+        })
+        .finally(() => {
+          LoadingActions.stop();
+        });
+    }
+  }
+
+  getShowState(att, val) {
+    const { show } = this.state;
+    return { ...show, [att]: val };
+  }
+
+  fetchRevisions(_element) {
+    const element = _element;
+    if (element?.id) {
+      LoadingActions.start();
+      GenericSgsFetcher.fetchKlassRevisions(element.id, 'SegmentKlass')
+        .then((result) => {
+          // eslint-disable-next-line prefer-object-spread
+          let curr = Object.assign({}, { ...element.properties_template });
+          // eslint-disable-next-line prefer-object-spread
+          curr = Object.assign(
+            {},
+            { properties_release: curr },
+            { uuid: 'current' }
+          );
+          const revisions = [].concat(curr, result.revisions);
+          this.setState({ revisions });
+        })
+        .finally(() => {
+          LoadingActions.stop();
+        });
+    }
+  }
+
+  handleDownloadKlass(e) {
+    LoadingActions.start();
+    GenericKlassFetcher.downloadKlass(e.id, 'SegmentKlass')
+      .then(result => {
+        LoadingActions.stop();
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  handleUploadKlass(_response) {
+    const { element, notify } = _response;
+    if (!notify.isSuccess) {
+      notification(notify);
+      return;
+    }
+    LoadingActions.start();
+    GenericSgsFetcher.uploadKlass(element)
+      .then(result => {
+        if (result?.status === 'success') {
+          this.fetchElements();
+        }
+        notification({
+          title: 'Upload Segment',
+          lvl: result?.status || 'error',
+          msg: result?.message || 'Unknown error',
+        });
+      })
+      .catch(errorMessage => {
+        console.log(errorMessage);
+      })
+      .finally(() => {
+        LoadingActions.stop();
+      });
+  }
+
+  fetchElements() {
+    LoadingActions.start();
+    GenericSgsFetcher.listSegmentKlass().then((result) => {
+      this.setState({ elements: result.klass }, () => LoadingActions.stop());
+    });
+  }
+
+  fetchElementKlasses() {
+    GenericElsFetcher.fetchElementKlasses().then((result) => {
+      const klasses = result?.klass?.sort((a, b) => a.place - b.place) || [];
+      this.setState({ klasses });
+    });
+  }
+
+  async handleSubmit(_element, _release = 'draft') {
+    const [element, release] = [_element, _release];
+    element.release = release;
+    LoadingActions.start();
+    const result = await submit(GenericSgsFetcher, { update: Constants.GENERIC_TYPES.SEGMENT, element, release });
+    if (result.isSuccess) {
+      notification(result);
+      this.fetchElements();
+      this.setState({ element: result.response }, () => LoadingActions.stop());
+    } else {
+      notification(result);
+    }
+    LoadingActions.stop();
+  }
+
+  renderGrid() {
+    const { elements, currentUser } = this.state;
+    const els = orderBy(elements, ['is_active', 'label'], ['desc', 'asc']);
+
+    return (
+      <Designer
+        fnCopy={this.handleCreateKlass}
+        fnCreate={this.handleCreateKlass}
+        fnSubmit={this.handleSubmit}
+        fnActive={this.handleActivateKlass}
+        fnDelete={this.handleDeleteKlass}
+        fnUpdate={this.handleUpdateKlass}
+        fnUpload={this.handleUploadKlass}
+        fnDownload={this.handleDownloadKlass}
+        fnRefresh={this.fetchElements}
+        genericType={Constants.GENERIC_TYPES.SEGMENT}
+        gridData={els}
+        klasses={this.state.klasses}
+        preview={{
+          fnDelRevisions: this.delRevision,
+          fnRevisions: this.fetchRevisions,
+          revisions: this.state.revisions,
+        }}
+        refSource={{ currentUser }}
+      />
+    );
+  }
+
+  render() {
+    const { currentUser } = this.state;
+    if (!currentUser.generic_admin?.segments) {
+      return <Unauthorized userName={currentUser.name} text={FN_ID} />;
+    }
+    return (
+      <div className="vw-90 my-auto mx-auto">
+        <GenericMenu userName={currentUser.name} text={FN_ID} />
+        <div className="mt-3">
+          {this.renderGrid()}
+        </div>
+        <Notifications />
+        <LoadingModal />
+      </div>
+    );
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const domElement = document.getElementById(`${FN_ID}Admin`);
+  if (domElement) {
+    ReactDOM.render(
+      <DndProvider backend={HTML5Backend}>
+        <GenericSegmentsAdmin />
+      </DndProvider>,
+      domElement
+    );
+  }
+});

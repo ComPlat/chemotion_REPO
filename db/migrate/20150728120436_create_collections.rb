@@ -14,54 +14,54 @@ class CreateCollections < ActiveRecord::Migration[4.2]
       t.integer :wellplate_detail_level,  default: 0
 
       t.timestamps null: false
-    end
+    end unless table_exists?(:collections)
 
     create_table :reactions do |t|
       t.string :name
 
       t.timestamps null: false
-    end
+    end unless table_exists?(:reactions)
 
     create_table :collections_reactions do |t|
       t.integer :collection_id
       t.integer :reaction_id
       t.index :collection_id
       t.index :reaction_id
-    end
+    end unless table_exists?(:collections_reactions)
 
     create_table :samples do |t|
       t.string :name
       t.float :amount_value
       t.string :amount_unit
       t.timestamps null: false
-    end
+    end unless table_exists?(:samples)
 
     create_table :collections_samples do |t|
       t.integer :collection_id
       t.integer :sample_id
       t.index :collection_id
       t.index :sample_id
-    end
+    end unless table_exists?(:collections_samples)
 
     create_table :reactions_starting_material_samples do |t|
       t.integer :reaction_id
       t.integer :sample_id
       t.index :reaction_id
       t.index :sample_id
-    end
+    end unless table_exists?(:reactions_starting_material_samples)
 
     create_table :reactions_reactant_samples do |t|
       t.integer :reaction_id
       t.integer :sample_id
       t.index :reaction_id
       t.index :sample_id
-    end
+    end unless table_exists?(:reactions_reactant_samples)
 
     create_table :reactions_product_samples do |t|
       t.integer :reaction_id
       t.integer :sample_id
       t.index :reaction_id
       t.index :sample_id
-    end
+    end unless table_exists?(:reactions_product_samples)
   end
 end

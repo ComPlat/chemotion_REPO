@@ -1,0 +1,450 @@
+// Styles owned by the new faceted publication search
+// (PublicationSearchPage + FacetPanel + FacetGroup + ResultsList).
+// Layout-shared classes like .repo-publ-layout, .repo-publ-main and
+// .repo-publ-sidenav stay in others.scss because RepoPubl uses them too.
+
+// Fullscreen overlay shown while the search effect is in flight.
+// Locks the entire viewport so neither the list, the filter panel,
+// nor the right-side detail can be touched mid-fetch.
+.repo-search-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 28, 36, 0.45);
+  color: #fff;
+}
+
+// Structure/scheme thumbnail hover preview — hide the popover pointer arrow;
+// it lands on the thumbnail edge and reads as a stray artifact.
+.repo-search-thumb-popover .popover-arrow {
+  display: none;
+}
+
+// Affiliation line inside the contributor tooltip. Top-level (not nested under
+// .repo-publication-search) because the tooltip is portaled to document.body.
+.repo-result-contributor-aff {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+// Contributor chip: name_abbreviation in a neutral pill (same neutral style as
+// the Chemotion ID badge, normal weight so it reads as secondary), full name +
+// affiliation on hover. Top-level and reused by both the publication search
+// list and the Molecule Archive. `.badge.` keeps specificity above Bootstrap's
+// `.badge` so the normal weight wins.
+.badge.repo-result-contributor-pill {
+  font-weight: 400;
+  cursor: help;
+}
+
+.repo-search-inline-panel {
+  flex: 0 0 320px;
+  width: 320px;
+  padding: 14px 16px;
+  background: #fff;
+  border-right: 1px solid #e6ebef;
+  overflow-y: auto;
+  font-family: "Roboto", sans-serif;
+  color: $chemstrap-carbon;
+}
+
+.repo-search-results-pane {
+  flex: 1 1 auto;
+  padding: 14px 18px;
+  min-width: 0;
+}
+
+// Molecule Archive wraps the whole split view in .repo-search-results-pane (the
+// pane sits OUTSIDE .repo-publ-split-view, unlike the publication page), so the
+// .repo-publ-split-view descendant rule below can't reach it. Tighten the pane
+// only when it holds a split view (detail open), matching the publication list.
+.repo-search-results-pane:has(> .repo-publ-split-view) {
+  padding: 2px 4px;
+}
+
+// Split-view layout overrides — when the right-side detail pane is
+// open, the list column needs to scroll independently so the detail
+// stays put while the user moves through results.
+.repo-publ-split-view {
+  .repo-search-results-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    // Tighten the padding around the narrow split-view list (full-width keeps
+    // the roomier 14px 18px) so the results use the column's width.
+    padding: 2px 4px;
+  }
+
+  .repo-search-results-pane .repo-search-results {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .repo-search-results-pane .repo-search-results > ul {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .repo-search-inline-panel {
+    height: auto;
+    min-height: 0;
+    max-height: 100%;
+  }
+}
+
+.repo-publication-search {
+  font-family: "Roboto", sans-serif;
+  color: $chemstrap-carbon;
+
+  // Section header (reused for the inline-panel title and the results header).
+  .repo-search-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eef1f3;
+
+    .repo-search-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: $chemstrap-graphite;
+      text-transform: uppercase;
+      margin: 0;
+    }
+  }
+
+  // Search & filters toggle, shown inline before the results count.
+  .repo-search-toggle-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #d5dde3;
+    border-radius: 8px;
+    background: #fff;
+    color: $chemstrap-graphite;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    i { font-size: 14px; line-height: 1; }
+
+    &:hover {
+      background: rgba(36, 149, 207, 0.08);
+      color: $chemstrap-blue-dark;
+      border-color: $chemstrap-blue;
+    }
+    &:focus { outline: none; }
+
+    .repo-search-toggle-dot {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: $chemstrap-blue;
+    }
+  }
+
+  // FacetGroup title — matches subsection look.
+  .repo-search-facet-group {
+    margin-bottom: 14px;
+
+    .repo-search-facet-title-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      margin: 0 0 6px;
+
+      .repo-search-facet-title {
+        margin: 0;
+      }
+    }
+
+    .repo-search-facet-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: $chemstrap-graphite;
+      margin: 0 0 6px;
+    }
+
+    // Collapsible group header: the whole row toggles the group open/closed.
+    .repo-search-facet-title-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 0;
+      background: none;
+      border: none;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+
+      .repo-search-facet-title { margin: 0; }
+
+      &:focus { outline: none; }
+      &:hover .repo-search-facet-title { color: $chemstrap-blue-dark; }
+    }
+
+    .repo-search-facet-caret {
+      flex-shrink: 0;
+      width: 10px;
+      font-size: 12px;
+      color: $chemstrap-graphite;
+    }
+
+    .repo-search-facet-chip {
+      // display: flex (not inline-flex) so each chip is its own block
+      // and forces its own line regardless of parent layout.
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+      max-width: 100%;
+      padding: 1px 6px 1px 10px;
+      background: rgba(36, 149, 207, 0.14);
+      color: $chemstrap-blue-dark;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .repo-search-facet-chip-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .repo-search-facet-chip-remove {
+      background: none;
+      border: none;
+      padding: 0 2px;
+      color: inherit;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+
+      &:hover { color: #c0392b; }
+    }
+
+    .form-check {
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 2px;
+
+      .badge {
+        background-color: rgba(36, 149, 207, 0.12) !important;
+        color: $chemstrap-blue-dark !important;
+        font-weight: 500;
+      }
+    }
+
+    .form-control-sm {
+      font-size: 12px;
+    }
+  }
+
+  // SearchBar input row.
+  .repo-search-bar {
+    .form-select-sm,
+    .btn {
+      font-size: 13px;
+    }
+
+    // Tint each field's action icon (magnifier / pencil) blue when that field
+    // has input. The × clear renders only when the field has a value and sits
+    // right before its action icon, so the action icon is an adjacent
+    // .search-input__icon sibling exactly when the field is non-empty.
+    .search-input__icon + .search-input__icon {
+      color: $chemstrap-blue;
+    }
+  }
+
+  // Result rows.
+  .repo-search-result-row {
+    padding: 14px 8px;
+    border-bottom: 1px solid #eef1f3;
+    transition: background 0.12s ease;
+
+    &.cursor-pointer:hover { background: rgba(36, 149, 207, 0.05); }
+    &:focus { outline: 2px solid rgba(36, 149, 207, 0.4); outline-offset: -2px; }
+
+    // When the detail pane is open the list is narrow, so put the image alone
+    // on top and stack ALL metadata (badges row through DOI) below it. No
+    // box/card — items are separated only by a divider line that matches the
+    // search <-> results split.
+    &.is-detail-open {
+      border-bottom: 1px solid #e6ebef;
+      // Size-query container so the expand button can reveal its "more" /
+      // "less" label only when the (resizable) list column is wide enough.
+      container-type: inline-size;
+
+      .repo-search-result-row-top {
+        justify-content: center;
+      }
+
+      // Stretch the thumb to the full row width so the absolute-positioned
+      // zoom button lands at the row's right edge on every card. The
+      // image stays centered (flex + object-fit: contain) regardless.
+      .repo-search-result-thumb {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .repo-search-result-row-bottom {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      // Per-row expand toggle — a small icon pushed to the right of the badges
+      // row (via .ms-auto) that reveals the full metadata inline.
+      .repo-search-result-expand {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        align-self: center;
+        padding: 0 2px;
+        background: none;
+        border: none;
+        font-size: 15px;
+        line-height: 1;
+        color: $chemstrap-graphite;
+        cursor: pointer;
+
+        &:hover { color: $chemstrap-blue-dark; }
+        &:focus { outline: none; }
+      }
+
+      // "more" / "less" label: hidden by default, shown only when the row
+      // (list column) is wide enough to spare the space.
+      .repo-search-result-expand-text {
+        display: none;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      @container (min-width: 300px) {
+        .repo-search-result-expand-text {
+          display: inline;
+        }
+      }
+    }
+
+    // Single-line ellipsis for the Authors line when the list is narrow.
+    .repo-result-meta-clip {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    // The badge with the element-type icon needs a touch more breathing
+    // room so the icon glyph doesn't crowd the label.
+    .repo-result-element-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    // Fixed-size thumb so every row's metadata column starts at the
+    // same X regardless of how wide/tall the structure SVG renders.
+    .repo-search-result-thumb {
+      position: relative;
+      width: 260px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .repo-search-result-thumb-zoom {
+        padding: 2px 6px;
+        line-height: 1;
+        font-size: 11px;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      &:hover .repo-search-result-thumb-zoom,
+      .repo-search-result-thumb-zoom:focus {
+        opacity: 0.9;
+      }
+    }
+
+    // Full-width list (no detail open): enlarge the structure thumbnail so the
+    // molecule/scheme reads more clearly. The narrow (is-detail-open) list keeps
+    // its own full-width thumb sizing.
+    &:not(.is-detail-open) .repo-search-result-thumb {
+      width: 340px;
+      height: 170px;
+    }
+
+    .badge { font-weight: 500; }
+    .repo-result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: $chemstrap-carbon;
+    }
+    .repo-result-meta {
+      font-size: 12px;
+      color: $chemstrap-graphite;
+      margin-top: 2px;
+    }
+    .repo-result-meta a { color: $chemstrap-blue-dark; }
+    // Contributor pill styling is shared and lives at top level
+    // (.badge.repo-result-contributor-pill), so both this list and the archive
+    // match. Affiliation clause after the contributor name in the expanded info:
+    .repo-result-affiliation {
+      opacity: 0.8;
+    }
+  }
+
+  // Pagination footer.
+  .repo-search-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid #eef1f3;
+    font-size: 13px;
+    color: $chemstrap-graphite;
+
+    .btn-sm { font-size: 13px; }
+    .form-select-sm { font-size: 13px; }
+  }
+}

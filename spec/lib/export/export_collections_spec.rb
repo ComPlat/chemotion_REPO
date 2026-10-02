@@ -21,7 +21,7 @@ RSpec.describe 'ExportCollection' do
   let(:collection) { create(:collection, user_id: user.id, label: 'Awesome Collection') }
   let(:file_path) { File.join('public', 'zip', "#{job_id}.zip") }
 
-  let(:molfile) { Rails.root.join('spec/fixtures/test_2.mol').read }
+  let(:molfile) { build(:molfile, type: 'test_2') }
   let(:svg) { Rails.root.join('spec/fixtures/images/molecule.svg').read }
   let(:sample) do
     create(:sample, created_by: user.id, name: 'Sample zero', molfile: molfile, collections: [collection])
@@ -88,9 +88,66 @@ RSpec.describe 'ExportCollection' do
       expect(file_names.length).to be 4
       expect(file_names).to include expected_attachment_filename
     end
+
+    context 'with multiple image fields' do
+      let(:attachment1) do
+        create(:attachment, :with_png_image,
+               identifier: '3367b5a0-24e9-11f0-ac68-bde43cb79548',
+               filename: 'Screenshot from 2025-04-29 12-01-22.png',
+               created_by: user.id)
+      end
+      let(:attachment2) do
+        create(:attachment, :with_png_image,
+               identifier: '3d3f3da0-24e9-11f0-ac68-bde43cb79548',
+               filename: 'Screenshot from 2025-04-23 10-59-42.png',
+               created_by: user.id)
+      end
+      let(:expected_attachment_filenames) do
+        %W[attachments/#{attachment1.identifier}.png attachments/#{attachment2.identifier}.png]
+      end
+
+      before do
+        research_plan.attachments = [attachment1, attachment2]
+        research_plan.save!
+
+        research_plan.update(
+          body: [
+            {
+              id: 'a39d554e-6822-43e6-9fb5-7a1ce7cc0267',
+              type: 'image',
+              value: {
+                file_name: 'Screenshot from 2025-04-29 12-01-22.png',
+                public_name: '3367b5a0-24e9-11f0-ac68-bde43cb79548',
+              },
+            },
+            {
+              id: 'ab9740db-11b0-4b26-8c1d-58db11c58a32',
+              type: 'image',
+              value: {
+                file_name: 'Screenshot from 2025-04-23 10-59-42.png',
+                public_name: '3d3f3da0-24e9-11f0-ac68-bde43cb79548',
+              },
+            },
+          ],
+        )
+
+        export = Export::ExportCollections.new(job_id, [collection.id], 'zip', nested, gate)
+        export.prepare_data
+        export.to_file
+      end
+
+      it 'exports both attachments' do
+        expect(file_names).to include(*expected_attachment_filenames)
+      end
+
+      it 'has correct number of files in zip' do
+        # 3 base files (export.json, schema.json, description.txt) + 2 attachments
+        expect(file_names.length).to be 5
+      end
+    end
   end
 
-  context 'with a reaction' do # rubocop:disable RSpecq/MultipleMemoizedHelpers
+  context 'with a reaction' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     let(:sample1) { create(:sample) }
     let(:sample2) { create(:sample) }
     let(:reaction_in_json) { elements_in_json['Reaction'].first.second }
@@ -115,7 +172,7 @@ RSpec.describe 'ExportCollection' do
 
     it 'export.json has one reaction entry' do
       expect(elements_in_json['Reaction'].length).to be 1
-      # TO DO - find an elegant way to check all properties json <-> raction, maybe with an grape entity??
+      # TO DO - find an elegant way to check all properties json <-> reaction, maybe with an grape entity??
       expect(reaction_in_json['name']).to eq reaction.name
     end
   end
@@ -186,7 +243,7 @@ RSpec.describe 'ExportCollection' do
       expect(elements_in_json[sample_material_join].values.second['cellline_sample_id']).to eq sample2_uuid
     end
   end
-  
+
   context 'with a chemical' do
     let(:chemical) { create(:chemical, sample_id: sample.id) }
 
@@ -210,6 +267,186 @@ RSpec.describe 'ExportCollection' do
         JSON.parse(json_file.get_input_stream.read)
       end
       expect(export_json_content).to have_key('Chemical')
+    end
+  end
+
+  context 'with sample components' do
+    let(:component) { create(:component, sample_id: sample.id) }
+
+    before do
+      sample.sample_type = Sample::SAMPLE_TYPE_MIXTURE
+      sample.save!
+      component.save!
+      export = Export::ExportCollections.new(job_id, [collection.id], 'zip', true)
+      export.prepare_data
+      export.to_file
+    end
+
+    it 'exported file exists' do
+      file_path = File.join('public', 'zip', "#{job_id}.zip")
+      expect(File.exist?(file_path)).to be true
+    end
+
+    it 'Component key is present in export.json' do
+      file_path = File.join('public', 'zip', "#{job_id}.zip")
+      export_json_content = Zip::File.open(file_path) do |files|
+        json_file = files.detect { |file| file.name == 'export.json' }
+        JSON.parse(json_file.get_input_stream.read)
+      end
+      expect(export_json_content).to have_key('Component')
+    end
+  end
+
+  context 'when sbmm samples, sbmms, analyses and attachments were exported to zip file' do
+    let(:collection) { create(:collection, user_id: user.id, label: 'sbmm test') }
+    let(:sbmm_sample1) do
+      create(
+        :sequence_based_macromolecule_sample,
+        sequence_based_macromolecule: build(:uniprot_sbmm, systematic_name: 'Zoological Phenomenon Protein'),
+        user: user,
+        container: FactoryBot.create(:container, :with_analysis),
+      )
+    end
+    let(:sbmm_sample2) do
+      create(
+        :sequence_based_macromolecule_sample,
+        sequence_based_macromolecule: build(
+          :modified_uniprot_sbmm,
+          systematic_name: 'Foobar',
+          parent: sbmm_sample1.sequence_based_macromolecule,
+        ),
+        user: user,
+      )
+    end
+    let(:attachment1) do
+      create(
+        :attachment, :with_cif_file, bucket: 1, created_by: user.id,
+                                     attachable_id: sbmm_sample1.sequence_based_macromolecule.id
+      )
+    end
+    let(:attachment2) do
+      create(
+        :attachment, :with_png_image, bucket: 1, created_by: user.id, attachable_id: sbmm_sample1.id
+      )
+    end
+    let(:expected_attachment_filenames) do
+      %W[attachments/#{attachment1.identifier}.cif attachments/#{attachment2.identifier}.png]
+    end
+
+    let(:sequence_based_macromolecule_samples) { elements_in_json['SequenceBasedMacromoleculeSample'] }
+    let(:sequence_based_macromolecules) { elements_in_json['SequenceBasedMacromolecule'] }
+    let(:protein_sequence_modifications) { elements_in_json['ProteinSequenceModification'] }
+    let(:post_translational_modifications) { elements_in_json['PostTranslationalModification'] }
+    let(:attachments) { elements_in_json['Attachment'] }
+    let(:container) { elements_in_json['Container'] }
+
+    before do
+      sbmm_sample1
+      sbmm_sample1.attachments = [attachment2]
+      sbmm_sample1.sequence_based_macromolecule.attachments = [attachment1]
+      sbmm_sample1.save!
+      sbmm_sample2
+
+      CollectionsSequenceBasedMacromoleculeSample.create!(sequence_based_macromolecule_sample: sbmm_sample1,
+                                                          collection: collection)
+      CollectionsSequenceBasedMacromoleculeSample.create!(sequence_based_macromolecule_sample: sbmm_sample2,
+                                                          collection: collection)
+
+      export = Export::ExportCollections.new(job_id, [collection.id], 'zip', nested, gate)
+      export.prepare_data
+      export.to_file
+    end
+
+    it 'returns existing zip file' do
+      file_path = File.join('public', 'zip', "#{job_id}.zip")
+      expect(File.exist?(file_path)).to be_present
+    end
+
+    it 'has included files' do
+      expect(file_names.length).to be 5
+      expect(file_names).to include('export.json', 'schema.json', 'description.txt')
+      expect(file_names).to include(*expected_attachment_filenames)
+    end
+
+    it 'has sbmm samples in export.js' do
+      expect(sequence_based_macromolecule_samples.length).to be 2
+    end
+
+    it 'has sbmms with post translational and protein sequence modifications in export.js' do
+      expect(sequence_based_macromolecules.length).to be 2
+      expect(protein_sequence_modifications.length).to be 1
+      expect(post_translational_modifications.length).to be 1
+    end
+
+    it 'has analyses and attachments in export.js' do
+      expect(attachments.length).to be 2
+      expect(container.length).to be 3
+    end
+  end
+
+  context 'when device descriptions, analyses and attachments were exported to zip file' do
+    let(:collection) { create(:collection, user_id: user.id, label: 'device description test') }
+    let(:collection2) { create(:collection, user_id: user.id, label: 'device description test2') }
+    let(:device_description3) do
+      create(:device_description, collection_id: collection2.id, created_by: collection2.user_id)
+    end
+    let(:device_description1) do
+      create(
+        :device_description, collection_id: collection.id, created_by: collection.user_id,
+                             device_class: 'component', container: FactoryBot.create(:container, :with_analysis),
+                             setup_descriptions: { component: [{ device_description_id: device_description3.id }] }
+      )
+    end
+    let(:device_description2) do
+      create(:device_description, :with_ontologies, collection_id: collection.id, created_by: collection.user_id)
+    end
+    let(:attachment1) do
+      create(:attachment, :with_image, bucket: 1, created_by: user.id, attachable_id: device_description1.id)
+    end
+    let(:expected_attachment_filename) do
+      "attachments/#{attachment1.identifier}.jpg"
+    end
+
+    let(:device_descriptions) { elements_in_json['DeviceDescription'] }
+    let(:attachments) { elements_in_json['Attachment'] }
+    let(:container) { elements_in_json['Container'] }
+
+    before do
+      collection
+      collection2
+      device_description1
+      device_description1.attachments = [attachment1]
+      device_description1.save!
+      device_description2
+      device_description3
+
+      CollectionsDeviceDescription.create!(device_description: device_description1, collection: collection)
+      CollectionsDeviceDescription.create!(device_description: device_description2, collection: collection)
+      CollectionsDeviceDescription.create!(device_description: device_description3, collection: collection2)
+
+      export = Export::ExportCollections.new(job_id, [collection.id], 'zip', nested, gate)
+      export.prepare_data
+      export.to_file
+    end
+
+    it 'returns existing zip file' do
+      file_path = File.join('public', 'zip', "#{job_id}.zip")
+      expect(File.exist?(file_path)).to be_present
+    end
+
+    it 'has included files' do
+      expect(file_names.length).to be 4
+      expect(file_names).to include('export.json', 'schema.json', 'description.txt')
+      expect(file_names).to include(expected_attachment_filename)
+    end
+
+    it 'has device descriptions in export.js' do
+      expect(device_descriptions.length).to be 3
+    end
+
+    it 'has analyses and attachments in export.js' do
+      expect(attachments.length).to be 1
+      expect(container.length).to be 9
     end
   end
 

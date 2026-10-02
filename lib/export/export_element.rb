@@ -179,6 +179,8 @@ module Export
                      'sample_id' => 'Sample',
                    })
 
+        # Fetch sample containers (analyses, datasets, and attachments)
+        fetch_containers(sample)
 
         # Collect sample images
         fetch_image('samples', sample.sample_svg_file) if sample.sample_svg_file

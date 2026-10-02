@@ -59,7 +59,7 @@ describe Chemotion::LiteratureAPI do
       end
     end
 
-    context 'when fetching literature from a cell line' do
+    context 'when fetching literature from a cell line', if: API::ELEMENT_CLASS.key?('cell_line') do
       let!(:cell_line) { create(:cellline_sample, collections: [collection]) }
       let!(:cell_line_literal) do
         create(:literal,
@@ -85,7 +85,7 @@ describe Chemotion::LiteratureAPI do
   end
 
   describe 'POST /api/v1/literatures' do
-    context 'when adding literature to a cell line' do
+    context 'when adding literature to a cell line', if: API::ELEMENT_CLASS.key?('cell_line') do
       let!(:cell_line) { create(:cellline_sample, cellline_material: cellline_material, collections: [collection]) }
       let!(:params_element_id) { cell_line.id }
       let!(:element_type) { 'cell_line' }
@@ -200,7 +200,7 @@ describe Chemotion::LiteratureAPI do
   end
 
   describe 'PUT /api/v1/literatures' do
-    context 'when changing the category of the literal of a cell line' do
+    context 'when changing the category of the literal of a cell line', if: API::ELEMENT_CLASS.key?('cell_line') do
       let!(:cell_line) { create(:cellline_sample, collections: [collection]) }
       let!(:cell_line_literal) do
         create(:literal,

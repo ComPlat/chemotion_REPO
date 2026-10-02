@@ -5,39 +5,42 @@
 # Table name: reactions
 #
 #  id                     :integer          not null, primary key
-#  name                   :string
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  description            :text
-#  timestamp_start        :string
-#  timestamp_stop         :string
-#  observation            :text
-#  purification           :string           default([]), is an Array
-#  dangerous_products     :string           default([]), is an Array
-#  tlc_solvents           :string
-#  tlc_description        :text
-#  rf_value               :string
-#  temperature            :jsonb
-#  status                 :string
-#  reaction_svg_file      :string
-#  solvent                :string
-#  deleted_at             :datetime
-#  short_label            :string
-#  created_by             :integer
-#  role                   :string
-#  origin                 :jsonb
-#  rinchi_string          :text
-#  rinchi_long_key        :text
-#  rinchi_short_key       :string
-#  rinchi_web_key         :string
-#  duration               :string
-#  rxno                   :string
 #  conditions             :string
-#  variations             :jsonb
+#  created_by             :integer
+#  dangerous_products     :string           default([]), is an Array
+#  deleted_at             :datetime
+#  description            :text
+#  duration               :string
+#  gaseous                :boolean          default(FALSE)
+#  name                   :string
+#  observation            :text
+#  origin                 :jsonb
 #  plain_text_description :text
 #  plain_text_observation :text
+#  purification           :string           default([]), is an Array
+#  reaction_svg_file      :string
+#  rf_value               :string
+#  rinchi_long_key        :text
+#  rinchi_short_key       :string
+#  rinchi_string          :text
+#  rinchi_web_key         :string
+#  role                   :string
+#  rxno                   :string
+#  short_label            :string
+#  solvent                :string
+#  status                 :string
+#  temperature            :jsonb
+#  timestamp_start        :string
+#  timestamp_stop         :string
+#  tlc_description        :text
+#  tlc_solvents           :string
+#  use_reaction_volume    :boolean          default(FALSE), not null
+#  variations             :jsonb
 #  vessel_size            :jsonb
-#  gaseous                :boolean          default(FALSE)
+#  volume                 :decimal(10, 4)
+#  weight_percentage      :boolean          default(FALSE)
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
 #
 # Indexes
 #
@@ -50,6 +53,7 @@
 
 # rubocop:disable Metrics/ClassLength
 class Reaction < ApplicationRecord
+  has_logidze
   acts_as_paranoid
   include ElementUIStateScopes
   include PgSearch::Model
@@ -59,6 +63,8 @@ class Reaction < ApplicationRecord
   include ReactionRinchi
   include Labimotion::Segmentable
   include Publishing
+  include RepoReaction
+  include RepoReactionRinchi
 
   serialize :description, Hash
   serialize :observation, Hash
@@ -66,7 +72,6 @@ class Reaction < ApplicationRecord
   multisearchable against: %i[name short_label rinchi_string]
 
   attr_accessor :can_copy
-  attr_accessor :previous_version
 
   # search scopes for exact matching
   pg_search_scope :search_by_reaction_name, against: :name
@@ -74,24 +79,24 @@ class Reaction < ApplicationRecord
   pg_search_scope :search_by_reaction_rinchi_string, against: :rinchi_string
 
   pg_search_scope :search_by_sample_name, associated_against: {
-    samples: :name
+    samples: :name,
   }
 
   pg_search_scope :search_by_iupac_name, associated_against: {
-    sample_molecules: :iupac_name
+    sample_molecules: :iupac_name,
   }
 
   pg_search_scope :search_by_inchistring, associated_against: {
-    sample_molecules: :inchistring
+    sample_molecules: :inchistring,
   }
 
   pg_search_scope :search_by_cano_smiles, associated_against: {
-    sample_molecules: :cano_smiles
+    sample_molecules: :cano_smiles,
   }
 
   pg_search_scope :search_by_substring, against: :name, associated_against: {
     samples: :name,
-    sample_molecules: :iupac_name
+    sample_molecules: :iupac_name,
   }, using: { trigram: { threshold: 0.0001 } }
 
   # scopes for suggestions
@@ -106,7 +111,6 @@ class Reaction < ApplicationRecord
   scope :by_literature_ids, ->(ids) { joins(:literals).where(literals: { literature_id: ids }) }
   scope :by_status, ->(query) { where('reactions.status ILIKE ?', "%#{sanitize_sql_like(query)}%") }
   scope :search_by_reaction_status, ->(query) { where(status: query) }
-  scope :search_by_reaction_rinchi_string, ->(query) { where(rinchi_string: query) }
   scope :includes_for_list_display, -> { includes(:tag) }
 
   has_many :collections_reactions, dependent: :destroy
@@ -138,6 +142,14 @@ class Reaction < ApplicationRecord
   has_many :reactants, through: :reactions_reactant_samples, source: :sample
   has_many :reactant_molecules, through: :reactants, source: :molecule
 
+  has_many :reactions_reactant_sbmm_samples,
+           -> { order(position: :asc) },
+           inverse_of: :reaction,
+           dependent: :destroy
+  has_many :reactant_sbmm_samples,
+           through: :reactions_reactant_sbmm_samples,
+           source: :sequence_based_macromolecule_sample
+
   has_many :reactions_product_samples, -> { order(position: :asc) }, dependent: :destroy
   has_many :products, through: :reactions_product_samples, source: :sample
   has_many :product_molecules, through: :products, source: :molecule
@@ -149,22 +161,18 @@ class Reaction < ApplicationRecord
 
   has_many :private_notes, as: :noteable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
-  has_many :fundings, as: :fundable, foreign_key: :element_id, foreign_type: :element_type, dependent: :destroy
 
   belongs_to :creator, foreign_key: :created_by, class_name: 'User'
-  validates :creator, presence: true
 
   before_save :update_svg_file!
   before_save :cleanup_array_fields
   before_save :scrub
   before_save :auto_format_temperature!
+  before_save :transform_variations
   around_save :update_fields_to_plain_text, if: -> { description_changed? || observation_changed? }
   before_create :auto_set_short_label
 
-
   after_create :update_counter
-
-  before_destroy :remove_from_previous_version
 
   has_one :container, as: :containable
 
@@ -174,10 +182,6 @@ class Reaction < ApplicationRecord
 
   def analyses
     container ? container.analyses : []
-  end
-
-  def links
-    self.container ? self.container.links : []
   end
 
   def auto_format_temperature!
@@ -192,10 +196,10 @@ class Reaction < ApplicationRecord
   end
 
   def temperature_display
-    userText = temperature['userText']
+    userText = (temperature && temperature['userText']) || ''
     return userText if userText != ''
 
-    return '' if temperature['data'].empty?
+    return '' if !temperature || !temperature['data'] || temperature['data'].empty?
 
     arrayData = temperature['data']
     maxTemp = (arrayData.max_by { |x| x['value'] })['value']
@@ -203,29 +207,20 @@ class Reaction < ApplicationRecord
 
     return '' if minTemp.nil? || maxTemp.nil?
 
-    minTemp + ' ~ ' + maxTemp
+    "#{minTemp} ~ #{maxTemp}"
   end
 
   def temperature_display_with_unit
     tp = temperature_display
-    !tp.empty? ? tp + ' ' + temperature['valueUnit'] : ''
+    tp.empty? ? '' : "#{tp} #{temperature['valueUnit']}"
   end
 
   def description_contents
-    description['ops'].map { |s| s['insert'] }.join
+    description['ops'].pluck('insert').join
   end
 
   def observation_contents
-    observation['ops'].map { |s| s['insert'] }.join
-  end
-
-
-  def regenerate_svg!
-    samples&.each do |sample|
-      sample.regenerate_svg
-    end
-    svg = update_svg_file!
-    update_columns(reaction_svg_file: svg) if svg.present?
+    observation['ops'].pluck('insert').join
   end
 
   def update_svg_file!
@@ -242,17 +237,19 @@ class Reaction < ApplicationRecord
       {
         starting_materials: :reactions_starting_material_samples,
         reactants: :reactions_reactant_samples,
-        products: :reactions_product_samples
+        products: :reactions_product_samples,
       }.each do |prop, resource|
         collection = public_send(resource).includes(sample: :molecule)
         paths[prop] = collection.map do |reactions_sample|
           sample = reactions_sample.sample
-          params = [ sample.get_svg_path ]
+          params = [sample.get_svg_path]
           params[0] = sample.svg_text_path if reactions_sample.show_label
           params.append(yield_amount(sample.id)) if prop == :products
           params
         end
       end
+      # SBMM reactants are stored in a separate association, so append them explicitly.
+      paths[:reactants] += reactant_sbmm_samples.map { |sbmm_sample| [sbmm_sample.svg_text_path] }
       begin
         composer = SVG::ReactionComposer.new(paths, temperature: temperature_display_with_unit,
                                                     duration: duration,
@@ -265,8 +262,10 @@ class Reaction < ApplicationRecord
       end
     end
     if reaction_svg_file_changed? && reaction_svg_file_was.present?
-      file_was = File.join(Rails.public_path, 'images', 'reactions', reaction_svg_file_was)
-      File.delete(file_was) if Reaction.where(reaction_svg_file: reaction_svg_file_was).length < 2 && File.exist?(file_was)
+      file_was = Rails.public_path.join('images', 'reactions', reaction_svg_file_was)
+      if Reaction.where(reaction_svg_file: reaction_svg_file_was).length < 2 && File.exist?(file_was)
+        File.delete(file_was)
+      end
     end
     reaction_svg_file
   end
@@ -278,55 +277,71 @@ class Reaction < ApplicationRecord
   end
 
   def yield_amount(sample_id)
-    rps = ReactionsProductSample.find_by(reaction_id: id, sample_id: sample_id)
-    (rps.equivalent.nil? || rps.equivalent.zero?) ? rps.scheme_yield : rps.equivalent
+    ReactionsProductSample.find_by(reaction_id: id, sample_id: sample_id).try(:equivalent)
   end
 
   def solvents_in_svg
     names = solvents.map(&:preferred_label)
-    names && !names.empty? ? names : [solvent]
+    names.presence || [solvent]
   end
 
   def cleanup_array_fields
-    self.dangerous_products = dangerous_products.reject(&:blank?)
-    self.purification = purification.reject(&:blank?)
+    self.dangerous_products = dangerous_products.compact_blank
+    self.purification = purification.compact_blank
   end
 
   def auto_set_short_label
-    unless self.previous_version.present?
-      prefix = creator.reaction_name_prefix
-      counter = creator.counters['reactions'].succ
-      self.short_label = "#{creator.initials}-#{prefix}#{counter}"
-    else
-      self.short_label = get_new_version_short_label
-    end
+    return if short_label.present?
+
+    prefix = creator.reaction_name_prefix
+    counter = creator.counters['reactions'].succ
+    self.short_label = "#{creator.initials}-#{prefix}#{counter}"
   end
 
   def update_counter
     creator.increment_counter 'reactions'
   end
 
-  def remove_from_previous_version
-    previous_version = self.tag&.taggable_data['previous_version']
-      if previous_version
-        previous_element = Reaction.find_by(id: previous_version['id'])
-        previous_element.untag_as_previous_version
-      end
+  def scrub
+    return if temperature&.fetch('userText', nil).blank?
+
+    self.temperature = temperature.merge('userText' => scrubber(temperature['userText']))
+
+    # Conditions are not scrubbed: plain text may contain "<" or ">" (e.g. "pH < 7");
+    # scrub_xml would strip them. Conditions are escaped at display time.
   end
 
-  def scrub
-    if temperature&.fetch('userText', nil).present?
-      self.temperature = temperature.merge('userText' => scrubber(temperature['userText']))
-    end
-    if conditions.present?
-      self.conditions = scrubber(conditions)
-    end
+  def variations
+    # We need to return raw.values because the frontend expects the variations to be an array of objects.
+    raw = self[:variations]
+    raw.is_a?(Hash) ? raw.values : raw
+  end
+
+  def assign_attachment_to_variation(variation_id, analysis_id)
+    return if variation_id.blank?
+
+    variation = variations.find { |v| v['id'].to_s == variation_id.to_s }
+    return unless variation
+
+    variation['metadata'] ||= {}
+    variation['metadata']['analyses'] ||= []
+    variation['metadata']['analyses'] << analysis_id
+    update(variations: variations)
   end
 
   private
 
   def scrubber(value)
     Chemotion::Sanitizer.scrub_xml(value)
+  end
+
+  def transform_variations
+    return unless variations.is_a?(Array)
+
+    self.variations = variations.each_with_object({}) do |item, hash|
+      item['uuid'] = SecureRandom.uuid if item['uuid'].blank?
+      hash[item['uuid']] = item
+    end
   end
 
   def update_fields_to_plain_text
@@ -351,5 +366,11 @@ class Reaction < ApplicationRecord
   # rubocop:enable Rails/SkipsModelValidations
 
   handle_asynchronously :update_to_plain_text, queue: 'plain_text_reaction'
+
+  def full_svg_path(svg_file_name = reaction_svg_file)
+    return unless svg_file_name
+
+    Rails.public_path.join('images/reactions', svg_file_name)
+  end
 end
 # rubocop:enable Metrics/ClassLength

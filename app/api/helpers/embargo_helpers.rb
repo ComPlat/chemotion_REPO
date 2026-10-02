@@ -22,8 +22,10 @@ module EmbargoHelpers
       cols = if current_user.type == 'Anonymous'
               Collection.where(id: current_user.sync_in_collections_users.pluck(:collection_id)).where.not(label: 'chemotion')
             else
+              pe_col = current_user.publication_embargo_collection
+              pe_child_ids = pe_col ? pe_col.children.pluck(:id) : []
               ext_col_ids = ext_embargo_list(current_user.id) || []
-              Collection.where(ancestry: current_user.publication_embargo_collection.id).or(Collection.where(id: ext_col_ids))
+              Collection.where(id: pe_child_ids + ext_col_ids)
             end
       es = Publication.where(element_type: 'Collection', element_id: cols.pluck(:id)).order(Arel.sql("taggable_data->>'label' ASC")) unless cols&.empty?
     end
@@ -49,8 +51,8 @@ module EmbargoHelpers
   end
 
   def embargo_list(embargo_collection, current_user)
-    sample_list = Publication.where(ancestry: nil, element: embargo_collection.samples).order(updated_at: :desc)
-    reaction_list = Publication.where(ancestry: nil, element: embargo_collection.reactions).order(updated_at: :desc)
+    sample_list = Publication.where(ancestry: '/', element: embargo_collection.samples).order(updated_at: :desc)
+    reaction_list = Publication.where(ancestry: '/', element: embargo_collection.reactions).order(updated_at: :desc)
     list = sample_list + reaction_list
     elements = []
     list.each do |e|

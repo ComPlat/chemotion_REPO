@@ -79,6 +79,7 @@ module ReportHelpers
       selection = r_ids
     end
     return '' if selection.empty?
+
     <<~SQL
       select json_object_agg(r_id, smiles_json) as result from (
       select r_id, json_object_agg(stype, smiles_arr) as smiles_json from (
@@ -127,6 +128,48 @@ module ReportHelpers
         -- molecules
         inner join molecules m on s.molecule_id = m.id
         where rsm.reaction_id in (#{selection})
+
+        union all
+
+        select s_id
+        , ('Enzyme' || row_number() over (
+          partition by rrss.reaction_id
+          order by coalesce(rrss.position, 999999), rrss.id
+        )) as smiles
+        , 1 as s_type
+        , rrss.reaction_id as r_id
+        from (
+          select sbms.id as s_id
+          , bool_and(co.is_shared) as shared_sync
+          , max(GREATEST(co.permission_level, scu.permission_level)) as pl
+          , max(
+            GREATEST(
+              co.sequencebasedmacromoleculesample_detail_level,
+              scu.sequencebasedmacromoleculesample_detail_level
+            )
+          ) dl_s
+          from sequence_based_macromolecule_samples sbms
+          inner join collections_sequence_based_macromolecule_samples c_sbms on (
+            sbms.id = c_sbms.sequence_based_macromolecule_sample_id and c_sbms.deleted_at is null
+          )
+          left join collections co on (
+            co.id = c_sbms.collection_id and co.user_id in (#{u_ids})
+          )
+          left join collections sco on (
+            sco.id = c_sbms.collection_id and sco.user_id not in (#{u_ids})
+          )
+          left join sync_collections_users scu on (
+            sco.id = scu.collection_id and scu.user_id in (#{u_ids})
+          )
+          where sbms.deleted_at isnull and c_sbms.deleted_at isnull
+            and (co.id is not null or scu.id is not null)
+          group by s_id
+        ) as s_sbmm
+        inner join reactions_reactant_sbmm_samples rrss on (
+          rrss.sequence_based_macromolecule_sample_id = s_sbmm.s_id and rrss.deleted_at isnull
+        )
+        inner join sequence_based_macromolecule_samples sbms on sbms.id = s_sbmm.s_id
+        where rrss.reaction_id in (#{selection})
         ) group_1
         group by r_id, s_type
       ) group_0 group by r_id order by #{order}
@@ -139,46 +182,80 @@ module ReportHelpers
     (v['0'] || []).join('.') + '>>' + (v['3'] || []).join('.')
   end
 
+  # Split reactants into regular entries and EnzymeN labels.
+  # Enzyme labels are extracted even if they are wrapped with separators.
+  def split_reactants(reactants)
+    common_reactants = []
+    enzyme_labels = []
+
+    Array(reactants).each do |item|
+      token = item.to_s
+      normalized = token.gsub(/\s+/, '')
+      extracted_enzymes = token.scan(/Enzyme\d+/i).map { |label| "Enzyme#{label[/\d+/]}" }
+      remaining = normalized.gsub(/Enzyme\d+/i, '')
+
+      if extracted_enzymes.any? && remaining.match?(/\A[.,;:|><]*\z/)
+        enzyme_labels.concat(extracted_enzymes)
+      else
+        common_reactants << token
+      end
+    end
+
+    [common_reactants, enzyme_labels]
+  end
+
+  # Keep enzyme labels in numeric order (Enzyme1, Enzyme2, ...).
+  def sorted_enzymes(enzymes)
+    enzymes.sort_by { |item| item.to_s.delete_prefix('Enzyme').to_i }
+  end
+
+  # Return a single reactant array where enzymes are normalized and appended.
+  def formatted_reactants(reactants)
+    common_reactants, enzymes = split_reactants(reactants)
+    common_reactants + sorted_enzymes(enzymes)
+  end
+
   # desc: SM.R>>P
   def r_smiles_1(v)
-    ((v['0'] || []) + (v['1'] || [])).join('.') \
+    ((v['0'] || []) + formatted_reactants(v['1'])).join('.') \
     + '>>' + (v['3'] || []).join('.')
   end
 
   # desc: SM.R.S>>P
   def r_smiles_2(v)
-    ((v['0'] || []) + (v['1'] || []) + (v['2'] || [])).join('.') \
+    ((v['0'] || []) + formatted_reactants(v['1']) + (v['2'] || [])).join('.') \
     + '>>' + (v['3'] || []).join('.')
   end
 
   # desc: SM>R>P
   def r_smiles_3(v)
     (v['0'] || []).join('.') + '>' \
-    + (v['1'] || []).join('.') + '>' \
+    + formatted_reactants(v['1']).join('.') + '>' \
     + (v['3'] || []).join('.')
   end
 
   # desc: SM>R.S>P
   def r_smiles_4(v)
     (v['0'] || []).join('.') + '>' \
-    + ((v['1'] || []) + (v['2'] || [])).join('.') + '>' \
+    + (formatted_reactants(v['1']) + (v['2'] || [])).join('.') + '>' \
     + (v['3'] || []).join('.')
   end
 
   # desc: SM>R>S>P
   def r_smiles_5(v)
-    (v['0'] || []).join('.') + '>' + (v['1'] || []).join('.') \
+    (v['0'] || []).join('.') + '>' + formatted_reactants(v['1']).join('.') \
     + '>' + (v['2'] || []).join('.') + '>' + (v['3'] || []).join('.')
   end
 
   # desc: SM , R , S ,P
   def r_smiles_6(v)
-    (v['0'] || []).join('.') + ' , ' + (v['1'] || []).join('.') + ' , ' \
+    (v['0'] || []).join('.') + ' , ' + formatted_reactants(v['1']).join('.') + ' , ' \
     + (v['2'] || []).join('.') + ' , ' + (v['3'] || []).join('.')
   end
 
   def build_sql(table, columns, c_id, ids, checkedAll = false)
     return unless %i[sample reaction wellplate].include?(table)
+
     send("build_sql_#{table}_sample", columns, c_id, ids, checkedAll)
   end
 
@@ -196,12 +273,15 @@ module ReportHelpers
   def generate_sheet(table, result, columns_params, export, type)
     case type
     when :analyses
-      sheet_name = "#{table}_analyses".to_sym
+      sheet_name = :"#{table}_analyses"
       export.generate_analyses_sheet_with_samples(sheet_name, result, columns_params)
     when :chemicals
       sheet_name = "#{table}_chemicals"
       format_result = Export::ExportChemicals.format_chemical_results(result)
       export.generate_sheet_with_samples(sheet_name, format_result, columns_params)
+    when :components
+      sheet_name = :"#{table}_components"
+      export.generate_components_sheet_with_samples(sheet_name, result, columns_params)
     else
       export.generate_sheet_with_samples(table, result)
     end
@@ -212,7 +292,7 @@ module ReportHelpers
     filter_parameter = if tables.include?(table) && type.nil?
                          table
                        else
-                         "#{table}_#{type}".to_sym
+                         :"#{table}_#{type}"
                        end
     type ||= :sample
     filter_selections = filter_column_selection(filter_parameter)
@@ -273,14 +353,14 @@ module ReportHelpers
 
       collection_join = " inner join collections_samples c_s on s_id = c_s.sample_id and c_s.deleted_at is null and c_s.collection_id = #{c_id} "
       order = 's_id asc'
-      selection = s_ids.empty? && '' || "s.id not in (#{s_ids}) and"
+      selection = (s_ids.empty? && '') || "s.id not in (#{s_ids}) and"
     else
       order = "position(','||s_id::text||',' in '(,#{s_ids},)')"
       selection = "s.id in (#{s_ids}) and"
     end
 
-    rest_of_selections = if columns[0].is_a?(Array)
-                           columns[0][0]
+    rest_of_selections = if columns.is_a?(Array)
+                           columns.join(', ')
                          else
                            columns
                          end
@@ -291,41 +371,125 @@ module ReportHelpers
       s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
       , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
+      , cl.id as "sample uuid"
       , #{rest_of_selections}
-      , ets.taggable_data#>>'{publication,doi}' as "doi"
-      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
       from (#{s_subquery}) as s_dl
       inner join samples s on s_dl.s_id = s.id #{collection_join}
       left join molecules m on s.molecule_id = m.id
       left join molecule_names mn on s.molecule_name_id = mn.id
       left join residues res on res.sample_id = s.id
-      left join element_tags ets on ets.taggable_type = 'Sample' and ets.taggable_id = s.id
+      left join code_logs cl on cl.source = 'sample' and cl.source_id = s.id
       order by #{order}
     SQL
   end
 
-  def chemical_query(chemical_columns, sample_ids)
-    individual_queries = sample_ids.map do |s_id|
-      <<~SQL.squish
-        SELECT #{s_id} AS chemical_sample_id, #{chemical_columns}
-        FROM chemicals c
-        WHERE c.sample_id = #{s_id}
-      SQL
+  def chemical_query(chemical_columns, c_id, ids, checked_all)
+    s_ids = [ids].flatten.join(',')
+    return '' if !checked_all && s_ids.empty?
+
+    if checked_all
+      return '' unless c_id
+
+      collection_condition = "INNER JOIN collections_samples cs ON c.sample_id = cs.sample_id AND cs.deleted_at IS NULL AND cs.collection_id = #{c_id}"
+      order = 'c.sample_id ASC'
+      selection = if s_ids.empty?
+                    ''
+                  else
+                    "AND c.sample_id NOT IN (#{s_ids})"
+                  end
+    else
+      collection_condition = ''
+      order = "position(','||c.sample_id::text||',' in '(,#{s_ids},)')"
+      selection = "AND c.sample_id IN (#{s_ids})"
     end
-    individual_queries.join(' UNION ALL ')
+
+    <<~SQL.squish
+      SELECT c.sample_id AS chemical_sample_id, #{chemical_columns}
+      FROM chemicals c
+      #{collection_condition}
+      WHERE c.deleted_at IS NULL #{selection}
+      ORDER BY #{order}
+    SQL
   end
 
   def build_sql_sample_chemicals(columns, c_id, ids, checked_all)
-    sample_query = build_sql_sample_sample(columns[0].join(','), c_id, ids, checked_all)
+    sample_query = build_sql_sample_sample(columns[0], c_id, ids, checked_all)
     return nil if sample_query.blank?
 
-    chemical_query = chemical_query(columns[1].join(','), ids)
+    chemical_query_sql = chemical_query(columns[1].join(','), c_id, ids, checked_all)
+    return sample_query if chemical_query_sql.blank?
+
     <<~SQL.squish
-      SELECT *
+      SELECT sample_results.*, chemical_results.*
       FROM (#{sample_query}) AS sample_results
-      JOIN (#{chemical_query}) AS chemical_results
+      LEFT JOIN (#{chemical_query_sql}) AS chemical_results
       ON sample_results.s_id = chemical_results.chemical_sample_id
     SQL
+  end
+
+  def build_sql_sample_components(columns, c_id, ids, checked_all)
+    return if columns.blank? || columns[0].blank? || columns[1].blank?
+
+    u_ids = [user_ids].flatten.join(',')
+    return if u_ids.empty?
+
+    # Use sample columns directly
+    sample_sql = build_sample_columns(columns[0])
+
+    # Use component columns directly
+    component_columns = columns[1].join(', ')
+
+    # Check if we need molecule properties
+    needs_molecule_join = component_columns.include?('m.')
+
+    if checked_all
+      return unless c_id
+
+      # For "All pages" - get all samples from the collection except excluded ones
+      excluded_ids = [ids].flatten.join(',')
+      collection_condition = "INNER JOIN collections_samples cs ON s.id = cs.sample_id AND cs.deleted_at IS NULL AND cs.collection_id = #{c_id}"
+      where_condition = excluded_ids.empty? ? '' : "AND s.id NOT IN (#{excluded_ids})"
+      order_clause = 's.id ASC'
+    else
+      # For specific sample selection
+      sample_ids = [ids].flatten.join(',')
+      return if sample_ids.empty?
+
+      collection_condition = ''
+      where_condition = "AND s.id IN (#{sample_ids})"
+      order_clause = "position(','||s.id::text||',' in '(,#{sample_ids},)')"
+    end
+
+    <<~SQL.squish
+      SELECT
+        #{sample_sql},
+        cl.id as "sample uuid",
+        COALESCE(components.components, '[]') AS components
+      FROM samples s
+      #{collection_condition}
+      LEFT JOIN molecules m on s.molecule_id = m.id
+      LEFT JOIN molecule_names mn on s.molecule_name_id = mn.id
+      LEFT JOIN residues res on res.sample_id = s.id
+      LEFT JOIN code_logs cl on cl.source = 'sample' and cl.source_id = s.id
+      LEFT JOIN LATERAL (
+        SELECT json_agg(row_to_json(component_row)) AS components
+        FROM (
+          SELECT
+            #{component_columns}
+          FROM components comp
+          #{needs_molecule_join ? "LEFT JOIN molecules m ON m.id = (comp.component_properties->>'molecule_id')::integer" : ''}
+          WHERE comp.sample_id = s.id
+          ORDER BY comp.position
+        ) AS component_row
+      ) AS components ON TRUE
+      WHERE s.deleted_at IS NULL #{where_condition}
+      ORDER BY #{order_clause}
+    SQL
+  end
+
+  def build_sample_columns(columns)
+    columns.unshift('s.id as "id"') unless columns.any? { |col| col.include?('id as') }
+    columns.join(', ')
   end
 
   def build_sql_sample_analyses(columns, c_id, ids, checkedAll = false)
@@ -338,9 +502,10 @@ module ReportHelpers
     cont_type = 'Sample' # containable_type
     if checkedAll
       return unless c_id
+
       collection_join = " inner join collections_samples c_s on s_id = c_s.sample_id and c_s.deleted_at is null and c_s.collection_id = #{c_id} "
       order = 's_id asc'
-      selection = s_ids.empty? && '' || "s.id not in (#{s_ids}) and"
+      selection = (s_ids.empty? && '') || "s.id not in (#{s_ids}) and"
     else
       order = "position(','||s_id::text||',' in '(,#{s_ids},)')"
       selection = "s.id in (#{s_ids}) and"
@@ -351,6 +516,7 @@ module ReportHelpers
       select
       s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
       , #{columns}
+      , cl.id as "sample uuid"
       , (select array_to_json(array_agg(row_to_json(analysis)))
         from (
         select  anac."name", anac.description
@@ -358,7 +524,6 @@ module ReportHelpers
         , anac.extended_metadata->'content' as "content"
         , anac.extended_metadata->'status' as "status"
         , clg.id as uuid
-        , ets.taggable_data#>>'{publication,analysis_doi}' as "doi"
         , (select array_to_json(array_agg(row_to_json(dataset)))
           from (
           select  datc."name" as "dataset name"
@@ -380,12 +545,12 @@ module ReportHelpers
         inner join container_hierarchies ch on cont.id = ch.ancestor_id and ch.generations = 2
         inner join containers anac on anac.id = ch.descendant_id
         left join code_logs clg on clg."source" = 'container' and clg.source_id = anac.id
-        left join element_tags ets on ets.taggable_type = 'Container' and ets.taggable_id = anac.id
         where cont.containable_type = '#{cont_type}' and cont.containable_id = #{t}.id
         ) analysis
       ) as analyses
       from (#{s_subquery}) as s_dl
       inner join samples s on s_dl.s_id = s.id #{collection_join}
+      left join code_logs cl on cl.source = 'sample' and cl.source_id = s.id
       order by #{order};
     SQL
   end
@@ -415,9 +580,10 @@ module ReportHelpers
 
     if checkedAll
       return unless c_id
+
       collection_join = " inner join collections_samples c_s on s_id = c_s.sample_id and c_s.deleted_at is null and c_s.collection_id = #{c_id} "
       order = 'wp_id asc'
-      selection = wp_ids.empty? && '' || "w.wellplate_id not in (#{wp_ids}) and"
+      selection = (wp_ids.empty? && '') || "w.wellplate_id not in (#{wp_ids}) and"
     else
       order = "position(','||wp_id::text||',' in '(,#{wp_ids},)')"
       selection = "w.wellplate_id in (#{wp_ids}) and"
@@ -429,6 +595,7 @@ module ReportHelpers
       , dl_wp
       , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
+      , cl.id as "sample uuid"
       , #{columns}
       from (
         select
@@ -459,6 +626,7 @@ module ReportHelpers
       left join molecules m on s.molecule_id = m.id
       left join molecule_names mn on s.molecule_name_id = mn.id
       left join residues res on res.sample_id = s.id
+      left join code_logs cl on cl.source = 'sample' and cl.source_id = s.id
       order by #{order}, "wy" asc,"wx" asc;
     SQL
   end
@@ -471,35 +639,46 @@ module ReportHelpers
 
     if checkedAll
       return unless c_id
-      collection_join = " inner join collections_samples c_s on s_id = c_s.sample_id and c_s.deleted_at is null and c_s.collection_id = #{c_id} "
-      order = 'r_id asc'
-      selection = r_ids.empty? && '' || "r_s.reaction_id not in (#{r_ids}) and"
+
+      order = 'r_s.reaction_id asc'
+      selection = (r_ids.empty? && '') || "r_s.reaction_id not in (#{r_ids}) and"
+      reaction_filter = (r_ids.empty? && '') || "and reaction_id not in (#{r_ids})"
+      collection_join = <<~SQL.squish
+        left join collections_samples c_s on (
+          s.source_type = 'sample' and s.id = c_s.sample_id and c_s.deleted_at is null and c_s.collection_id = #{c_id}
+        )
+        left join collections_sequence_based_macromolecule_samples c_sbms on (
+          s.source_type = 'sbmm' and s.id = c_sbms.sequence_based_macromolecule_sample_id
+          and c_sbms.deleted_at is null and c_sbms.collection_id = #{c_id}
+        )
+      SQL
+      collection_filter = 'where c_s.id is not null or c_sbms.id is not null'
     else
-      order = "position(','||r_id::text||',' in '(,#{r_ids},)')"
+      order = "position(','||r_s.reaction_id::text||',' in '(,#{r_ids},)')"
       selection = "r_s.reaction_id in (#{r_ids}) and"
+      reaction_filter = "and reaction_id in (#{r_ids})"
+      collection_join = ''
+      collection_filter = ''
     end
 
     <<~SQL
       select
-      s_id, ts, co_id, scu_id, shared_sync, pl, dl_s
-      , dl_r
+      s_dl.s_id, s_dl.ts, s_dl.co_id, s_dl.scu_id, s_dl.shared_sync, s_dl.pl, s_dl.dl_s, s_dl.dl_r
+      , s.source_type
       , res.residue_type, s.molfile_version, s.decoupled, s.molecular_mass as "molecular mass (decoupled)", s.sum_formula as "sum formula (decoupled)"
       , s.stereo->>'abs' as "stereo_abs", s.stereo->>'rel' as "stereo_rel"
-      -- , r_s.type as "type"
-      -- , r_s.position
+      , cl.id as "sample uuid"
       , #{columns}
       , case
         when r_s.type = 'ReactionsStartingMaterialSample' then '1 starting mat'
         when r_s.type = 'ReactionsReactantSample' then '2 reactant'
+        when r_s.type = 'ReactionsReactantSbmmSample' then '2 reactant'
         when r_s.type = 'ReactionsSolventSample' then '3 solvent'
         when r_s.type = 'ReactionsProductSample' then '4 product' end as "type"
-      , ets.taggable_data#>>'{publication,doi}' as "doi"
-      , 'https://dx.doi.org/' || (ets.taggable_data#>>'{publication,doi}') as "url"
-      , etr.taggable_data#>>'{publication,doi}' as "r doi"
-      , 'https://dx.doi.org/' || (etr.taggable_data#>>'{publication,doi}') as "r url"
       from (
         select
           s.id as s_id
+          , 'sample'::text as source_type
           , s.is_top_secret as ts
           , min(co.id) as co_id
           , min(scu.id) as scu_id
@@ -507,9 +686,8 @@ module ReportHelpers
           , max(GREATEST(co.permission_level, scu.permission_level)) as pl
           , max(GREATEST(co.sample_detail_level,scu.sample_detail_level)) dl_s
           , max(GREATEST(co.reaction_detail_level,scu.reaction_detail_level)) dl_r
-          , (array_agg(r_s.reaction_id)) [1] as r_id
         from samples s
-        inner join reactions_samples r_s on s.id = r_s.sample_id
+        inner join reactions_samples r_s on s.id = r_s.sample_id and r_s.deleted_at is null
         inner join collections_samples c_s on s.id = c_s.sample_id and c_s.deleted_at is null
         left join collections co on (co.id = c_s.collection_id and co.user_id in (#{u_ids}))
         left join collections sco on (sco.id = c_s.collection_id and sco.user_id not in (#{u_ids}))
@@ -517,20 +695,160 @@ module ReportHelpers
         where #{selection} s.deleted_at isnull and c_s.deleted_at isnull
           and (co.id is not null or scu.id is not null)
         group by s_id
+        union all
+        select
+          sbms.id as s_id
+          , 'sbmm'::text as source_type
+          , false as ts
+          , min(co.id) as co_id
+          , min(scu.id) as scu_id
+          , bool_and(co.is_shared) as shared_sync
+          , max(GREATEST(co.permission_level, scu.permission_level)) as pl
+          , max(
+            GREATEST(
+              co.sequencebasedmacromoleculesample_detail_level,
+              scu.sequencebasedmacromoleculesample_detail_level
+            )
+          ) as dl_s
+          , max(GREATEST(co.reaction_detail_level, scu.reaction_detail_level)) as dl_r
+        from sequence_based_macromolecule_samples sbms
+        inner join reactions_reactant_sbmm_samples r_s on (
+          sbms.id = r_s.sequence_based_macromolecule_sample_id and r_s.deleted_at is null
+        )
+        inner join collections_sequence_based_macromolecule_samples c_sbms on (
+          sbms.id = c_sbms.sequence_based_macromolecule_sample_id and c_sbms.deleted_at is null
+        )
+        left join collections co on (co.id = c_sbms.collection_id and co.user_id in (#{u_ids}))
+        left join collections sco on (sco.id = c_sbms.collection_id and sco.user_id not in (#{u_ids}))
+        left join sync_collections_users scu on (sco.id = scu.collection_id and scu.user_id in (#{u_ids}))
+        where #{selection} sbms.deleted_at isnull and c_sbms.deleted_at isnull
+          and (co.id is not null or scu.id is not null)
+        group by s_id
       ) as s_dl
-      inner join samples s on s_dl.s_id = s.id #{collection_join}
-      inner join reactions_samples r_s on s.id = r_s.sample_id
+      inner join (
+        select
+          s.id::bigint as id
+          , 'sample'::text as source_type
+          , s.is_top_secret
+          , s.external_label
+          , s.name
+          , s.target_amount_value
+          , s.target_amount_unit
+          , s.real_amount_value
+          , s.real_amount_unit
+          , s.description
+          , s.molfile
+          , s.purity
+          , s.solvent
+          , s.location
+          , s.short_label
+          , s.imported_readout
+          , s.sample_svg_file
+          , s.identifier
+          , s.density
+          , s.melting_point
+          , s.boiling_point
+          , s.created_at
+          , s.updated_at
+          , s.molecule_id
+          , s.molecule_name_id
+          , s.molarity_value
+          , s.molarity_unit
+          , s.dry_solvent
+          , s.xref
+          , s.decoupled
+          , s.molecular_mass
+          , s.sum_formula
+          , s.molfile_version
+          , s.stereo
+          , s.sample_type
+        from samples s
+        union all
+        select
+          sbms.id as id
+          , 'sbmm'::text as source_type
+          , false as is_top_secret
+          , sbms.external_label
+          , sbms.name
+          , null::float as target_amount_value
+          , null::varchar as target_amount_unit
+          , null::float as real_amount_value
+          , null::varchar as real_amount_unit
+          , null::text as description
+          , null::bytea as molfile
+          , sbms.purity
+          , null::jsonb as solvent
+          , null::varchar as location
+          , sbms.short_label
+          , null::varchar as imported_readout
+          , null::varchar as sample_svg_file
+          , null::varchar as identifier
+          , null::float as density
+          , null::numrange as melting_point
+          , null::numrange as boiling_point
+          , sbms.created_at
+          , sbms.updated_at
+          , null::integer as molecule_id
+          , null::integer as molecule_name_id
+          , sbms.molarity_value
+          , sbms.molarity_unit
+          , false as dry_solvent
+          , '{}'::jsonb as xref
+          , false as decoupled
+          , null::float as molecular_mass
+          , null::varchar as sum_formula
+          , null::varchar as molfile_version
+          , null::jsonb as stereo
+          , 'SequenceBasedMacromolecule'::varchar as sample_type
+        from sequence_based_macromolecule_samples sbms
+      ) as s on s_dl.s_id = s.id and s_dl.source_type = s.source_type
+      inner join (
+        select
+          r_s.sample_id::bigint as s_id
+          , 'sample'::text as source_type
+          , r_s.reaction_id
+          , r_s.reference
+          , r_s.equivalent
+          , r_s.conversion_rate
+          , r_s.position
+          , r_s.type
+        from reactions_samples r_s
+        where r_s.deleted_at isnull #{reaction_filter}
+        union all
+        select
+          r_s.sequence_based_macromolecule_sample_id as s_id
+          , 'sbmm'::text as source_type
+          , r_s.reaction_id
+          , r_s.reference
+          , r_s.equivalent
+          , null::float as conversion_rate
+          , r_s.position
+          , 'ReactionsReactantSbmmSample'::varchar as type
+        from reactions_reactant_sbmm_samples r_s
+        left join sequence_based_macromolecule_samples sbms on (
+          sbms.id = r_s.sequence_based_macromolecule_sample_id
+        )
+        where r_s.deleted_at isnull #{reaction_filter}
+      ) as r_s on s.id = r_s.s_id and s.source_type = r_s.source_type
       inner join reactions r on r_s.reaction_id = r.id
+      #{collection_join}
       left join molecules m on s.molecule_id = m.id
       left join molecule_names mn on s.molecule_name_id = mn.id
-      left join residues res on res.sample_id = s.id
-      left join element_tags ets on ets.taggable_type = 'Sample' and ets.taggable_id = s.id
-      left join element_tags etr on etr.taggable_type = 'Reaction' and etr.taggable_id = r.id
+      left join residues res on s.source_type = 'sample' and res.sample_id = s.id
+      left join code_logs cl on (
+        (s.source_type = 'sample' and cl.source = 'sample' and cl.source_id = s.id)
+        or (
+          s.source_type = 'sbmm'
+          and cl.source = 'sequence_based_macromolecule_sample'
+          and cl.source_id = s.id
+        )
+      )
+      #{collection_filter}
       order by #{order}, "type" asc, r_s.position asc;
     SQL
   end
 
-  # desc: returns hash of alllowed tables and associated columns
+  # desc: returns hash of allowed tables and associated columns
   # to be queried for export.
   # { table_name:
   #     column_name: ['abbr.column_name', 'alt column_name', min_detail_level]
@@ -567,12 +885,20 @@ module ReportHelpers
         # deleted_at: ['wp.deleted_at', nil, 10],
         molecule_name: ['mn."name"', '"molecule name"', 1],
         molarity_value: ['s."molarity_value"', '"molarity_value"', 0],
+        molarity_unit: ['s."molarity_unit"', '"molarity_unit"', 0],
         dry_solvent: ['s."dry_solvent"', '"dry_solvent"', 0],
+        flash_point: ['s."flash_point"', '"flash point"', 0],
+        refractive_index: ['s."refractive_index"', '"refractive index"', 0],
+        inventory_label: ['s."inventory_label"', '"inventory label"', 0],
+        solubility: ['s."solubility"', '"solubility"', 0],
+        color: ['s."color"', '"color"', 0],
+        form: ['s."form"', '"form"', 0],
       },
       sample_id: {
         external_label: ['s.external_label', '"sample external label"', 0],
         name: ['s."name"', '"sample name"', 0],
         short_label: ['s.short_label', '"short label"', 0],
+        sample_type: ['s."sample_type"', '"sample type"', 0],
         # molecule_name: ['mn."name"', '"molecule name"', 1]
       },
       molecule: {
@@ -646,14 +972,25 @@ module ReportHelpers
     }.freeze
 
   def custom_column_query(table, col, selection, user_id, attrs)
-    if col == 'user_labels'
-      selection << "labels_by_user_sample(#{user_id}, s_id) as user_labels"
-    elsif col == 'literature'
-      selection << "literatures_by_element('Sample', s_id) as literatures"
-    elsif col == 'cas'
-      selection << "s.xref->>'cas' as cas"
+    column_map = {
+      # Use samples table alias `s.id` for functions that operate on sample IDs.
+      # This works across all export queries, including components exports
+      # where `s_id` is not selected.
+      'user_labels' => "labels_by_user_sample(#{user_id}, s.id) as user_labels",
+      'literature' => "literatures_by_element('Sample', s.id) as literatures",
+      'cas' => "s.xref->>'cas' as cas",
+      'inventory_label' => "s.xref->>'inventory_label' as \"inventory label\"",
+      'refractive_index' => "s.xref->>'refractive_index' as refractive_index",
+      'flash_point' => "s.xref->>'flash_point' as flash_point",
+      'solubility' => "s.xref->>'solubility' as solubility",
+      'color' => "s.xref->>'color' as color",
+      'form' => "s.xref->>'form' as form",
+    }
+
+    if column_map[col]
+      selection << column_map[col]
     elsif (s = attrs[table][col.to_sym])
-      selection << ("#{s[1] && s[0]} as #{s[1] || s[0]}")
+      selection << "#{s[1] && s[0]} as #{s[1] || s[0]}"
     end
   end
 
@@ -664,11 +1001,14 @@ module ReportHelpers
         custom_column_query(table, col, selection, user_id, attrs)
       end
     end
-    selection = if sel[:chemicals].present?
-                  Export::ExportChemicals.build_chemical_column_query(selection, sel)
-                else
-                  selection.join(',')
-                end
+
+    selection = Export::ExportChemicals.build_chemical_column_query(selection, sel) if sel[:chemicals].present?
+
+    if sel[:components].present?
+      return Export::ExportComponents.build_component_column_query(selection, sel)
+    end
+
+    sel[:chemicals].present? ? selection : selection.join(',')
   end
 
   def filter_column_selection(table, columns = params[:columns])
@@ -687,6 +1027,8 @@ module ReportHelpers
     #  columns.slice(:analysis).merge(reaction_id: params[:columns][:reaction])
     when :sample_chemicals
       columns.slice(:chemicals, :sample, :molecule)
+    when :sample_components
+      columns.slice(:components, :sample, :molecule)
     else
       {}
     end
@@ -694,9 +1036,9 @@ module ReportHelpers
 
   def force_molfile_selection
     sample_params = params[:columns][:sample]
-    if !sample_params || !sample_params.include?(:molfile)
-      params[:columns][:sample] = (sample_params || []) + [:molfile]
-    end
+    return unless sample_params.nil? || sample_params.exclude?(:molfile)
+
+    params[:columns][:sample] = (sample_params || []) + [:molfile]
   end
 
   DEFAULT_COLUMNS_WELLPLATE = {

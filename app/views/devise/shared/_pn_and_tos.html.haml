@@ -1,8 +1,0 @@
-.panel.panel-primary
-  .panel-heading
-    %fieldset
-      %input{ type:"checkbox", required: true}
-      %label I have read and I accept the directive to use the service
-  .panel-body{style: 'height: 300px; overflow-y: scroll; '}
-    :plain
-      #{File.read(Rails.public_path.join('directives', 'directives.html')).html_safe}

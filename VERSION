@@ -1,6 +1,6 @@
-version: v2.6.0
-base_revision: 670ec7e682937aafda1ca949cfb251cde71d3918
-current_revision: 670ec7e682937aafda1ca949cfb251cde71d3918
-eln_version: v1.10.5
-labimotion_version: v1.4.1
-spectra_version: v1.2.7
+version: v3.0.0
+base_revision: e6ea2a9393b3a12b0bf613495642f8178de39428
+current_revision: e6ea2a9393b3a12b0bf613495642f8178de39428
+eln_version: v3.1.2
+labimotion_version: v2.1.1
+spectra_version: v1.7.1

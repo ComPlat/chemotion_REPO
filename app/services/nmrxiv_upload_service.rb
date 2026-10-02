@@ -139,7 +139,13 @@ class NmrxivUploadService
 
   def handle_nmrxiv_response(response)
     if response.success?
-      response_body = response.body || {}
+      raw_body = response.body || '{}'
+      response_body = if raw_body.is_a?(Hash)
+                        raw_body
+                      else
+                        JSON.parse(raw_body)
+                      end
+      nmrxiv_logger.info("Response from NMRXiv - Status: #{response.status}, Body: #{response_body.inspect}")
       nmrxiv_logger.info("[API_SUCCESS] NMRXiv API response successful - Status: #{response.status}, ID: #{response_body.dig('id')}, Status: #{response_body.dig('status')}")
       nmrxiv_logger.debug("[API_RESPONSE] NMRXiv response body: #{response_body.inspect}")
       {
@@ -154,6 +160,13 @@ class NmrxivUploadService
         error: error_message,
       }
     end
+  rescue JSON::ParserError => e
+    nmrxiv_logger.error("[API_PARSE_ERROR] Failed to parse NMRXiv response as JSON (received HTML or non-JSON body) - Status: #{response.status}, Error: #{e.message}")
+    nmrxiv_logger.debug("[API_PARSE_ERROR] Raw body: #{response.body&.first(500)}")
+    {
+      success: false,
+      error: "Invalid response from NMRXiv (non-JSON body): #{e.message}",
+    }
   end
 
   def generate_external_id

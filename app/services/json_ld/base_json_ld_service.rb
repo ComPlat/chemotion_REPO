@@ -25,21 +25,21 @@ module JsonLd
         [
           {
             "@type": "CreativeWork",
-            "@id": "https://bioschemas.org/types/ChemicalSubstance/0.3-RELEASE-2019_09_02"
+            "@id": "https://bioschemas.org/profiles/ChemicalSubstance/0.4-RELEASE"
           }
         ]
       when 'Dataset'
         [
           {
             "@type": "CreativeWork",
-            "@id": "https://schema.org/Dataset"
+            "@id": "https://bioschemas.org/profiles/Dataset/1.0-RELEASE"
           }
         ]
       when 'MolecularEntity'
         [
           {
             "@type": "CreativeWork",
-            "@id": "https://bioschemas.org/types/MolecularEntity/0.3-RELEASE-2019_09_02"
+            "@id": "https://bioschemas.org/profiles/MolecularEntity/0.5-RELEASE"
           }
         ]
       else
@@ -54,6 +54,27 @@ module JsonLd
         logo: 'https://www.chemotion-repository.net/images/repo/Chemotion-V1.png',
         url: 'https://www.chemotion-repository.net'
       }
+    end
+
+    def json_ld_context
+      {
+        '@vocab': 'https://schema.org/',
+        dct: 'http://purl.org/dc/terms/'
+      }
+    end
+
+    def bioschemas_study_conformance
+      [conformance_declarations('Study').first]
+    end
+
+    def iso_timestamp(value)
+      return nil unless value
+
+      if value.respond_to?(:utc)
+        value.utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+      else
+        value.strftime('%Y-%m-%dT00:00:00Z')
+      end
     end
 
     def doi_url(full_doi = nil)
@@ -205,9 +226,34 @@ module JsonLd
       bb = DataCite::LiteraturePaser.get_metadata(bb, lit[:doi], id) unless bb.class == BibTeX::Entry
       dc_lit = DataCite::LiteraturePaser.report_hash(lit, bb) if bb.class == BibTeX::Entry
       json['name'] = dc_lit[:title] unless dc_lit.blank?
-      json['author'] = dc_lit[:author] unless dc_lit.blank?
+      json['author'] = citation_authors(dc_lit[:author]) unless dc_lit.blank?
       json['url'] = dc_lit[:url] unless dc_lit.blank?
       json
+    end
+
+    # Decode LaTeX/BibTeX escapes in a citation author string. For multi-author
+    # entries (joined by " and "), return an array of schema.org Person objects.
+    def citation_authors(raw)
+      return nil if raw.blank?
+
+      decoded = ::LaTeX.decode(raw.to_s)
+      return decoded unless decoded.include?(' and ')
+
+      names = BibTeX::Names.parse(decoded)
+      return decoded if names.blank? || names.length <= 1
+
+      names.map do |name|
+        first = name.first.to_s.strip
+        last = [name.prefix.to_s, name.last.to_s].reject(&:empty?).join(' ').strip
+        person = { '@type': 'Person' }
+        person[:name] = [first, last].reject(&:empty?).join(' ')
+        person[:givenName] = first if first.present?
+        person[:familyName] = last if last.present?
+        person
+      end
+    rescue StandardError => e
+      Rails.logger.error ["citation author parse error:", e.message, *e.backtrace].join($INPUT_RECORD_SEPARATOR)
+      raw
     end
 
     def authors_from_taggable_data(taggable_data)

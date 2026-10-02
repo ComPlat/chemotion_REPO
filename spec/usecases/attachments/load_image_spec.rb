@@ -47,6 +47,8 @@ RSpec.describe Usecases::Attachments::LoadImage do
     end
 
     context 'with image attachment(tif, already converted)' do
+      before { skip_unless_binary_available('convert') }
+
       let(:attachment) { create(:attachment, :with_tif_file) }
 
       it 'size of returned image equals size of converted image' do
@@ -55,6 +57,8 @@ RSpec.describe Usecases::Attachments::LoadImage do
     end
 
     context 'with image attachment(tif, not yet converted [can happen due migration])' do
+      before { skip_unless_binary_available('convert') }
+
       let(:attachment) { create(:attachment, :with_tif_file) }
       let(:updated_attachment) { Attachment.find(attachment.id) }
 
@@ -78,6 +82,8 @@ RSpec.describe Usecases::Attachments::LoadImage do
     end
 
     context 'with annotated image' do
+      before { skip_unless_binary_available('convert') }
+
       let(:annotation_updater) { Usecases::Attachments::Annotation::AnnotationUpdater.new }
       let(:attachment) { create(:attachment, :with_tif_file) }
       let(:annotated) { true }

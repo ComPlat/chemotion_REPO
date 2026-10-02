@@ -53,6 +53,108 @@ module Chemotion
         end
       end
 
+      namespace :find_adv_values do
+        helpers do
+          def query_authors(name)
+            like = "#{ActiveRecord::Base.send(:sanitize_sql_like, name.to_s.downcase)}%"
+            sql = ActiveRecord::Base.send(:sanitize_sql_array, [
+              <<~SQL,
+                SELECT u.id AS key,
+                       u.first_name,
+                       u.last_name,
+                       u.first_name || chr(32) || u.last_name AS name,
+                       u.first_name || chr(32) || u.last_name || chr(32) || '(' || u.name_abbreviation || ')' AS label
+                FROM users u
+                WHERE u.type IN ('Person', 'Group', 'Collaborator')
+                  AND u.deleted_at IS NULL
+                  AND u.id IN (
+                    SELECT DISTINCT pa.author_id::integer
+                    FROM publication_authors pa
+                    WHERE pa.state = 'completed'
+                  )
+                  AND (
+                    LOWER(u.first_name) ILIKE ?
+                    OR LOWER(u.last_name) ILIKE ?
+                    OR LOWER(u.first_name || ' ' || u.last_name) ILIKE ?
+                  )
+                ORDER BY u.last_name ASC, u.first_name ASC
+                LIMIT 10
+              SQL
+              like, like, like,
+            ])
+            ActiveRecord::Base.connection.exec_query(sql).to_a
+          end
+          def query_contributors(name)
+            like = "#{ActiveRecord::Base.send(:sanitize_sql_like, name.to_s.downcase)}%"
+            sql = ActiveRecord::Base.send(:sanitize_sql_array, [
+              <<~SQL,
+                SELECT u.id AS key,
+                       u.first_name,
+                       u.last_name,
+                       u.first_name || chr(32) || u.last_name AS name,
+                       u.first_name || chr(32) || u.last_name || chr(32) || '(' || u.name_abbreviation || ')' AS label
+                FROM users u
+                WHERE u.type = 'Person'
+                  AND u.deleted_at IS NULL
+                  AND u.id IN (
+                    SELECT DISTINCT p.published_by
+                    FROM publications p
+                    WHERE p.published_by IS NOT NULL
+                      AND p.state = 'completed'
+                      AND p.element_type IN ('Sample', 'Reaction')
+                      AND p.deleted_at IS NULL
+                  )
+                  AND (
+                    LOWER(u.first_name) ILIKE ?
+                    OR LOWER(u.last_name) ILIKE ?
+                    OR LOWER(u.first_name || ' ' || u.last_name) ILIKE ?
+                  )
+                ORDER BY u.last_name ASC, u.first_name ASC
+                LIMIT 10
+              SQL
+              like, like, like,
+            ])
+            ActiveRecord::Base.connection.exec_query(sql).to_a
+          end
+          def query_ontologies(name)
+            result = PublicationOntologies.where('LOWER(ontologies) ILIKE ? ',"%#{params[:name]}%").limit(3)
+            .select(
+              <<~SQL
+              term_id as key, label, label as name
+              SQL
+            ).distinct
+          end
+          def query_embargo(name)
+            Collection.all_embargos(current_user&.id).where("LOWER(label) ILIKE '#{ActiveRecord::Base.send(:sanitize_sql_like, params[:name])}%'").limit(10)
+            .select(
+              <<~SQL
+              id as key, label, label as name
+              SQL
+            )
+          end
+        end
+        desc 'Find top 3 matched advanced values'
+        params do
+          requires :name, type: String, allow_blank: false, regexp: /^[\w]+([\w -]*)*$/
+          requires :adv_type, type: String, allow_blank: false, desc: 'Type', values: %w[Authors Contributors Ontologies Embargo]
+        end
+        get do
+          result = case params[:adv_type]
+                   when 'Authors'
+                     query_authors(params[:name])
+                   when 'Contributors'
+                     query_contributors(params[:name])
+                   when 'Ontologies'
+                     query_ontologies(params[:name])
+                   when 'Embargo'
+                     query_embargo(params[:name])
+                   else
+                     []
+                   end
+          { result: result }
+        end
+      end
+
       resource :inchikey do
         params do
           requires :inchikey, type: String
@@ -91,7 +193,7 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo Label]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Contributors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :label_val, type: Integer, desc: 'label_val'
           optional :req_xvial, type: Boolean, default: false, desc: 'xvial is required or not'
@@ -99,86 +201,144 @@ module Chemotion
         paginate per_page: 10, offset: 0, max_per_page: 100
         get '/' do
           public_collection_id = Collection.public_collection_id
-          params[:adv_val]
-          adv_search = ' '
+          adv_search = ''
           req_xvial = params[:req_xvial]
           if params[:adv_flag] == true && params[:adv_type].present? && params[:adv_val].present?
+            safe_ids = params[:adv_val].map(&:to_i).reject(&:zero?)
             case params[:adv_type]
             when 'Authors'
-              adv_search = <<~SQL
-                INNER JOIN publication_authors pub on pub.element_id = samples.id and pub.element_type = 'Sample' and pub.state = 'completed'
-                and author_id in ('#{params[:adv_val].join("','")}')
-              SQL
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publication_authors pub_adv ON pub_adv.element_id = samples.id AND pub_adv.element_type = \'Sample\' AND pub_adv.state = \'completed\' AND pub_adv.author_id IN (?)',
+                safe_ids.map(&:to_s)
+              ])
+            when 'Contributors'
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publications pub_adv_c ON pub_adv_c.element_id = samples.id AND pub_adv_c.element_type = \'Sample\' AND pub_adv_c.deleted_at IS NULL AND pub_adv_c.state LIKE \'completed%\' AND pub_adv_c.published_by IN (?)',
+                safe_ids
+              ])
             when 'Ontologies'
-              adv_search = <<~SQL
-                INNER JOIN publication_ontologies pub on pub.element_id = samples.id and pub.element_type = 'Sample'
-                and term_id in ('#{params[:adv_val].join("','")}')
-              SQL
+              term_ids = params[:adv_val].select { |v| v.match?(/\A[[:alpha:]]+:\d+\z/) }
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publication_ontologies pub_adv ON pub_adv.element_id = samples.id AND pub_adv.element_type = \'Sample\' AND pub_adv.term_id IN (?)',
+                term_ids
+              ]) if term_ids.any?
             when 'Embargo'
-              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' css.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              param_sql = ActiveRecord::Base.sanitize_sql_array([' css.collection_id IN (?)', safe_ids])
               adv_search = <<~SQL
-                INNER JOIN collections_samples css on css.sample_id = samples.id and css.deleted_at ISNULL
-                and #{param_sql}
+                INNER JOIN collections_samples css ON css.sample_id = samples.id AND css.deleted_at IS NULL
+                AND #{param_sql}
               SQL
             end
           end
+          label_search = ''
           if params[:adv_type] == 'Label' && params[:label_val].present?
-            label_search = <<~SQL
-              and pub.taggable_data->'user_labels' @> '#{params[:label_val]}'
-            SQL
+            label_search = ActiveRecord::Base.sanitize_sql_array(
+              ["AND pub.taggable_data->'user_labels' @> ?", params[:label_val].to_s]
+            )
           end
           sample_join = <<~SQL
             INNER JOIN (
-              SELECT molecule_id, published_at max_published_at, sample_svg_file, id as sid
+              SELECT molecule_id, published_at AS max_published_at, sample_svg_file, id AS sid
               FROM (
-              SELECT samples.*, pub.published_at, rank() OVER (PARTITION BY CASE WHEN m.inchikey = 'DECOUPLED' or m.inchikey = 'DUMMY' THEN samples.id ELSE molecule_id END order by pub.published_at desc) as rownum
-              FROM samples
-              INNER JOIN molecules m ON m.id = samples.molecule_id
-              CROSS JOIN publications pub
-              WHERE pub.element_type='Sample' and pub.element_id=samples.id  and pub.deleted_at ISNULL #{label_search}
-                and samples.id IN (
-                SELECT samples.id FROM samples
-                INNER JOIN collections_samples cs on cs.collection_id = #{public_collection_id} and cs.sample_id = samples.id and cs.deleted_at ISNULL
+                SELECT samples.id, samples.molecule_id, samples.sample_svg_file,
+                       pub.id AS pub_id, pub.published_at,
+                       rank() OVER (
+                         PARTITION BY CASE WHEN m.inchikey IN ('DECOUPLED', 'DUMMY') THEN samples.id ELSE samples.molecule_id END
+                         ORDER BY pub.published_at DESC
+                       ) AS rownum
+                FROM samples
+                INNER JOIN molecules m ON m.id = samples.molecule_id
+                INNER JOIN publications pub ON pub.element_type = 'Sample' AND pub.element_id = samples.id AND pub.deleted_at IS NULL #{label_search}
+                INNER JOIN collections_samples cs ON cs.collection_id = #{public_collection_id} AND cs.sample_id = samples.id AND cs.deleted_at IS NULL
                 #{adv_search}
                 #{join_xvial_sql(req_xvial)}
-              )) s where rownum = 1
-            ) s on s.molecule_id = molecules.id
+              ) ranked
+              WHERE rownum = 1
+            ) s ON s.molecule_id = molecules.id
           SQL
 
           embargo_sql = <<~SQL
-            molecules.*, sample_svg_file, sid,
-            (select count(*) from publication_ontologies po where po.element_type = 'Sample' and po.element_id = sid) as ana_cnt,
-            (select "collections".label from "collections" inner join collections_samples cs on collections.id = cs.collection_id
-              and cs.sample_id = sid where "collections"."deleted_at" is null and (ancestry in (
-              select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
-            (
-                select json_build_object('id', id, 'published_at', to_char(published_at, 'YYYY-MM-DD'), 'author_name', taggable_data -> 'creators'->0->>'name', 'doi', taggable_data -> 'doi')
-                from publications
-                where element_type = 'Sample'
-                  and element_id = sid
-                  and deleted_at is null
-            ) as publication
+            molecules.*,
+            s.sample_svg_file,
+            s.sid,
+            s.max_published_at
           SQL
 
-          mol_scope = Molecule.joins(sample_join).order("s.max_published_at desc").select(embargo_sql)
+          # Paginate on a simple scope (no lateral joins) so Kaminari's COUNT works cleanly
+          mol_scope = Molecule.joins(sample_join).order('s.max_published_at DESC').select(embargo_sql)
           reset_pagination_page(mol_scope)
           list = paginate(mol_scope)
 
           entities = Entities::MoleculePublicationListEntity.represent(list, serializable: true)
-          sids = entities.map { |e| e[:sid] }
+          sids = entities.map { |e| e[:sid] }.compact.map(&:to_i)
+
+          # Fetch embargo metadata for only this page's ~10 rows using lateral joins
+          embargo_by_sid = {}
+          if sids.any?
+            embargo_rows = ActiveRecord::Base.connection.exec_query(<<~SQL)
+              SELECT s.sid,
+                COALESCE(ana.ana_cnt, 0) AS ana_cnt,
+                emb.label AS embargo,
+                pub_meta.publication
+              FROM unnest(ARRAY[#{sids.join(',')}]::bigint[]) AS s(sid)
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS ana_cnt
+                FROM publication_ontologies po
+                WHERE po.element_type = 'Sample' AND po.element_id = s.sid
+              ) ana ON true
+              LEFT JOIN LATERAL (
+                SELECT c.label
+                FROM collections c
+                INNER JOIN collections_samples cs ON cs.collection_id = c.id AND cs.sample_id = s.sid
+                WHERE c.deleted_at IS NULL
+                  AND EXISTS (
+                    SELECT 1 FROM collections pe
+                    WHERE pe.label = 'Published Elements' AND c.ancestry LIKE '%/' || pe.id::text || '/%'
+                  )
+                ORDER BY c.position ASC
+                LIMIT 1
+              ) emb ON true
+              LEFT JOIN LATERAL (
+                SELECT json_build_object(
+                  'id', p.id,
+                  'published_at', to_char(p.published_at, 'YYYY-MM-DD'),
+                  'author_name', p.taggable_data -> 'creators' -> 0 ->> 'name',
+                  'doi', p.taggable_data -> 'doi'
+                ) AS publication
+                FROM publications p
+                WHERE p.element_type = 'Sample' AND p.element_id = s.sid AND p.deleted_at IS NULL
+                LIMIT 1
+              ) pub_meta ON true
+            SQL
+            embargo_by_sid = embargo_rows.each_with_object({}) do |r, h|
+              pub = r['publication']
+              pub = pub.is_a?(String) ? JSON.parse(pub) : (pub || {})
+              h[r['sid'].to_i] = r.merge('publication' => pub)
+            end
+          end
 
           com_config = Rails.configuration.compound_opendata
           xvial_count_sql = <<~SQL
-            inner join element_tags e on e.taggable_type = 'Sample' and e.taggable_id = samples.id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+            INNER JOIN element_tags e ON e.taggable_type = 'Sample' AND e.taggable_id = samples.id
+              AND e.taggable_data -> 'xvial' IS NOT NULL AND e.taggable_data -> 'xvial' ->> 'num' != ''
           SQL
           x_cnt_ids = req_xvial ? sids.uniq : (Sample.joins(xvial_count_sql).where(id: sids).distinct.pluck(:id) || [])
           xvial_com_sql = get_xvial_sql(req_xvial)
           x_com_ids = Sample.joins(xvial_com_sql).where(id: sids).distinct.pluck(:id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
 
-          entities = entities.each do |obj|
-            obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:sid])
-            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:sid])
-            obj[:xvial_archive] = get_xdata(obj[:inchikey], obj[:sid], req_xvial)
+          x_cnt_set = x_cnt_ids.to_set
+          x_com_set = (x_com_ids || []).to_set
+          show_xvial_com = com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          entities.each do |obj|
+            sid_i = obj[:sid].to_i
+            meta = embargo_by_sid[sid_i]
+            obj[:ana_cnt] = meta ? meta['ana_cnt'].to_i : 0
+            obj[:embargo] = meta ? (meta['embargo'] || '') : ''
+            obj[:publication] = meta ? (meta['publication'].presence || {}) : {}
+            obj[:xvial_count] = 1 if x_cnt_set.include?(sid_i)
+            obj[:xvial_com] = 1 if show_xvial_com && x_com_set.include?(sid_i)
+            obj[:xvial_archive] = get_xdata(obj[:inchikey], sid_i, req_xvial)
           end
           { molecules: entities }
         end
@@ -191,76 +351,160 @@ module Chemotion
           optional :pages, type: Integer, desc: 'pages'
           optional :per_page, type: Integer, desc: 'per page'
           optional :adv_flag, type: Boolean, desc: 'is it advanced search?'
-          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Ontologies Embargo Label]
+          optional :adv_type, type: String, desc: 'advanced search type', values: %w[Authors Contributors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :label_val, type: Integer, desc: 'label_val'
           optional :scheme_only, type: Boolean, desc: 'is it a scheme-only reaction?', default: false
         end
         paginate per_page: 10, offset: 0, max_per_page: 100
         get '/' do
-          if params[:adv_flag] === true && params[:adv_type].present? && params[:adv_val].present?
+          adv_search = ''
+          if params[:adv_flag] == true && params[:adv_type].present? && params[:adv_val].present?
+            safe_ids = params[:adv_val].map(&:to_i).reject(&:zero?)
             case params[:adv_type]
             when 'Authors'
-              adv_search = <<~SQL
-                INNER JOIN publication_authors pub on pub.element_id = reactions.id and pub.element_type = 'Reaction' and pub.state = 'completed'
-                and author_id in ('#{params[:adv_val].join("','")}')
-              SQL
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publication_authors pub_adv ON pub_adv.element_id = reactions.id AND pub_adv.element_type = \'Reaction\' AND pub_adv.state = \'completed\' AND pub_adv.author_id IN (?)',
+                safe_ids.map(&:to_s)
+              ])
+            when 'Contributors'
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publications pub_adv_c ON pub_adv_c.element_id = reactions.id AND pub_adv_c.element_type = \'Reaction\' AND pub_adv_c.deleted_at IS NULL AND pub_adv_c.state LIKE \'completed%\' AND pub_adv_c.published_by IN (?)',
+                safe_ids
+              ])
             when 'Ontologies'
-              adv_search = <<~SQL
-                INNER JOIN publication_ontologies pub on pub.element_id = reactions.id and pub.element_type = 'Reaction'
-                and term_id in ('#{params[:adv_val].join("','")}')
-              SQL
+              term_ids = params[:adv_val].select { |v| v.match?(/\A[[:alpha:]]+:\d+\z/) }
+              adv_search = ActiveRecord::Base.sanitize_sql_array([
+                'INNER JOIN publication_ontologies pub_adv ON pub_adv.element_id = reactions.id AND pub_adv.element_type = \'Reaction\' AND pub_adv.term_id IN (?)',
+                term_ids
+              ]) if term_ids.any?
             when 'Embargo'
-              param_sql = ActiveRecord::Base.send(:sanitize_sql_array, [' cr.collection_id in (?)', params[:adv_val].map(&:to_i).join(',')])
+              param_sql = ActiveRecord::Base.sanitize_sql_array([' cr.collection_id IN (?)', safe_ids])
               adv_search = <<~SQL
-                INNER JOIN collections_reactions cr on cr.reaction_id = reactions.id and cr.deleted_at is null
-                and #{param_sql}
+                INNER JOIN collections_reactions cr ON cr.reaction_id = reactions.id AND cr.deleted_at IS NULL
+                AND #{param_sql}
               SQL
-            else
-              adv_search = ' '
             end
-          else
-            adv_search = ' '
           end
           com_config = Rails.configuration.compound_opendata
           embargo_sql = <<~SQL
-            reactions.id, reactions.name, reactions.reaction_svg_file, publications.id as pub_id, to_char(publications.published_at, 'YYYY-MM-DD') as published_at, publications.taggable_data,
-            (select count(*) from publication_ontologies po where po.element_type = 'Reaction' and po.element_id = reactions.id) as ana_cnt,
-            (select "collections".label from "collections" inner join collections_reactions cr on collections.id = cr.collection_id and cr.deleted_at is null
-            and cr.reaction_id = reactions.id where "collections"."deleted_at" is null and (ancestry in (
-            select c.id::text from collections c where c.label = 'Published Elements')) order by position asc limit 1) as embargo,
-            (select taggable_data -> 'new_version' -> 'id' from element_tags where taggable_type = 'Reaction' and taggable_id = reactions.id) as new_version
+            reactions.id,
+            reactions.name,
+            reactions.reaction_svg_file,
+            publications.id AS pub_id,
+            to_char(publications.published_at, 'YYYY-MM-DD') AS published_at,
+            publications.taggable_data,
+            COALESCE(ana.ana_cnt, 0) AS ana_cnt,
+            emb.label AS embargo,
+            etag.new_version
+          SQL
+
+          embargo_joins = <<~SQL
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*) AS ana_cnt
+              FROM publication_ontologies po
+              WHERE po.element_type = 'Reaction' AND po.element_id = reactions.id
+            ) ana ON true
+            LEFT JOIN LATERAL (
+              SELECT c.label
+              FROM collections c
+              INNER JOIN collections_reactions cr2 ON cr2.collection_id = c.id AND cr2.reaction_id = reactions.id AND cr2.deleted_at IS NULL
+              WHERE c.deleted_at IS NULL
+                AND EXISTS (
+                  SELECT 1 FROM collections pe
+                  WHERE pe.label = 'Published Elements' AND c.ancestry LIKE '%/' || pe.id::text || '/%'
+                )
+              ORDER BY c.position ASC
+              LIMIT 1
+            ) emb ON true
+            LEFT JOIN LATERAL (
+              SELECT taggable_data -> 'new_version' -> 'id' AS new_version
+              FROM element_tags
+              WHERE taggable_type = 'Reaction' AND taggable_id = reactions.id
+              LIMIT 1
+            ) etag ON true
           SQL
 
           if params[:scheme_only]
-            col_scope = Collection.scheme_only_reactions_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
+            col_scope = Collection.scheme_only_reactions_collection.reactions
+                          .joins(adv_search).joins(:publication).joins(embargo_joins)
+                          .select(embargo_sql).order('publications.published_at DESC')
           else
-            col_scope = Collection.public_collection.reactions.joins(adv_search).joins(:publication).select(embargo_sql).order('publications.published_at desc')
+            col_scope = Collection.public_collection.reactions
+                          .joins(adv_search).joins(:publication).joins(embargo_joins)
+                          .select(embargo_sql).order('publications.published_at DESC')
           end
           if params[:adv_type] == 'Label' && params[:label_val].present?
-            col_scope = col_scope.where("publications.taggable_data->'user_labels' @> '?'", params[:label_val])
+            col_scope = col_scope.where("publications.taggable_data->'user_labels' @> ?", params[:label_val].to_s)
           end
           reset_pagination_page(col_scope)
           list = paginate(col_scope)
           entities = Entities::ReactionPublicationListEntity.represent(list, serializable: true)
 
-          ids = entities.map { |e| e[:id] }
+          ids = entities.map { |e| e[:id] }.compact.map(&:to_i)
+
+          embargo_by_id = {}
+          if ids.any?
+            embargo_rows = ActiveRecord::Base.connection.exec_query(<<~SQL)
+              SELECT r.id,
+                COALESCE(ana.ana_cnt, 0) AS ana_cnt,
+                emb.label AS embargo,
+                etag.new_version
+              FROM unnest(ARRAY[#{ids.join(',')}]::bigint[]) AS r(id)
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS ana_cnt
+                FROM publication_ontologies po
+                WHERE po.element_type = 'Reaction' AND po.element_id = r.id
+              ) ana ON true
+              LEFT JOIN LATERAL (
+                SELECT c.label
+                FROM collections c
+                INNER JOIN collections_reactions cr2 ON cr2.collection_id = c.id AND cr2.reaction_id = r.id AND cr2.deleted_at IS NULL
+                WHERE c.deleted_at IS NULL
+                  AND EXISTS (
+                    SELECT 1 FROM collections pe
+                    WHERE pe.label = 'Published Elements' AND c.ancestry LIKE '%/' || pe.id::text || '/%'
+                  )
+                ORDER BY c.position ASC
+                LIMIT 1
+              ) emb ON true
+              LEFT JOIN LATERAL (
+                SELECT taggable_data -> 'new_version' -> 'id' AS new_version
+                FROM element_tags
+                WHERE taggable_type = 'Reaction' AND taggable_id = r.id
+                LIMIT 1
+              ) etag ON true
+            SQL
+            embargo_by_id = embargo_rows.each_with_object({}) do |r, h|
+              h[r['id'].to_i] = r
+            end
+          end
 
           xvial_count_sql = <<~SQL
-            inner join element_tags e on e.taggable_id = reactions_samples.sample_id and (e.taggable_data -> 'xvial' is not null and e.taggable_data -> 'xvial' ->> 'num' != '')
+            INNER JOIN element_tags e ON e.taggable_id = reactions_samples.sample_id
+              AND e.taggable_data -> 'xvial' IS NOT NULL AND e.taggable_data -> 'xvial' ->> 'num' != ''
           SQL
           x_cnt_ids = ReactionsSample.joins(xvial_count_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) || []
 
           xvial_com_sql = <<~SQL
-            inner join samples s on reactions_samples.sample_id = s.id and s.deleted_at is null
-            inner join molecules m on m.id = s.molecule_id
-            inner join com_xvial(true) a on a.x_inchikey = m.inchikey
+            INNER JOIN samples s ON reactions_samples.sample_id = s.id AND s.deleted_at IS NULL
+            INNER JOIN molecules m ON m.id = s.molecule_id
+            INNER JOIN com_xvial(true) a ON a.x_inchikey = m.inchikey
           SQL
           x_com_ids = ReactionsSample.joins(xvial_com_sql).where(type: 'ReactionsProductSample', reaction_id: ids).distinct.pluck(:reaction_id) if com_config.present? && com_config.allowed_uids.include?(current_user&.id)
 
-          entities = entities.each do |obj|
-            obj[:xvial_count] = 1 if x_cnt_ids.include?(obj[:id])
-            obj[:xvial_com] = 1 if com_config.present? && com_config.allowed_uids.include?(current_user&.id) && (x_com_ids || []).include?(obj[:id])
+          x_cnt_set = x_cnt_ids.to_set
+          x_com_set = (x_com_ids || []).to_set
+          show_xvial_com = com_config.present? && com_config.allowed_uids.include?(current_user&.id)
+
+          entities.each do |obj|
+            id_i = obj[:id].to_i
+            meta = embargo_by_id[id_i]
+            obj[:ana_cnt] = meta ? meta['ana_cnt'].to_i : 0
+            obj[:embargo] = meta ? (meta['embargo'] || '') : ''
+            obj[:new_version] = meta['new_version'] if meta && meta['new_version']
+            obj[:xvial_count] = 1 if x_cnt_set.include?(id_i)
+            obj[:xvial_com] = 1 if show_xvial_com && x_com_set.include?(id_i)
           end
 
           { reactions: entities }
@@ -393,7 +637,7 @@ module Chemotion
         end
         get do
           pub = Publication.find_by(element_type: 'Collection', element_id: params[:id], state: 'completed')
-          pub.review = nil
+          pub&.review = nil
           { col: pub }
         end
       end
@@ -416,8 +660,8 @@ module Chemotion
           anasql = <<~SQL
             publications.*, (select count(*) from publication_ontologies po where po.element_type = publications.element_type and po.element_id = publications.element_id) as ana_cnt
           SQL
-          sample_list = Publication.where(ancestry: nil, element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
-          reaction_list = Publication.where(ancestry: nil, element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
+          sample_list = Publication.where(ancestry: '/', element: @embargo_collection.samples).select(anasql).order(updated_at: :desc)
+          reaction_list = Publication.where(ancestry: '/', element: @embargo_collection.reactions).select(anasql).order(updated_at: :desc)
           list = sample_list + reaction_list
           elements = []
           list.each do |e|
@@ -493,7 +737,7 @@ module Chemotion
           optional :pid, type: Integer, desc: 'Publication id'
           optional :suffix, type: String, desc: 'Suffix'
           optional :adv_flag, type: Boolean, desc: 'advanced search flag'
-          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Ontologies Embargo Label]
+          optional :adv_type, type: String, desc: 'advanced search type', allow_blank: true, values: %w[Authors Contributors Ontologies Embargo Label]
           optional :adv_val, type: Array[String], desc: 'advanced search value', regexp: /^(\d+|([[:alpha:]]+:\d+))$/
           optional :label_val, type: Integer, desc: 'label_val'
         end
@@ -889,6 +1133,86 @@ module Chemotion
         end
       end
 
+      resource :top_contributors do
+        desc 'Return top publication contributors (publications.published_by) of the past 365 days'
+        params do
+          optional :limit, type: Integer, default: 10, desc: 'maximum number of contributors to return'
+          optional :days,  type: Integer, default: 365, desc: 'lookback window in days'
+        end
+        get do
+          limit = [[params[:limit].to_i, 1].max, 50].min
+          days  = [[params[:days].to_i, 1].max, 3650].min
+          sql = <<~SQL
+            SELECT u.id AS user_id,
+                   u.first_name,
+                   u.last_name,
+                   u.name_abbreviation,
+                   COUNT(*) AS pub_count
+            FROM publications p
+            JOIN users u ON u.id = p.published_by
+            WHERE p.state = 'completed'
+              AND p.element_type IN ('Sample', 'Reaction')
+              AND p.deleted_at IS NULL
+              AND p.published_at >= NOW() - INTERVAL '#{days} days'
+              AND u.type = 'Person'
+            GROUP BY u.id, u.first_name, u.last_name, u.name_abbreviation
+            ORDER BY pub_count DESC, u.last_name ASC
+            LIMIT #{limit}
+          SQL
+          result = ActiveRecord::Base.connection.exec_query(sql)
+          top_contributors = result.map do |row|
+            {
+              user_id: row['user_id'],
+              first_name: row['first_name'],
+              last_name: row['last_name'],
+              name_abbreviation: row['name_abbreviation'],
+              pub_count: row['pub_count'].to_i,
+            }
+          end
+          { top_contributors: top_contributors, window_days: days }
+        end
+      end
+
+      resource :yearly_publication_stats do
+        desc 'Return publication counts per calendar year per element type'
+        get do
+          sql = <<~SQL
+            SELECT EXTRACT(YEAR FROM published_at)::int AS pub_year,
+                   element_type,
+                   COUNT(*) AS pub_count
+            FROM publications
+            WHERE state = 'completed'
+              AND element_type IN ('Sample', 'Reaction', 'Container', 'Collection')
+              AND deleted_at IS NULL
+              AND published_at IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM published_at), element_type
+            ORDER BY EXTRACT(YEAR FROM published_at) ASC
+          SQL
+          rows = ActiveRecord::Base.connection.exec_query(sql)
+
+          present_years = rows.map { |r| r['pub_year'] }.compact.uniq.sort
+          labels = present_years.empty? ? [] : (present_years.first..present_years.last).map(&:to_s)
+          year_count = labels.size
+          series = {
+            'Sample' => Array.new(year_count, 0),
+            'Reaction' => Array.new(year_count, 0),
+            'Container' => Array.new(year_count, 0),
+            'Collection' => Array.new(year_count, 0),
+          }
+          rows.each do |row|
+            idx = labels.index(row['pub_year'].to_s)
+            next if idx.nil?
+
+            series[row['element_type']][idx] = row['pub_count'].to_i
+          end
+
+          totals = labels.each_with_index.map { |_, i| series.values.sum { |arr| arr[i] } }
+          cumulative = totals.each_with_object([]) { |n, acc| acc << ((acc.last || 0) + n) }
+
+          { years: labels, series: series, totals: totals, cumulative: cumulative }
+        end
+      end
+
       resource :represent do
         desc 'represent molfile structure'
         params do
@@ -901,6 +1225,151 @@ module Chemotion
         end
       end
 
+      namespace :ols_terms do
+        desc 'Get List'
+        params do
+          requires :name, type: String, desc: 'OLS Name', values: %w[chmo rxno bao]
+          optional :edited, type: Boolean, default: true, desc: 'Only list visible terms'
+        end
+        get 'list' do
+          file = Rails.public_path.join(
+            'ontologies',
+            "#{params[:name]}#{params[:edited] ? '.edited.json' : '.json'}",
+          )
+          unless File.exist?(file)
+            file = Rails.public_path.join(
+              'ontologies_default',
+              "#{params[:name]}#{params[:edited] ? '.default.edited.json' : '.default.json'}",
+            )
+          end
+          result = JSON.parse(File.read(file, encoding: 'bom|utf-8')) if File.exist?(file)
+          result
+        end
+      end
+
+      desc 'Public initialization'
+      get 'initialize' do
+        stt_config = Rails.configuration.try(:stt).try(:config)
+        {
+          molecule_viewer: Matrice.molecule_viewer,
+          repo_versioning: ENV['REPO_VERSIONING'] == 'true' ? true : false,
+          u: Rails.configuration.u || {},
+          stt_enabled: stt_config.present? && stt_config.authorization.present?
+        }
+      end
+
+      namespace :generic_templates do
+        desc 'get active generic templates'
+        params do
+          requires :klass, type: String, desc: 'Klass', values: %w[Element Segment Dataset]
+        end
+        get do
+          list = "Labimotion::#{params[:klass]}Klass".constantize.where(is_active: true).where.not(released_at: nil).select { |s| s['is_generic'].blank? }
+          entities = Labimotion::GenericPublicEntity.represent(list)
+          # entities.length > 1 ? de_encode_json(entities) : []
+        end
+      end
+
+      namespace :element_klasses_name do
+        desc 'get klasses'
+        params do
+          requires :username, type: String, desc: 'Username'
+          requires :password, type: String, desc: 'Password'
+        end
+        get do
+          list = Labimotion::ElementKlass.where(is_active: true) if params[:generic_only].present? && params[:generic_only] == true
+          list = Labimotion::ElementKlass.where(is_active: true) unless params[:generic_only].present? && params[:generic_only] == true
+          list.pluck(:name)
+        end
+      end
+
+      namespace :article_init do
+        get do
+          { is_article_editor: current_user&.is_article_editor || false }
+        end
+      end
+
+      namespace :howto_init do
+        get do
+          { is_howto_editor: current_user&.is_howto_editor || false }
+        end
+      end
+
+      namespace :repository do
+        desc 'Export published samples as a single SDF file.'
+        params do
+          optional :from, type: Date, default: -> { 3.months.ago.to_date },
+                          desc: 'Lower bound of publications.published_at (YYYY-MM-DD).'
+          optional :to, type: Date, default: -> { Date.current },
+                        desc: 'Upper bound of publications.published_at (YYYY-MM-DD).'
+        end
+        get :sdf do
+          if params[:from] && params[:to] && (params[:to] - params[:from]).to_i > 366
+            error!('Date range may not exceed 366 days', 400)
+          end
+
+          service = RepoSdfExportService.new(
+            from: params[:from]&.beginning_of_day,
+            to: params[:to]&.end_of_day,
+          )
+
+          filename_parts = ['chemotion', 'samples']
+          filename_parts << params[:from].iso8601 if params[:from]
+          filename_parts << params[:to].iso8601 if params[:to]
+          filename = "#{filename_parts.join('-')}.sdf"
+
+          content_type 'chemical/x-mdl-sdfile'
+          header 'Content-Disposition', "attachment; filename=\"#{filename}\""
+          env['api.format'] = :binary
+          service.to_sdf
+        end
+      end
+    end
+
+    namespace :upload do
+      before do
+        error!('Unauthorized', 401) unless TokenAuthentication.new(request, with_remote_addr: true).is_successful?
+      end
+      resource :attachments do
+        desc 'Upload files'
+        params do
+          requires :recipient_email, type: String
+          requires :subject, type: String
+        end
+        post do
+          recipient_email = params[:recipient_email]
+          subject = params[:subject]
+          params.delete(:subject)
+          params.delete(:recipient_email)
+
+          token = request.headers['Auth-Token'] || request.params['auth_token']
+          key = AuthenticationKey.find_by(token: token)
+
+          helper = CollectorHelper.new(key.user.email, recipient_email)
+
+          if helper.sender_recipient_known?
+            dataset = helper.prepare_new_dataset(subject)
+            params.each do |file_id, file|
+              if tempfile = file.tempfile
+                a = Attachment.new(
+                  filename: file.filename,
+                  file_path: file.tempfile,
+                  created_by: helper.sender.id,
+                  created_for: helper.recipient.id,
+                )
+                begin
+                  a.save!
+                  a.update!(attachable: dataset)
+                ensure
+                  tempfile.close
+                  tempfile.unlink
+                end
+              end
+            end
+          end
+          true
+        end
+      end
     end
   end
 end

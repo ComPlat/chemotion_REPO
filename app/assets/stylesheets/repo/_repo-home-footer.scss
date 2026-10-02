@@ -1,0 +1,26 @@
+.bot-navbar {
+  margin: 0;
+  padding: 0.25rem 1.25rem;
+  background-color: #ffffff;
+  border-top: 1px solid var(--repo-border, #e5e7eb);
+  box-shadow: 0 -1px 3px rgba(15, 23, 42, 0.04);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.nav-footer-even {
+  display: flex !important;
+  width: 100%;
+
+  .nav-footer-item {
+    flex: 1;
+    text-align: center;
+
+    a, span {
+      display: block;
+      width: 100%;
+      padding: 0.35rem 0.65rem;
+      text-align: center;
+    }
+  }
+}

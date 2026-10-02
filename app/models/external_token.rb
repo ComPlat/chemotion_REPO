@@ -2,15 +2,15 @@
 #
 # Table name: external_tokens
 #
-#  id                       :bigint           not null, primary key
-#  provider                 :string           not null
-#  encrypted_access_token   :string           not null
-#  encrypted_refresh_token  :string
-#  expires_at               :datetime
-#  created_by               :integer          not null
-#  provider_config          :jsonb            default({})
-#  created_at               :datetime         not null
-#  updated_at               :datetime         not null
+#  id                      :bigint           not null, primary key
+#  created_by              :integer          not null
+#  encrypted_access_token  :string           not null
+#  encrypted_refresh_token :string
+#  expires_at              :datetime
+#  provider                :string           not null
+#  provider_config         :jsonb
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
 #
 # Indexes
 #
@@ -101,7 +101,7 @@ class ExternalToken < ApplicationRecord
   end
 
   def refresh_nmrxiv_token!
-    service = Chemotion::NmrxivService.new
+    service = Repo::NmrxivService.new
     result = service.refresh_token(refresh_token)
 
     if result[:success]

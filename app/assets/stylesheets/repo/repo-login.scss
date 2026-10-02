@@ -1,0 +1,140 @@
+.repo-login-options {
+  padding: 1.5rem 0 0.5rem;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+  }
+
+  &__eyebrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b7280;
+    background: #eef2ff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.3rem;
+  }
+
+  &__subtitle {
+    font-size: 0.88rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__divider {
+    position: relative;
+    text-align: center;
+    margin: 1rem 0 0.5rem;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #e5e7eb;
+      z-index: 0;
+    }
+
+    span {
+      position: relative;
+      background: #fff;
+      padding: 0 0.75rem;
+      font-size: 0.78rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      z-index: 1;
+    }
+  }
+}
+
+.repo-login-provider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2937;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover,
+  &:focus {
+    border-color: #1976d2;
+    color: #1976d2;
+    box-shadow: 0 2px 6px rgba(25, 118, 210, 0.12);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+
+    img {
+      max-height: 1.6rem;
+      max-width: 1.6rem;
+      object-fit: contain;
+    }
+
+    i {
+      font-size: 1.1rem;
+      color: #6b7280;
+    }
+  }
+
+  &__label {
+    flex: 1 1 auto;
+    font-size: 0.95rem;
+
+    strong {
+      font-weight: 600;
+    }
+  }
+
+  &__arrow {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  &:hover &__arrow,
+  &:focus &__arrow {
+    opacity: 1;
+    transform: translateX(0);
+    color: #1976d2;
+  }
+}

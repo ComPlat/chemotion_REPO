@@ -5,58 +5,74 @@
 # Table name: attachments
 #
 #  id              :integer          not null, primary key
-#  attachable_id   :integer
-#  filename        :string
-#  identifier      :uuid
+#  aasm_state      :string
+#  attachable_type :string
+#  attachment_data :jsonb
+#  bucket          :string
 #  checksum        :string
-#  storage         :string(20)       default("tmp")
+#  con_state       :integer
+#  content_type    :string
 #  created_by      :integer          not null
+#  created_by_type :string
 #  created_for     :integer
-#  version         :string
+#  deleted_at      :datetime
+#  edit_state      :integer          default("not_editing")
+#  filename        :string
+#  filesize        :bigint
+#  folder          :string
+#  identifier      :uuid
+#  key             :string(500)
+#  storage         :string(20)       default("tmp")
+#  thumb           :boolean          default(FALSE)
+#  version         :string           default("/"), not null
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
-#  content_type    :string
-#  bucket          :string
-#  key             :string(500)
-#  thumb           :boolean          default(FALSE)
-#  folder          :string
-#  attachable_type :string
-#  aasm_state      :string
-#  filesize        :bigint
-#  attachment_data :jsonb
-#  edit_state      :integer          default(0)
-#  con_state       :integer
+#  attachable_id   :integer
 #
 # Indexes
 #
 #  index_attachments_on_attachable_type_and_attachable_id  (attachable_type,attachable_id)
 #  index_attachments_on_identifier                         (identifier) UNIQUE
+#  index_attachments_on_version                            (version) WHERE (deleted_at IS NULL)
 #
 
 class Attachment < ApplicationRecord
+  has_logidze
+  acts_as_paranoid
+  include AASM
   include AttachmentJcampAasm
   include AttachmentJcampProcess
   include Labimotion::AttachmentConverter
   include AttachmentUploader::Attachment(:attachment)
 
+  enum edit_state: { not_editing: 0, editing: 1 }
+
+  aasm(:document, column: :edit_state) do
+    state :not_editing, initial: true
+    state :editing
+
+    event :editing_start do
+      transitions from: :not_editing, to: :editing
+    end
+
+    event :editing_end do
+      transitions from: %i[editing not_editing], to: :not_editing
+    end
+  end
+
   attr_accessor :file_data, :file_path, :thumb_path, :thumb_data, :duplicated, :transferred
 
-  has_ancestry ancestry_column: :version
+  has_ancestry ancestry_column: :version, orphan_strategy: :adopt
 
   validate :check_file_size
 
+  after_initialize :set_default_created_by_type
   before_create :generate_key
-  # TODO: rm this during legacy store cleaning
-  # before_create :add_content_type
 
   # reload to get identifier:uuid
   after_create :reload
   after_destroy :delete_file_and_thumbnail
   after_save :attach_file
-  # TODO: rm this during legacy store cleaning
-  # after_save :update_filesize
-  # TODO: rm this during legacy store cleaning
-  # after_save :add_checksum, if: :new_upload
 
   belongs_to :attachable, polymorphic: true, optional: true
   has_one :report_template, dependent: :nullify
@@ -80,6 +96,12 @@ class Attachment < ApplicationRecord
     where(attachable_type: 'Template')
   }
 
+  def set_default_created_by_type
+    self.created_by_type ||= 'User'
+  rescue NoMethodError
+    # This is a workaround for the case ActiveRecord::Migrator.current_version < 20210921114428
+  end
+
   def extname
     File.extname(filename.to_s)
   end
@@ -93,50 +115,10 @@ class Attachment < ApplicationRecord
 
   def read_thumbnail
     attachment(:thumbnail).read if attachment(:thumbnail)&.exists?
-  rescue StandardError => e
-    Rails.logger.error e.message
-    nil
   end
 
   def abs_path
     attachment_attacher.url if attachment_attacher.file.present?
-  end
-
-  def abs_prev_path
-    store.prev_path
-  end
-
-  def store
-    Storage.new_store(self)
-  end
-
-  def old_store(old_store = storage_was)
-    Storage.old_store(self, old_store)
-  end
-
-  # TODO: rm this during legacy store cleaning
-  def add_checksum
-    self.checksum = Digest::MD5.hexdigest(read_file) if attachment_attacher.file.present?
-    update_column('checksum', checksum) # rubocop:disable Rails/SkipsModelValidations
-  end
-
-  # Rewrite read attribute for checksum
-  def checksum
-    # read_attribute(:checksum).presence || attachment['md5']
-    attachment && attachment['md5']
-  end
-
-  # TODO: to be handled by shrine
-  def reset_checksum
-    add_checksum
-    update_column('checksum', checksum) if checksum_changed? # rubocop:disable Rails/SkipsModelValidations
-  end
-
-  def regenerate_thumbnail
-    return unless filesize <= 50 * 1024 * 1024
-
-    store.regenerate_thumbnail
-    update_column('thumb', thumb) if thumb_changed? # rubocop:disable Rails/SkipsModelValidations
   end
 
   # @desc return the associated element {instance of ResearchPlan, Sample,.. or User , or nil}
@@ -150,7 +132,8 @@ class Attachment < ApplicationRecord
   #  "Attachment.new.root_element" #=> "nil"
   def root_element
     case attachable_type
-    when 'Sample', 'Reaction', 'ResearchPlan', 'Wellplate', 'Screen', 'CelllineSample' # *Model::ELEMENTS
+    when 'Sample', 'Reaction', 'ResearchPlan', 'Wellplate', 'Screen', 'CelllineSample', 'DeviceDescription',
+         'SequenceBasedMacromolecule', 'SequenceBasedMacromoleculeSample' # *Model::ELEMENTS
       attachable
     when 'Container'
       attachable&.root_element
@@ -183,50 +166,24 @@ class Attachment < ApplicationRecord
     for_container? ? attachable : nil
   end
 
+  def checksum
+    attachment&.metadata&.fetch('md5', nil)
+  end
+
   def update_research_plan!(c_id)
     update!(attachable_id: c_id, attachable_type: 'ResearchPlan')
-  end
-
-  def rewrite_file_data!
-    return if file_data.blank?
-
-    store.destroy
-    store.store_file
-    self
-  end
-
-  def update_filesize
-    self.filesize = file_data.bytesize if file_data.present?
-    self.filesize = File.size(file_path) if file_path.present? && File.exist?(file_path)
-    update_column('filesize', filesize) # rubocop:disable Rails/SkipsModelValidations
   end
 
   # Rewrite read attribute for filesize
   def filesize
     # read_attribute(:filesize).presence || attachment['size']
     attachment && attachment['size']
-  rescue StandardError => e
-    Rails.logger.error e.message
-    nil
-  end
-
-  def add_content_type
-    return if content_type.present?
-
-    self.content_type = begin
-      MimeMagic.by_path(filename)&.type
-    rescue StandardError
-      nil
-    end
   end
 
   # Rewrite read attribute for content_type
   def content_type
     # read_attribute(:content_type).presence || attachment['mime_type']
     attachment && attachment['mime_type']
-  rescue StandardError => e
-    Rails.logger.error e.message
-    nil
   end
 
   def reload
@@ -269,11 +226,6 @@ class Attachment < ApplicationRecord
     )
   end
 
-  def self.logger
-    @@attachment_logger ||= Logger.new(Rails.root.join('log/attachment.log')) # rubocop:disable Style/ClassVars
-  end
-
-  # @return [String] build annotation file name based on the original file name
   def annotated_filename
     return '' unless annotated?
 
@@ -282,8 +234,60 @@ class Attachment < ApplicationRecord
     "#{File.basename(filename, '.*')}_annotated#{extension_of_annotation}"
   end
 
+  def file_extension
+    extname = File.extname(filename.to_s)
+    extname && extname[1..]
+  end
+
+  def thumbnail_base64
+    return nil unless thumb
+
+    thumbnail_data = read_thumbnail
+    Base64.encode64(thumbnail_data)
+  rescue TypeError, Errno::ENOENT
+    Rails.logger.error "Thumbnail data is not available for attachment #{id} but thumb is set to true"
+    nil
+  end
+
   def preview
-    "data:image/png;base64,#{Base64.encode64(read_thumbnail)}" if thumb
+    base64_data = thumbnail_base64
+    base64_data ? "data:image/png;base64,#{base64_data}" : nil
+  end
+
+  def editable_document?
+    return false if file_extension.blank?
+
+    available_extensions = Rails.configuration.editors&.available_extensions
+    return false if available_extensions.blank?
+
+    available_extensions.include?(file_extension.downcase)
+  end
+
+  def resolve_unique_match
+    return [nil, nil] unless inbox_auto_enabled?
+
+    samples = InboxSearchElements.call(
+      search_string: filename,
+      current_user: recipient,
+      element: :sample,
+    )
+
+    variation = filename[/-v(\d+)(?=[.-]|$)/i, 1]
+    search_string = filename.sub(/-v\d+.*$/i, '')
+
+    reactions = InboxSearchElements.call(
+      search_string: search_string,
+      current_user: recipient,
+      element: :reaction,
+    )
+
+    return [reactions.first, variation] if samples.empty? && reactions.one?
+    return [samples.first, nil]         if reactions.empty? && samples.one?
+
+    product_samples = samples.select { |s| s.reactions_samples.any? { |rs| rs.type == 'ReactionsProductSample' } }
+    return [product_samples.first, nil] if reactions.empty? && product_samples.one?
+
+    [nil, nil]
   end
 
   private
@@ -291,15 +295,6 @@ class Attachment < ApplicationRecord
   def generate_key
     self.key = SecureRandom.uuid unless key
     self.storage = 'local'
-  end
-
-  # TODO: rm this during legacy store cleaning
-  def new_upload
-    storage == 'tmp'
-  end
-
-  def store_changed
-    !duplicated && storage_changed?
   end
 
   def transferred?
@@ -310,12 +305,26 @@ class Attachment < ApplicationRecord
     attachment_attacher.destroy
   end
 
+  def user_quota_exceeded?
+    user = User.find(created_for.nil? ? created_by : created_for)
+    if (user.used_space + attachment_data['metadata']['size']) > user.allocated_space &&
+       !user.allocated_space.zero?
+      return true
+    end
+
+    false
+  rescue ActiveRecord::RecordNotFound
+    false # creating attachments without user is allowed (for tests)
+  end
+
   def attach_file
     return if file_path.nil?
     return unless File.exist?(file_path)
 
     attachment_attacher.attach(File.open(file_path, binmode: true))
     raise 'File to large' unless valid?
+
+    raise 'User quota exceeded' if user_quota_exceeded?
 
     attachment_attacher.create_derivatives
 
@@ -330,5 +339,14 @@ class Attachment < ApplicationRecord
 
     raise "File #{File.basename(file_path)}
       cannot be uploaded. File size must be less than #{Rails.configuration.shrine_storage.maximum_size} MB"
+  end
+
+  def inbox_auto_enabled?
+    return false unless recipient
+
+    data = recipient.profile&.data
+    return true unless data
+
+    data.fetch('inbox_auto', true)
   end
 end

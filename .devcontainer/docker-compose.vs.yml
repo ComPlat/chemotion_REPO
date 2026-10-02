@@ -1,0 +1,26 @@
+x-common-volumes: &common-volumes
+  - homedir:/home/ubuntu
+  - ..:/home/ubuntu/app
+
+
+x-common-build: &common-build
+  context: '.'
+  dockerfile: 'Dockerfile.chemotion-dev'
+  target: chemotion_dev_base
+  args:
+    uid: skip
+    gid: skip
+
+
+services:
+  setup:
+    build: *common-build
+    volumes: *common-volumes
+
+
+  app:
+    build: *common-build
+    volumes: *common-volumes
+
+  webpacker:
+    volumes: *common-volumes

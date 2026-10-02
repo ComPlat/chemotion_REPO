@@ -1,0 +1,1061 @@
+.navbar-custom {
+  margin-bottom: 8px;
+  border-radius: 0;
+  padding: 0px;
+  background-color: #EFEFEF;
+  margin-left: -6px;
+  margin-right: -6px;
+
+  .navbar-brand {
+    padding-left: 21px; // 15px (Bootstrap row offset) + 6px (container padding)
+  }
+
+  .navbar-collapse {
+    .navbar-nav {
+      flex-grow: 1;
+      justify-content: center;
+
+      .nav-link {
+        white-space: nowrap;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
+    > .d-flex:last-child {
+      padding-right: 21px; // 15px (Bootstrap row offset) + 6px (container padding)
+    }
+  }
+
+  a.dropdown-toggle:hover {
+    color: black;
+  }
+}
+
+.orcid-logo {
+  height: 16px;
+  width: 16px;
+  margin-bottom: 2px;
+  margin-right: 1px;
+}
+
+
+.review-entries > tbody > tr > td {
+  border-top: 1
+}
+
+.public-element {
+  height: calc(100vh - 128px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.public-list {
+  height: calc(100vh - 220px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.public-list-adv {
+  height: calc(100vh - 220px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+/* Remove internal scrolling when inside fixed content area */
+.home-content-with-fixed-header .public-element,
+.home-content-with-fixed-header .public-list,
+.home-content-with-fixed-header .public-list-adv,
+.home-content-with-fixed-header .review-element,
+.home-content-with-fixed-header .review-list,
+.home-content-with-fixed-header .review-list-search,
+.home-content-with-fixed-header .embargo-list {
+  height: auto;
+  overflow: visible;
+}
+
+/* RepoPubl container styles */
+.repo-publ-container-split {
+  /* Split view: full height minus top header (120px) and bottom footer (40px) */
+  height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.home-content-with-fixed-header.sysinfo-closed .repo-publ-container-split {
+  /* SysInfo closed: 60px header + 40px footer */
+  height: calc(100vh - 100px);
+}
+
+/* Special handling for RepoPubl when item is selected (isPubElement=true) */
+.home-content-with-fixed-header .repo-publ-split-view {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  /* Drop Bootstrap Row's negative gutters so the list sits flush against
+     the detail with no empty band between them. */
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Left and right Cols stretch to container height and stack their children */
+.repo-publ-split-view .repo-publ-split-list,
+.repo-publ-split-view .repo-publ-split-detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Remove Col gutters — the divider border is the only separation. */
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* The list width is set inline (drag-to-resize); the detail flex-grows to
+   fill the rest. The resizer is a thin grab strip whose centred ::before line
+   is the visible list <-> detail divider (same #e6ebef as before), turning
+   blue while hovered/focused/dragged. */
+.repo-publ-split-view .repo-publ-split-detail {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.repo-publ-split-view .repo-publ-split-resizer {
+  flex: 0 0 7px;
+  align-self: stretch;
+  position: relative;
+  cursor: col-resize;
+  background: transparent;
+  touch-action: none;
+}
+.repo-publ-split-view .repo-publ-split-resizer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: #e6ebef;
+  transition: background 0.15s ease, width 0.15s ease;
+}
+.repo-publ-split-view .repo-publ-split-resizer:hover::before,
+.repo-publ-split-view .repo-publ-split-resizer:focus::before,
+.repo-publ-split-view .repo-publ-split-resizer:active::before {
+  width: 3px;
+  background: $chemstrap-blue-dark;
+}
+.repo-publ-split-view .repo-publ-split-resizer:focus {
+  outline: none;
+}
+
+/* Collapsible published-sample sections in the sample detail page. */
+.repo-sample-collapsible {
+  margin-bottom: 8px;
+}
+.repo-sample-collapse-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: #f2f5f7;
+  border: 1px solid #e2e8ee;
+  border-radius: 6px;
+  color: #2b3a4a;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.repo-sample-collapse-toggle:hover {
+  background: #e9eef2;
+}
+.repo-sample-collapse-toggle:focus {
+  outline: none;
+}
+.repo-sample-collapse-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.repo-sample-collapse-title {
+  font-weight: 600;
+}
+.repo-sample-collapse-summary {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #5a6b7b;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.repo-sample-collapse-summary-item:not(:first-child)::before {
+  content: "\00b7"; // middot separator between summary segments
+  margin: 0 6px;
+  color: #9aa8b5;
+}
+.repo-sample-collapse-summary-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* List region fills remaining left-Col space, scrolls internally */
+.repo-publ-split-view .public-list,
+.repo-publ-split-view .public-list-adv {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Molecule Archive nests its result list directly inside the split-list column
+   (unlike the publication page, whose .repo-search-results sits inside a
+   .repo-search-results-pane), so the publication-search flex rules in
+   repo-search.scss don't reach it. Reproduce them here — via the child (>)
+   combinator so this only touches the archive — to pin the header + pagination
+   footer and scroll only the result <ul>, matching the publication list. */
+.repo-publ-split-view .repo-publ-split-list > .repo-search-results {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+.repo-publ-split-view .repo-publ-split-list > .repo-search-results > ul {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* New publication-search layout: hand height down through the flex chain
+   so the result list scrolls inside the left column instead of pushing
+   the right-side detail pane around. */
+.repo-publ-split-view .repo-publ-layout {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+/* Pagination strip pinned to bottom of left Col, vertically centered */
+.repo-publ-split-view .list-container-bottom {
+  flex: 0 0 auto;
+  padding: 8px 0;
+}
+
+.list-container-bottom > .row {
+  align-items: center;
+}
+
+.list-container-bottom .pagination {
+  margin-bottom: 0;
+}
+
+.list-container-bottom .list-show-count {
+  margin-bottom: 0;
+}
+
+/* Right pane fills the right Col and scrolls internally */
+.repo-publ-split-view .public-element {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.review-element {
+  height: calc(100vh - 110px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.review-list {
+  height: calc(100vh - 214px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.review-list-search {
+  height: calc(100vh - 200px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.embargo-list {
+  height: calc(100vh - 200px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+@media only screen and (max-width: 1500px) {
+  .list-elements {
+    height: calc(100vh - 330px);
+  }
+
+  .public-element {
+    height: calc(100vh - 204px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+  }
+  .public-list {
+      height: calc(100vh - 226px);
+      overflow-x: hidden;
+      overflow-y: scroll;
+  }
+
+  /* Override media query styles when inside fixed content area */
+  .home-content-with-fixed-header .public-element,
+  .home-content-with-fixed-header .public-list,
+  .home-content-with-fixed-header .review-element,
+  .home-content-with-fixed-header .review-list,
+  .home-content-with-fixed-header .review-list-search,
+  .home-content-with-fixed-header .embargo-list {
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Media query adjustments for split container */
+  .home-content-with-fixed-header.sysinfo-closed .repo-publ-container-split {
+    height: calc(100vh - 100px);
+  }
+
+  .home-content-with-fixed-header .repo-publ-split-view .public-element {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+.repo-publ-layout {
+  display: flex;
+  align-items: stretch;
+  min-height: 100%;
+  height: 100%;
+}
+
+.repo-publ-main {
+  min-width: 0;
+}
+
+.repo-publ-sidenav {
+  background: #ffffff;
+  color: $chemstrap-carbon;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: relative;
+
+  &.expanded { width: 220px; }
+  &.collapsed { width: 56px; }
+
+  .repo-publ-sidenav-toggle {
+    background: transparent;
+    border: none;
+    color: $chemstrap-graphite;
+    width: 100%;
+    height: 44px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #eef1f3;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover { background: rgba(36, 149, 207, 0.06); color: $chemstrap-blue-dark; }
+    &:focus { outline: none; }
+  }
+
+  .repo-publ-sidenav-list {
+    list-style: none;
+    padding: 8px 8px;
+    margin: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      margin: 2px 0;
+      cursor: pointer;
+      gap: 12px;
+      color: $chemstrap-graphite;
+      border-left: 3px solid transparent;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+      i {
+        width: 20px;
+        flex-shrink: 0;
+        text-align: center;
+        font-size: 18px;
+        line-height: 1;
+        color: inherit;
+        opacity: 0.85;
+      }
+      .sidenav-label {
+        font-family: "Roboto", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.25;
+        white-space: normal;
+        word-break: break-word;
+        flex: 1;
+        letter-spacing: 0.1px;
+      }
+
+      &:hover {
+        background: rgba(36, 149, 207, 0.08);
+        color: $chemstrap-blue-dark;
+
+        i { opacity: 1; }
+      }
+      &.active {
+        background-color: rgb(239, 239, 239);
+        border-left-color: $chemstrap-blue;
+        color: $chemstrap-blue-dark;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(36, 149, 207, 0.08);
+
+        i { opacity: 1; }
+      }
+      &:focus { outline: none; }
+    }
+  }
+
+  &.collapsed .repo-publ-sidenav-list {
+    padding: 8px 6px;
+
+    li {
+      justify-content: center;
+      padding: 10px 0;
+      border-left-width: 0;
+      border-right: 3px solid transparent;
+
+      &.active {
+        border-right-color: $chemstrap-blue;
+        background-color: rgb(239, 239, 239);;
+      }
+    }
+  }
+}
+
+.repo-publ-sidenav-tool-wrap {
+  position: relative;
+}
+
+.repo-publ-sidenav-tool-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.repo-publ-sidenav-tool-dot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e67e22;
+  border: 2px solid #fff;
+  box-sizing: content-box;
+  pointer-events: none;
+}
+
+.repo-publ-sidenav-popover {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 10px;
+  min-width: 640px;
+  max-width: 920px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  z-index: 1050;
+  font-weight: normal;
+  color: $chemstrap-carbon;
+  cursor: default;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 18px;
+    left: -7px;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-left: 1px solid #e6e6e6;
+    border-bottom: 1px solid #e6e6e6;
+    transform: rotate(45deg);
+  }
+
+  .chemotion-search {
+    float: none;
+    padding-right: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+
+    .search-autocomplete {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .rbt,
+    .rbt-input-main,
+    .rbt-input,
+    input.rbt-input-main {
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+    }
+
+    .search-autocomplete > div,
+    .form-group {
+      width: 100%;
+    }
+
+    .input-group {
+      width: 100%;
+      flex-wrap: nowrap;
+    }
+
+    .form-control {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      width: auto !important;
+    }
+  }
+
+  .home-adv-search {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    flex-wrap: nowrap;
+
+    > div {
+      min-width: 0;
+    }
+
+    > div:nth-child(1) { flex: 0 0 180px; }
+    > div:nth-child(2) { flex: 1 1 auto; }
+
+    [class$="-control"] {
+      min-height: 36px !important;
+      height: auto !important;
+      border-radius: 0 !important;
+      border: 1px solid #ccc !important;
+      box-shadow: none !important;
+      min-width: 0 !important;
+    }
+
+    > div:nth-child(2) [class$="-control"] {
+      border-left: 0 !important;
+    }
+
+    > div:first-child [class$="-control"] {
+      border-top-left-radius: 4px !important;
+      border-bottom-left-radius: 4px !important;
+    }
+
+    [class$="-menu"] {
+      background: #fff !important;
+      border: 1px solid #ccc;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      z-index: 20;
+    }
+
+    [class$="-ValueContainer"] {
+      flex-wrap: wrap;
+      max-height: 96px;
+      overflow-y: auto;
+    }
+
+    .btns-grp,
+    .btns-grp .btn-group {
+      display: flex;
+      align-self: stretch;
+      align-items: stretch;
+      flex: 0 0 auto;
+    }
+
+    .btns-grp .btn-group > .btn,
+    .btns-grp > .btn {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0 !important;
+      border: 1px solid #ccc !important;
+      background: #fff !important;
+      color: $chemstrap-graphite !important;
+      height: auto !important;
+      min-height: 38px !important;
+      padding: 0 14px !important;
+      line-height: 1 !important;
+      box-sizing: border-box !important;
+      box-shadow: none !important;
+
+      i {
+        line-height: 1;
+        font-size: 14px;
+      }
+
+      &:hover {
+        background: #f2f4f6 !important;
+        color: $chemstrap-blue-dark !important;
+      }
+      &:focus,
+      &:active {
+        background: #f2f4f6 !important;
+        box-shadow: none !important;
+      }
+    }
+
+    .btns-grp .btn-group > .btn:first-child,
+    .btns-grp > .btn:first-child {
+      border-left: 0 !important;
+    }
+
+    .btns-grp .btn-group > .btn:last-child,
+    .btns-grp > .btn:last-child {
+      border-top-right-radius: 4px !important;
+      border-bottom-right-radius: 4px !important;
+    }
+  }
+
+  .input-group { width: 100%; }
+  .rbt, .rbt-input-main { width: 100% !important; }
+}
+
+.repo-publ-sidenav-popover-filter {
+  min-width: 620px;
+}
+
+.repo-publ-sidenav-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ececec;
+  font-weight: 600;
+  color: $chemstrap-graphite;
+  background: linear-gradient(180deg, #fafbfc 0%, #f2f4f6 100%);
+  border-radius: 8px 8px 0 0;
+  letter-spacing: 0.02em;
+}
+
+.repo-publ-sidenav-popover-close {
+  background: transparent;
+  border: none;
+  color: $chemstrap-graphite;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: $chemstrap-blue-dark;
+    background: rgba(0, 0, 0, 0.05);
+  }
+  &:focus { outline: none; }
+}
+
+.repo-publ-sidenav-popover-body {
+  padding: 16px;
+}
+
+.repo-publ-search-and-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.repo-publ-search-block,
+.repo-publ-filter-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &::before {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $chemstrap-graphite;
+    opacity: 0.85;
+  }
+}
+
+.repo-publ-search-block::before {
+  content: "Search by name, SMILES, InChI, or draw a structure";
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.repo-publ-filter-block {
+  padding-top: 14px;
+  border-top: 1px solid #ececec;
+
+  &::before {
+    content: "Search by authors, contributors, analysis type, embargo, or label";
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+}
+
+.chemotion-search {
+  padding-right: 30px;
+  float: left;
+  position: static;
+
+  div > div > div:nth-child(2) {
+    position: relative;
+    z-index: 2;
+  }
+
+  .button-caret {
+    border-radius: unset;
+  }
+}
+
+.advanced-search {
+  margin-top: 10px;
+
+  .adv-search-row {
+    display: flex;
+    overflow: visible !important;
+    margin-left: 10px;
+  }
+
+  button {
+    margin-left: 5px;
+  }
+
+  .field-select-full {
+    margin: 5px;
+    flex: 100%;
+  }
+
+  .field-select {
+    margin: 5px;
+    flex: 0 0 205px;
+  }
+
+  .link-select {
+    margin: 5px;
+    flex: 0 0 117px;
+  }
+
+  .match-select {
+    margin: 5px;
+    flex: 0 0 150px;
+  }
+
+  .value-field-select {
+    margin: 5px;
+    flex: 0 0 205px;
+
+    .ant-select {
+      width: 100%;
+    }
+    .ant-select-selection--single {
+      height: 34px;
+    }
+    .value-select-unit {
+      height: 34px;
+    }
+  }
+
+  .value-select {
+    margin: 5px;
+  }
+
+  .footer {
+    margin: 10px;
+    z-index: 1;
+  }
+}
+
+.loading-modal {
+  .modal-content {
+    height: 100px;
+    text-align: center;
+    margin: auto;
+    padding-top: 25px;
+    width: 100px;
+  }
+}
+
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  b {
+    float: right;
+  }
+}
+
+.home-title {
+  font-size: x-large;
+  font-weight: bolder;
+  text-align: center;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  & > span {
+    position: relative;
+    padding: 0 5px;
+    &:before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 50%;
+      background-color: #777;
+      right: 100%;
+    }
+    &:after {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 50%;
+      background-color: #777;
+      left: 100%;
+    }
+  }
+}
+
+.display-false {
+  display: none !important;
+}
+
+.display-true {
+  .initial {
+    display: initial;
+  }
+  .inherit {
+    display: inherit;
+  }
+}
+
+.select-assign-collection {
+  .separator {
+    border-top: 1px solid #ccc;
+  }
+}
+
+.navig-smaller-font {
+  a.dropdown-toggle {
+     font-size: 70%;
+  }
+}
+
+
+@media only screen and (min-width: 1366px) and (min-height: 500px) {
+  .card-navigation {
+    top: 0;
+    z-index: 5;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media only screen and (min-width: 1144px) and (max-width: 1365px) and (min-height: 500px) {
+  .card-navigation {
+    top: 0;
+    z-index: 5;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.card-navigation {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Fixed header container that holds both SysInfo and Navigation */
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+}
+
+/* Home page content area with padding to account for fixed header */
+.home-content-with-fixed-header {
+  position: fixed;
+  top: 120px; /* Default: SysInfo + navbar */
+  left: 0;
+  right: 0;
+  bottom: 40px; /* Account for footer height */
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: top 0.3s ease;
+}
+
+/* Disable main content scrollbar when split view is active */
+.home-content-with-fixed-header.has-split-view {
+  overflow: hidden;
+}
+
+/* Reduced padding when SysInfo is closed */
+.home-content-with-fixed-header.sysinfo-closed {
+  top: 60px; /* Only navbar height */
+}
+
+/* SysInfo styling - appears at the very top */
+.alert-info {
+  position: relative;
+  margin-bottom: 0;
+  border-radius: 0;
+}
+
+/* Navbar positioned directly below SysInfo within the fixed header */
+.navbar-home-custom {
+  position: relative;
+  margin-bottom: 8px;
+  border-radius: 0;
+  padding: 0px;
+  background-color: #EFEFEF;
+
+  .navbar-brand {
+    padding-left: 20px;
+  }
+
+  .navbar-collapse {
+    .navbar-nav {
+      flex-grow: 1;
+      justify-content: flex-end;
+
+      .nav-link {
+        white-space: nowrap;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
+    > .d-flex:last-child {
+      padding-right: 20px;
+    }
+  }
+}
+
+/* Ensure SysInfo appears properly below fixed navbar */
+.alert-info {
+  position: relative;
+  z-index: 1020;
+}
+
+.title-public {
+  background: Lavender;
+}
+
+/* === Embargo Overview Layout ===
+ * Mirrors the has-split-view pattern used by RepoPubl.
+ * JS toggles 'embargo-overview-mode' on the fixed parent container to suppress
+ * its outer scrollbar; then a flex column with calc() heights handles the rest.
+ */
+
+/* 1. Suppress outer scrollbar while in overview mode */
+.home-content-with-fixed-header.embargo-overview-mode {
+  overflow: hidden !important;
+}
+
+/* 2. Full-height flex wrapper.
+ *    Using exact offsets to close the gap as much as possible before hitting the footer bounds.
+ */
+.repo-embargo-overview-wrapper {
+  height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.home-content-with-fixed-header.sysinfo-closed .repo-embargo-overview-wrapper {
+  height: calc(100vh - 100px);
+}
+
+/* 3. Toolbar: natural height, never shrinks */
+.repo-embargo-overview-toolbar {
+  flex-shrink: 0;
+  background-color: #fff;
+  position: relative;
+  z-index: 20;
+}
+
+/* 4. List area: fill all remaining space */
+.repo-embargo-overview-list {
+  flex: 1;
+  min-height: 0; /* allow flex child to shrink below content height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 5. Make the React wrapper component pass the height down */
+.repo-embargo-overview-list .repo-embargo-container {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 6. Scroll container fills container; owns both scrollbars */
+.repo-embargo-overview-list .embargo-table-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.dropdown-button-selection {
+  .dropdown-toggle {
+    min-width: 180px;
+    max-width: 280px;
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    background-color: #fff;
+    border-color: #ced4da;
+    color: #212529;
+    font-weight: 400;
+
+    span,
+    > *:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:hover,
+    &:focus {
+      background-color: #f8f9fa;
+      border-color: #adb5bd;
+      color: #212529;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(56, 112, 178, 0.18);
+    }
+  }
+
+  .dropdown-menu {
+    min-width: 180px;
+  }
+}

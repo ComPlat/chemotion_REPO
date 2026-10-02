@@ -12,7 +12,7 @@ module ReviewHelpers
   def get_review_list(params, current_user, is_reviewer = false)
     type = params[:type].blank? || params[:type] == 'All' ? %w[Sample Reaction] : params[:type].chop!
     state = params[:state].empty? || params[:state] == 'All' ? [Publication::STATE_PENDING, Publication::STATE_REVIEWED, Publication::STATE_ACCEPTED] : params[:state]
-    pub_scope = Publication.where(state: state, ancestry: nil, element_type: type)
+    pub_scope = Publication.where(state: state, ancestry: '/', element_type: type)
     pub_scope = pub_scope.where("published_by = ? OR (review -> 'reviewers')::jsonb @> '?' OR (review -> 'submitters')::jsonb @> '?'", current_user.id, current_user.id, current_user.id) unless is_reviewer
     unless params[:search_value].blank? || params[:search_value] == 'All'
       case params[:search_type]
@@ -187,8 +187,21 @@ module ReviewHelpers
     leaders = declared_params[:leaders]
     if tagg_data.present?
       tagg_data['author_ids'] = tagg_data['creators']&.map { |cr| cr['id'] }
-      tagg_data['affiliation_ids'] = [tagg_data['creators']&.map { |cr| cr['affiliationIds'] }.flatten.uniq]
-      affiliation_ids_to_keep = tagg_data['affiliation_ids'].first || []
+
+      creators_aff_ids = tagg_data['creators']&.map { |cr| cr['affiliationIds'] }&.flatten&.compact || []
+
+      contributors = tagg_data['contributors'] || {}
+      contributors_aff_ids = if contributors.is_a?(Array)
+                               contributors.map { |c| c['affiliationIds'] }.flatten.compact
+                             elsif contributors.is_a?(Hash)
+                               contributors['affiliationIds'] || []
+                             else
+                               []
+                             end
+
+      all_aff_ids = (creators_aff_ids + contributors_aff_ids).uniq
+      tagg_data['affiliation_ids'] = all_aff_ids
+      affiliation_ids_to_keep = all_aff_ids
 
       # Process affiliations and ensure all have ROR IDs when possible
       if tagg_data['affiliations'].present?
@@ -256,6 +269,8 @@ module ReviewHelpers
 
       # Merge the new data
       pub_taggable_data = pub_taggable_data.deep_merge(tagg_data || {})
+      pub_taggable_data['contributors'] = tagg_data['contributors'] if tagg_data['contributors'].present?
+      pub_taggable_data['creators'] = tagg_data['creators'] if tagg_data['creators'].present?
       pub.update(taggable_data: pub_taggable_data)
 
       et_taggable_data = et.taggable_data || {}
@@ -271,6 +286,8 @@ module ReviewHelpers
       end
 
       pub_tag = pub_tag.deep_merge(tagg_data || {})
+      pub_tag['contributors'] = tagg_data['contributors'] if tagg_data['contributors'].present?
+      pub_tag['creators'] = tagg_data['creators'] if tagg_data['creators'].present?
       et_taggable_data['publication'] = pub_tag
       et.update(taggable_data: et_taggable_data)
     end
@@ -385,7 +402,7 @@ module ReviewHelpers
       search_scope = User.where(type: 'Person').where(
         <<~SQL
           users.id in (
-            select published_by from publications pub where ancestry is null and deleted_at is null
+            select published_by from publications pub where ancestry = '/' and deleted_at is null
             and #{state_sql} and #{type_sql})
         SQL
       )
@@ -393,11 +410,10 @@ module ReviewHelpers
     else
       search_scope = User.where(id: current_user.id)
     end
-    result = search_scope.select(
-      <<~SQL
-        id as key, first_name, last_name, first_name || chr(32) || last_name as name, first_name || chr(32) || last_name || chr(32) || '(' || name_abbreviation || ')' as label
-      SQL
-    )
+    search_scope.pluck(:id, :first_name, :last_name, :name_abbreviation).map do |id, first_name, last_name, abbr|
+      full_name = "#{first_name} #{last_name}"
+      { key: id, name: full_name, label: "#{full_name} (#{abbr})" }
+    end
   rescue StandardError => e
     Publication.repo_log_exception(e, { element_type: element_type, state: state, current_user: current_user&.id })
     { error: e.message }
@@ -405,14 +421,18 @@ module ReviewHelpers
 
   def query_embargo(current_user)
     search_scope = if User.reviewer_ids.include?(current_user.id)
-                     Collection.where(
-                       <<~SQL
-                         ancestry::integer in (select id from collections cx where label = 'Embargoed Publications')
-                       SQL
-                     )
-                   else
-                     Collection.where(ancestry: current_user.publication_embargo_collection.id)
-                   end
+      # Find all collections whose ancestry path starts from a collection with label 'Embargoed Publications from' as root parent
+      # Get the id of the root collection
+      root_id_sql = "select id::text from collections cx where label = 'Embargoed Publications from'"
+      # Find collections whose ancestry matches '/<root_id>/<child_id>/' (i.e., two-level ancestry)
+      Collection.where(
+        <<~SQL
+          ancestry ~ ('^/' || (#{root_id_sql}) || '/[0-9]+/$')
+        SQL
+      )
+    else
+      Collection.where(ancestry: current_user.publication_embargo_collection.id)
+    end
     result = search_scope.select(
       <<~SQL
         id as key, label as name, label as label

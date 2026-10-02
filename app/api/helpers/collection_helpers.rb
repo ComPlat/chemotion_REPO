@@ -16,7 +16,7 @@ module CollectionHelpers
       )&.collection_id
     else
       (Collection.find_by(id: id.to_i, user_id: user_ids) ||
-        Collection.find_by(id: id.to_i, shared_by_id: current_user.id))&.id
+        Collection.find_by(id: id.to_i, shared_by_id: current_user&.id))&.id
     end.to_i
   end
 
@@ -25,7 +25,7 @@ module CollectionHelpers
       SyncCollectionsUser.find_by(id: id.to_i, user_id: user_ids)
     else
       Collection.find_by(id: id.to_i, user_id: user_ids) ||
-        Collection.find_by(id: id.to_i, shared_by_id: current_user.id)
+        Collection.find_by(id: id.to_i, shared_by_id: current_user&.id)
     end
   end
 
@@ -38,7 +38,9 @@ module CollectionHelpers
       :sample_detail_level, :reaction_detail_level,
       :wellplate_detail_level, :screen_detail_level,
       :researchplan_detail_level, :element_detail_level,
-      :celllinesample_detail_level
+      :celllinesample_detail_level,
+      :devicedescription_detail_level,
+      :sequencebasedmacromoleculesample_detail_level
     )&.symbolize_keys
     {
       permission_level: 0,
@@ -49,6 +51,8 @@ module CollectionHelpers
       researchplan_detail_level: 0,
       element_detail_level: 0,
       celllinesample_detail_level: 0,
+      devicedescription_detail_level: 0,
+      sequencebasedmacromoleculesample_detail_level: 0,
     }.merge(dl || {})
   end
 
@@ -57,7 +61,7 @@ module CollectionHelpers
   # if current user is entitled to write into the destination collection
   def fetch_collection_id_for_assign(prms = params, pl = 1)
     c_id = prms[:collection_id]
-    if !prms[:newCollection].blank?
+    if prms[:newCollection].present?
       c = Collection.create(
         user_id: current_user.id, label: prms[:newCollection],
       )
@@ -108,7 +112,9 @@ module CollectionHelpers
     fetch_collection_by_ui_state_params_and_pl(2)
   end
 
+  # rubocop:disable Metrics/AbcSize
   def set_var(c_id = params[:collection_id], is_sync = params[:is_sync])
+    check_params_collection_id
     public_col = !is_sync && [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(params[:collection_id])
     if public_col
       @c_id = params[:collection_id] if public_col
@@ -117,9 +123,9 @@ module CollectionHelpers
     end
     @c = Collection.find_by(id: @c_id)
     cu_id = current_user&.id
-    @is_owned = cu_id && ((@c&.user_id == cu_id && !@c&.is_shared) || @c&.shared_by_id == cu_id)
+    @is_owned = cu_id && @c && ((@c.user_id == cu_id && !@c.is_shared) || @c.shared_by_id == cu_id)
 
-    @dl ||= {
+    @dl = {
       permission_level: 10,
       sample_detail_level: 10,
       reaction_detail_level: 10,
@@ -128,9 +134,11 @@ module CollectionHelpers
       researchplan_detail_level: 10,
       element_detail_level: 10,
       celllinesample_detail_level: 10,
+      devicedescription_detail_level: 10,
+      sequencebasedmacromoleculesample_detail_level: 10,
     }
 
-    @dl = detail_level_for_collection(c_id, is_sync) unless @is_owned || [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(@c_id)
+    @dl = detail_level_for_collection(c_id, is_sync) unless @is_owned  || [Collection.public_collection_id, Collection.scheme_only_reactions_collection_id].include?(@c_id)
     @pl = @dl[:permission_level]
     @dl_s = @dl[:sample_detail_level]
     @dl_r = @dl[:reaction_detail_level]
@@ -139,8 +147,13 @@ module CollectionHelpers
     @dl_rp = @dl[:researchplan_detail_level]
     @dl_e = @dl[:element_detail_level]
     @dl_cl = @dl[:celllinesample_detail_level]
+    @dl_dd = @dl[:devicedescription_detail_level]
+    @dl_sbmms = @dl[:sequencebasedmacromoleculesample_detail_level]
   end
 
+  ## Chemotion Repository
+  # Resolve the textual aliases 'public' / 'schemeOnly' to actual collection
+  # ids before #set_var uses them.
   def check_params_collection_id
     params[:collection_id] = case params[:collection_id]
                              when 'public'
@@ -151,17 +164,6 @@ module CollectionHelpers
                                params[:collection_id]
                              end
   end
-
-  def set_var_for_unsigned_user
-    params[:is_sync] = false
-    @dl = {
-      permission_level: 0,
-      sample_detail_level: 10,
-      reaction_detail_level: 10,
-      wellplate_detail_level: 0,
-      screen_detail_level: 0,
-      researchplan_detail_level: 0
-    }
-  end
+  # rubocop:enable Metrics/AbcSize
 end
 # rubocop:enable Metrics/ModuleLength, Style/OptionalBooleanParameter, Naming/MethodParameterName, Layout/LineLength

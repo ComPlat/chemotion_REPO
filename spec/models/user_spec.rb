@@ -1,5 +1,60 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: users
+#
+#  id                        :integer          not null, primary key
+#  account_active            :boolean
+#  allocated_space           :bigint           default(0)
+#  confirmation_sent_at      :datetime
+#  confirmation_token        :string
+#  confirmed_at              :datetime
+#  consumed_timestep         :integer
+#  counters                  :hstore           not null
+#  current_sign_in_at        :datetime
+#  current_sign_in_ip        :inet
+#  deleted_at                :datetime
+#  email                     :string           default(""), not null
+#  encrypted_otp_secret      :string
+#  encrypted_otp_secret_iv   :string
+#  encrypted_otp_secret_salt :string
+#  encrypted_password        :string           default(""), not null
+#  failed_attempts           :integer          default(0), not null
+#  first_name                :string           not null
+#  last_name                 :string           not null
+#  last_sign_in_at           :datetime
+#  last_sign_in_ip           :inet
+#  layout                    :hstore           not null
+#  locked_at                 :datetime
+#  matrix                    :integer          default(0)
+#  name                      :string
+#  name_abbreviation         :string(12)
+#  otp_backup_codes          :string           is an Array
+#  otp_required_for_login    :boolean
+#  providers                 :jsonb
+#  reaction_name_prefix      :string(3)        default("R")
+#  remember_created_at       :datetime
+#  reset_password_sent_at    :datetime
+#  reset_password_token      :string
+#  sign_in_count             :integer          default(0), not null
+#  type                      :string           default("Person")
+#  unconfirmed_email         :string
+#  unlock_token              :string
+#  used_space                :bigint           default(0)
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  selected_device_id        :integer
+#
+# Indexes
+#
+#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
+#  index_users_on_deleted_at            (deleted_at)
+#  index_users_on_email                 (email) UNIQUE
+#  index_users_on_name_abbreviation     (name_abbreviation) UNIQUE WHERE (name_abbreviation IS NOT NULL)
+#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
+#  index_users_on_unlock_token          (unlock_token) UNIQUE
+#
 require 'rails_helper'
 
 RSpec.describe User do
@@ -108,6 +163,44 @@ RSpec.describe User do
 
     it 'can not find a uniq user by name_abbreviation with different case' do
       expect(User.try_find_by_name_abbreviation(user_lower.name_abbreviation.downcase)).to be_nil
+    end
+  end
+
+  describe '.default_admin' do
+    let(:user) { create(:person, name_abbreviation: 'ADM') }
+    let(:admins) { create_list(:admin, 2) }
+    let(:admin) { create(:admin, name_abbreviation: 'ADM') }
+
+    it 'returns the default admin - first admin' do
+      user
+      admins
+      expect(described_class.default_admin).to eq admins.first
+    end
+
+    it 'returns the default admin - ADM' do
+      admins
+      admin
+      expect(described_class.default_admin).to eq admin
+    end
+
+    it 'returns nil if no admin' do
+      expect(described_class.default_admin).to be_nil
+    end
+  end
+
+  describe '#increment_counter' do
+    let(:described_method) { :increment_counter }
+    let(:element) { described_class::COUNTER_KEYS.sample }
+    let(:some_key) { Faker::Lorem.word }
+    let(:counters) { { some_key => '0' } }
+    let(:user) { create(:user, counters: counters) }
+
+    it 'increments the counter when no value is set for default elements' do
+      expect { user.send(described_method, element) }.to change { user.reload.counters[element].to_i }.by(1)
+    end
+
+    it 'increments the counter for non default element when a value preset' do
+      expect { user.send(described_method, some_key) }.to change { user.reload.counters[some_key].to_i }.by(1)
     end
   end
 end

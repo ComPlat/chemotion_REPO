@@ -5,23 +5,23 @@
 # Table name: reports
 #
 #  id                   :integer          not null, primary key
-#  author_id            :integer
-#  file_name            :string
-#  file_description     :text
 #  configs              :text
-#  sample_settings      :text
-#  reaction_settings    :text
-#  objects              :text
-#  img_format           :string
+#  deleted_at           :datetime
+#  file_description     :text
+#  file_name            :string
 #  file_path            :string
 #  generated_at         :datetime
-#  deleted_at           :datetime
+#  img_format           :string
+#  mol_serials          :text             default([])
+#  objects              :text
+#  prd_atts             :text             default([])
+#  reaction_settings    :text
+#  sample_settings      :text
+#  si_reaction_settings :text             default({:Name=>true, :CAS=>true, :Formula=>true, :Smiles=>true, :InCHI=>true, :"Molecular Mass"=>true, :"Exact Mass"=>true, :EA=>true})
+#  template             :string           default("standard")
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
-#  template             :string           default("standard")
-#  mol_serials          :text             default([])
-#  si_reaction_settings :text             default({"Name"=>true, "CAS"=>true, "Formula"=>true, "Smiles"=>true, "InCHI"=>true, "Molecular Mass"=>true, "Exact Mass"=>true, "EA"=>true})
-#  prd_atts             :text             default([])
+#  author_id            :integer
 #  report_templates_id  :integer
 #
 # Indexes
@@ -88,10 +88,6 @@ class Report < ApplicationRecord
       Reporter::WorkerRxnList.new(
         report: self, template_path: tpl_path, ext: 'html',
       ).process
-    when 'doi_list_xlsx'
-      Reporter::WorkerDoiList.new(
-        report: self, ext: 'xlsx'
-      ).process
     else
       Reporter::Worker.new(
         report: self, template_path: tpl_path,
@@ -101,8 +97,7 @@ class Report < ApplicationRecord
   handle_asynchronously(:create_docx, run_at: proc { 30.seconds.from_now }) unless Rails.env.development?
 
   def queue_name
-    #"report_#{id}"
-    'report'
+    "report_#{id}"
   end
 
   def self.create_reaction_docx(current_user, user_ids, params)
@@ -120,12 +115,13 @@ class Report < ApplicationRecord
     ).serializable_hash
     content = Reporter::Docx::Document.new(objs: [serialized_reaction]).convert
     tpl_path = template_path(params[:template])
-    Sablon.template(tpl_path)
-          .render_to_string(merge(current_user,
-                                  content,
-                                  all_spl_settings,
-                                  all_rxn_settings,
-                                  all_configs))
+    raw = Sablon.template(tpl_path)
+                .render_to_string(merge(current_user,
+                                        content,
+                                        all_spl_settings,
+                                        all_rxn_settings,
+                                        all_configs))
+    Reporter::Docx::HyperlinkPostprocessor.process(raw)
   end
 
   def self.docx_file_name(template)

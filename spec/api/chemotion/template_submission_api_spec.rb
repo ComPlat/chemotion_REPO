@@ -6,8 +6,14 @@ describe Chemotion::TemplateSubmissionAPI do
   let(:user) { create(:person) }
   let(:token) { JsonWebToken.encode(user_id: user.id, first_name: user.first_name, last_name: user.last_name) }
   let(:auth_header) { { 'AUTHORIZATION' => "Bearer #{token}" } }
+  let(:allowed_origin) { 'http://external-system.test' }
+  let(:origin_header) { { 'X-Origin-URL' => allowed_origin } }
 
-  describe 'POST /api/v1/public/template_submissions' do
+  before do
+    stub_const('ENV', ENV.to_hash.merge('TEMPLATE_SUBMISSION_ALLOWED_ORIGINS' => allowed_origin))
+  end
+
+  describe 'POST /api/v1/labimotion_hub/template_submissions' do
     let(:valid_params) do
       {
         template_klass: 'reaction',
@@ -17,51 +23,63 @@ describe Chemotion::TemplateSubmissionAPI do
       }
     end
 
-    context 'with valid authentication and params' do
+    context 'with valid origin header and params' do
       it 'creates a template submission' do
         expect do
-          post '/api/v1/public/template_submissions', params: valid_params, headers: auth_header
+          post '/api/v1/labimotion_hub/template_submissions', params: valid_params, headers: origin_header
         end.to change(TemplateSubmission, :count).by(1)
 
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json['template_klass']).to eq('reaction')
         expect(json['state']).to eq('pending')
-        expect(json['metadata']['submitted_by_user_id']).to eq(user.id)
+        expect(json['metadata']['submitted_from_origin']).to eq(allowed_origin)
       end
     end
 
-    context 'without authentication' do
+    context 'without origin header' do
       it 'returns 401 unauthorized' do
-        post '/api/v1/public/template_submissions', params: valid_params
+        post '/api/v1/labimotion_hub/template_submissions', params: valid_params
         expect(response).to have_http_status(:unauthorized)
       end
     end
 
-    context 'with invalid token' do
-      it 'returns 401 unauthorized' do
-        post '/api/v1/public/template_submissions', params: valid_params,
-                                                    headers: { 'AUTHORIZATION' => 'Bearer invalid_token' }
-        expect(response).to have_http_status(:unauthorized)
+    context 'with unauthorized origin' do
+      it 'returns 403 forbidden' do
+        post '/api/v1/labimotion_hub/template_submissions',
+             params: valid_params,
+             headers: { 'X-Origin-URL' => 'http://unauthorized.test' }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context 'when TEMPLATE_SUBMISSION_ALLOWED_ORIGINS is not configured' do
+      before { stub_const('ENV', ENV.to_hash.merge('TEMPLATE_SUBMISSION_ALLOWED_ORIGINS' => nil)) }
+
+      it 'returns 503 service unavailable' do
+        post '/api/v1/labimotion_hub/template_submissions', params: valid_params, headers: origin_header
+        expect(response).to have_http_status(:service_unavailable)
       end
     end
 
     context 'with missing required params' do
       it 'returns 400 bad request when template_klass is missing' do
-        invalid_params = valid_params.except(:template_klass)
-        post '/api/v1/public/template_submissions', params: invalid_params, headers: auth_header
+        post '/api/v1/labimotion_hub/template_submissions',
+             params: valid_params.except(:template_klass),
+             headers: origin_header
         expect(response).to have_http_status(:bad_request)
       end
 
       it 'returns 400 bad request when template is missing' do
-        invalid_params = valid_params.except(:template)
-        post '/api/v1/public/template_submissions', params: invalid_params, headers: auth_header
+        post '/api/v1/labimotion_hub/template_submissions',
+             params: valid_params.except(:template),
+             headers: origin_header
         expect(response).to have_http_status(:bad_request)
       end
     end
   end
 
-  describe 'GET /api/v1/public/template_submissions/:id' do
+  describe 'GET /api/v1/template_submissions/:id' do
     let!(:submission) do
       TemplateSubmission.create!(
         template_klass: 'reaction',
@@ -74,7 +92,7 @@ describe Chemotion::TemplateSubmissionAPI do
 
     context 'with valid authentication' do
       it 'returns the template submission' do
-        get "/api/v1/public/template_submissions/#{submission.id}", headers: auth_header
+        get "/api/v1/template_submissions/#{submission.id}", headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['id']).to eq(submission.id)
@@ -84,39 +102,39 @@ describe Chemotion::TemplateSubmissionAPI do
 
     context 'with non-existent id' do
       it 'returns 404 not found' do
-        get '/api/v1/public/template_submissions/99999', headers: auth_header
+        get '/api/v1/template_submissions/99999', headers: auth_header
         expect(response).to have_http_status(:not_found)
       end
     end
 
     context 'without authentication' do
       it 'returns 401 unauthorized' do
-        get "/api/v1/public/template_submissions/#{submission.id}"
+        get "/api/v1/template_submissions/#{submission.id}"
         expect(response).to have_http_status(:unauthorized)
       end
     end
   end
 
-  describe 'GET /api/v1/public/template_submissions' do
+  describe 'GET /api/v1/template_submissions' do
     before do
       TemplateSubmission.create!(
         template_klass: 'reaction',
         template: { name: 'Reaction 1' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
       )
       TemplateSubmission.create!(
         template_klass: 'sample',
         template: { name: 'Sample 1' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :approved,
       )
       TemplateSubmission.create!(
         template_klass: 'reaction',
         template: { name: 'Reaction 2' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'external',
         state: :pending,
       )
@@ -124,7 +142,7 @@ describe Chemotion::TemplateSubmissionAPI do
 
     context 'with valid authentication' do
       it 'returns all template submissions' do
-        get '/api/v1/public/template_submissions', headers: auth_header
+        get '/api/v1/template_submissions', headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['submissions'].length).to eq(3)
@@ -132,28 +150,28 @@ describe Chemotion::TemplateSubmissionAPI do
       end
 
       it 'filters by template_klass' do
-        get '/api/v1/public/template_submissions', params: { template_klass: 'reaction' }, headers: auth_header
+        get '/api/v1/template_submissions', params: { template_klass: 'reaction' }, headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['submissions'].length).to eq(2)
       end
 
       it 'filters by state' do
-        get '/api/v1/public/template_submissions', params: { state: 'approved' }, headers: auth_header
+        get '/api/v1/template_submissions', params: { state: 'approved' }, headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['submissions'].length).to eq(1)
       end
 
       it 'filters by origin' do
-        get '/api/v1/public/template_submissions', params: { origin: 'external' }, headers: auth_header
+        get '/api/v1/template_submissions', params: { origin: 'external' }, headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['submissions'].length).to eq(1)
       end
 
       it 'supports pagination' do
-        get '/api/v1/public/template_submissions', params: { page: 1, per_page: 2 }, headers: auth_header
+        get '/api/v1/template_submissions', params: { page: 1, per_page: 2 }, headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['submissions'].length).to eq(2)
@@ -162,7 +180,7 @@ describe Chemotion::TemplateSubmissionAPI do
     end
   end
 
-  describe 'PUT /api/v1/public/template_submissions/:id/state' do
+  describe 'PUT /api/v1/template_submissions/:id/state' do
     let!(:submission) do
       TemplateSubmission.create!(
         template_klass: 'reaction',
@@ -175,29 +193,29 @@ describe Chemotion::TemplateSubmissionAPI do
 
     context 'with valid authentication and params' do
       it 'updates the state' do
-        put "/api/v1/public/template_submissions/#{submission.id}/state",
+        put "/api/v1/template_submissions/#{submission.id}/state",
             params: { state: 'approved' },
             headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['state']).to eq('approved')
-        expect(json['metadata']['approved_by_user_id']).to eq(user.id)
       end
 
-      it 'updates with additional metadata' do
-        put "/api/v1/public/template_submissions/#{submission.id}/state",
+      it 'merges metadata_update and records reviewer info' do
+        put "/api/v1/template_submissions/#{submission.id}/state",
             params: { state: 'rejected', metadata_update: { reason: 'Invalid data' } },
             headers: auth_header
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['state']).to eq('rejected')
         expect(json['metadata']['reason']).to eq('Invalid data')
+        expect(json['metadata']['rejected_by_user_id']).to eq(user.id)
       end
     end
 
     context 'with invalid state' do
       it 'returns 400 bad request' do
-        put "/api/v1/public/template_submissions/#{submission.id}/state",
+        put "/api/v1/template_submissions/#{submission.id}/state",
             params: { state: 'invalid_state' },
             headers: auth_header
         expect(response).to have_http_status(:bad_request)
@@ -205,7 +223,7 @@ describe Chemotion::TemplateSubmissionAPI do
     end
   end
 
-  describe 'DELETE /api/v1/public/template_submissions/:id' do
+  describe 'DELETE /api/v1/template_submissions/:id' do
     let!(:submission) do
       TemplateSubmission.create!(
         template_klass: 'reaction',
@@ -218,16 +236,16 @@ describe Chemotion::TemplateSubmissionAPI do
 
     context 'with valid authentication' do
       it 'soft deletes the template submission' do
-        delete "/api/v1/public/template_submissions/#{submission.id}", headers: auth_header
+        delete "/api/v1/template_submissions/#{submission.id}", headers: auth_header
         expect(response).to have_http_status(:no_content)
-        submission.reload
-        expect(submission.deleted_at).not_to be_nil
+        reloaded = TemplateSubmission.with_deleted.find(submission.id)
+        expect(reloaded.deleted_at).not_to be_nil
       end
     end
 
     context 'with non-existent id' do
       it 'returns 404 not found' do
-        delete '/api/v1/public/template_submissions/99999', headers: auth_header
+        delete '/api/v1/template_submissions/99999', headers: auth_header
         expect(response).to have_http_status(:not_found)
       end
     end

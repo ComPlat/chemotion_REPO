@@ -1,5 +1,5 @@
 class AddMolfileToSamples < ActiveRecord::Migration[4.2]
   def change
-    add_column :samples, :molfile, :binary
+    add_column :samples, :molfile, :binary unless column_exists?(:samples, :molfile)
   end
 end

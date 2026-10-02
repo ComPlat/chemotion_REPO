@@ -1,0 +1,99 @@
+// Partners section
+// Relies on $home-* variables defined at the top of repo-home.scss.
+
+.card-partners {
+  margin-top: 20px;
+  padding: 8px 0;
+  background-color: #f5f5f5;
+
+  .partner-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .partners-info {
+    height: 120px;
+    position: relative;
+    display: flex;
+    margin: 0;
+    border: 0px;
+    background-color: #f5f5f5;
+    flex: 1 1 0;
+    min-width: 90px;
+
+    img {
+      display: block;
+      margin: auto;
+      max-height: 90%;
+      max-width: 90%;
+      opacity: 1;
+      z-index: 1;
+    }
+
+    &:hover img {
+      opacity: 0.08;
+    }
+
+    &:hover {
+      border: 2px solid #ddd;
+    }
+
+    &:hover .info {
+      opacity: 1;
+    }
+
+    .info {
+      inset: 0;
+      opacity: 0;
+      position: absolute;
+      padding: 8px;
+      background-color: transparent;
+      color: #1f2937;
+      font-weight: 500;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--repo-border, #e5e7eb);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+  }
+}
+
+// Welcome-page modernization overrides for the Partners section
+.repo-welcome {
+  .card-partners {
+    background-color: $home-surface-muted;
+    border-radius: $home-radius-card;
+    padding: 16px 8px;
+
+    .partners-info {
+      background-color: $home-surface-muted;
+      border: 1px solid $home-border;
+      border-radius: $home-radius-card;
+      transition: box-shadow 0.25s ease, border-color 0.25s ease;
+
+      &:hover {
+        box-shadow: $home-shadow;
+      }
+
+      .card-title,
+      h4 {
+        font-size: $home-font-partner;
+        font-weight: 600;
+        line-height: $home-line-height-h;
+        margin-bottom: 6px;
+      }
+
+      .card-text {
+        font-size: $home-font-caption;
+        line-height: $home-line-height;
+        color: #555;
+      }
+    }
+  }
+}

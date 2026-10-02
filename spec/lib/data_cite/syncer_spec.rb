@@ -9,6 +9,13 @@ describe DataCite::Syncer do
   let(:device_metadata) { create(:device_metadata, doi: doi, data_cite_prefix: data_cite_prefix) }
   let(:doi) { "#{ENV['DATA_CITE_PREFIX']}/device-test-3" }
   let(:data_cite_prefix) { ENV['DATA_CITE_PREFIX'] }
+  let(:data_cite_configured?) do
+    ENV['DATA_CITE_PREFIX'].present? && ENV['DATA_CITE_BASE_URI'].present?
+  end
+
+  before do
+    skip 'DataCite not configured (requires DATA_CITE_PREFIX and DATA_CITE_BASE_URI)' unless data_cite_configured?
+  end
 
   describe '#find_and_create_at_chemotion!' do
     let(:device_metadata) do

@@ -13,8 +13,8 @@ describe 'Copy sample' do
   let!(:col2) { create(:collection, user_id: user.id, label: 'Col2', sample_detail_level: 10) }
 
   let!(:root_share) { create(:collection, user: user, shared_by_id: user2.id, is_shared: true, is_locked: true) }
-  let!(:cshare) { create(:collection, user: user, label: 'share-col', sample_detail_level: 10, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
-  let!(:cshare2) { create(:collection, user: user, label: 'share-col-2', sample_detail_level: 0, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
+  let!(:cshare) { create(:collection, user: user, label: 'share-col', sample_detail_level: 10, shared_by_id: user2.id, is_shared: true, parent: root_share) }
+  let!(:cshare2) { create(:collection, user: user, label: 'share-col-2', sample_detail_level: 0, shared_by_id: user2.id, is_shared: true, parent: root_share) }
 
   before do
     sign_in(user)

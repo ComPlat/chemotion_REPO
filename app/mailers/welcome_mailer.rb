@@ -19,7 +19,7 @@ class WelcomeMailer < ApplicationMailer
     @message = content_path.read
     @output = markdown(@message)
 
-    mail(to: @user.email, subject: 'Welcome to Chemotion Repository.')
+    mail(to: @user.email, subject: '[ELN] Welcome to Chemotion.')
   end
 
   # set Job max attempts

@@ -29,6 +29,7 @@ module Taggable
     data['pubchem_cid'] = pubchem_tag if args[:pubchem_tag]
     data['analyses'] = analyses_tag if args[:analyses_tag]
     data['collection_labels'] = collection_tag if args[:collection_tag]
+    data['resources'] = resources_tag if args[:resources_tag]
     tag.taggable_data = remove_blank_value(data)
   end
 
@@ -57,6 +58,37 @@ module Taggable
     end
   end
 
+  # Populate resources tag
+  def resources_tag
+    return unless is_a?(Sample)
+
+    resources = []
+    reactions_samples&.includes(:reaction)&.each do |rs|
+      next unless r = rs.reaction
+      next if r.deleted_at.present?
+
+      resources.push({
+                       resource_context_type: 'Reaction',
+                       resource_context_id: r.id,
+                       resource_context_label: r.short_label,
+                     })
+    end
+    elements_samples&.each do |es|
+      e = Labimotion::Element.find_by(id: es.element_id)
+      next if e.nil? || e.deleted_at.present?
+
+      ek = e.element_klass
+      next if ek.nil?
+
+      resources.push({
+                       resource_context_type: ek.label,
+                       resource_context_id: e.id,
+                       resource_context_label: e.short_label,
+                     })
+    end
+
+    resources
+  end
   # Populate Collections tag
   def collection_tag
     klass = Labimotion::Utils.col_by_element(self.class.name).underscore.pluralize
@@ -66,35 +98,29 @@ module Taggable
     cols = []
     send(klass).each do |cc|
       next unless c = cc.collection
-      next if (c.label == 'All' && c.is_locked)
+      next if c.label == 'All' && c.is_locked
+
       cols.push({
-        name: c.label, is_shared: c.is_shared, user_id: c.user_id,
-        id: c.id, shared_by_id: c.shared_by_id,
-        is_synchronized: false
-      })
-      next if (c.id == Collection.public_collection_id) || (c.id == Collection.scheme_only_reactions_collection_id)
-      if c.is_synchronized
-        c.sync_collections_users&.each do |syn|
-          cols.push({
-            name: c.label, is_shared: c.is_shared, user_id: syn.user_id,
-            id: syn.id, shared_by_id: syn.shared_by_id,
-            is_synchronized: c.is_synchronized
-          })
-        end
+                  name: c.label, is_shared: c.is_shared, user_id: c.user_id,
+                  id: c.id, shared_by_id: c.shared_by_id,
+                  is_synchronized: false
+                })
+      next unless c.is_synchronized
+
+      c.sync_collections_users&.each do |syn|
+        cols.push({
+                    name: c.label, is_shared: c.is_shared, user_id: syn.user_id,
+                    id: syn.id, shared_by_id: syn.shared_by_id,
+                    is_synchronized: c.is_synchronized
+                  })
       end
     end
     cols
   end
 
   def grouped_analyses
-    analyses_extended_metadata = analyses.map(&:extended_metadata)
-    links_extended_metadata = links.map do |container|
-      target_container = Container.find(container.extended_metadata['target_id'])
-      target_container[:extended_metadata]
-    end
-    extended_metadata = analyses_extended_metadata.concat(links_extended_metadata)
-    extended_metadata.map { |x| x.extract!('kind', 'status') }
-                     .group_by { |x| x['status'] }
+    analyses.map(&:extended_metadata).map { |x| x.extract!('kind', 'status') }
+            .group_by { |x| x['status'] }
   end
 
   def count_by_kind(analyses)
@@ -102,7 +128,7 @@ module Taggable
   end
 
   def analyses_tag
-    return nil unless is_a?(Sample) && (analyses.count.positive? || links.count.positive?)
+    return nil unless is_a?(Sample) && analyses.count.positive?
 
     grouped_analyses.to_h do |key, val|
       vv = count_by_kind(val)
@@ -116,6 +142,10 @@ module Taggable
     return tag.taggable_data['pubchem_cid'] if pubchem_check
 
     pcid.presence || PubChem.get_cid_from_inchikey(inchikey)
+  end
+
+  def user_labels
+    tag&.taggable_data&.fetch('user_labels', [])
   end
 end
 # rubocop: enable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity,Metrics/AbcSize, Naming/MethodParameterName, Lint/AssignmentInCondition

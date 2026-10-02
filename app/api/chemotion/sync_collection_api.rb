@@ -74,8 +74,8 @@ module Chemotion
             next
           end
           oc = SyncCollectionsUser.find(col['id'])&.collection
-          sc = (oc&.samples&.joins(:publication)&.where('publications.ancestry is null') || []).length
-          rc = (oc&.reactions&.joins(:publication)&.where('publications.ancestry is null') || []).length
+          sc = (oc&.samples&.joins(:publication)&.where("publications.ancestry = '/'") || []).length
+          rc = (oc&.reactions&.joins(:publication)&.where("publications.ancestry = '/'") || []).length
           next if (sc + rc).zero?
 
           col['label'] = col['label'] + ",S#{sc},R#{rc}" if col['label'] == 'Reviewing' || col['label'] == 'Element To Review' || col['label'] == 'Reviewed'

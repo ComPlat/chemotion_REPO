@@ -34,10 +34,11 @@ module ThirdPartyAppHelpers
 
   # desc: find records from the payload
   def parse_payload(payload = @payload)
-    # TODO: implement attachment authorization
     @attachment = Attachment.find(payload['attID']&.to_i)
     @user = User.find(payload['userID']&.to_i)
     @app = payload['appID'].to_i.zero? ? ThirdPartyApp.new : ThirdPartyApp.find(payload['appID']&.to_i)
+
+    error!('No read access to attachment', 403) unless read_access?(@attachment, @user)
   rescue ActiveRecord::RecordNotFound
     error!('Record not found', 404)
   end
@@ -60,10 +61,22 @@ module ThirdPartyAppHelpers
     return error!('No read access to attachment', 403) unless read_access?(@attachment, @user)
 
     content_type 'application/octet-stream'
-    header['Content-Length'] = @attachment.filesize.to_s
+    header['Content-Length'] = attachment_filesize.to_s
     header['Content-Disposition'] = "attachment; filename=#{@attachment.filename}"
     env['api.format'] = :binary
     @attachment.read_file
+  end
+
+  # @note: Check file size before download from the third party app
+  #  This is a temporary solution aroung the discrepency for some zip file of the recorded size vs actual on the fs
+  #  see #463
+  # @return [Integer] the file size in bytes
+  def attachment_filesize
+    if @attachment.attachment.mime_type == 'application/zip'
+      path = @attachment.attachment.to_io.path
+      return File.size(path)
+    end
+    @attachment.filesize
   end
 
   # desc: upload file from the third party app
@@ -97,5 +110,18 @@ module ThirdPartyAppHelpers
       { token: @token, download: 3, upload: 10 },
       expires_at: expiry_time,
     )
+  end
+
+  # Build the url public endpoint with the token-path that can be used to fetch an attachment
+  #
+  # @note '@token' should be defined
+  # @return [URI] the full url with token path
+  def token_uri
+    url = URI.parse Rails.application.config.root_url
+    url.path = Pathname.new(url.path)
+                       .join('/', API.prefix.to_s, API.version, 'public/third_party_apps', @token)
+                       .to_s
+
+    url
   end
 end

@@ -7,14 +7,9 @@ require 'digest'
 
 module Chemotion
   class AttachmentAPI < Grape::API # rubocop:disable Metrics/ClassLength
-    helpers PublicHelpers
     helpers do
-      def thumbnail(att)
-        att.thumb ? Base64.encode64(att.read_thumbnail) : nil
-      end
-
       def thumbnail_obj(att)
-        { id: att.id, thumbnail: thumbnail(att) }
+        { id: att.id, thumbnail: att.thumbnail_base64 }
       end
 
       def raw_file(att)
@@ -45,13 +40,6 @@ module Chemotion
 
         old_att&.destroy
       end
-
-      def remove_duplicated(att)
-        old_att = Attachment.find_by(filename: att.filename, attachable_id: att.attachable_id)
-        return unless old_att.id != att.id
-
-        old_att&.destroy
-      end
     end
 
     rescue_from ActiveRecord::RecordNotFound do |_error|
@@ -70,7 +58,14 @@ module Chemotion
       end
       desc 'Download the dataset attachment file'
       get 'dataset/:container_id' do
-        export = prepare_and_export_dataset(@container.id)
+        env['api.format'] = :binary
+        export = Labimotion::ExportDataset.new(params[:container_id])
+        export.export
+        content_type('application/vnd.ms-excel')
+        ds_filename = export.res_name
+        filename = URI.escape(ds_filename)
+        header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+        export.read
       end
     end
 
@@ -82,6 +77,7 @@ module Chemotion
 
         @attachment = Attachment.find_by(identifier: params[:identifier]) if @attachment.nil? && params[:identifier]
 
+        # rubocop:disable Performance/StringInclude
         case request.env['REQUEST_METHOD']
         when /delete/i
           error!('401 Unauthorized', 401) unless writable?(@attachment)
@@ -94,9 +90,24 @@ module Chemotion
               can_dwnld = can_read &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
             end
-          elsif /sample_analyses/.match?(request.url)
+          elsif /\bsample_analyses\b/.match?(request.url)
             @sample = Sample.find(params[:sample_id])
             if (element = @sample)
+              can_read = ElementPolicy.new(current_user, element).read?
+              can_dwnld = can_read &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+            end
+          elsif /device_description_analyses/.match?(request.url)
+            @device_description = DeviceDescription.find(params[:device_description_id])
+            if (element = @device_description)
+              can_read = ElementPolicy.new(current_user, element).read?
+              can_dwnld = can_read &&
+                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
+            end
+          elsif /\bsequence_based_macromolecule_sample_analyses\b/.match?(request.url)
+            @sequence_based_macromolecule_sample =
+              SequenceBasedMacromoleculeSample.find(params[:sequence_based_macromolecule_sample_id])
+            if (element = @sequence_based_macromolecule_sample)
               can_read = ElementPolicy.new(current_user, element).read?
               can_dwnld = can_read &&
                           ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?
@@ -116,16 +127,10 @@ module Chemotion
                               )
                           end
             end
-
-            if !can_dwnld && @attachment.attachable_type == 'SegmentProps'
-              element = Labimotion::Segment.find(@attachment.attachable_id)&.element
-              can_dwnld = @attachment.created_for == current_user.id ||
-                          (ElementPolicy.new(current_user, element).read? &&
-                          ElementPermissionProxy.new(current_user, element, user_ids).read_dataset?)
-            end
           end
           error!('401 Unauthorized', 401) unless can_dwnld
         end
+        # rubocop:enable Performance/StringInclude
       end
 
       desc 'Bulk Delete Attachments'
@@ -141,10 +146,10 @@ module Chemotion
           deleted_attachments = attachments.destroy_all
         end
 
-        render json: { deleted_attachments: deleted_attachments }, status: :ok
+        { deleted_attachments: deleted_attachments }
       rescue StandardError => e
-        render json: { error: e.message }, status: :unprocessable_entity
         Rails.logger.error("Error deleting attachments: #{e.message}")
+        error!({ error: e.message }, 422)
       end
 
       desc 'Delete Attachment'
@@ -223,24 +228,6 @@ module Chemotion
         return loader.get_annotation_of_attachment(params[:attachment_id])
       end
 
-      desc 'get_annotated_image_of_attachment'
-      get ':attachment_id/annotated_image' do
-        content_type 'application/octet-stream'
-        env['api.format'] = :binary
-
-        annotation = @attachment.annotated_file_location.presence
-        if annotation.present? && File.file?(annotation)
-          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.annotated_filename}\""
-          file = File.open(annotation)
-        else
-          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
-          file = @attachment.attachment_attacher.file
-        end
-        file.read
-      ensure
-        file&.close
-      end
-
       desc 'update_annotation_of_attachment'
       post ':attachment_id/annotation' do
         params do
@@ -256,7 +243,7 @@ module Chemotion
       desc 'Upload files to Inbox as unsorted'
       post 'upload_to_inbox' do
         attach_ary = []
-        params.each do |_file_id, file|
+        params.each_value do |file|
           next unless tempfile = file[:tempfile] # rubocop:disable Lint/AssignmentInCondition
 
           attach = Attachment.new(
@@ -272,6 +259,27 @@ module Chemotion
           begin
             attach.save!
             attach_ary.push(attach.id)
+            match, variation = attach.resolve_unique_match
+
+            if match # auto assign to element
+              analysis_name = attach.filename.chomp(File.extname(attach.filename))
+              dataset = match.container.analyses_container.create_analysis_with_dataset!(name: analysis_name)
+              attach.update!(attachable: dataset)
+              type = match.model_name.singular
+              @link = "#{Rails.application.config.root_url}/mydb/collection/all/#{type}/#{match.id}"
+              match.assign_attachment_to_variation(variation, dataset.parent_id) if match.is_a?(Reaction)
+
+              Message.create_msg_notification(
+                channel_subject: Channel::ASSIGN_INBOX_TO_SAMPLE,
+                message_from: current_user.id,
+                data_args: { filename: attach.filename, info: "#{match.short_label} #{match.name}" },
+                url: @link,
+                level: 'success',
+              )
+            end
+          rescue StandardError => e
+            Rails.logger.error(e)
+            status 413
           ensure
             tempfile.close
             tempfile.unlink
@@ -282,16 +290,23 @@ module Chemotion
       end
 
       desc 'Download the attachment file'
+      params do
+        optional :annotated, type: Boolean, desc: 'Return annotated image if possible'
+      end
       get ':attachment_id' do
-        content_type 'application/octet-stream'
+        content_type @attachment.content_type || 'application/octet-stream'
         header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
         env['api.format'] = :binary
-        uploaded_file = @attachment.attachment_attacher.file
+        file = @attachment.attachment
+        if params[:annotated] && @attachment.annotated?
+          annotation = @attachment.annotated_file_location.presence
+          header['Content-Disposition'] = "attachment; filename=\"#{@attachment.annotated_filename}\""
+          file = File.open(annotation)
+        end
 
-        data = uploaded_file.read
-        uploaded_file.close
-
-        data
+        body file.read
+      ensure
+        file&.close
       end
 
       desc 'Download the zip attachment file'
@@ -300,7 +315,7 @@ module Chemotion
         content_type('application/zip, application/octet-stream')
         filename = CGI.escape("#{@container.parent&.name&.gsub(/\s+/, '_')}-#{@container.name.gsub(/\s+/, '_')}.zip")
         header('Content-Disposition', "attachment; filename=\"#{filename}\"")
-        zip = Zip::OutputStream.write_buffer do |zip| # rubocop:disable Lint/ShadowingOuterLocalVariable
+        zip = Zip::OutputStream.write_buffer do |zip|
           file_text = ''
           @container.attachments.each do |att|
             zip.put_next_entry att.filename
@@ -318,7 +333,12 @@ module Chemotion
             end
           end
 
-          file_text += export_and_add_to_zip(params[:container_id], zip)
+          if Labimotion::Dataset.find_by(element_id: params[:container_id], element_type: 'Container').present?
+            export = Labimotion::ExportDataset.new(params[:container_id])
+            export.export
+            zip.put_next_entry export.res_name
+            zip.write export.read
+          end
 
           hyperlinks_text = ''
           JSON.parse(@container.extended_metadata.fetch('hyperlinks', '[]')).each do |link|
@@ -348,17 +368,63 @@ module Chemotion
                 end
               end&.flatten&.reduce(:+) || 0
         if tts > 300_000_000
-          DownloadAnalysesJob.perform_later(@sample.id, current_user.id, false)
+          DownloadAnalysesJob.perform_later(@sample.id, current_user.id, false, 'sample')
           nil
         else
           env['api.format'] = :binary
           content_type('application/zip, application/octet-stream')
           filename = CGI.escape("#{@sample.short_label}-analytical-files.zip")
           header('Content-Disposition', "attachment; filename=\"#{filename}\"")
-          zip = DownloadAnalysesJob.perform_now(@sample.id, current_user.id, true)
+          zip = DownloadAnalysesJob.perform_now(@sample.id, current_user.id, true, 'sample')
           zip.rewind
           zip.read
 
+        end
+      end
+
+      desc 'Download the zip attachment file by device_description_id'
+      get 'device_description_analyses/:device_description_id' do
+        tts = @device_description.analyses&.map do |a|
+                a.children&.map do |d|
+                  d.attachments&.map(&:filesize)
+                end
+              end&.flatten&.sum || 0
+        if tts > 300_000_000
+          DownloadAnalysesJob.perform_later(@device_description.id, current_user.id, false, 'device_description')
+          nil
+        else
+          env['api.format'] = :binary
+          content_type('application/zip, application/octet-stream')
+          filename = CGI.escape("#{@device_description.short_label}-analytical-files.zip")
+          header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+          zip = DownloadAnalysesJob.perform_now(@device_description.id, current_user.id, true, 'device_description')
+          zip.rewind
+          zip.read
+        end
+      end
+
+      desc 'Download the zip attachment file by sequence_based_macromolecule_sample_id'
+      get 'sequence_based_macromolecule_sample_analyses/:sequence_based_macromolecule_sample_id' do
+        tts = @sequence_based_macromolecule_sample.analyses&.map do |a|
+                a.children&.map do |d|
+                  d.attachments&.map(&:filesize)
+                end
+              end&.flatten&.sum || 0
+        if tts > 300_000_000
+          DownloadAnalysesJob.perform_later(
+            @sequence_based_macromolecule_sample.id, current_user.id, false, 'sequence_based_macromolecule_sample'
+          )
+          nil
+        else
+          env['api.format'] = :binary
+          content_type('application/zip, application/octet-stream')
+          filename = CGI.escape("#{@sequence_based_macromolecule_sample.short_label}-analytical-files.zip")
+          header('Content-Disposition', "attachment; filename=\"#{filename}\"")
+          zip = DownloadAnalysesJob.perform_now(
+            @sequence_based_macromolecule_sample.id, current_user.id, true, 'sequence_based_macromolecule_sample'
+          )
+          zip.rewind
+          zip.read
         end
       end
 
@@ -367,11 +433,11 @@ module Chemotion
       params do
         requires :attachment_id, type: Integer, desc: 'Database id of image attachment'
         optional :identifier, type: String, desc: 'Identifier(UUID) of image attachment as fallback loading criteria'
-        optional :annotated, type: Boolean, desc: 'Return annotated image if possible'
       end
 
       get 'image/:attachment_id' do
-        data = Usecases::Attachments::LoadImage.execute!(@attachment, params[:annotated])
+        annotated = @attachment.attachment_attacher.derivatives.key?(:annotation)
+        data = Usecases::Attachments::LoadImage.execute!(@attachment, annotated)
         content_type @attachment.content_type
         header['Content-Disposition'] = "attachment; filename=\"#{@attachment.filename}\""
         header['Content-Transfer-Encoding'] = 'binary'
@@ -381,12 +447,12 @@ module Chemotion
 
       desc 'Return Base64 encoded thumbnail'
       get 'thumbnail/:attachment_id' do
-        Base64.encode64(@attachment.read_thumbnail) if @attachment.thumb
+        @attachment.thumbnail_base64
       end
 
       desc 'Return Base64 encoded thumbnails'
       params do
-        requires :ids, type: Array[Integer]
+        requires :ids, type: [Integer]
       end
       post 'thumbnails' do
         thumbnails = params[:ids].map do |a_id|
@@ -403,7 +469,7 @@ module Chemotion
 
       desc 'Return Base64 encoded files'
       params do
-        requires :ids, type: Array[Integer]
+        requires :ids, type: [Integer]
       end
       post 'files' do
         files = params[:ids].map do |a_id|
@@ -415,13 +481,14 @@ module Chemotion
                       end
           can_dwnld ? raw_file_obj(att) : nil
         end
+        error!('401 Unauthorized', 401) if !files.empty? && files.compact.empty?
         { files: files }
       end
 
       desc 'Regenerate spectra'
       params do
-        requires :original, type: Array[Integer]
-        requires :generated, type: Array[Integer]
+        requires :original, type: [Integer]
+        requires :generated, type: [Integer]
       end
       post 'regenerate_spectrum' do
         pm = to_rails_snake_case(params)
@@ -444,7 +511,7 @@ module Chemotion
 
       desc 'Regenerate edited spectra'
       params do
-        requires :edited, type: Array[Integer]
+        requires :edited, type: [Integer]
         optional :molfile, type: String
       end
       post 'regenerate_edited_spectrum' do
@@ -464,8 +531,18 @@ module Chemotion
           result = Chemotion::Jcamp::RegenerateJcamp.spectrum(
             att.abs_path, t_molfile.path
           )
-          att.file_data = result
-          att.rewrite_file_data!
+          io = StringIO.new(result)
+          io.rewind
+
+          att.attachment_attacher.attach(
+            io,
+            metadata: {
+              'filename' => att.filename,
+              'mime_type' => att.content_type || 'chemical/x-jcamp-dx',
+            },
+          )
+
+          att.save!
         end
         t_molfile.close
         t_molfile.unlink

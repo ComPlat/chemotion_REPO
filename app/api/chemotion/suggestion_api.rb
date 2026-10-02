@@ -8,6 +8,7 @@ module Chemotion
     include Grape::Kaminari
 
     helpers CollectionHelpers
+    helpers RepoCollectionHelpers
     helpers RepoSearchHelpers
     helpers do
       def page_size
@@ -39,8 +40,6 @@ module Chemotion
         }
       end
 
-      # rubocop:disable Style/TrailingCommaInHashLiteral, Layout/LineLength
-
       def search_possibilities_by_type_user_and_collection(type)
         collection_id = @c_id
         dl = @dl
@@ -50,19 +49,23 @@ module Chemotion
         dl_sc = dl[:screen_detail_level]
         dl_e = dl[:element_detail_level]
         dl_cl = dl[:celllinesample_detail_level]
+        dl_sbmms = dl[:sequencebasedmacromoleculesample_detail_level]
+        dl_dd = dl[:devicedescription_detail_level]
 
         d_for = proc do |klass|
           klass.by_collection_id(collection_id)
         end
 
         search_by_field = proc do |klass, field, qry|
-          scope = d_for.call klass
+          scope = d_for.call(klass)
           collection = scope.send("by_#{field}", qry).page(1).per(page_size)
 
           if klass.columns_hash.key?(field.to_s)
             collection.pluck(field).uniq
+          elsif klass.reflect_on_association(field)
+            collection.filter_map { |record| record.send(field)&.name }.uniq
           else
-            collection.map(&field).uniq
+            collection.filter_map { |record| record.send(field) }.uniq
           end
         end
 
@@ -90,6 +93,7 @@ module Chemotion
           iupac_name = (dl_s.positive? && search_by_field.call(Molecule, :iupac_name, qry)) || []
           # cas = dl_s.positive? && search_by_field.call(Molecule, :cas, qry) || []
           cas = (dl_s.positive? && search_by_field.call(Sample, :sample_xref_cas, qry)) || []
+          molecule_name = (dl_s.positive? && search_by_field.call(Sample, :molecule_name, qry)) || []
           inchistring = (dl_s.positive? && search_by_field.call(Molecule, :inchistring, qry)) || []
           inchikey = (dl_s.positive? && search_by_field.call(Molecule, :inchikey, qry)) || []
           cano_smiles = (dl_s.positive? && search_by_field.call(Molecule, :cano_smiles, qry)) || []
@@ -101,6 +105,7 @@ module Chemotion
             sum_formula: sum_formula,
             iupac_name: iupac_name,
             cas: cas,
+            molecule_name: molecule_name,
             inchistring: inchistring,
             inchikey: inchikey,
             cano_smiles: cano_smiles,
@@ -175,10 +180,13 @@ module Chemotion
             requirements: requirements,
           }
         when 'cell_lines'
-          dl_cl&.positive? ? search_for_celllines : []
+          dl_cl.positive? ? search_for_celllines : []
+        when 'sequence_based_macromolecule_samples'
+          dl_sbmms ? SequenceBasedMacromoleculeSample.by_search_fields(qry) : []
+        when 'device_descriptions'
+          dl_dd ? DeviceDescription.by_search_fields(qry) : []
         else
-          chemotion_id = suggest_pid(qry)
-          element_short_label = (dl_e&.positive? && search_by_element_short_label.call(Labimotion::Element, qry)) || []
+          element_short_label = (dl_e.positive? && search_by_element_short_label.call(Labimotion::Element, qry)) || []
           sample_name = (dl_s.positive? && search_by_field.call(Sample, :name, qry)) || []
           sample_short_label = (dl_s.positive? && search_by_field.call(Sample, :short_label, qry)) || []
           sample_external_label = (dl_s > -1 && search_by_field.call(Sample, :external_label, qry)) || []
@@ -189,6 +197,7 @@ module Chemotion
           iupac_name = (dl_s.positive? && search_by_field.call(Molecule, :iupac_name, qry)) || []
           # cas = dl_s.positive? && search_by_field.call(Molecule, :cas, qry) || []
           cas = (dl_s.positive? && search_by_field.call(Sample, :sample_xref_cas, qry)) || []
+          molecule_name = (dl_s.positive? && search_by_field.call(Sample, :molecule_name, qry)) || []
           inchistring = (dl_s.positive? && search_by_field.call(Molecule, :inchistring, qry)) || []
           inchikey = (dl_s.positive? && search_by_field.call(Molecule, :inchikey, qry)) || []
           cano_smiles = (dl_s.positive? && search_by_field.call(Molecule, :cano_smiles, qry)) || []
@@ -200,11 +209,12 @@ module Chemotion
           screen_name = (dl_sc > -1 && search_by_field.call(Screen, :name, qry)) || []
           conditions = (dl_sc > -1 && search_by_field.call(Screen, :conditions, qry)) || []
           requirements = (dl_sc > -1 && search_by_field.call(Screen, :requirements, qry)) || []
-          cell_line_infos = dl_cl&.positive? ? search_for_celllines : {}
+          cell_line_infos = dl_cl.positive? ? search_for_celllines : {}
+          sbmm_samples = dl_sbmms ? SequenceBasedMacromoleculeSample.by_search_fields(qry) : {}
+          device_descriptions = dl_dd ? DeviceDescription.by_search_fields(qry) : {}
 
           {
             element_short_label: element_short_label,
-            chemotion_id: chemotion_id,
             sample_name: sample_name,
             sample_short_label: sample_short_label,
             sample_external_label: sample_external_label,
@@ -212,6 +222,7 @@ module Chemotion
             sum_formula: sum_formula,
             iupac_name: iupac_name,
             cas: cas,
+            molecule_name: molecule_name,
             inchistring: inchistring,
             inchikey: inchikey,
             cano_smiles: cano_smiles,
@@ -223,12 +234,10 @@ module Chemotion
             screen_name: screen_name,
             conditions: conditions,
             requirements: requirements,
-          }.merge(cell_line_infos)
+          }.merge(cell_line_infos).merge(sbmm_samples).merge(device_descriptions)
         end
       end
     end
-    # rubocop:enable Style/TrailingCommaInHashLiteral, Layout/LineLength
-
     resource :suggestions do
       after_validation do
         check_params_collection_id
@@ -236,19 +245,17 @@ module Chemotion
         set_var
       end
 
-      route_param :element_type, type: String, values: %w[all samples reactions wellplates screens cell_lines] do
+      route_param :element_type, type: String, values: %w[
+        all samples reactions wellplates screens cell_lines sequence_based_macromolecule_samples device_descriptions
+      ] do
         desc 'Return all suggestions for AutoCompleteInput'
         params do
           use :suggestion_params
         end
         get do
           params[:element_type]
-          if params[:element_type] == 'embargo'
-            suggest_embargo(current_user, params[:query])
-          else
-            search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
-            { suggestions: search_possibilities_to_suggestions(search_possibilities) }
-          end
+          search_possibilities = search_possibilities_by_type_user_and_collection(params[:element_type])
+          { suggestions: search_possibilities_to_suggestions(search_possibilities) }
         end
       end
     end

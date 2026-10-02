@@ -287,6 +287,8 @@ describe Chemotion::ThirdPartyAppAPI do
         end
 
         it 'thumbnail was generated' do
+          skip_unless_binary_available('convert')
+
           expect(Attachment.find_by(filename: 'attachment_of_3pa').thumb).to be true
         end
       end
@@ -316,6 +318,8 @@ describe Chemotion::ThirdPartyAppAPI do
         end
 
         it 'thumbnail was generated' do
+          skip_unless_binary_available('convert')
+
           expect(Attachment.find_by(filename: 'attachment_of_3pa').thumb).to be true
         end
       end
@@ -369,6 +373,7 @@ describe Chemotion::ThirdPartyAppAPI do
 
         before do
           cache.write(cache_key, { token: token, upload: allowed_uploads }, expires_in: 1.hour)
+          allow_any_instance_of(Chemotion::ThirdPartyAppAPI::AttachmentHelpers).to receive(:read_access?).and_return(true)
           post "/api/v1/public/third_party_apps/#{token}", params: params
         end
 

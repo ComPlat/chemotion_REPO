@@ -1,104 +1,105 @@
 import React from 'react';
 import expect from 'expect';
-import Enzyme, { mount, shallow } from 'enzyme';
+import sinon from 'sinon';
+import { configure, mount, shallow } from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
 import {
   describe, it, beforeEach
 } from 'mocha';
 
 import {
-  HeaderDeleted, HeaderNormal
+  AnalysesHeader
 } from 'src/apps/mydb/elements/details/samples/analysesTab/SampleDetailsContainersAux';
 
 import Container from 'src/models/Container';
 import Sample from 'src/models/Sample';
 
-Enzyme.configure({ adapter: new Adapter() });
+configure({ adapter: new Adapter() });
 
 describe('SampleDetailsContainersAux', () => {
-  describe('HeaderDeleted', () => {
+  describe('AnalysesHeader deleted', () => {
     describe('Render without edit mode', () => {
       let container;
+      let sample;
       beforeEach(() => {
         container = Container.buildEmpty();
         container.name = 'Just a string';
+        container.is_deleted = true;
+        sample = Sample.buildEmpty();
       });
 
       it('Render without kind and status', () => {
-        const wrapper = shallow(<HeaderDeleted container={container} />);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header-delete"><strike>${container.name}</strike><div class="button-right undo-middle"></div></div>`);
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample }));
+        expect(wrapper.html()).toEqual(expect.stringContaining(
+          `<h4 class="flex-grow-1 text-decoration-line-through">${container.name}</h4>`
+        ));
       });
 
       it('Render with kind', () => {
         container.extended_metadata.kind = 'Just a kind string';
-        const wrapper = shallow(<HeaderDeleted container={container} />);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header-delete"><strike>${container.name} - Type: ${container.extended_metadata.kind}</strike><div class="button-right undo-middle"></div></div>`);
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample }));
+        expect(wrapper.html()).toEqual(expect.stringContaining('Just a kind string'));
       });
 
       it('Render with status', () => {
         container.extended_metadata.status = 'Just a status string';
-        const wrapper = shallow(<HeaderDeleted container={container} />);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header-delete"><strike>${container.name} - Status: ${container.extended_metadata.status}</strike><div class="button-right undo-middle"></div></div>`);
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample }));
+        expect(wrapper.html()).toEqual(expect.stringContaining('Just a status string'));
       });
 
       it('Render with kind and status', () => {
         container.extended_metadata.kind = 'Just a kind string';
         container.extended_metadata.status = 'Just a status string';
-        const wrapper = shallow(<HeaderDeleted container={container} />);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header-delete"><strike>${container.name} - Type: ${container.extended_metadata.kind} - Status: ${container.extended_metadata.status}</strike><div class="button-right undo-middle"></div></div>`);
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample }));
+        expect(wrapper.html()).toEqual(expect.stringContaining('Just a kind string'));
+        expect(wrapper.html()).toEqual(expect.stringContaining('Just a status string'));
       });
     });
 
     describe('Render with edit mode', () => {
       const container = Container.buildEmpty();
       container.name = 'Just a string';
+      container.is_deleted = true;
+
+      const sample = Sample.buildEmpty();
 
       it('Render without kind and status', () => {
-        const wrapper = shallow(<HeaderDeleted container={container} mode="edit" />);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header-delete"><strike>${container.name}</strike><div class="button-right undo-middle"><button type="button" class="pull-right btn btn-xs btn-danger"><i class="fa fa-undo"></i></button></div></div>`);
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample, mode: "edit" }));
+        const title = wrapper.find('h4');
+        expect(title.text()).toEqual(container.name);
+        expect(title.prop('className')).toEqual(expect.stringContaining('text-decoration-line-through'));
       });
 
-      it('Check on click instance', () => {
-        const testOnClick = () => {};
-        const wrapper = mount(<HeaderDeleted container={container} mode="edit" handleUndo={testOnClick} />);
-        const button = wrapper.find('button');
-        const onClickProp = button.prop('onClick');
-        expect(onClickProp).toBeInstanceOf(Function);
+      it('Check undo delete handler', () => {
+        const testOnClick = sinon.spy();
+        const wrapper = mount(
+          React.createElement(AnalysesHeader, { container: container, sample: sample, mode: "edit", handleUndo: testOnClick })
+        );
+        wrapper.find('button').simulate('click');
+        expect(testOnClick.calledWith(container)).toBeTruthy();
       });
     });
   });
 
-  describe('HeaderNormal', () => {
+  describe('AnalysesHeader not-deleted', () => {
     describe('Render without edit mode', () => {
-      let container; let
-        sample;
+      let container;
+      let sample;
 
       beforeEach(() => {
         container = Container.buildEmpty();
         container.name = 'Just a string';
+        container.extended_metadata.status = 'some status';
         sample = Sample.buildEmpty();
       });
 
       it('Render without status', () => {
-        const wrapper = shallow(<HeaderNormal container={container} sample={sample} />);
-        const statusWrapper = shallow(<div className="sub-title">
-          Status:
-          {' '}
-          {container.extended_metadata.status}
-          {' '}
+        const wrapper = shallow(React.createElement(AnalysesHeader, { container: container, sample: sample }));
 
-          {' '}
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          {' '}
+        const title = wrapper.find('h4');
+        expect(title.text()).toEqual(container.name);
 
-        </div>);
-        expect(wrapper.html())
-          .toEqual(`<div class="analysis-header order"><div class="preview"><div class="preview-table"><img src="/images/wild_card/no_attachment.svg" alt="" style="cursor:default"/></div></div><div class="abstract"><div class="lower-text"><div class="main-title">${container.name}</div><div class="sub-title">Type: </div>${statusWrapper.html()}<div class="desc sub-title"><span style="float:left;margin-right:5px">Content:</span><span></span></div></div></div></div>`);
+        expect(wrapper.text()).toEqual(expect.stringContaining('some status'));
       });
     });
   });

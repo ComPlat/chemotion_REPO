@@ -1,5 +1,5 @@
 class AddAncestryToSamples < ActiveRecord::Migration[4.2]
   def change
-    add_column :samples, :ancestry, :string, index: true
+    add_column :samples, :ancestry, :string, index: true  unless column_exists?(:samples, :ancestry)
   end
 end

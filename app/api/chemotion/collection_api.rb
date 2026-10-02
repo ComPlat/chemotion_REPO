@@ -13,20 +13,6 @@ module Chemotion
         end
       end
 
-      namespace :all_as_tree do
-        desc "Return the 'All' collection of the current user"
-        get do
-          current_user.collections.arrange_serializable do |parent, children|
-            {
-              title: parent.label,
-              value: parent.id,
-              key: parent.id,
-              children: children
-            }
-          end
-        end
-      end
-
       desc "Return collection by id"
       params do
         requires :id, type: Integer, desc: "Collection id"
@@ -91,8 +77,9 @@ module Chemotion
 
       desc "Return all locked and unshared serialized collection roots of current user"
       get :locked do
-        cols = current_user.type == 'Anonymous' ? [] : current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
-        present cols, with: Entities::CollectionEntity, root: :collections
+        roots = current_user.collections.includes(:shared_users).locked.unshared.roots.order(label: :asc)
+
+        present roots, with: Entities::CollectionEntity, root: :collections
       end
 
       get_child = Proc.new do |children, collects|
@@ -105,7 +92,7 @@ module Chemotion
 
       build_tree = Proc.new do |collects, delete_empty_root|
         col_tree = []
-        collects.collect{ |obj| col_tree.push(obj) if obj['ancestry'].nil? }
+        collects.collect { |obj| col_tree.push(obj) if obj['ancestry'] == '/' }
         get_child.call(col_tree,collects)
         col_tree.select! { |col| col[:children].count > 0 } if delete_empty_root
         Entities::CollectionRootEntity.represent(col_tree, serializable: true, root: :collections)
@@ -118,7 +105,7 @@ module Chemotion
           <<~SQL
             collections.id, label, ancestry, is_synchronized, permission_level, tabs_segment, position, collection_shared_names(user_id, collections.id) as shared_names,
             reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, element_detail_level, is_locked, is_shared, inventory_id,
-            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, chr(47), collections.id) end as ancestry_root
+            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, collections.id, chr(47)) end as ancestry_root
           SQL
         ).as_json(methods: %i[inventory_name inventory_prefix])
         build_tree.call(collects, false)
@@ -132,7 +119,7 @@ module Chemotion
             collections.id, user_id, label, ancestry, permission_level, user_as_json(user_id) as shared_to,
             is_shared, is_locked, is_synchronized, false as is_remoted, tabs_segment, inventory_id,
             reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, element_detail_level,
-            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, chr(47), collections.id) end as ancestry_root
+            case when (ancestry is null) then cast(collections.id as text) else concat(ancestry, collections.id, chr(47)) end as ancestry_root
           SQL
         ).as_json(methods: %i[inventory_name inventory_prefix])
         build_tree.call(collects, true)
@@ -144,7 +131,7 @@ module Chemotion
                              .where(user_id: current_user.id).order(:id).select(
           <<~SQL
             collections.id, user_id, label, ancestry, permission_level, user_as_json(shared_by_id) AS shared_by, tabs_segment,
-            CASE WHEN ancestry IS NULL THEN CAST(collections.id AS TEXT) ELSE CONCAT(ancestry, '/', collections.id) END AS ancestry_root,
+            CASE WHEN ancestry IS NULL THEN CAST(collections.id AS TEXT) ELSE CONCAT(ancestry, collections.id, chr(47)) END AS ancestry_root,
             reaction_detail_level, sample_detail_level, screen_detail_level, wellplate_detail_level, is_locked, is_shared, inventory_id,
             shared_user_as_json(user_id, #{current_user.id}) AS shared_to,
             position
@@ -206,6 +193,15 @@ module Chemotion
             optional :cell_line, type: Hash do
               use :ui_state_params
             end
+            optional :device_description, type: Hash do
+              use :ui_state_params
+            end
+            optional :vessel, type: Hash do
+              use :ui_state_params
+            end
+            optional :sequence_based_macromolecule_sample, type: Hash do
+              use :ui_state_params
+            end
           end
           requires :collection_attributes, type: Hash do
             requires :permission_level, type: Integer
@@ -234,6 +230,16 @@ module Chemotion
           cell_lines = CelllineSample.by_collection_id(@cid)
                                      .by_ui_state(params[:elements_filter][:cell_line])
                                      .for_user_n_groups(user_ids)
+          device_descriptions = DeviceDescription.by_collection_id(@cid)
+                                                 .by_ui_state(params[:elements_filter][:device_description])
+                                                 .for_user_n_groups(user_ids)
+          vessels = Vessel.by_collection_id(@cid)
+                          .by_ui_state(params[:elements_filter][:vessel])
+                          .for_user_n_groups(user_ids)
+          sequence_based_macromolecule_samples =
+            SequenceBasedMacromoleculeSample.by_collection_id(@cid)
+                                            .by_ui_state(params[:elements_filter][:sequence_based_macromolecule_sample])
+                                            .for_user_n_groups(user_ids)
           elements = {}
           Labimotion::ElementKlass.find_each do |klass|
             elements[klass.name] = Labimotion::Element.by_collection_id(@cid).by_ui_state(params[:elements_filter][klass.name]).for_user_n_groups(user_ids)
@@ -250,6 +256,10 @@ module Chemotion
           share_screens = ElementsPolicy.new(current_user, screens).share?
           share_research_plans = ElementsPolicy.new(current_user, research_plans).share?
           share_cell_lines = ElementsPolicy.new(current_user, cell_lines).share?
+          share_device_descriptions = ElementsPolicy.new(current_user, device_descriptions).share?
+          share_vessels = ElementsPolicy.new(current_user, vessels).share?
+          share_sequence_based_macromolecule_samples =
+            ElementsPolicy.new(current_user, sequence_based_macromolecule_samples).share?
           share_elements = !(elements&.length > 0)
           elements.each do |k, v|
             share_elements = ElementsPolicy.new(current_user, v).share?
@@ -262,6 +272,9 @@ module Chemotion
                             share_screens &&
                             share_research_plans &&
                             share_cell_lines &&
+                            share_device_descriptions &&
+                            share_vessels &&
+                            share_sequence_based_macromolecule_samples &&
                             share_elements
           error!('401 Unauthorized', 401) if (!sharing_allowed || is_top_secret)
 
@@ -271,6 +284,9 @@ module Chemotion
           @screen_ids = screens.pluck(:id)
           @research_plan_ids = research_plans.pluck(:id)
           @cell_line_ids = cell_lines.pluck(:id)
+          @device_description_ids = device_descriptions.pluck(:id)
+          @vessel_ids = vessels.pluck(:id)
+          @sequence_based_macromolecule_sample_ids = sequence_based_macromolecule_samples.pluck(:id)
           @element_ids = elements&.transform_values { |v| v && v.pluck(:id) }
         end
 
@@ -293,6 +309,9 @@ module Chemotion
             screen_ids: @screen_ids,
             research_plan_ids: @research_plan_ids,
             cell_line_ids: @cell_line_ids,
+            device_description_ids: @device_description_ids,
+            vessel_ids: @vessel_ids,
+            sequence_based_macromolecule_sample_ids: @sequence_based_macromolecule_sample_ids,
             element_ids: @element_ids,
             collection_attributes: params[:collection_attributes].merge(shared_by_id: current_user.id)
           ).execute!
@@ -332,6 +351,10 @@ module Chemotion
 
             ids = API::ELEMENT_CLASS[element].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
             next if ids.empty?
+
+            if API::ELEMENT_CLASS[element] == DeviceDescription
+              ids = Usecases::DeviceDescriptions::ByUIState.new(ids).with_joined_ids
+            end
 
             collections_element_class = API::ELEMENT_CLASS[element].collections_element_class
             collections_element_class.move_to_collection(ids, from_collection.id, to_collection_id)
@@ -377,6 +400,10 @@ module Chemotion
 
             ids = API::ELEMENT_CLASS[element].by_collection_id(from_collection.id).by_ui_state(ui_state).pluck(:id)
             next if ids.empty?
+
+            if API::ELEMENT_CLASS[element] == DeviceDescription
+              ids = Usecases::DeviceDescriptions::ByUIState.new(ids).with_joined_ids
+            end
 
             collections_element_class = API::ELEMENT_CLASS[element].collections_element_class
             collections_element_class.create_in_collection(ids, to_collection_id)
@@ -450,18 +477,19 @@ module Chemotion
       namespace :exports do
         desc "Create export job"
         params do
-          optional :collections, type: Array[Integer]
-          optional :sync_collections, type: Array[Integer]
-          requires :format, type: Symbol, values: [:json, :zip, :udm]
+          requires :collections, type: Array[Integer]
+          requires :format, type: Symbol, values: %i[json zip udm]
           requires :nested, type: Boolean
         end
 
         post do
-          collection_ids = params[:collections]&.uniq
-          sync_col_ids = params[:sync_collections]&.uniq
+          collection_ids = params[:collections].uniq
           nested = params[:nested] == true
 
-          if collection_ids.present?
+          if collection_ids.empty?
+            # no collection was given, export all collections for this user
+            collection_ids = Collection.belongs_to_or_shared_by(current_user.id, current_user.group_ids).pluck(:id)
+          else
             # check if the user is allowed to export these collections
             collection_ids.each do |collection_id|
               collection = Collection.belongs_to_or_shared_by(current_user.id, current_user.group_ids).find_by(id: collection_id)
@@ -472,26 +500,11 @@ module Chemotion
               error!('401 Unauthorized', 401) unless collection
             end
           end
-
-          if sync_col_ids.present?
-            sync_col_ids.each do |sync_col_id|
-              sync_col = SyncCollectionsUser.find_by(id: sync_col_id, user_id: current_user.id)
-              col = Collection.find(sync_col.collection_id) if sync_col.present?
-              collection_ids << sync_col.collection_id if col.present? && col.parent.present? && ['My Published Elements', 'Published Elements', 'Embargoed Publications'].include?(col.parent&.label)
-            end
+          if Rails.env.development?
+            ExportCollectionsJob.perform_now(collection_ids, params[:format].to_s, nested, current_user.id)
+          else
+            ExportCollectionsJob.perform_later(collection_ids, params[:format].to_s, nested, current_user.id)
           end
-
-          case ENV['PUBLISH_MODE']
-          when 'production'
-            if Rails.env.production?
-              ExportCollectionsJob.perform_later(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
-            end
-          when 'staging'
-            ExportCollectionsJob.perform_now(collection_ids, params[:format].to_s, nested, current_user.id) unless collection_ids.empty?
-          else 'development'
-          end
-
-
           status 204
         end
       end
@@ -520,15 +533,10 @@ module Chemotion
               tempfile.unlink
             end
             # run the asyncronous import job and return its id to the client
-
-            case ENV['PUBLISH_MODE']
-            when 'production'
-              if Rails.env.production?
-                ImportCollectionsJob.perform_later(att, current_user.id)
-              end
-            when 'staging'
+            if Rails.env.development?
               ImportCollectionsJob.perform_now(att, current_user.id)
-            else 'development'
+            else
+              ImportCollectionsJob.perform_later(att, current_user.id)
             end
             status 204
           end

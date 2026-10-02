@@ -24,17 +24,17 @@ describe 'Copy reaction' do
   let!(:col) { create(:collection, user_id: user1.id, label: 'Col3', permission_level: 10, reaction_detail_level: 10) }
 
   let!(:root_share) { create(:collection, user: user1, shared_by_id: user2.id, is_shared: true, is_locked: true) }
-  let!(:cshare) { create(:collection, user: user1, label: 'share-col', permission_level: 10, sample_detail_level: 10, reaction_detail_level: 10, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
-  let!(:cshare2) { create(:collection, user: user1, label: 'share-col-2', permission_level: 10, sample_detail_level: 0, reaction_detail_level: 0, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
+  let!(:cshare) { create(:collection, user: user1, label: 'share-col', permission_level: 10, sample_detail_level: 10, reaction_detail_level: 10, shared_by_id: user2.id, is_shared: true, parent: root_share) }
+  let!(:cshare2) { create(:collection, user: user1, label: 'share-col-2', permission_level: 10, sample_detail_level: 0, reaction_detail_level: 0, shared_by_id: user2.id, is_shared: true, parent: root_share) }
 
   let!(:col1) { create(:collection, user_id: user1.id, label: 'Col1') }
   let!(:col2) { create(:collection, user_id: user1.id, label: 'Col2') }
 
   let!(:root_share) { create(:collection, user: user1, shared_by_id: user2.id, is_shared: true, is_locked: true) }
   let!(:col1_shared) { create(:collection, user: user1, label: 'Col1-shared', permission_level: 10,
-    sample_detail_level: 10, reaction_detail_level: 10, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
+    sample_detail_level: 10, reaction_detail_level: 10, shared_by_id: user2.id, is_shared: true, parent: root_share) }
   let!(:col2_shared) { create(:collection, user: user1, label: 'Col2-shared', permission_level: 10,
-    sample_detail_level: 0, reaction_detail_level: 0, shared_by_id: user2.id, is_shared: true, ancestry: root_share.id.to_s) }
+    sample_detail_level: 0, reaction_detail_level: 0, shared_by_id: user2.id, is_shared: true, parent: root_share) }
 
   def copy_reaction(source_collection, target_collection)
     find_by_id("tree-id-#{source_collection}").click

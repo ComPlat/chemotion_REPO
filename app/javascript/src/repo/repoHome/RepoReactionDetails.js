@@ -1,0 +1,902 @@
+/* eslint-disable react/forbid-prop-types */
+import React, { Component } from 'react';
+import { Card, Container, Collapse, Row, Col, Button } from 'react-bootstrap';
+import PropTypes from 'prop-types';
+import { head, filter, isNil } from 'lodash';
+import ArrayUtils from 'src/utilities/ArrayUtils';
+import {
+  AuthorList,
+  AffiliationList,
+  CalcDuration,
+  ChemotionId,
+  ClosePanel,
+  CommentBtn,
+  ContributorInfo,
+  ClipboardCopyBtn,
+  Doi,
+  PubQRCode,
+  ReactionRinChiKey,
+  RenderAnalysisHeader,
+  IconToMyDB,
+  AnalysesTypeJoinLabel,
+  SchemeWord,
+  zoomSvg,
+} from 'src/repo/repoHome/RepoCommon';
+import ReactionTable from 'src/repo/repoHome/RepoReactionTable';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import PublicStore from 'src/repo/stores/PublicStore';
+import PublicActions from 'src/repo/actions/PublicActions';
+import ReviewActions from 'src/repo/actions/ReviewActions';
+import DateInfo from 'src/repo/chemrepo/DateInfo';
+import LicenseIcon from 'src/repo/chemrepo/LicenseIcon';
+import PublicAnchor from 'src/repo/chemrepo/PublicAnchor';
+import PublicCommentModal from 'src/repo/chemrepo/PublicCommentModal';
+import PublicReactionTlc from 'src/repo/chemrepo/PublicReactionTlc';
+import PublicReactionProperties from 'src/repo/chemrepo/PublicReactionProperties';
+import UserCommentModal from 'src/repo/chemrepo/UserCommentModal';
+import RepoConst from 'src/repo/chemrepo/common/RepoConst';
+import Quill2Viewer from 'src/repo/others/Quill2Viewer';
+import {
+  Citation,
+  literatureContent,
+  RefByUserInfo,
+} from 'src/apps/mydb/elements/details/literature/LiteratureCommon';
+import RepoReactionSchemeInfo from 'src/repo/repoHome/RepoReactionSchemeInfo';
+import { AffiliationMap } from 'src/repo/repoHome/RepoReviewCommon';
+import RepoReviewButtonBar from 'src/repo/repoHome/RepoReviewButtonBar';
+import Sample from 'src/models/Sample';
+import Reaction from 'src/models/Reaction';
+import RepoSegment from 'src/repo/repoHome/RepoSegment';
+import { getAuthorLabel } from 'src/repo/chemrepo/publication-utils';
+import PublicLabels from 'src/repo/chemrepo/PublicLabels';
+import NMRiumDisplayer from 'src/components/nmriumWrapper/NMRiumDisplayer';
+import NewVersionModal from 'src/repo/chemrepo/NewVersionModal';
+import VersionDropdown from 'src/repo/chemrepo/VersionDropdown';
+import AnalysisRenderer from 'src/repo/chemrepo/analysis/AnalysisRenderer';
+import { StateLabelDetail } from 'src/repo/chemrepo/common/StateLabel';
+import FundingDisplay from 'src/repo/chemrepo/funding/FundingDisplay';
+import AddRefToPublication from 'src/repo/chemrepo/AddRefToPublication';
+
+export default class RepoReactionDetails extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      showScheme: true,
+      showRinchi: false,
+      showProp: true,
+      showTlc: true,
+      showSA: true,
+      showRA: {},
+      commentField: '',
+      originInfo: '',
+      displayedProducts: isNil(props.reaction) ? [] : [...props.reaction.products],
+    };
+
+    this.toggleScheme = this.toggleScheme.bind(this);
+    this.toggleRinchi = this.toggleRinchi.bind(this);
+    this.toggleProp = this.toggleProp.bind(this);
+    this.toggleTlc = this.toggleTlc.bind(this);
+    this.toggleSA = this.toggleSA.bind(this);
+    this.toggleRA = this.toggleRA.bind(this);
+    this.handleToggle = this.handleToggle.bind(this);
+    this.handleReviewBtn = this.handleReviewBtn.bind(this);
+    this.handleCommentBtn = this.handleCommentBtn.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.reaction !== prevProps.reaction) {
+      this.setState({ displayedProducts: this.props.reaction.products });
+    }
+  }
+
+  toggleScheme() {
+    const { showScheme } = this.state;
+    this.setState({ showScheme: !showScheme });
+  }
+
+  toggleRinchi() {
+    const { showRinchi } = this.state;
+    this.setState({ showRinchi: !showRinchi });
+  }
+
+  toggleProp() {
+    const { showProp } = this.state;
+    this.setState({ showProp: !showProp });
+  }
+
+  toggleTlc() {
+    const { showTlc } = this.state;
+    this.setState({ showTlc: !showTlc });
+  }
+
+  toggleSA() {
+    const { showSA } = this.state;
+    this.setState({ showSA: !showSA });
+  }
+
+  toggleRA(idx = -1) {
+    const { showRA } = this.state;
+    if (idx in showRA && showRA[idx] === false) {
+      showRA[idx] = true;
+    } else {
+      showRA[idx] = false;
+    }
+    this.setState({ showRA });
+  }
+
+  handleToggle(type) {
+    switch (type) {
+      case 'Scheme':
+        this.toggleScheme();
+        break;
+      case 'Rinchi':
+        this.toggleRinchi();
+        break;
+      case 'Prop':
+        this.toggleProp();
+        break;
+      default:
+        break;
+    }
+  }
+
+  handleReviewBtn(showReviewModal, btnAction) {
+    ReviewActions.handleReviewModal(showReviewModal, btnAction);
+  }
+  handleCommentBtn(showCommentModal, commentField, originInfo) {
+    ReviewActions.handleCommentModal(showCommentModal, 'Comment', commentField, originInfo);
+  }
+
+  updateRepoXvial() {
+    PublicActions.displayReaction(this.props.reaction.id);
+    PublicActions.refreshPubElements('Reactions');
+  }
+
+  reactionInfo(reaction) {
+    const { showScheme, showRinchi, showProp, showTlc } = this.state;
+    const {
+      canComment: propsCanComment,
+      review_info,
+      isPublished,
+    } = this.props;
+    const { currentUser } = UserStore.getState();
+    const canComment =
+      currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
+        ? false
+        : propsCanComment;
+
+    const svgPath = `/images/reactions/${reaction.reaction_svg_file}`;
+    const content = reaction.description;
+    const additionInfo = reaction.observation;
+
+    const descContent =
+      content && content.ops && content.ops.length > 0 && content.ops[0].insert
+        ? content.ops[0].insert.trim()
+        : '';
+    let descQV = (
+      <span className="expand-p fs-6">
+        <b>Description:</b>
+        <Quill2Viewer value={content} preview />
+      </span>
+    );
+    if (descContent === '') {
+      if (isPublished) descQV = '';
+      else descQV = <span className="fs-6"><b>Description:</b><br /><br /></span>;
+    }
+
+    const addinfoContent =
+      additionInfo &&
+      additionInfo.ops &&
+      additionInfo.ops.length > 0 &&
+      additionInfo.ops[0].insert
+        ? additionInfo.ops[0].insert.trim()
+        : '';
+    let addQV = (
+      <span className="expand-p fs-6">
+        <b>Additional information for publication and purification details:</b>
+        <Quill2Viewer value={additionInfo} preview />
+      </span>
+    );
+    if (addinfoContent === '') {
+      if (isPublished) addQV = '';
+      else addQV = <span className="fs-6"><b>Additional information for publication and purification details:</b><br /><br /></span>;
+    }
+
+    const temperature = reaction.temperature
+      ? `${reaction.temperature.userText} ${reaction.temperature.valueUnit}`
+      : '';
+    const duration = CalcDuration(reaction);
+    const properties = `Status:[${reaction.status}]; Temperature:[${temperature}]; Duration: [${duration}]`;
+    const tlc = `Solvents (parts):[${reaction.tlc_solvents || ''}]; Rf-Value:[${
+      reaction.rf_value || ''
+    }]; TLC-Description: [${reaction.tlc_description || ''}]`;
+
+    const bodyAttrs = {
+      style: {
+        paddingBottom: 'unset',
+      },
+    };
+    const schemeOnly =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data &&
+        reaction.publication.taggable_data.scheme_only === true) ||
+      false;
+    if (schemeOnly) {
+      if (canComment) {
+        return (
+          <RepoReactionSchemeInfo
+            reaction={reaction}
+            svgPath={svgPath}
+            showScheme={showScheme}
+            showRinchi={showRinchi}
+            showProp={showProp}
+            bodyAttrs={bodyAttrs}
+            onToggle={this.handleToggle}
+            review_info={review_info}
+            onComment={this.handleCommentBtn}
+            propInfo={properties}
+            canComment={canComment}
+          />
+        );
+      }
+      return (
+        <RepoReactionSchemeInfo
+          reaction={reaction}
+          svgPath={svgPath}
+          showScheme={showScheme}
+          showRinchi={showRinchi}
+          showProp={showProp}
+          bodyAttrs={bodyAttrs}
+          onToggle={this.handleToggle}
+          canComment={canComment}
+        />
+      );
+    }
+    return (
+      <Card style={{ marginBottom: '4px' }}>
+        <Card.Body style={{ paddingBottom: '1px' }}>
+          <Row>
+            <Col sm={12} md={12} lg={12}>
+              {zoomSvg(svgPath)}
+            </Col>
+          </Row>
+          <Row className="mb-2">
+            <Col sm={12} md={12} lg={12}>
+              <CommentBtn
+                {...this.props}
+                field="Reaction Table"
+                orgInfo="<Reaction Table>"
+                onShow={this.handleCommentBtn}
+              />
+              <ReactionTable
+                reaction={reaction}
+                toggle={this.toggleScheme}
+                show={showScheme}
+                isPublic
+                isReview={this.props.isReview}
+                canComment={canComment}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12} md={12} lg={12}>
+              <div className="desc small-p">
+                <CommentBtn
+                  {...this.props}
+                  field="Description"
+                  orgInfo={descContent}
+                  onShow={this.handleCommentBtn}
+                />
+                {descQV}
+              </div>
+              <div className="desc small-p">
+                <CommentBtn
+                  {...this.props}
+                  field="Additional information"
+                  orgInfo={addinfoContent}
+                  onShow={this.handleCommentBtn}
+                />
+                {addQV}
+              </div>
+            </Col>
+          </Row>
+          <Row className="mb-2">
+            <Col sm={12} md={12} lg={12}>
+              <ReactionRinChiKey
+                reaction={reaction}
+                toggle={this.toggleRinchi}
+                show={showRinchi}
+                bodyAttrs={bodyAttrs}
+              />
+            </Col>
+          </Row>
+          <Row className="mb-2">
+            <Col sm={12} md={12} lg={12}>
+              <CommentBtn
+                {...this.props}
+                field="Properties"
+                orgInfo={properties}
+                onShow={this.handleCommentBtn}
+              />
+              <PublicReactionProperties
+                reaction={reaction}
+                toggle={this.toggleProp}
+                show={showProp}
+                isPublished={isPublished}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12} md={12} lg={12}>
+              <CommentBtn
+                {...this.props}
+                field="TLC-Control"
+                orgInfo={tlc}
+                onShow={this.handleCommentBtn}
+              />
+              <PublicReactionTlc
+                reaction={reaction}
+                toggle={this.toggleTlc}
+                show={showTlc}
+                isPublished={isPublished}
+              />
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  renderAnalysisView({
+    container,
+    type,
+    product = null,
+    idx = -1,
+    isLogin = false,
+    isCI = false,
+    isReviewer = false,
+    references = [],
+    element = null
+  }) {
+    if (typeof container === 'undefined' || !container) return <span />;
+    const { reaction } = this.props;
+
+    const analyses = ArrayUtils.sortArrByIndex(
+      head(filter(container.children, (o) => o.container_type === 'analyses'))
+        .children
+    );
+    const show = this.state.showRA[idx] || true;
+    if (typeof analyses === 'undefined' || !analyses || analyses.length === 0) {
+      return <div />;
+    }
+    const productHeader =
+      typeof product !== 'undefined' && product ? (
+        <RenderAnalysisHeader
+          key={`reaction-product-header-${product.id}`}
+          reactionId={this.props.reaction.id}
+          element={product}
+          isPublic={this.props.isPublished}
+          isLogin={isLogin}
+          isCI={isCI}
+          isReviewer={isReviewer}
+          userInfo={product.pub_info || ''}
+          zipUrl={product.zip_download_url}
+          chemotionZipUrl={product.chemotion_zip_url}
+          updateRepoXvial={() => this.updateRepoXvial()}
+          xvialCom={product.xvialCom}
+          literatures={references}
+          onVersionChange={(product, version) => {
+            this.setState({
+              displayedProducts: this.state.displayedProducts.map((sample) => (sample.id == product.id) ? {
+                ...version, versions: product.versions // propagate the versions array to the newly selected version
+              } : sample)
+            })
+          }}
+        />
+      ) : (
+        <span />
+      );
+    const analysisElement =
+      type === 'Sample' && typeof product !== 'undefined' && product
+        ? new Sample(product)
+        : new Reaction(element);
+    const extractAnaInfo = (elementType, analysisId) => {
+      if (elementType === 'Sample' && product) {
+        return product.ana_infos ? product.ana_infos[analysisId] || '' : '';
+      }
+      if (elementType === 'Reaction' && reaction) {
+        return reaction.infos.ana_infos
+          ? reaction.infos.ana_infos[analysisId] || ''
+          : '';
+      }
+      return '';
+    };
+    const analysesView = analyses.map((analysis) => {
+      const kind =
+        analysis.extended_metadata &&
+        analysis.extended_metadata.kind &&
+        analysis.extended_metadata['kind'].split('|').pop().trim();
+      const anaInfo = extractAnaInfo(type, analysis.id);
+      return (
+        <span key={`analysis_${analysis.id}`}>
+          <CommentBtn
+            {...this.props}
+            field={`Analysis_${analysis.id}`}
+            orgInfo={kind}
+            onShow={this.handleCommentBtn}
+          />
+          <AnalysisRenderer
+            key={`${type}_${analysis.id}`}
+            userInfo={anaInfo}
+            analysis={analysis}
+            type="Container"
+            pageType="reactions"
+            pageId={this.props.reaction.id}
+            isPublic={this.props.isPublished}
+            isLogin={isLogin}
+            isReviewer={isReviewer}
+            element={analysisElement}
+          />
+        </span>
+      );
+    });
+
+    return (
+      <div>
+        <span
+          className="btn btn-outline-secondary btn-sm rounded-0 text-decoration-none pe-none fw-bold"
+        >
+          Analyses
+        </span>&nbsp;
+        <span
+          className="label"
+          style={{ color: 'black', fontSize: 'smaller', fontWeight: 'bold' }}
+        >
+          {AnalysesTypeJoinLabel(analyses, type)}
+        </span>
+        <Card
+          style={{ border: 'none' }}
+          id={`collapsible_${type}_analyses`}
+        >
+          <Collapse in={show}>
+            <Card.Body
+              style={{
+                backgroundColor: '#f5f5f5',
+                padding: '4',
+              }}
+            >
+              {productHeader}
+              {analysesView}
+            </Card.Body>
+          </Collapse>
+        </Card>
+      </div>
+    );
+  }
+
+  renderProductAnalysisView(
+    isLogin = false,
+    isReviewer = false,
+    references = []
+  ) {
+    const products = this.state.displayedProducts;
+    if (typeof products === 'undefined' || !products || products.length === 0) {
+      return <span />;
+    }
+    const prdReferences = (_sid, _references) =>
+      _references
+        ? _references.filter(
+            (r) => r.element_type === 'Sample' && r.element_id === _sid
+          )
+        : [];
+    return products.map((product, idx) => (
+      <div key={`product-${product.id}`}>
+        {this.renderAnalysisView({
+          container: product.container,
+          type: 'Sample',
+          product,
+          idx,
+          isLogin,
+          isReviewer,
+          references: prdReferences(product.id, references),
+          element: product
+        })}
+      </div>
+    ));
+  }
+
+  render() {
+    const {
+      reaction,
+      isPublished,
+      canComment: propsCanComment,
+      review_info,
+      showComment,
+      review,
+      canClose,
+    } = this.props;
+    let { buttons } = this.props;
+    if (typeof reaction === 'undefined' || !reaction) {
+      return <div />;
+    }
+    const { currentUser } = UserStore.getState();
+    const { repoVersioning } = PublicStore.getState();
+    const canComment =
+      currentUser?.type === RepoConst.U_TYPE.ANONYMOUS
+        ? false
+        : propsCanComment;
+
+    const taggData =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data) ||
+      {};
+    const pubData = (reaction && reaction.publication) || {};
+    const doi = (reaction && reaction.doi) || {};
+
+    const affiliationMap = AffiliationMap(taggData.affiliation_ids || [], taggData.affiliations || {});
+    const { literatures } = reaction;
+    const references = literatures
+      ? literatures.map((lit) => (
+          <li key={`product_${lit.id}`} style={{ display: 'flex' }}>
+            <RefByUserInfo info={lit.ref_added_by} litype={lit.litype} />
+            &nbsp;
+            <i className={`icon-${lit.element_type.toLowerCase()}`} />
+            &nbsp;
+            <Citation key={lit.id} literature={lit} />
+          </li>
+        ))
+      : [];
+    const refArray = [];
+    let referencesText = '';
+    if (literatures) {
+      literatures.forEach((lit) => {
+        const content = literatureContent(lit, true);
+        refArray.push(content);
+      });
+      referencesText = refArray.join('');
+    }
+    const license = taggData.license || 'CC BY-SA';
+
+    const schemeOnly =
+      (reaction &&
+        reaction.publication &&
+        reaction.publication.taggable_data &&
+        reaction.publication.taggable_data.scheme_only === true) ||
+      false;
+
+    const zipUrl =
+      reaction?.publication?.taggable_data &&
+      reaction.publication.taggable_data['zip_download_url'];
+
+    const chemotionZipUrl =
+      reaction?.publication?.taggable_data &&
+      reaction.publication.taggable_data['chemotion_zip_url'];
+
+    let showDOI = (
+      <>
+        <Doi
+          type="reaction"
+          id={reaction.id}
+          zipUrl={zipUrl}
+          chemotionZipUrl={chemotionZipUrl}
+          doi={isPublished ? taggData.doi : doi}
+          isPublished={isPublished}
+          pid={pubData.id}
+        />
+        {
+          reaction.publication.concept && (
+            <Doi
+              type="reaction"
+              id={reaction.id}
+              doi={reaction.publication.concept.doi.full_doi}
+              isPublished={isPublished}
+              concept={true}
+              pid={pubData.id}
+            />
+          )
+        }
+      </>
+    );
+    if (schemeOnly) {
+      buttons = ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'];
+      showDOI = '';
+    }
+
+    if (
+      review_info?.groupleader === true &&
+      review_info?.preapproved !== true
+    ) {
+      buttons = ['Comments', 'Review', 'Approve'];
+    }
+
+    const idyLogin =
+      typeof reaction.isLogin === 'undefined' ? true : reaction.isLogin;
+    const idyReview =
+      typeof reaction.isReviewer === 'undefined' ? false : reaction.isReviewer;
+    const idyPublisher =
+      typeof reaction.isPublisher === 'undefined' ? false : reaction.isPublisher;
+    const isCI =
+      typeof reaction.isCI === 'undefined' ? false : reaction.isCI;
+    const userInfo = (reaction.infos && reaction.infos.pub_info) || '';
+
+    let embargo = <span />;
+    const colDoiPrefix = isPublished
+      ? taggData.doi?.split('/')[0]
+      : doi?.full_doi?.split('/')[0];
+    if (reaction.embargo) {
+      const embargoLink = isPublished
+        ? `/inchikey/collection/${reaction.embargo}`
+        : `/embargo/reaction/${reaction.id}`;
+      embargo = (
+        <span>
+          <b>Access to the DOI and metadata for the whole data collection: </b>{' '}
+          &nbsp;
+          <Button
+            key="embargo-link-btn"
+            variant="link"
+            href={embargoLink}
+            target="_blank"
+            style={{ padding: '0px 0px' }}
+          >
+            <i className="fa fa-database" />
+            &nbsp;&nbsp;{reaction.embargo}
+          </Button>&nbsp;
+          <ClipboardCopyBtn
+            text={`https://dx.doi.org/${colDoiPrefix}/collection/${reaction.embargo}`}
+            tooltip="retrieve and copy collection DOI"
+          />
+        </span>
+      );
+    }
+    const userLabels = (reaction.labels || []).map(label => label.id);
+    return (
+      <div style={{ border: 'none' }}>
+        <div>
+          <Container
+            key={`reaction-${reaction.id}`}
+            fluid
+            style={{
+              backgroundColor: '#eeeeee',
+              padding: '30px',
+              borderRadius: '6px',
+              marginBottom: '20px',
+              border: '1px solid #ddd'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '10px',
+                marginBottom: '10px',
+              }}
+            >
+              <PublicAnchor
+                doi={isPublished ? taggData.doi : doi?.full_doi}
+                isPublished={isPublished}
+              />
+              {canComment ? (
+                <RepoReviewButtonBar
+                  element={{
+                    id: reaction.id,
+                    elementType: 'Reaction',
+                    user_labels: userLabels,
+                  }}
+                  buttons={buttons}
+                  buttonFunc={this.handleReviewBtn}
+                  review_info={review_info}
+                  pubState={pubData.state}
+                  showComment={showComment}
+                  taggData={taggData}
+                  schemeOnly={schemeOnly}
+                  canClose={canClose}
+                  currComment={
+                    (review?.history &&
+                      review?.history.length > 0 &&
+                      review?.history.slice(-1).pop()) ||
+                    {}
+                  }
+                />
+              ) : (
+                ''
+              )}
+              <div
+                style={{
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <StateLabelDetail state={pubData.state} />
+                {canClose ? <ClosePanel element={reaction} /> : ''}
+              </div>
+            </div>
+            <h4>
+              <IconToMyDB
+                isLogin={idyLogin}
+                isCI={isCI}
+                isPublished={isPublished}
+                id={reaction.id}
+                type="reaction"
+              />
+              {schemeOnly ? <SchemeWord /> : ''}&nbsp;
+              <DateInfo
+                isPublished={isPublished}
+                preText="Reaction"
+                pubData={pubData}
+                tagData={taggData}
+              />
+              &nbsp;
+              <LicenseIcon
+                license={license}
+                hasCoAuthors={
+                  taggData.author_ids && taggData.author_ids.length > 1
+                }
+              />
+              <span className="repo-public-user-comment">
+                {PublicLabels(reaction.labels)}
+                <PublicCommentModal
+                  isReviewer={idyReview}
+                  id={reaction.id}
+                  type="Reaction"
+                  title={`Reaction, CRR-${pubData.id}`}
+                  userInfo={userInfo}
+                  pageId={reaction.id}
+                />
+                &nbsp;
+                <UserCommentModal
+                  isPublished={isPublished}
+                  isLogin={idyLogin}
+                  id={reaction.id}
+                  type="Reaction"
+                  title={`Reaction, CRR-${pubData.id}`}
+                />
+                &nbsp;
+                <NewVersionModal
+                  type="Reaction"
+                  element={reaction}
+                  repoVersioning={repoVersioning}
+                  isPublisher={idyPublisher}
+                  isLatestVersion={!reaction.new_version}
+                  schemeOnly={schemeOnly}
+                />
+              </span>
+            </h4>
+            <VersionDropdown
+              type="Reaction"
+              element={reaction}
+              onChange={version => PublicActions.displayReaction(version.id)}
+            />
+            <br />
+            <div className="d-flex align-items-start gap-2">
+              <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+                <ContributorInfo
+                  contributor={taggData.contributors}
+                  affiliationMap={affiliationMap}
+                  showHelp={schemeOnly}
+                />
+                <div className="fw-bold fs-6">
+                  {getAuthorLabel(taggData.author_ids)}{' '}
+                  <AuthorList
+                    creators={taggData.creators}
+                    affiliationMap={affiliationMap}
+                    affiliations={taggData.affiliations}
+                    contributor={taggData.contributors}
+                  />
+                </div>
+                <AffiliationList
+                  affiliations={taggData.affiliations}
+                  affiliationMap={affiliationMap}
+                  rorMap={taggData.rors}
+                />
+              </div>
+              {isPublished && (
+                <div style={{ flex: '0 0 auto' }}>
+                  <PubQRCode
+                    doi={isPublished ? taggData.doi : ''}
+                    publicationId={pubData.id}
+                  />
+                </div>
+              )}
+            </div>
+            {showDOI}
+            <ChemotionId id={pubData.id} type="reaction" />
+            {embargo}
+            <div>
+              <CommentBtn
+                {...this.props}
+                field="Reference"
+                orgInfo={referencesText}
+                onShow={this.handleCommentBtn}
+              />
+              <b className="fw-bold">
+                Reference{references.length > 1 ? 's' : null} in the Literature:{' '}
+              </b>
+              <ul className="mb-0" style={{ listStyle: 'none' }}>{references}</ul>
+              {(idyPublisher || idyReview || (idyLogin && isPublished)) && (
+                <AddRefToPublication
+                  elementType="reaction"
+                  elementId={reaction.id}
+                  isLogin={!!(idyLogin && isPublished)}
+                  isPublisher={idyPublisher}
+                  isReviewer={idyReview}
+                  onAdded={typeof this.props.onRefresh === 'function'
+                    ? this.props.onRefresh
+                    : () => PublicActions.displayReaction(reaction.id)}
+                />
+              )}
+            </div>
+            {reaction.fundingReferences &&
+              reaction.fundingReferences.length > 0 && (
+                <h5>
+                  <b>Funding References:</b>
+                  <FundingDisplay
+                    elementId={reaction.id}
+                    elementType="Reaction"
+                  />
+                </h5>
+            )}
+            <br />
+            <h5>{this.reactionInfo(reaction)}</h5>
+            <RepoSegment segments={reaction.segments} isPublic={isPublished} />
+            {schemeOnly
+              ? ''
+              : this.renderAnalysisView({
+                container: reaction.container,
+                type: 'Reaction',
+                idx: -1,
+                isLogin: idyLogin,
+                isCI: isCI,
+                isReviewer: idyReview,
+                element: reaction,
+              })}
+          {schemeOnly
+            ? ''
+            : this.renderProductAnalysisView(
+                idyLogin,
+                idyReview,
+                literatures
+              )}
+          </Container>
+          <NMRiumDisplayer
+            sample={reaction}
+            handleSampleChanged={() => {}}
+            handleSubmit={() => {}}
+            readOnly
+          />
+        </div>
+      </div>
+    );
+  }
+}
+
+RepoReactionDetails.propTypes = {
+  reaction: PropTypes.object.isRequired,
+  isPublished: PropTypes.bool,
+  canComment: PropTypes.bool,
+  btnAction: PropTypes.string,
+  review_info: PropTypes.object,
+  showComment: PropTypes.bool,
+  isReview: PropTypes.bool,
+  review: PropTypes.object,
+  canClose: PropTypes.bool,
+  buttons: PropTypes.arrayOf(PropTypes.string),
+  onReviewUpdate: PropTypes.func,
+};
+
+RepoReactionDetails.defaultProps = {
+  isPublished: false,
+  canComment: false,
+  review_info: {},
+  showComment: true,
+  btnAction: '',
+  isReview: false,
+  review: {},
+  canClose: true,
+  buttons: ['Decline', 'Comments', 'Review', 'Submit', 'Accept', 'Revert'],
+  onReviewUpdate: () => {},
+};

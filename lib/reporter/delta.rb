@@ -1,9 +1,15 @@
+require 'cgi'
+
 module Reporter
+  # Delta class to convert Quill delta format to HTML
   class Delta
     attr_reader :delta, :html
 
-    def initialize(d, font_family = nil)
-      @delta = d
+    # Initialize the Delta class with a delta and optional font font_family
+    # @param delta_input [Hash, Nil] The delta to be converted
+    # @param font_family [String, Nil] The font family to be used in the HTML
+    def initialize(delta_input, font_family = nil)
+      @delta = delta_input.presence || {}
       @font_family = font_family
     end
 
@@ -109,7 +115,7 @@ module Reporter
     end
 
     def buildDeltaOps(op)
-      return op["insert"] if (!op["attributes"]) && (!(op && op["insert"].is_a?(Hash) && op["insert"]["image"]))
+      return CGI.escapeHTML(op["insert"].to_s) if (!op["attributes"]) && (!(op && op["insert"].is_a?(Hash) && op["insert"]["image"]))
 
       styles = []
       tags = []
@@ -148,7 +154,7 @@ module Reporter
 
     def html_with_tags_style(op, tags, styles)
       style = styles.count > 0 ? " style=\"#{styles.join(";")}\"" : ""
-      html = "<span#{style}>#{op["insert"]}</span>"
+      html = "<span#{style}>#{CGI.escapeHTML(op["insert"].to_s)}</span>"
 
       tags.each { |tag| html = "<#{tag}>#{html}</#{tag}>" }
       html

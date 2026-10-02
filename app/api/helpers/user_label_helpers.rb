@@ -3,19 +3,19 @@
 module UserLabelHelpers
   extend Grape::API::Helpers
 
-  def update_element_labels(element, user_labels, current_user_id)
-    tag = ElementTag.find_by(taggable: element)
-    data = tag.taggable_data || {}
-    private_labels = UserLabel.where(id: data['user_labels'], access_level: [0, 1]).where.not(user_id: current_user_id).pluck(:id)
-    if !User.reviewer_ids.include?(current_user_id)
-      review_labels = UserLabel.where(id: data['user_labels'], access_level: 3).pluck(:id)
-    end
-    data['user_labels'] = ((user_labels || []) + private_labels + (review_labels || []))&.uniq
-    tag.save!
+  def update_element_labels(element, user_labels, user_id)
+    tag = element.tag
+    return if tag.nil?
 
-    ## For Chemotion Repository
-    if element.respond_to?(:publication) && pub = element.publication
-      pub.update_user_labels(data['user_labels'], current_user_id) if pub.present?
-    end
+    data = tag.taggable_data || {}
+    pri_labels = UserLabel.where(id: data['user_labels'], access_level: [0, 1]).where.not(user_id: user_id).pluck(:id)
+    data['user_labels'] = ((user_labels || []) + pri_labels)&.uniq
+    tag.taggable_data = data
+    tag.save!
   end
 end
+
+# Chemotion Repository layers additional behaviour (review-access labels +
+# publication sync) on top of the upstream module via prepend.
+require_relative 'repo_user_label_helpers'
+UserLabelHelpers.prepend(RepoUserLabelHelpers)

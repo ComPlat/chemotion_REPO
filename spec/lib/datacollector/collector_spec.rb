@@ -3,6 +3,40 @@
 require 'rails_helper'
 
 RSpec.describe Datacollector::Collector, type: :model do
+  # The factory references a keyfile under Rails.configuration.datacollectors.keydir. CI images
+  # don't ship one — create a stub so the factory's validation passes.
+  before(:all) do
+    keydir = Rails.configuration.datacollectors&.keydir
+    @stub_keyfile_path = nil
+    if keydir.present?
+      dir = keydir.start_with?('/') ? Pathname.new(keydir) : Rails.root.join(keydir)
+      FileUtils.mkdir_p(dir)
+      key_name = ENV['DATACOLLECTOR_FACTORY_SFTP_KEY'].presence || 'id_test'
+      key_path = dir.join(key_name)
+      unless key_path.exist?
+        FileUtils.touch(key_path)
+        @stub_keyfile_path = key_path
+      end
+    end
+  end
+
+  after(:all) do
+    File.delete(@stub_keyfile_path) if @stub_keyfile_path && File.exist?(@stub_keyfile_path)
+  end
+
+  def sftp_reachable?
+    return @sftp_reachable unless @sftp_reachable.nil?
+
+    require 'socket'
+    host = ENV['DATACOLLECTOR_FACTORY_SFTP_HOST'].presence || '127.0.0.1'
+    @sftp_reachable =
+      begin
+        Socket.tcp(host, 22, connect_timeout: 1) { true }
+      rescue StandardError
+        false
+      end
+  end
+
   let(:users) { create_list(:person, 2) }
   let(:users_unknown) { build_list(:person, 1) }
   let(:name_abbrs) { (users + users_unknown).map(&:name_abbreviation) }
@@ -49,6 +83,10 @@ RSpec.describe Datacollector::Collector, type: :model do
     collector_options.each do |device_trait, description|
       user_level_options.each do |user_level|
         context "with a device configured for #{description} #{user_level ? '(user dirs)' : ''}" do
+          before do
+            skip 'SFTP server not reachable' if device_trait.to_s.end_with?('sftp') && !sftp_reachable?
+          end
+
           let(:device) do
             create(
               :device,
@@ -127,6 +165,8 @@ RSpec.describe Datacollector::Collector, type: :model do
 
   describe '#bulk_execute' do
     context 'when a device has non-working sftp config' do
+      before { skip 'SFTP server not reachable' unless sftp_reachable? }
+
       let(:devices) do
         [
           create(:device, :folder_sftp_faulty, user_identifiers: name_abbrs[0..0], data_count: 2 * data_count),
@@ -150,6 +190,8 @@ RSpec.describe Datacollector::Collector, type: :model do
   end
 
   describe 'when a file cannot be deleted' do
+    before { skip 'SFTP server not reachable' unless sftp_reachable? }
+
     let(:device) { create(:device, :file_sftp) }
     let(:user_identifiers) { name_abbrs[0..1] }
 

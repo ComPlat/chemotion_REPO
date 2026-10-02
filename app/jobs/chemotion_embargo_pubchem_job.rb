@@ -8,8 +8,8 @@ class ChemotionEmbargoPubchemJob < ActiveJob::Base
   def perform(embargo_col_id)
     @embargo_collection = Collection.find(embargo_col_id)
     @sync_emb_col = @embargo_collection.sync_collections_users&.first
-    pub_samples = Publication.where(ancestry: nil, element: @embargo_collection.samples).order(updated_at: :desc)
-    pub_reactions = Publication.where(ancestry: nil, element: @embargo_collection.reactions).order(updated_at: :desc)
+    pub_samples = Publication.where(ancestry: '/', element: @embargo_collection.samples).order(updated_at: :desc)
+    pub_reactions = Publication.where(ancestry: '/', element: @embargo_collection.reactions).order(updated_at: :desc)
     @pub_list = pub_samples + pub_reactions
     @pub_list.each do |embargo_pub|
       @publication = Publication.find(embargo_pub.id)

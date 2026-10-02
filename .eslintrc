@@ -2,8 +2,8 @@
   "parser": "@babel/eslint-parser",
   "plugins": [
     "react",
-    "no-relative-import-paths",
-    "prettier"
+    "prettier",
+    "no-relative-import-paths"
   ],
   "env": {
     "browser": true,
@@ -11,26 +11,22 @@
   },
   "extends": [
     "airbnb",
-    "prettier",
+    "plugin:react/recommended",
+    "plugin:storybook/recommended",
     "plugin:prettier/recommended",
-    "plugin:react/recommended"
+    "plugin:react-hooks/recommended"
   ],
   "rules": {
-    "func-style": ["error", "expression", { "allowArrowFunctions": true }],
-    "react/function-component-definition": [
-      "error",
-      {
-        "namedComponents": ["arrow-function", "function-expression"],
-        "unnamedComponents": ["arrow-function", "function-expression"]
-      }
-    ],
     "no-console": ["off"],
     "comma-dangle": [1,"only-multiline"],
     "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
+    "prettier/prettier": ["error", {
+      "arrowParens": "always"
+    }],
     "prefer-destructuring": ["error", {"object": true, "array": false}],
     "no-relative-import-paths/no-relative-import-paths": [
       "error",
-      { "allowSameFolder": false, "rootDir": "app/packs" }
+      { "allowSameFolder": false, "rootDir": "app/javascript" }
     ],
     "max-len": [
       "error",
@@ -38,13 +34,12 @@
         "code": 120,
         "ignoreComments": true
       }
-    ],
-    "prettier/prettier": "error"
+    ]
   },
   "settings": {
     "import/resolver": {
       "node": {
-        "paths": ["app/packs"]
+        "paths": ["app/javascript"]
       }
     }
   }

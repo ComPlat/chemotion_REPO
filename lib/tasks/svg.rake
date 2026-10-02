@@ -26,13 +26,12 @@ namespace :svg do
     message_header = build_message_header(**args)
     scope = build_scope(**args)
 
-    puts "#{message_header}Ketcher rendering service seems to #{ketcher_running ? '' : 'not'} be available"
-
     scope.find_each do |element|
       svg_path = element.send(:full_svg_path)
       svg_file_exists = svg_path.present? && File.file?(svg_path)
 
-      message = "#{message_header}element #{element.id}"
+      message = "🚀 #{message_header}element #{element.id}"
+      puts "#{message} SVG attached\n"
 
       if svg_file_exists
         next if args[:which] == 'openbabel' && !File.read(svg_path).match?('Open Babel')
@@ -44,30 +43,23 @@ namespace :svg do
         next
       end
 
-      svg = KetcherService::RenderSvg.svg(element.molfile)
+      svg = Chemotion::SvgRenderer.render_svg_from_molfile(element.molfile)
       if svg.blank? || svg.match('viewBox=\"0 0 0 0\"')
-        puts "#{message} cannot build SVG\n"
+        puts "❌ #{message} cannot build SVG."
+        puts '--------------------------------'
         next
       end
-      svg = Ketcherails::SVGProcessor.new(svg)
-      svg = svg.centered_and_scaled_svg
-
       FileUtils.rm_f(svg_path) if svg_file_exists
 
       element.attach_svg(svg)
       element.save(touch: false)
-      puts "#{message} SVG attached\n"
+      puts '--------------------------------'
     end
-    puts "#{message_header}done"
+    puts "#{message_header}process completed."
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/PerceivedComplexity
   # rubocop:enable Metrics/CyclomaticComplexity
-
-  def ketcher_running
-    svg = KetcherService::RenderSvg.svg(Molecule.last&.molfile.presence || 'dummy')
-    svg.presence&.start_with?('<svg')
-  end
 
   def build_message_header(**args)
     raise accepted_args_message unless %w[all missing openbabel].include?(args[:which])

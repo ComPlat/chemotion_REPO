@@ -9,6 +9,9 @@
 .vscode/launch.json
 .vscode/tasks.json
 
+# Claude Code local config
+.claude/
+
 
 # Ignore bundler config.
 /.bundle
@@ -31,12 +34,13 @@
 .coveralls.yml
 
 .env
-.env.development
 .env.test
-.env.production
+.dockerenv
+/.devcontainer/Dockerfile*
+/.devcontainer/docker-compose.dev*
+/docker-compose.services.yml
 
 /config/matrices.json
-/config/klasses.json
 /config/mailcollector.yml
 /config/datamailcollector.yml
 /config/datacollector.yml
@@ -48,10 +52,10 @@
 /config/converter.yml
 /config/ketcher_service.yml
 /config/structure_editors.yml
+/config/indigo_service.yml
 !/config/data_collector_keys/.keep
 
 /config/database.yml
-/config/repository_database.yml
 /config/storage.yml
 /config/shrine.yml
 /config/spectra.yml
@@ -62,16 +66,13 @@
 /config/stt.yml
 /config/radar.yml
 
+# test env
+/db/structure.sql
+
 /doc/*
 
 /node_modules
 
-/public/newsroom/*
-!/public/newsroom/.keep
-/public/howto/*
-!/public/howto/.keep
-
-!/public/images/molecules/.keep
 /public/images/molecules/*
 !/public/images/molecules/.keep
 
@@ -102,20 +103,10 @@
 /public/images/*
 !/public/images/wild_card/
 !/public/images/ghs/
-!/public/images/creative_common/
-
-/public/nmrxiv/upload/*
-!/public/nmrxiv/upload/.keep
-
-/public/intro/*
-!/public/intro/.keep
-/public/jsmol/*
-!/public/jsmol/.keep
 /public/editors/*
 !/public/editors/.keep
-/public/favicon.ico
 
-/public/klasses.json
+/public/favicon.ico
 
 /public/ontologies/*
 !/public/ontologies/.keep
@@ -125,9 +116,6 @@
 !/public/ontologies/rxno.default.json
 !/public/ontologies/rxno.default.edited.json
 
-/public/directives/*
-!/public/images/directives/.keep
-!/public/images/directives/directives.html
 /public/jsmol
 /public/jsmol/*
 !/public/jsmol/.keep
@@ -136,6 +124,7 @@
 /public/default_editors
 
 /uploads/*
+!uploads/common_templates/default.json
 !/public/attachments/.keep
 
 /public/json/*
@@ -143,15 +132,16 @@
 !/public/json/precautionaryPhrases.json
 !/public/json/hazardPhrases.json
 !/public/json/pictograms.json
+!/public/json/ketcher_common_templates_default.json
 
-
-/public/jsmol/*
-!/public/jsmol/.keep
+/public/safety_sheets/*
+!public/safety_sheets/.keep
 
 /public/jsmol/*
 !/public/jsmol/.keep
 
 /public/zip/*
+/public/import_logs/*
 !/public/zip/.keep
 
 /public/udm/*
@@ -162,11 +152,12 @@
 /public/docx/*
 !/public/docx/.keep
 
-/public/xlsx/*
-!/public/xlsx/.keep
 
-/public/csv/*
+!/public/xlsx/.keep
+!/public/sdf/.keep
+
 !/public/csv/.keep
+!/public/tsv/.keep
 
 /public/html/*
 !/public/html/.keep
@@ -175,6 +166,8 @@
 
 /public/cdjs/*
 /public/marvinjs/*
+
+/public/klasses.json
 
 /coverage/
 
@@ -191,9 +184,6 @@
 
 #config generated files
 aliasifyConfig.js
-/app/assets/javascripts/components/extra/*
-/app/packs/src/components/extra/*
-/app/packs/klasses.json
 
 # Backups folder
 backup/deploy_backup
@@ -238,16 +228,47 @@ public/sprite.png
 
 #svgeditor
 /public/svgedit
-# pdf worker
-/public/pdf.worker.min.js
 
 !spec/fixtures/import/sample_import_template.xlsx
 
-# generic elements
-data/klasses.json
-
-# pdf worker
-public/pdf.worker.min.js
-
 # Sentry Config File
 .env.sentry-build-plugin*
+
+# Changes from Shakapacker Installation
+.yarn-integrity
+
+*storybook.log
+storybook-static
+public/units_system/units_system.json
+CLAUDE.md
+# Main Settings
+
+.env.development
+.env.production
+
+/config/klasses.json
+/config/variable_measured.yml
+/config/repository_database.yml
+/config/*.bak
+
+/public/newsroom
+/public/newsroom/*
+!/public/newsroom/.keep
+/public/howto/*
+!/public/howto/.keep
+
+!/public/images/creative_common/
+
+/public/nmrxiv/upload/*
+!/public/nmrxiv/upload/.keep
+
+/public/intro/*
+!/public/intro/.keep
+
+/public/directives/*
+!/public/images/directives/.keep
+!/public/images/directives/directives.html
+
+/scripts/*.md
+
+/public/safety_sheets_backup

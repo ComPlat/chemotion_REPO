@@ -3,8 +3,9 @@
 # Table name: users_collaborators
 #
 #  id              :integer          not null, primary key
-#  user_id         :integer
+#  is_group_lead   :boolean          default(FALSE)
 #  collaborator_id :integer
+#  user_id         :integer
 #
 
 class UsersCollaborator < ApplicationRecord

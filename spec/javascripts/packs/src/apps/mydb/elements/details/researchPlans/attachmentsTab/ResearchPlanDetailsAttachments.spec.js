@@ -2,26 +2,28 @@
 
 import React from 'react';
 import expect from 'expect';
-import Enzyme, { shallow } from 'enzyme';
+import { configure, mount } from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
+import sinon from 'sinon';
 
 import AttachmentFetcher from 'src/fetchers/AttachmentFetcher';
-import sinon from 'sinon';
+import PublicFetcher from 'src/repo/fetchers/PublicFetcher';
 import ResearchPlanFactory from 'factories/ResearchPlanFactory';
 // eslint-disable-next-line no-unused-vars
-import ElementStore from 'src/stores/alt/stores/ElementStore';
 
 import EditorFetcher from 'src/fetchers/EditorFetcher';
 import ResearchPlanDetailsAttachments from
   'src/apps/mydb/elements/details/researchPlans/attachmentsTab/ResearchPlanDetailsAttachments';
 
-import { StoreContext } from 'src/stores/mobx/RootStore';
-Enzyme.configure({ adapter: new Adapter() });
+configure({ adapter: new Adapter() });
 
-describe('ResearchPlanDetailsAttachments', async () => {
-  
-  describe('.createAttachmentPreviews()', async () => {
-    describe('.when preview was changed', async () => {
+describe('ResearchPlanDetailsAttachments', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  describe('.createAttachmentPreviews()', () => {
+    describe('.when preview was changed', () => {
       it('new preview is rendered', async () => {
         const researchPlanWithAttachment = await ResearchPlanFactory.build(
           'ResearchPlanFactory.with attachment_not_in_body'
@@ -33,22 +35,33 @@ describe('ResearchPlanDetailsAttachments', async () => {
         sinon
           .stub(AttachmentFetcher, 'fetchThumbnail')
           .callsFake(() => Promise.resolve('reloadedPreviewData'));
+        sinon
+          .stub(PublicFetcher, 'fetchThumbnail')
+          .callsFake(() => Promise.resolve('reloadedPreviewData'));
 
-        const wrapper = shallow(<ResearchPlanDetailsAttachments
-          researchPlan={researchPlanWithAttachment}
-          attachments={researchPlanWithAttachment.attachments}
-          onDrop={(() => {})}
-          onDelete={(() => {})}
-          onUndoDelete={(() => {})}
-          onDownload={(() => {})}
-          onAttachmentImportComplete={(() => {})}
-          onEdit={(() => {})}
-          readOnly={false}
-        />);
+        const wrapper = mount(
+          React.createElement(
+            ResearchPlanDetailsAttachments,
+            {
+              researchPlan: researchPlanWithAttachment,
+              attachments: researchPlanWithAttachment.attachments,
+              onDrop: (() => {}),
+              onDelete: (() => {}),
+              onUndoDelete: (() => {}),
+              onDownload: (() => {}),
+              onAttachmentImportComplete: (() => {}),
+              onEdit: (() => {}),
+              readOnly: false,
+            }
+          )
+        );
+        const instance = wrapper.instance();
+        instance.componentDidMount();
+
         await new Promise(process.nextTick);
-        const expectedPreviewComponent = '<img src="data:image/png;base64,reloadedPreviewData"';
 
-        expect(wrapper.html().includes(expectedPreviewComponent)).toBe(true);
+        wrapper.update();
+        expect(wrapper.find('img').at(0).prop('src')).toEqual('data:image/png;base64,reloadedPreviewData');
       });
     });
   });

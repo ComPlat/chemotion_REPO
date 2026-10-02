@@ -1,0 +1,59 @@
+// Styles for PublishAnalysesTag component in publish modals
+
+.analysis-header.order {
+  $preview-size: 120px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+
+  .preview {
+    flex-shrink: 0;
+    img {
+      height: $preview-size;
+    }
+    img, i {
+      width: $preview-size;
+    }
+  }
+
+  .abstract {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
+
+  .upper-btn {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    min-height: 22px;
+    float: right;
+    margin-left: 8px;
+
+    .button-right {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .add-to-report {
+      font-size: 12px;
+      height: 22px;
+      padding: 0 12px;
+      vertical-align: middle;
+    }
+
+    .checkbox {
+      margin: 0;
+
+      span {
+        line-height: 22px;
+      }
+    }
+  }
+
+  .lower-text {
+    overflow: hidden;
+  }
+}

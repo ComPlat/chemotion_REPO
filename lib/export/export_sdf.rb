@@ -1,9 +1,17 @@
 # frozen_string_literal: true
 
 require 'export_table'
+require Rails.root.join('lib/chemotion/molfile_polymer_support')
 
 module Export
   class ExportSdf < ExportTable
+    EMPTY_MOLFILE = <<~MOLFILE.freeze
+      noname
+
+        0  0  0  0  0  0  0  0  0  0999 V2000
+      M  END
+    MOLFILE
+
     EXCLUDED_COLUMNS = [
       'image', 'description', 'r description', 'molfile'
     ].freeze
@@ -16,6 +24,7 @@ module Export
     def generate_sheet_with_samples(table, samples = nil)
       @samples = samples
       return if samples.nil? # || samples.count.zero?
+
       generate_headers(table, EXCLUDED_COLUMNS)
       @xfile[table] = Tempfile.new(["#{table}s_#{@t}_", '.sdf'], encoding: 'utf-8')
       samples.each do |sample|
@@ -26,7 +35,8 @@ module Export
     end
 
     def read
-      return nil if @xfile.size.zero?
+      return nil if @xfile.empty?
+
       file = stream_data
       file.rewind
       file.read
@@ -34,25 +44,44 @@ module Export
 
     private
 
+    def concatenate_data(sample, data, headers = @headers)
+      headers.each do |column|
+        next unless column
+
+        raw_value = case column
+                    when 'molarity'
+                      "#{sample['molarity_value']} #{sample['molarity_unit']}"
+                    when 'flash point'
+                      sample['flash_point']
+                    when 'refractive index'
+                      sample['refractive_index']
+                    when 'density'
+                      "#{sample['density']} g/mL"
+                    else
+                      sample[column]
+                    end
+        column_data = format_field(column, raw_value)
+        data.concat(column_data)
+      end
+      data
+    end
+
     def filter_with_permission_and_detail_level(sample)
-      if sample['shared_sync'] == 'f' || sample['shared_sync'] == false
-        data = validate_molfile(sample['molfile'])
+      if ['f', false].include?(sample['shared_sync'])
+        data = validate_molfile(sdf_molfile_for(sample))
         return nil unless data.presence
 
         if sample['molfile_version'] =~ /^(V2000).*T9/
-          data = Chemotion::OpenBabelService.mofile_clear_coord_bonds(data, $1)
+          data = Chemotion::OpenBabelService.mofile_clear_coord_bonds(data, Regexp.last_match(1))
         end
         data = data.rstrip
         data += "\n"
-        @headers.each do |column|
-          column_data = format_field(column, sample[column])
-          data.concat(column_data)
-        end
+        data = concatenate_data(sample, data)
       else
         # return no data if molfile not allowed
         return nil if sample['dl_s'].zero?
 
-        data = validate_molfile(sample['molfile'])
+        data = validate_molfile(sdf_molfile_for(sample))
         return nil unless data.presence
 
         data = data.rstrip
@@ -62,14 +91,17 @@ module Export
         # NB: as of now , only dl 0 and 10 are implemented
         dl = 10 if dl.positive?
         headers = instance_variable_get("headers#{sample['dl_s']}#{dl}")
-        headers.each do |column|
-          next unless column
+        data = concatenate_data(sample, data, headers)
 
-          column_data = format_field(column, sample[column])
-          data.concat(column_data)
-        end
       end
-      data.concat("\$\$\$\$\n")
+      data.concat("$$$$\n")
+    end
+
+    def sdf_molfile_for(sample)
+      return sample['molfile'] if sample['molfile'].present?
+      return EMPTY_MOLFILE if sample['source_type'] == 'sbmm'
+
+      nil
     end
 
     def extract_reference_values(raw_value)
@@ -81,11 +113,14 @@ module Export
     def format_field(column, raw_value)
       field = column.gsub(/\s+/, '_').upcase
       reference_values = ['melting pt', 'boiling pt']
+      flash_point = ['flash point', 'flash_point']
       sample_column =
         if reference_values.include?(column)
           extract_reference_values(raw_value)
         elsif column == 'solvent'
           extract_label_from_solvent_column(raw_value) || ''
+        elsif flash_point.include?(column)
+          flash_point_format(raw_value)
         else
           raw_value
         end
@@ -93,10 +128,18 @@ module Export
       ">  <#{field}>\n#{value}\n\n"
     end
 
+    # Keep only the CTAB (up to and including "M  END") when molfile has no PolymersList/TextNode.
+    # When PolymersList or TextNode blocks are present, keep the full molfile including those blocks and $$$$.
     def validate_molfile(molfile)
-      return ($`).concat('M  END') if molfile.to_s =~ /^M  END/
+      s = molfile.to_s
+      return s.rstrip if Chemotion::MolfilePolymerSupport.has_polymer_or_textnode_blocks?(s)
 
-      molfile
+      return s unless s.include?('M  END')
+
+      idx = s.index('M  END')
+      return s unless idx
+
+      s[0..(idx + 'M  END'.length - 1)].rstrip
     end
 
     def validate_value(value)
@@ -111,9 +154,11 @@ module Export
 
     def stream_data
       return @xfile.first[1] if @xfile.size == 1
+
       Zip::OutputStream.write_buffer do |zip|
         @xfile.each_pair do |table, file|
           next unless file
+
           file.rewind
           zip.put_next_entry "#{table}s_#{@t}_.sdf"
           zip.write file.read

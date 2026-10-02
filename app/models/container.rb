@@ -6,32 +6,36 @@
 #
 #  id                 :integer          not null, primary key
 #  ancestry           :string
-#  containable_id     :integer
 #  containable_type   :string
-#  name               :string
 #  container_type     :string
+#  deleted_at         :datetime
 #  description        :text
 #  extended_metadata  :hstore
+#  name               :string
+#  plain_text_content :text
 #  created_at         :datetime         not null
 #  updated_at         :datetime         not null
+#  containable_id     :integer
 #  parent_id          :integer
-#  plain_text_content :text
 #
 # Indexes
 #
 #  index_containers_on_containable  (containable_type,containable_id)
+#  index_containers_on_parent_id    (parent_id) WHERE (deleted_at IS NULL)
+#  index_containers_parent_id       (parent_id)
 #
 
 class Container < ApplicationRecord
+  has_logidze
+  acts_as_paranoid
   include ElementCodes
   include Labimotion::Datasetable
-  include Taggable
   include Publishing
+  include Taggable
+  include RepoContainer
   if ENV['REPO_VERSIONING'] == 'true'
     include Versioning
   end
-
-  attr_accessor :dataset_doi, :pub_id, :preview_img, :link_id # decide if we need to expose these conditionally <--- ASK PAGGY
 
   belongs_to :containable, polymorphic: true, optional: true
   has_many :attachments, as: :attachable
@@ -39,11 +43,9 @@ class Container < ApplicationRecord
   around_save :content_to_plain_text,
               if: -> { extended_metadata_changed? && extended_metadata && extended_metadata['content'].present? }
   # TODO: dependent destroy for attachments should be implemented when attachment get paranoidized instead of this DJ
-  before_destroy :delete_attachment
   before_destroy :destroy_datasetable
+  # after_destroy :delete_attachment
 
-  ## has_closure_tree order: "extended_metadata->'index' asc"  ## TODO: Paggy
-  ## has_closure_tree order: Arel.sql("extended_metadata->'index' asc") ## TODO: 10122024
   has_closure_tree
 
   scope :analyses_for_root, lambda { |root_id|
@@ -53,33 +55,16 @@ class Container < ApplicationRecord
     )
   }
 
-  scope :links_for_root, ->(root_id) {
-    where(container_type: 'link').joins(
-      "inner join container_hierarchies ch on ch.generations = 2 and ch.ancestor_id = #{root_id} and ch.descendant_id = containers.id "
-    )
-  }
-
-  scope :analyses_container, ->(id) {
-    where(container_type: 'analyses').joins(
-      <<~SQL
-        inner join container_hierarchies ch
-        on (ch.ancestor_id = #{id} and ch.descendant_id = containers.id)
-        or (ch.descendant_id = #{id} and ch.ancestor_id = containers.id)
-      SQL
-    )
-  }
-
-
   def analyses
     Container.analyses_for_root(id)
   end
 
-  def links
-    Container.links_for_root(self.id)
-  end
-
   def root_element
     root&.containable
+  end
+
+  def analyses_container
+    children.find_by!(container_type: 'analyses')
   end
 
   def self.create_root_container(**args)
@@ -87,6 +72,22 @@ class Container < ApplicationRecord
     root_con.children.create(container_type: 'analyses')
     root_con
   end
+
+  def create_analysis_with_dataset!(name:)
+    transaction do
+      analysis = children.create!(
+        container_type: 'analysis',
+        name: name,
+      )
+
+      analysis.children.create!(
+        container_type: 'dataset',
+        name: name,
+      )
+    end
+  end
+
+  private
 
   def delete_attachment
     if Rails.env.production?
@@ -116,5 +117,4 @@ class Container < ApplicationRecord
   # rubocop:enable Rails/SkipsModelValidations
 
   handle_asynchronously :update_content_to_plain_text, queue: 'plain_text_container_content'
-  # rubocop:enable Style/StringLiterals
 end

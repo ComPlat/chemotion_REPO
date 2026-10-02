@@ -37,6 +37,11 @@ module Chemotion
 
     config.active_job.queue_adapter = :delayed_job
 
+    # Get ActiveRecord to look for tables in multiple schemas
+    # ( seems to be a problem only on the test runner)
+    # config.active_record.schema_format = :sql
+    # schema_search_path could be used to set to pg search path to 'public,rdkit'
+
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration can go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded after loading
@@ -75,6 +80,11 @@ module Chemotion
       FileUtils.rm(sprite_file) if File.file?(sprite_file)
       FileUtils.ln_s(new_sprite, sprite_file)
     end
+
+    # OTP secret key used by Devise for encrypting two-factor authentication secrets.
+    # In development and test, it falls back to a default value. In production, ensure
+    # OTP_SECRET_KEY is set in the environment to keep encryption secure.
+    config.otp_secret_encryption_key = ENV.fetch('OTP_SECRET_KEY', nil) || 'default_dev_test_key_please_change_in_production'
 
     # Specifically allow some classes to be serialized by Psych
     # See https://discuss.rubyonrails.org/t/cve-2022-32224-possible-rce-escalation-bug-with-serialized-columns-in-active-record/81017

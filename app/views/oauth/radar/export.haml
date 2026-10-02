@@ -11,5 +11,5 @@
     %p
       Your export is uploaded to RADAR. You will be redirected once the upload is complete.
 
-    :javascript
+    = javascript_tag nonce: content_security_policy_nonce do
       setTimeout('location.reload(true)', 2000);

@@ -37,7 +37,7 @@ class GenericSegmentsRevisionMigration < ActiveRecord::Migration[4.2]
         properties_release: klass.properties_template,
         released_at: klass.released_at
       }
-      Labimotion::SegmentKlassesRevision.create(attributes)
+      SegmentKlassesRevision.create(attributes)
     end
 
     Segment.find_each do |el|
@@ -69,7 +69,7 @@ class GenericSegmentsRevisionMigration < ActiveRecord::Migration[4.2]
         deleted_at: el.deleted_at,
         properties: el.properties
       }
-      Labimotion::SegmentsRevision.create(attributes)
+      SegmentsRevision.create(attributes)
     end
   end
 

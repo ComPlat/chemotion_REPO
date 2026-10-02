@@ -82,6 +82,8 @@ class Import::ImportJson
   #       'r_uuid' => nil,
   #       'r_reference' => nil,
   #       'r_equivalent' => nil,
+  #       'r_gas_type' => nil,
+  #       'r_gas_phase_data' => nil,
   #       'r_conversion_rate' => nil,
   #     ]
   #   }
@@ -322,7 +324,7 @@ class Import::ImportJson
   end
 
   def create_datasets(datasets, analysis)
-    datasets&.each do |a|
+    datasets.each do |a|
       # next unless (remote_id = a['analysis_id'])
       # next unless (analysis_id = @log['analyses'][remote_id])
       # new_a = Container.find_by(id: analysis_id).children.create(
@@ -376,7 +378,9 @@ class Import::ImportJson
       @log['samples'][el_uuid][klass.name] = klass.create(
         sample_id: new_el.id, reaction_id: new_data[r_uuid]['id'],
         reference: ref, equivalent: eq, position: el['r_position'],
-        conversion_rate: el['r_conversion_rate']
+        gas_type: el['r_gas_type'], gas_phase_data: el['r_gas_phase_data'],
+        conversion_rate: el['r_conversion_rate'], weight_percentage_reference: el['r_weight_percentage_reference'],
+        weight_percentage: el['r_weight_percentage']
       ) && '201' || '500'
     else
       @log['samples'][el_uuid][klass.name] = '404'

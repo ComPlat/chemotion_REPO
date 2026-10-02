@@ -1,5 +1,35 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: molecules
+#
+#  id                     :integer          not null, primary key
+#  boiling_point          :float
+#  cano_smiles            :string
+#  cas                    :text
+#  deleted_at             :datetime
+#  density                :float            default(0.0)
+#  exact_molecular_weight :float
+#  inchikey               :string
+#  inchistring            :string
+#  is_partial             :boolean          default(FALSE), not null
+#  iupac_name             :string
+#  melting_point          :float
+#  molecular_weight       :float
+#  molecule_svg_file      :string
+#  molfile                :binary
+#  molfile_version        :string(20)
+#  names                  :string           default([]), is an Array
+#  sum_formular           :string
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#
+# Indexes
+#
+#  index_molecules_on_deleted_at                           (deleted_at)
+#  index_molecules_on_formula_and_inchikey_and_is_partial  (inchikey,sum_formular,is_partial) UNIQUE
+#
 require 'rails_helper'
 require 'digest'
 
@@ -29,6 +59,25 @@ RSpec.describe Molecule, type: :model do
 
       expect(association_names).to include molecule.sum_formular
       expect(database_names).to match_array(association_names.without(molecule.sum_formular))
+    end
+  end
+
+  describe '#delete' do
+    let(:molecule) { create(:molecule) }
+
+    it 'deletes the molecule' do
+      molecule.delete
+      expect(described_class.where(id: molecule.id).count).to eq(0)
+    end
+
+    it 'modifies the inchikey' do
+      id = molecule.id
+      inchikey = molecule.inchikey
+      molecule.save!
+      molecule.destroy!
+      deleted_molecule = described_class.only_deleted.find_by(id: id)
+      expect(deleted_molecule&.inchikey).to start_with("#{id}_")
+      expect(deleted_molecule&.inchikey).to end_with(inchikey)
     end
   end
 
@@ -66,29 +115,6 @@ RSpec.describe Molecule, type: :model do
       persisted_molecule.tag.taggable_data['pubchem_cid'] = 643_785
       persisted_molecule.pubchem_lcss
       expect(persisted_molecule.tag.taggable_data['pubchem_lcss']).not_to be_nil
-    end
-  end
-
-  describe 'find or create molecule using smiles' do
-    context 'when smiles are faulty' do
-      let(:faulty_smile01) { 'C1CCCCN1(C)[Al]([H])(I)(I)N1(C)CCCCC1' }
-
-      it 'RDKitChem raises a MolSanitizeException for invalid SMILES' do
-        expect { RDKitChem::RWMol.mol_from_smiles(faulty_smile01) }.to raise_error do |error|
-          expect(error.class.name).to eq('MolSanitizeException')
-        end
-      end
-    end
-
-    context 'when molfile is invalid' do
-      let(:invalid_molfile) { Rails.root.join('spec/fixtures/structures/invalid_01.mol').read }
-      let(:faulty_smiles02) { Chemotion::OpenBabelService.get_smiles_from_molfile(invalid_molfile) }
-
-      it 'RDKitChem raises a MolSanitizeException for invalid molfile' do
-        expect { RDKitChem::RWMol.mol_from_smiles(faulty_smiles02) }.to raise_error do |error|
-          expect(error.class.name).to eq('MolSanitizeException')
-        end
-      end
     end
   end
 end

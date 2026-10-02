@@ -48,9 +48,6 @@ module Entities
     expose :tabs_segment do |obj|
         obj['tabs_segment']
     end
-    expose :is_public do |obj|
-      obj['shared_by'] && obj['shared_by']['initials'] == 'CI'
-    end
     expose :children, as: 'children', using: Entities::CollectionSyncEntity
 
     expose :is_sync_to_me do |obj|

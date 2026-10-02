@@ -30,7 +30,7 @@ describe('ChemicalFetcher methods', () => {
 
       fetchStub.resolves(new Response(JSON.stringify(expectedResponse)));
 
-      const result = await ChemicalFetcher.fetchChemical(sampleId);
+      const result = await ChemicalFetcher.fetchChemical(sampleId, 'sample');
 
       sinon.assert.calledOnce(fetchStub);
       sinon.assert.calledWithExactly(fetchStub, `/api/v1/chemicals?sample_id=${sampleId}`, {
@@ -115,7 +115,8 @@ describe('ChemicalFetcher methods', () => {
     const params = {
       cas: '50-00-0',
       chemical_data: [{ status: 'Out of stock' }],
-      sample_id: 19
+      sample_id: 19,
+      type: 'sample'
     };
     it('should update chemical entry', async () => {
       const expectedResponse = {
@@ -129,15 +130,16 @@ describe('ChemicalFetcher methods', () => {
 
       const result = await ChemicalFetcher.update(params);
 
+      const { type, ...expectedBody } = params;
       sinon.assert.calledOnce(fetchStub);
-      sinon.assert.calledWithExactly(fetchStub, `/api/v1/chemicals/${params.sample_id}`, {
+      sinon.assert.calledWithExactly(fetchStub, '/api/v1/chemicals', {
         credentials: 'same-origin',
         method: 'put',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(params)
+        body: JSON.stringify(expectedBody)
       });
       expect(result).toEqual(expectedResponse);
     });
@@ -205,6 +207,53 @@ describe('ChemicalFetcher methods', () => {
       });
 
       expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('saveManualAttachedSafetySheet', () => {
+    const inputParams = {
+      sample_id: 19,
+      cas: '50-00-0',
+      chemical_data: [{ status: 'Out of stock' }],
+      vendor_product: 'merckProductInfo',
+      attached_file: {
+        filename: 's41597-023-02501-8.pdf',
+        type: 'application/pdf',
+        name: 'attached_file',
+        tempfile: new File(['mock file content'], 's41597-023-02501-8.pdf', { type: 'application/pdf' }),
+        head: `Content-Disposition: form-data; name="attached_file"; filename="s41597-023-02501-8.pdf"
+        Content-Type: application/pdf\r\n`
+      }
+    };
+
+    it('should save manual attached safety sheet', async () => {
+      const expectedResponse = true;
+
+      fetchStub.resolves(new Response(JSON.stringify(expectedResponse)));
+
+      const result = await ChemicalFetcher.saveManualAttachedSafetySheet(inputParams);
+
+      // Assert that fetch was called once with the correct parameters
+      sinon.assert.calledOnce(fetchStub);
+      sinon.assert.calledWithExactly(fetchStub, '/api/v1/chemicals/save_manual_sds', {
+        credentials: 'same-origin',
+        method: 'post',
+        body: inputParams
+      });
+
+      expect(result).toEqual(expectedResponse);
+    });
+
+    it('should handle fetch error', async () => {
+      // Setup fetchStub to reject with a specific error
+      fetchStub.rejects(new Error('Fetch error'));
+
+      try {
+        await ChemicalFetcher.saveManualAttachedSafetySheet(inputParams);
+        throw new Error('Failed to save manual attached safety sheet');
+      } catch (error) {
+        expect(error.message).toEqual('Failed to save manual attached safety sheet');
+      }
     });
   });
 

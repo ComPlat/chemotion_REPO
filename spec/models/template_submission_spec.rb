@@ -1,5 +1,24 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: template_submissions
+#
+#  id                                                                                     :bigint           not null, primary key
+#  deleted_at(The deletion time of the submission)                                        :datetime
+#  metadata(Additional metadata about the klass info and submission)                      :jsonb            not null
+#  origin(The origin of the submission)                                                   :string           not null
+#  state(The state of the submission (0: pending, 1: approved, 2: rejected, 3: released)) :integer          default("pending"), not null
+#  template(The template data submitted)                                                  :jsonb            not null
+#  template_klass(The type of template submitted)                                         :string           not null
+#  created_at(The creation time of the submission)                                        :datetime         not null
+#  updated_at(The last update time of the submission)                                     :datetime
+#
+# Indexes
+#
+#  idx_template_submissions_metadata  (metadata) USING gin
+#  idx_template_submissions_template  (template) USING gin
+#
 require 'rails_helper'
 
 RSpec.describe TemplateSubmission, type: :model do
@@ -25,7 +44,7 @@ RSpec.describe TemplateSubmission, type: :model do
       described_class.create!(
         template_klass: 'reaction',
         template: { name: 'Reaction' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
       )
@@ -35,21 +54,22 @@ RSpec.describe TemplateSubmission, type: :model do
       described_class.create!(
         template_klass: 'sample',
         template: { name: 'Sample' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'external',
         state: :approved,
       )
     end
 
     let!(:deleted_submission) do
-      described_class.create!(
+      submission = described_class.create!(
         template_klass: 'analysis',
         template: { name: 'Analysis' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
-        deleted_at: Time.current,
       )
+      submission.destroy
+      submission
     end
 
     describe '.by_template_klass' do
@@ -70,51 +90,41 @@ RSpec.describe TemplateSubmission, type: :model do
       end
     end
 
-    describe '.not_deleted' do
-      it 'excludes deleted submissions' do
-        expect(described_class.not_deleted).to contain_exactly(reaction_submission, sample_submission)
+    describe 'default scope (acts_as_paranoid)' do
+      it 'excludes soft-deleted submissions' do
+        expect(described_class.all).to contain_exactly(reaction_submission, sample_submission)
+      end
+
+      it 'includes soft-deleted submissions when using with_deleted' do
+        expect(described_class.with_deleted).to include(deleted_submission)
       end
     end
 
     describe '.recent' do
       it 'orders by created_at desc' do
-        expect(described_class.recent.first).to eq(deleted_submission)
+        expect(described_class.recent.first).to eq(sample_submission)
       end
     end
   end
 
-  describe '#soft_delete' do
+  describe 'soft delete via acts_as_paranoid' do
     let(:submission) do
       described_class.create!(
         template_klass: 'reaction',
         template: { name: 'Test' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
       )
     end
 
-    it 'sets deleted_at timestamp' do
-      expect do
-        submission.soft_delete
-      end.to change(submission, :deleted_at).from(nil)
+    it 'sets deleted_at timestamp when destroyed' do
+      expect { submission.destroy }.to change(submission, :deleted_at).from(nil)
     end
 
-    it 'does not destroy the record' do
-      submission.soft_delete
-      expect(described_class.find_by(id: submission.id)).not_to be_nil
-    end
-  end
-
-  describe '#deleted?' do
-    it 'returns true when deleted_at is present' do
-      submission = described_class.new(deleted_at: Time.current)
-      expect(submission.deleted?).to be true
-    end
-
-    it 'returns false when deleted_at is nil' do
-      submission = described_class.new(deleted_at: nil)
-      expect(submission.deleted?).to be false
+    it 'does not really destroy the record' do
+      submission.destroy
+      expect(described_class.with_deleted.find_by(id: submission.id)).not_to be_nil
     end
   end
 
@@ -123,7 +133,7 @@ RSpec.describe TemplateSubmission, type: :model do
       described_class.create!(
         template_klass: 'reaction',
         template: { name: 'Test' },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
       )
@@ -151,7 +161,7 @@ RSpec.describe TemplateSubmission, type: :model do
       submission = described_class.create!(
         template_klass: 'reaction',
         template: { name: 'Test', steps: %w[step1 step2] },
-        metadata: {},
+        metadata: { source: 'test' },
         origin: 'api',
         state: :pending,
       )

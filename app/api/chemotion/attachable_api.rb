@@ -6,11 +6,11 @@ module Chemotion
   class AttachableAPI < Grape::API
     resource :attachable do
       params do
-        optional :files, type: Array[File], desc: 'files', default: []
+        optional :files, type: [File], desc: 'files', default: []
         optional :attachable_type, type: String, desc: 'attachable_type'
         optional :attachable_id, type: Integer, desc: 'attachable id'
-        optional :attfilesIdentifier, type: Array[String], desc: 'file identifier'
-        optional :del_files, type: Array[Integer], desc: 'del file id', default: []
+        optional :attfilesIdentifier, type: [String], desc: 'file identifier'
+        optional :del_files, type: [Integer], desc: 'del file id', default: []
       end
       after_validation do
         case params[:attachable_type]
@@ -28,8 +28,6 @@ module Chemotion
         attachable_id = params[:attachable_id]
 
         if params.fetch(:files, []).any?
-          attach_ary = []
-          rp_attach_ary = []
           params[:files].each_with_index do |file, index|
             next unless (tempfile = file[:tempfile])
 
@@ -47,8 +45,8 @@ module Chemotion
 
             begin
               a.save!
-              attach_ary.push(a.id)
-              rp_attach_ary.push(a.id) if a.attachable_type.in?(%w[ResearchPlan Wellplate Labimotion::Element])
+            rescue StandardError
+              status 413
             ensure
               tempfile.close
               tempfile.unlink
@@ -56,8 +54,8 @@ module Chemotion
           end
         end
         if params[:del_files].any?
-          Attachment.where('id IN (?) AND attachable_type = (?)', params[:del_files].map!(&:to_i),
-                           attachable_type).update_all(attachable_id: nil)
+          Attachment.where(id: params[:del_files].map!(&:to_i), attachable_type: attachable_type)
+                    .update_all(attachable_id: nil)
         end
         true
       end

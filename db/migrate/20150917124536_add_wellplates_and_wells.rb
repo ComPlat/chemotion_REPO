@@ -7,7 +7,7 @@ class AddWellplatesAndWells < ActiveRecord::Migration[4.2]
       t.integer  "position_y"
       t.datetime "created_at", null: false
       t.datetime "updated_at", null: false
-    end
+    end unless table_exists?(:wells)
 
     create_table "wellplates", force: :cascade do |t|
       t.string   "name"
@@ -15,13 +15,13 @@ class AddWellplatesAndWells < ActiveRecord::Migration[4.2]
       t.string   "description"
       t.datetime "created_at",  null: false
       t.datetime "updated_at",  null: false
-    end
+    end unless table_exists?(:wellplates)
 
     create_table :collections_wellplates do |t|
       t.integer :collection_id
       t.integer :wellplate_id
       t.index :collection_id
       t.index :wellplate_id
-    end
+    end unless table_exists?(:collections_wellplates)
   end
 end

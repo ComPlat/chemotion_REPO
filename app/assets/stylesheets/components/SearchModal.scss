@@ -1,0 +1,322 @@
+.accordion.search-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.accordion.search-modal .accordion-header {
+  border-bottom: 1px solid $chemstrap-silicon;
+}
+
+.accordion.search-modal .accordion-button {
+  font-size: 1.2rem;
+}
+
+.accordion.search-modal .accordion-item {
+  flex-shrink: 1;
+}
+
+.accordion.search-modal .accordion-item.active {
+  height: 100%;
+  &.with-result {
+    height: calc(100% - 56px);
+  }
+}
+
+.accordion.search-modal .accordion-item.inactive {
+  display: none;
+}
+
+.accordion.search-modal .accordion-item .accordion-button {
+  @extend .surface-lighten1;
+}
+
+.accordion.search-modal .accordion-item.active .accordion-button {
+  @extend .surface-lighten4;
+}
+
+.accordion.search-modal .accordion-collapse.show {
+  height: calc(100% - 64px);
+}
+
+.accordion.search-modal .accordion-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem 1.25rem;
+  overflow: hidden;
+}
+
+.advanced-search-content-header,
+.advanced-search-buttons,
+.result-content-header,
+.draggable-modal-form-buttons {
+  flex-shrink: 0;
+}
+
+.advanced-search-content-scrollable-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.advanced-search-content-scrollable-body.without-header {
+  margin-top: 0;
+}
+
+.advanced-search-buttons,
+.draggable-modal-form-buttons {
+  gap: 0.5rem;
+}
+
+.advanced-search-content-header.hstack {
+  margin-top: 0.5rem;
+  @extend .border-lighten2;
+  @extend .border-bottom;
+  justify-content: space-between;
+  width: 100%;
+  align-self: flex-start;
+}
+
+.advanced-search-toggle-elements,
+.advanced-search-result-toggle-elements {
+  flex-wrap: wrap;
+
+  .btn-outline-dark {
+    --bs-btn-padding-x: 1.5rem;
+    --bs-btn-padding-y: 0;
+    @extend .border-lighten2;
+    @extend .text-lighten1;
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .btn-outline-dark.no-result {
+    @extend .text-lighten4;
+  }
+
+  .btn-check:checked + .btn,
+  :not(.btn-check) + .btn:active,
+  .btn:first-child:active,
+  .btn.active,
+  .btn.show {
+    background-color: $chemstrap-silicon-active !important;
+    color: $primary !important;
+    &:hover {
+      @extend .text-body;
+    }
+  }
+
+  .btn-check + .btn:hover,
+  :not(.btn-check) + btn:hover {
+    color: $primary !important;
+    @extend .surface-hover;
+  }
+
+  i {
+    font-size: 1.7em;
+  }
+
+  i.icon-device_description,
+  i.icon-sequence_based_macromolecule_sample,
+  i.icon-screen {
+    font-size: 1.5em;
+    padding: 2px 0 0 0;
+    display: inline-block;
+  }
+
+  i.icon-research_plan {
+    font-size: 1.2em;
+    padding: 6px 0 5px 0;
+    display: inline-block;
+  }
+
+  i.icon_generic_nav {
+    font-size: 1.3em;
+    padding: 10px 0 8px 0;
+  }
+}
+
+.advanced-detail-button-group {
+  @extend .fs-6;
+  width: 85px;
+}
+
+.advanced-search-row {
+  display: flex;
+  overflow: visible !important;
+  margin-left: 10px;
+
+  .field-select {
+    margin: 5px;
+    flex: 0 0 205px;
+  }
+
+  .link-select-spacer {
+    width: 100%;
+    display: none;
+
+    &.visible {
+      display: table;
+    }
+  }
+
+  .link-select {
+    margin: 5px;
+    flex: 0 0 127px;
+  }
+
+  .match-select {
+    margin: 5px;
+    flex: 0 0 150px;
+  }
+
+  .value-field-select {
+    margin: 5px;
+    flex: 0 0 205px;
+
+    .ant-select {
+      width: 100%;
+      height: 34px;
+    }
+  }
+
+  .value-select {
+    margin: 5px;
+  }
+}
+
+.detail-search-element-tabs.nav-tabs.nav {
+  --bs-nav-link-color: var(--bs-navbar-color);
+  --bs-nav-link-hover-color: var(--bs-primary);
+  --bs-nav-tabs-link-active-color: var(--bs-primary);
+  --bs-nav-tabs-border-color: var(--bs-gray-600);
+  --bs-nav-tabs-link-active-border-color: var(--bs-gray-600);
+  --bs-nav-tabs-link-hover-border-color: none;
+  margin-bottom: 1rem;
+}
+
+.detail-search-element-tabs.nav-tabs .nav-link.active {
+  border-bottom: var(--bs-nav-tabs-border-width) solid white;
+}
+
+.detail-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem 1.25rem;
+}
+
+.detail-search-form > div {
+  width: calc(50% - 1rem);
+}
+
+.detail-search-form > div.sub-group-with-addon-2col {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .detail-search-form > div {
+    width: calc(25% - 1rem);
+  }
+  .detail-search-form > div.sub-group-with-addon-2col {
+    width: calc(50% - 1rem);
+  }
+}
+
+.detail-search-headline,
+.detail-search-segment-headline {
+  flex-basis: 100%;
+  font-weight: 700;
+  font-size: 1.15em;
+  color: var(--bs-black);
+  border-bottom: 1px solid var(--bs-gray-600);
+  padding-bottom: 3px;
+}
+
+.detail-search-headline {
+  background-color: var(--bs-gray-200);
+  padding: 0.25rem;
+  padding-left: 10px;
+  border-top: 1px solid var(--bs-gray-400);
+  border-bottom: 1px solid var(--bs-gray-400);
+}
+
+.detail-search-headline + .detail-search-headline {
+  background-color: transparent;
+  border-top: none;
+  padding: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--bs-gray-600);
+}
+
+.detail-search-content {
+  .subfields-with-addon-left-3 {
+    width: calc(33% - 1rem);
+  }
+
+  .subfields-with-addon-left-2 {
+    width: calc(50% - 1rem);
+  }
+
+  .grouped-sub-fields {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .ant-select {
+    width: 100%;
+    height: 34px;
+  }
+
+  hr.content-spacer {
+    border-top: 1px solid var(--bs-gray-800);
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+    flex-basis: 100%;
+  }
+
+  .form-control.error {
+    border-color: var(--bs-form-invalid-border-color);
+  }
+
+  .form-check {
+    align-self: flex-end;
+    margin-bottom: 1rem;
+  }
+}
+
+.search-info-button {
+  margin-left: 0.5rem;
+}
+
+.no-selected-search {
+  padding: 1rem;
+}
+
+.search-spinner {
+  color: var(--bs-gray-400);
+  position: absolute;
+  top: 0;
+  left: 50%;
+}
+
+.ketcher-buttons {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 3.5rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.result-error-message {
+  margin-top: 1rem;
+}
+
+.input-group:has(#search-inner-dropdown ~ .dropdown-menu.show) {
+  z-index: 20 !important;
+}

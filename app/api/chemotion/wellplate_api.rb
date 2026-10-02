@@ -8,6 +8,7 @@ module Chemotion
     helpers CollectionHelpers
     helpers SampleHelpers
     helpers ProfileHelpers
+    helpers UserLabelHelpers
 
     resource :wellplates do
       namespace :bulk do
@@ -19,6 +20,7 @@ module Chemotion
             optional :wells, type: Array
             optional :readout_titles, type: Array
             optional :collection_id, type: Integer
+            optional :user_labels, type: Array
           end
         end
         post do
@@ -54,6 +56,7 @@ module Chemotion
         optional :collection_id, type: Integer, desc: 'Collection id'
         optional :sync_collection_id, type: Integer, desc: 'SyncCollectionsUser id'
         optional :filter_created_at, type: Boolean, desc: 'filter by created at or updated at'
+        optional :user_label, type: Integer, desc: 'user label'
         optional :from_date, type: Integer, desc: 'created_date from in ms'
         optional :to_date, type: Integer, desc: 'created_date to in ms'
       end
@@ -78,10 +81,11 @@ module Chemotion
                 else
                   # All collection of current_user
                   Wellplate.joins(:collections).where(collections: { user_id: current_user.id }).distinct
-                end.order('created_at DESC')
+                end.order('wellplates.created_at DESC')
 
         from = params[:from_date]
         to = params[:to_date]
+        user_label = params[:user_label]
         by_created_at = params[:filter_created_at] || false
 
         scope = scope.includes_for_list_display
@@ -89,6 +93,7 @@ module Chemotion
         scope = scope.created_time_to(Time.zone.at(to) + 1.day) if to && by_created_at
         scope = scope.updated_time_from(Time.zone.at(from)) if from && !by_created_at
         scope = scope.updated_time_to(Time.zone.at(to) + 1.day) if to && !by_created_at
+        scope = scope.by_user_label(user_label) if user_label
 
         reset_pagination_page(scope)
 
@@ -143,6 +148,7 @@ module Chemotion
         optional :name, type: String
         optional :description, type: Hash
         optional :wells, type: Array
+        optional :user_labels, type: Array
         optional :readout_titles, type: Array
         requires :container, type: Hash
         optional :segments, type: Array, desc: 'Segments'
@@ -183,6 +189,7 @@ module Chemotion
         optional :height, type: Integer, default: 8, values: 1..100
         optional :width, type: Integer, default: 12, values: 1..100
         optional :segments, type: Array, desc: 'Segments'
+        optional :user_labels, type: Array
       end
       post do
         container = params[:container]
@@ -191,6 +198,7 @@ module Chemotion
         wellplate.container = update_datamodel(container)
 
         wellplate.save!
+        update_element_labels(wellplate, params[:user_labels], current_user.id)
 
         # save to profile
         kinds = wellplate.container&.analyses&.pluck(Arel.sql("extended_metadata->'kind'"))
@@ -255,40 +263,6 @@ module Chemotion
               error!(e, 500)
             end
           end
-        end
-      end
-
-      namespace :well_label do
-        desc 'update well label'
-        params do
-          requires :id, type: Integer
-          requires :label, type: String
-        end
-        after_validation do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user,
-                                                                   Well.find(params[:id]).wellplate).update?
-        end
-        post do
-          well = Well.find(params[:id])
-          well.update(label: params[:label])
-          { label: well.label }
-        end
-      end
-
-      namespace :well_color_code do
-        desc 'add or update color code'
-        params do
-          requires :id, type: Integer
-          requires :color_code, type: String
-        end
-        after_validation do
-          error!('401 Unauthorized', 401) unless ElementPolicy.new(current_user,
-                                                                   Well.find(params[:id]).wellplate).update?
-        end
-        post do
-          well = Well.find(params[:id])
-          well.update(color_code: params[:color_code])
-          { color_code: well.color_code }
         end
       end
 

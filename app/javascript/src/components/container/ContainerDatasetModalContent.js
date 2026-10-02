@@ -1,0 +1,748 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable react/destructuring-assignment */
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import {
+  Form, Button, ButtonToolbar, Alert
+} from 'react-bootstrap';
+import Dropzone from 'react-dropzone';
+import SaveEditedImageWarning from 'src/apps/mydb/elements/details/researchPlans/SaveEditedImageWarning';
+import debounce from 'es6-promise-debounce';
+import {
+  findIndex, cloneDeep
+} from 'lodash';
+import { absOlsTermId } from 'chem-generic-ui';
+import { LayerPlain } from 'chem-generic-ui-viewer';
+import Attachment from 'src/models/Attachment';
+import UserStore from 'src/stores/alt/stores/UserStore';
+import GenericDS from 'src/models/GenericDS';
+import GenericDSDetails from 'src/components/generic/GenericDSDetails';
+import InboxActions from 'src/stores/alt/actions/InboxActions';
+import InstrumentsFetcher from 'src/fetchers/InstrumentsFetcher';
+import HyperLinksSection from 'src/components/common/HyperLinksSection';
+import ImageAnnotationModalSVG from 'src/apps/mydb/elements/details/researchPlans/ImageAnnotationModalSVG';
+import { FolderDropzone } from 'src/apps/mydb/elements/details/analyses/UploadField';
+import PropTypes from 'prop-types';
+import {
+  downloadButton,
+  removeButton,
+  annotateButton,
+  EditButton,
+  sortingAndFilteringUI,
+  formatFileSize,
+  moveBackButton,
+  attachmentThumbnail,
+  ThirdPartyAppButton
+} from 'src/apps/mydb/elements/list/AttachmentList';
+import { formatDate } from 'src/utilities/timezoneHelper';
+import UIStore from 'src/stores/alt/stores/UIStore';
+import { StoreContext } from 'src/stores/mobx/RootStore';
+import { observer } from 'mobx-react';
+import { CreatableSelect } from 'src/components/common/Select';
+
+export function classifyAttachments(attachments) {
+  const groups = {
+    Original: [],
+    BagitZip: [],
+    Combined: [],
+    Processed: {},
+    Pending: [],
+  };
+
+  attachments.forEach((attachment) => {
+    if (attachment.is_pending) {
+      groups.Pending.push(attachment);
+      return;
+    }
+
+    if (attachment.aasm_state === 'queueing' && attachment.content_type === 'application/zip') {
+      groups.BagitZip.push(attachment);
+    } else if (attachment.aasm_state === 'image'
+        && (attachment.filename.includes('.combined')
+            || attachment.filename.includes('.new_combined'))) {
+      groups.Combined.push(attachment);
+    } else if (attachment.filename.includes('bagit')) {
+      const baseName = attachment.filename.split('_bagit')[0].trim();
+      if (!groups.Processed[baseName]) {
+        groups.Processed[baseName] = [];
+      }
+      groups.Processed[baseName].push(attachment);
+    } else if (attachment.aasm_state === 'non_jcamp' && attachment.filename.includes('.new_combined')) {
+      groups.Combined.push(attachment);
+    } else {
+      groups.Original.push(attachment);
+    }
+  });
+
+  return groups;
+}
+
+export class ContainerDatasetModalContent extends Component {
+  // eslint-disable-next-line react/static-property-placement
+  static contextType = StoreContext;
+
+  constructor(props) {
+    super(props);
+    const datasetContainer = { ...props.datasetContainer };
+    const { thirdPartyApps } = UIStore.getState() || [];
+    this.thirdPartyApps = thirdPartyApps;
+    this.state = {
+      datasetContainer,
+      instruments: [],
+      instrumentInputValue: '',
+      timeoutReference: null,
+      imageEditModalShown: false,
+      filteredAttachments: [...props.datasetContainer.attachments],
+      prevMessages: [],
+      newMessages: [],
+      filterText: '',
+      chosenAttachment: null,
+      attachmentGroups: {
+        Original: [],
+        BagitZip: [],
+        Combined: [],
+        Processed: {},
+      }
+    };
+    this.overlayContainerRef = React.createRef();
+    this.timeout = 6e2; // 600ms timeout for input typing
+    this.doneInstrumentTyping = this.doneInstrumentTyping.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this);
+    this.handleAddLink = this.handleAddLink.bind(this);
+    this.handleRemoveLink = this.handleRemoveLink.bind(this);
+    this.handleDSChange = this.handleDSChange.bind(this);
+    this.handleFilterChange = this.handleFilterChange.bind(this);
+    this.handleAttachmentRemove = this.handleAttachmentRemove.bind(this);
+    this.handleAttachmentBackToInbox = this.handleAttachmentBackToInbox.bind(this);
+    this.classifyAttachments = this.classifyAttachments.bind(this);
+    this.state.attachmentGroups = this.classifyAttachments(props.datasetContainer.attachments);
+  }
+
+  componentDidMount() {
+    const { datasetContainer } = this.state;
+    this.setState({
+      attachmentGroups: this.classifyAttachments(this.props.datasetContainer.attachments),
+      instrumentInputValue: datasetContainer?.extended_metadata?.instrument || ''
+    });
+  }
+
+  componentDidUpdate(prevProps) {
+    const { prevMessages, newMessages } = this.state;
+    const { attachments } = this.props.datasetContainer;
+
+    const prevAttachments = [...attachments];
+
+    // Sync instrumentInputValue when datasetContainer.extended_metadata.instrument changes
+    if (prevProps.datasetContainer?.extended_metadata?.instrument !== this.props.datasetContainer?.extended_metadata?.instrument) {
+      this.setState({
+        instrumentInputValue: this.props.datasetContainer?.extended_metadata?.instrument || ''
+      });
+    }
+
+    if (prevMessages.length !== newMessages.length) {
+      this.setState({
+        prevMessages: newMessages
+      });
+
+      this.updateAttachmentsFromContext();
+    }
+
+    if (prevAttachments.length !== prevProps.datasetContainer.attachments.length) {
+      this.setState({
+        filteredAttachments: [...attachments],
+        attachmentGroups: this.classifyAttachments(attachments),
+        datasetContainer: { ...this.props.datasetContainer }
+      }, () => {
+        this.props.onChange({ ...this.state.datasetContainer });
+        this.filterAttachments();
+      });
+    }
+  }
+
+  // This function is being called from ContainerDatasetModal.js
+  // eslint-disable-next-line react/no-unused-class-component-methods
+  setLocalName(localName) {
+    const { datasetContainer } = this.state;
+    datasetContainer.name = localName;
+    this.setState({ datasetContainer });
+  }
+
+  // eslint-disable-next-line react/sort-comp
+  updateAttachmentsFromContext = () => {
+    const { datasetContainer } = this.props;
+    const { filteredAttachments } = this.state;
+
+    let combinedAttachments = [...filteredAttachments];
+
+    if (this.context.attachmentNotificationStore) {
+      combinedAttachments = this.context.attachmentNotificationStore
+        .getCombinedAttachments(filteredAttachments, 'Container', datasetContainer);
+    }
+    return combinedAttachments;
+  };
+
+  handleInputChange(type, event) {
+    const { datasetContainer } = this.state;
+    const { value } = event.target;
+    switch (type) {
+      case 'name':
+        datasetContainer.name = value;
+        break;
+      case 'instrument':
+        datasetContainer.extended_metadata.instrument = value;
+        break;
+      case 'description':
+        datasetContainer.description = value;
+        break;
+      case 'dataset':
+        datasetContainer.dataset = value;
+        break;
+      default:
+        console.warn(`Unhandled input type: ${type}`);
+        break;
+    }
+    this.setState({ datasetContainer });
+  }
+
+  handleDSChange(ds) {
+    this.handleInputChange('dataset', { target: { value: ds } });
+  }
+
+  handleFileDrop(files) {
+    this.setState((prevState) => {
+      const newAttachments = files.map((f) => {
+        const newAttachment = Attachment.fromFile(f);
+        newAttachment.is_pending = true;
+        return newAttachment;
+      });
+
+      const updatedAttachments = [...prevState.datasetContainer.attachments, ...newAttachments];
+      const updatedDatasetContainer = { ...prevState.datasetContainer, attachments: updatedAttachments };
+
+      return {
+        datasetContainer: updatedDatasetContainer,
+        filteredAttachments: updatedAttachments,
+        attachmentGroups: this.classifyAttachments(updatedAttachments),
+      };
+    }, () => {
+    });
+  }
+
+  handleAttachmentRemove(attachment) {
+    const { datasetContainer } = this.state;
+    const index = datasetContainer.attachments.indexOf(attachment);
+    datasetContainer.attachments[index].is_deleted = true;
+    this.setState({ datasetContainer });
+  }
+
+  handleAttachmentBackToInbox(attachment) {
+    const { onChange } = this.props;
+    const { datasetContainer } = this.state;
+    const index = datasetContainer.attachments.indexOf(attachment);
+    if (index !== -1) {
+      InboxActions.backToInbox(attachment);
+      datasetContainer.attachments.splice(index, 1);
+      onChange(datasetContainer);
+    }
+  }
+
+  handleUndo(attachment) {
+    const { datasetContainer } = this.state;
+    const index = datasetContainer.attachments.indexOf(attachment);
+
+    datasetContainer.attachments[index].is_deleted = false;
+    this.setState({ datasetContainer });
+  }
+
+  // the next method is used in ContainerDatasetModal.js please ignore eslint warning
+  // eslint-disable-next-line react/no-unused-class-component-methods
+  handleSave(shouldClose = false) {
+    const { datasetContainer } = this.state;
+    const {
+      onChange, onModalHide, handleContainerSubmit, isNew
+    } = this.props;
+    this.context.attachmentNotificationStore.clearMessages();
+    onChange(datasetContainer);
+    if (!isNew) {
+      handleContainerSubmit(shouldClose);
+      if (shouldClose) onModalHide();
+      return;
+    }
+    if (shouldClose) {
+      onModalHide();
+    }
+  }
+
+  // eslint-disable-next-line react/no-unused-class-component-methods, react/sort-comp
+  resetAnnotation() {
+    const { chosenAttachment } = this.state;
+    if (chosenAttachment && chosenAttachment.updatedAnnotation) {
+      chosenAttachment.updatedAnnotation = null;
+      this.setState({ chosenAttachment });
+    }
+  }
+
+  handleInstrumentValueChange(event, doneInstrumentTyping) {
+    const { value } = event.target;
+    const { timeoutReference } = this.state;
+    if (!value) {
+      this.resetInstrumentComponent();
+      return;
+    }
+    if (timeoutReference) {
+      clearTimeout(timeoutReference);
+    }
+    this.setState({
+      value,
+      timeoutReference: setTimeout(() => {
+        doneInstrumentTyping();
+      }, this.timeout),
+    });
+    this.handleInputChange('instrument', event);
+    this.props.onInstrumentChange(value);
+  }
+
+  handleAddLink(link) {
+    const { datasetContainer } = this.state;
+    if (datasetContainer.extended_metadata.hyperlinks == null) {
+      datasetContainer.extended_metadata.hyperlinks = [link];
+    } else {
+      datasetContainer.extended_metadata.hyperlinks.push(link);
+    }
+    this.setState({ datasetContainer });
+  }
+
+  handleRemoveLink(link) {
+    const { datasetContainer } = this.state;
+    const index = datasetContainer.extended_metadata.hyperlinks.indexOf(link);
+    if (index !== -1) {
+      datasetContainer.extended_metadata.hyperlinks.splice(index, 1);
+    }
+    this.setState({ datasetContainer });
+  }
+
+  handleFilterChange = (e) => {
+    this.setState({ filterText: e.target.value }, this.filterAttachments);
+  };
+
+  filterAttachments() {
+    const filterTextLower = this.state.filterText.toLowerCase();
+    const filteredGroups = this.classifyAttachments(this.props.datasetContainer.attachments);
+
+    Object.keys(filteredGroups).forEach((group) => {
+      if (Array.isArray(filteredGroups[group])) {
+        filteredGroups[group] = filteredGroups[group]
+          .filter((attachment) => attachment.filename.toLowerCase().includes(filterTextLower));
+      } else {
+        Object.keys(filteredGroups[group]).forEach((subGroup) => {
+          filteredGroups[group][subGroup] = filteredGroups[group][subGroup]
+            .filter((attachment) => attachment.filename.toLowerCase().includes(filterTextLower));
+        });
+      }
+    });
+
+    this.setState({ attachmentGroups: filteredGroups });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  classifyAttachments(attachments) {
+    return classifyAttachments(attachments);
+  }
+
+  resetInstrumentComponent() {
+    const { datasetContainer } = this.state;
+    this.setState({
+      value: '',
+      instruments: [],
+      instrumentInputValue: '',
+    });
+    datasetContainer.extended_metadata.instrument = '';
+  }
+
+  doneInstrumentTyping() {
+    const { value } = this.state;
+    if (!value) {
+      this.resetInstrumentComponent();
+    } else {
+      this.fetchInstruments(value);
+    }
+  }
+
+  fetchInstruments(value, show = true) {
+    const debounced = debounce((query) => InstrumentsFetcher.fetchInstrumentsForCurrentUser(query), 200);
+    const query = (value || '').trim();
+
+    if (!query) {
+      this.setState({ instruments: [] });
+      return;
+    }
+
+    debounced(query)
+      .then((result) => {
+        const newState = {};
+        if (result.length > 0) {
+          newState.instruments = result;
+          newState.showInstruments = show;
+        } else {
+          newState.instruments = [];
+          newState.error = '';
+          newState.showInstruments = false;
+        }
+        this.setState(newState);
+      })
+      .catch((error) => console.log(error));
+  }
+
+  customDropzone() {
+    return (
+      <FolderDropzone
+        handleChange={async (files) => this.handleFileDrop(files)}
+        unzip={false}
+        flatFileList
+      >
+        Drop files here, or click to upload.
+      </FolderDropzone>
+    );
+  }
+
+  renderImageEditModal() {
+    const { chosenAttachment, imageEditModalShown } = this.state;
+    const { onChange } = this.props;
+    return (
+      <ImageAnnotationModalSVG
+        attachment={chosenAttachment}
+        isShow={imageEditModalShown}
+        handleSave={
+          () => {
+            const newAnnotation = document.getElementById('svgEditId').contentWindow.svgEditor.svgCanvas.getSvgString();
+            chosenAttachment.updatedAnnotation = newAnnotation;
+            this.setState({ imageEditModalShown: false });
+            onChange(chosenAttachment);
+          }
+        }
+        handleOnClose={() => { this.setState({ imageEditModalShown: false }); }}
+      />
+    );
+  }
+
+  renderAttachmentRow(attachment) {
+    const { readOnly } = this.props;
+    return (
+      <div className="attachment-row" key={attachment.id}>
+        {attachmentThumbnail(attachment)}
+        <div className="attachment-row-text" title={attachment.filename}>
+          {attachment.is_deleted ? (
+            <strike>{attachment.filename}</strike>
+          ) : (
+            attachment.filename
+          )}
+          <div className="attachment-row-subtext">
+            <div>
+              Created:
+              <span className="ms-1">
+                {formatDate(attachment.created_at)}
+              </span>
+            </div>
+            <span className="ms-2 me-2">|</span>
+            <div>
+              Size:
+              <span className="fw-bold text-gray-700 ms-1">
+                {formatFileSize(attachment.filesize)}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="attachment-row-actions d-flex justify-content-end align-items-center gap-1">
+          {attachment.is_deleted ? (
+            <Button
+              size="sm"
+              variant="danger"
+              className="attachment-button-size"
+              onClick={() => this.handleUndo(attachment)}
+            >
+              <i className="fa fa-undo" aria-hidden="true" />
+            </Button>
+          ) : (
+            <>
+              <ButtonToolbar>
+                {downloadButton(attachment)}
+                <ThirdPartyAppButton attachment={attachment} options={this.thirdPartyApps} />
+                <EditButton attachment={attachment} onChange={this.props.onChange} />
+                {annotateButton(attachment, () => {
+                  this.setState({
+                    imageEditModalShown: true,
+                    chosenAttachment: attachment,
+                  });
+                })}
+                {moveBackButton(attachment, this.handleAttachmentBackToInbox, readOnly)}
+              </ButtonToolbar>
+              <div className="ms-2">
+                {removeButton(attachment, this.handleAttachmentRemove, readOnly)}
+              </div>
+            </>
+          )}
+        </div>
+        {attachment.updatedAnnotation && <SaveEditedImageWarning visible />}
+      </div>
+    );
+  }
+
+  renderAttachments() {
+    const {
+      filteredAttachments, sortDirection, attachmentGroups
+    } = this.state;
+    const { datasetContainer } = this.props;
+    const { readOnly, disabled } = this.props;  // Chemotion Repoisitory
+    const { currentUser } = UserStore.getState();
+
+    const renderGroup = (attachments, title, key) => (
+      <div key={key} className="mt-2">
+        <div
+          className="fw-bold mb-2 border rounded p-1"
+          style={{ backgroundColor: '#D3D3D3' }}
+        >
+          {title}
+        </div>
+        {attachments.map((attachment) => this.renderAttachmentRow(attachment))}
+      </div>
+    );
+
+    const hasProcessedAttachments = Object.keys(attachmentGroups.Processed).some(
+      (groupName) => attachmentGroups.Processed[groupName].length > 0
+    );
+
+    return (
+      <div className="p-2 border rounded">
+        {this.renderImageEditModal()}
+        <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex flex-grow-1 align-self-center">
+            {readOnly || disabled ? <span /> : this.customDropzone()}
+          </div>
+          <div className="ms-4 align-self-center">
+            {datasetContainer.attachments.length > 0
+              && sortingAndFilteringUI(
+                sortDirection,
+                this.handleSortChange,
+                this.toggleSortDirection,
+                this.handleFilterChange,
+                false
+              )}
+          </div>
+        </div>
+        {filteredAttachments.length === 0 ? (
+          <div className="no-attachments-text">
+            There are currently no attachments.
+          </div>
+        ) : (
+          <>
+            <div className="mb-5">
+              {attachmentGroups.Pending && attachmentGroups.Pending.length > 0
+                && renderGroup(attachmentGroups.Pending, 'Pending')}
+              {attachmentGroups.Original.length > 0 && renderGroup(attachmentGroups.Original, 'Original')}
+              {attachmentGroups.BagitZip.length > 0 && renderGroup(attachmentGroups.BagitZip, 'Bagit / Zip')}
+              {hasProcessedAttachments && Object.keys(attachmentGroups.Processed)
+                .map((groupName) => attachmentGroups.Processed[groupName].length > 0
+                  && renderGroup(attachmentGroups.Processed[groupName], `Processed: ${groupName}`, groupName))}
+              {attachmentGroups.Combined.length > 0 && renderGroup(attachmentGroups.Combined, 'Combined')}
+            </div>
+            <Alert variant="warning" show={UserStore.isUserQuotaExceeded(filteredAttachments)}>
+              Uploading attachments will fail; User quota
+              {currentUser != null ? ` (${currentUser.allocated_space / 1024 / 1024} MB) ` : ' '}
+              will be exceeded.
+            </Alert>
+          </>
+        )}
+        <HyperLinksSection
+          data={this.state.datasetContainer.extended_metadata.hyperlinks}
+          onAddLink={this.handleAddLink}
+          onRemoveLink={this.handleRemoveLink}
+          readOnly={readOnly}
+          disabled={this.props.disabled || this.props.isLink}
+        />
+      </div>
+    );
+  }
+
+  renderMetadata() {
+    const { datasetContainer, instruments } = this.state;
+    const {
+      readOnly, disabled, kind, element, isPublic
+    } = this.props;
+    // When read-only/disabled (e.g. the repository review or public page) react-select does
+    // not render the typed `inputValue`, so the instrument must be supplied as a selected
+    // `value` to stay visible. While editing we keep `inputValue` for free-text creation.
+    const isReadOnly = readOnly || disabled;
+    const instrumentOption = this.state.instrumentInputValue
+      ? { label: this.state.instrumentInputValue, value: this.state.instrumentInputValue }
+      : null;
+    const termId = absOlsTermId(kind);
+    const klasses = (UserStore.getState() && UserStore.getState().dsKlasses) || [];
+    let klass = {};
+    const idx = findIndex(klasses, (o) => o.ols_term_id === termId);
+    if (idx > -1) {
+      klass = klasses[idx];
+    }
+    let genericDS = {};
+    if (datasetContainer?.dataset?.id) {
+      genericDS = datasetContainer.dataset;
+    } else if (klass.ols_term_id !== undefined) {
+      genericDS = GenericDS.buildEmpty(cloneDeep(klass), datasetContainer.id);
+    }
+
+    return (
+      <>
+        <div ref={this.overlayContainerRef} style={{ position: 'relative' }}>
+          <Form.Group controlId="datasetInstrument" className="ms-3 me-3">
+            <Form.Label>Instrument</Form.Label>
+            <CreatableSelect
+              isClearable
+              isInputEditable
+              className="w-100"
+              inputValue={isReadOnly ? '' : this.state.instrumentInputValue}
+              value={isReadOnly ? instrumentOption : undefined}
+              isDisabled={isReadOnly}
+              onChange={(selectedOption) => {
+                const value = selectedOption ? selectedOption.value : '';
+                this.setState({ instrumentInputValue: value });
+                this.handleInstrumentValueChange({ target: { value } }, this.doneInstrumentTyping);
+              }}
+              onInputChange={(inputValue, { action }) => {
+                if (action === 'input-change') {
+                  this.setState({ instrumentInputValue: inputValue });
+                  this.handleInstrumentValueChange({ target: { value: inputValue } }, this.doneInstrumentTyping);
+                }
+              }}
+              options={instruments?.map((item) => ({
+                label: item.name,
+                value: item.name,
+              }))}
+              placeholder="Enter or select an instrument"
+              allowCreateWhileLoading
+              formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+            />
+          </Form.Group>
+        </div>
+        <Form.Group controlId="datasetDescription" className="ms-3 me-3">
+          <Form.Label>Description</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={4}
+            value={datasetContainer.description || ''}
+            disabled={readOnly || disabled}
+            onChange={(event) => this.handleInputChange('description', event)}
+          />
+        </Form.Group>
+        {isReadOnly ? (
+          // Repository review / publication pages: render the generic dataset read-only via
+          // chem-generic-ui-viewer (no editing, no matrix-permission gating).
+          genericDS?.properties?.layers ? (
+            <div className="ms-3 me-3">
+              <LayerPlain
+                layers={genericDS.properties.layers}
+                options={genericDS.properties.select_options || {}}
+                id={datasetContainer.id}
+                isPublic={isPublic}
+              />
+            </div>
+          ) : null
+        ) : (
+          <GenericDSDetails
+            element={element}
+            genericDS={genericDS}
+            klass={klass}
+            kind={kind}
+            onChange={this.handleDSChange}
+            datasetContainer={this.state.datasetContainer}
+            onDatasetChange={(updatedContainer) => {
+              this.setState({ datasetContainer: updatedContainer });
+              this.props.onChange(updatedContainer);
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  render() {
+    const { mode } = this.props;
+    const { prevMessages } = this.state;
+    const newMessages = this.context?.attachmentNotificationStore.getAttachmentsOfMessages();
+
+    if (prevMessages.length !== newMessages.length) {
+      this.setState({
+        newMessages
+      });
+    }
+    return (
+      <div>
+        {mode === 'attachments' && this.renderAttachments()}
+        {mode === 'metadata' && this.renderMetadata()}
+      </div>
+    );
+  }
+}
+
+ContainerDatasetModalContent.propTypes = {
+  datasetContainer: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    attachments: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number
+      ]).isRequired,
+      aasm_state: PropTypes.string.isRequired,
+      content_type: PropTypes.string.isRequired,
+      filename: PropTypes.string.isRequired,
+      filesize: PropTypes.number.isRequired,
+      identifier: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number
+      ]).isRequired,
+      thumb: PropTypes.bool.isRequired
+    })),
+  }).isRequired,
+  element: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    type: PropTypes.string,
+    short_label: PropTypes.string,
+  }),
+  onChange: PropTypes.func.isRequired,
+  handleContainerSubmit: PropTypes.func.isRequired,
+  isNew: PropTypes.bool.isRequired,
+  onInstrumentChange: PropTypes.func,
+  onModalHide: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool,
+  disabled: PropTypes.bool,
+  isPublic: PropTypes.bool,
+  kind: PropTypes.string,
+  mode: PropTypes.oneOf(['attachments', 'metadata']),
+  attachments: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number
+    ]).isRequired,
+    aasm_state: PropTypes.string.isRequired,
+    content_type: PropTypes.string.isRequired,
+    filename: PropTypes.string.isRequired,
+    filesize: PropTypes.number.isRequired,
+    identifier: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number
+    ]).isRequired,
+    thumb: PropTypes.bool.isRequired
+  })),
+};
+
+ContainerDatasetModalContent.defaultProps = {
+  mode: 'attachments',
+  disabled: false,
+  readOnly: false,
+  isPublic: false,
+  attachments: [],
+  kind: null,
+  onInstrumentChange: () => { },
+  element: {},
+};
+
+export default observer(ContainerDatasetModalContent);

@@ -22,7 +22,7 @@ module Entities
 
     def literatures
       Entities::LiteratureEntity.represent(
-        Literature.by_element_attributes_and_cat(object.id, 'Sample', 'detail').with_user_info,
+        Literature.by_element_attributes_and_cat(object.id, 'Sample', %w[detail public]).with_user_info,
         with_user_info: true,
       )
     end

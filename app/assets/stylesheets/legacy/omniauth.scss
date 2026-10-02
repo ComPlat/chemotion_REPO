@@ -1,0 +1,28 @@
+.omniauth-btn {
+    text-align: left;
+    img {
+      height: 1.5em;
+      width: auto;
+      vertical-align: middle;
+      object-fit: contain;
+    }
+  }
+
+  #login-options-toggle {
+    width: 100%;
+  }
+
+  .login-options {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    a {
+      width: 100%;
+      img {
+          height: 1.5em;
+          width: auto;
+          vertical-align: middle;
+          object-fit: contain;
+      }
+    }
+  }

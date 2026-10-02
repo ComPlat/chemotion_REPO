@@ -253,7 +253,6 @@ module Repo
         end
       end
 
-
       if his ## add next_node
         next_node = { action: 'revising', type: 'submit', state: 'reviewed' } if @action == 'reviewed'
         next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' } if @action == 'submit'
@@ -268,8 +267,8 @@ module Repo
         if @root_publication.state == Publication::STATE_PENDING && (action.nil? || action == Publication::STATE_REVIEWED)
           next_node = { action: 'reviewing', type: 'reviewed', state: 'pending' }
           review_history << next_node
-          review['history'] = review_history
         end
+        review['history'] = review_history
       end
       if @checklist&.length&.positive?
         revst = review['checklist'] || {}
@@ -435,6 +434,7 @@ module Repo
       return 'accepted' if @action == 'accepted'
       return 'revert' if @action == 'revert'
       return 'declined' if @action == 'declined'
+      return 'revert' if @action == 'revert'
     end
 
     def next_step

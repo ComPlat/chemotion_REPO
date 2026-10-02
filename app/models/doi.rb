@@ -3,25 +3,26 @@
 # Table name: dois
 #
 #  id             :integer          not null, primary key
-#  molecule_id    :integer
-#  inchikey       :string
-#  molecule_count :integer
-#  analysis_id    :integer
-#  analysis_type  :string
 #  analysis_count :integer
+#  analysis_type  :string
+#  doiable_type   :string
+#  inchikey       :string
 #  metadata       :jsonb
 #  minted         :boolean          default(FALSE)
 #  minted_at      :datetime
+#  molecule_count :integer
+#  suffix         :string
+#  version_count  :integer          default(0)
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
+#  analysis_id    :integer
 #  doiable_id     :integer
-#  doiable_type   :string
-#  suffix         :string
+#  molecule_id    :integer
 #
 # Indexes
 #
 #  index_dois_on_suffix  (suffix) UNIQUE
-#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count) UNIQUE
+#  index_on_dois         (inchikey,molecule_count,analysis_type,analysis_count,version_count) UNIQUE
 #
 # Foreign Keys
 #
@@ -55,11 +56,11 @@ class Doi < ApplicationRecord
   end
 
   def generate_doi
-    "#{Datacite::Mds.new.doi_prefix}/#{suffix}"
+    "#{Repo::Datacite::Mds.new.doi_prefix}/#{suffix}"
   end
 
   def full_doi
-    "#{Datacite::Mds.new.doi_prefix}/#{suffix}"
+    "#{Repo::Datacite::Mds.new.doi_prefix}/#{suffix}"
   end
 
   def self.find_by_doi(doi)

@@ -2,18 +2,50 @@
 
 # rubocop:disable Metrics/ClassLength, Lint/UselessAssignment
 require 'open-uri'
+require 'csv'
 
 module Chemotion
   class SampleAPI < Grape::API
     include Grape::Kaminari
     helpers ContainerHelpers
     helpers ParamsHelpers
+    helpers LiteratureHelpers
     helpers CollectionHelpers
     helpers SampleHelpers
     helpers ProfileHelpers
     helpers UserLabelHelpers
 
     resource :samples do
+      desc 'Batch refresh multiple sample SVGs'
+      params do
+        requires :svgs, type: Array, desc: 'Array of {svg_path, molfile} objects'
+      end
+      post 'batch-refresh-svg' do
+        svgs = params[:svgs] || []
+
+        if svgs.empty?
+          status 400
+          body 'svgs array is required and cannot be empty.'
+          return
+        end
+
+        results = svgs.map do |svg_params|
+          svg_path = svg_params[:svg_path] || svg_params['svg_path']
+          molfile = svg_params[:molfile] || svg_params['molfile']
+          if svg_path.blank? || molfile.blank?
+            { success: false, error: 'svg_path and molfile are required' }
+          else
+            result = Sample.refresh_smaple_svg(svg_path, molfile)
+            { success: result[:success], filename: result[:filename], error: result[:error] }.compact
+          end
+        rescue StandardError => e
+          { success: false, error: e.message }
+        end
+
+        status 200
+        { results: results }
+      end
+
       # TODO: Refactoring: Use Grape Entities
       namespace :ui_state do
         desc 'Get samples by UI state'
@@ -40,7 +72,16 @@ module Chemotion
         post do
           @samples = @samples.limit(params[:limit]) if params[:limit]
 
-          present @samples, with: Entities::SampleEntity, root: :samples
+          {
+            samples: Entities::SampleEntity.represent(
+              @samples,
+              root: false,
+            ),
+            literatures: Entities::LiteratureEntity.represent(
+              citation_for_elements(@samples.pluck(:id), 'Sample'),
+              with_element_and_user_info: true,
+            ),
+          }
         end
       end
 
@@ -65,19 +106,55 @@ module Chemotion
       namespace :import do
         desc 'Import Samples from a File'
 
-        before do
+        after_validation do
           error!('401 Unauthorized', 401) unless current_user.collections.find(params[:currentCollectionId])
+          if params[:data].present?
+            tempfile = Tempfile.new(['validated_data', '.csv'])
+            params[:file] = { tempfile: tempfile, filename: 'validated_data.csv' }
+            tempfile.binmode
+            CSV.open(tempfile, 'wb') do |csv|
+              # Add headers - get keys from the first row
+              first_row = params[:data].first
+              error!('Invalid data format: rows must be objects', 400) unless first_row.is_a?(Hash)
+
+              headers = first_row.keys
+              csv << headers
+              # Add data rows
+              params[:data].each { |row| csv << headers.map { |header| row[header] } }
+            end
+            tempfile.rewind
+          end
+
+          @att = Attachment.create(
+            file_path: params[:file][:tempfile].path,
+            filename: params[:file][:filename],
+            created_by: current_user.id,
+            created_for: current_user.id,
+            attachable_type: 'Container',
+          )
+        ensure
+          params[:file][:tempfile].close! if params[:file] && params[:file][:tempfile]
         end
+
+        params do
+          requires :currentCollectionId, type: Integer, desc: 'Collection id'
+          requires :import_type, type: String
+          optional :file, type: File, desc: 'File upload'
+          optional :data, type: JSON, desc: 'Validated data '
+          at_least_one_of :file, :data
+        end
+
         post do
-          # Create a temp file in the tmp folder and sdf delayed job, and pass it to sdf delayed job
-          extname = File.extname(params[:file][:filename])
-          if /\.(sdf?|mol)/i.match?(extname)
+          ## 2-step SDF Import
+          if /\.(sdf?|mol)/i.match?(@att.extname)
             sdf_import = Import::ImportSdf.new(
-              file_path: params[:file][:tempfile].path,
+              attachment: @att,
               collection_id: params[:currentCollectionId],
               current_user_id: current_user.id,
             )
+
             sdf_import.find_or_create_mol_by_batch
+            @att.really_destroy!
             return {
               sdf: true, message: sdf_import.message,
               data: sdf_import.processed_mol, status: sdf_import.status,
@@ -86,38 +163,15 @@ module Chemotion
               collection_id: sdf_import.collection_id
             }
           end
-          # Creates the Samples from the XLS/CSV file. Empty Array if not successful
-          file_size = params[:file][:tempfile].size
-          file = params[:file]
-          if file_size < 25_000
-            import = Import::ImportSamples.new(
-              params[:file][:tempfile].path,
-              params[:currentCollectionId], current_user.id, file['filename'], params[:import_type]
-            )
-            import_result = import.process
-            if import_result[:status] == 'ok' || import_result[:status] == 'warning'
-              # the FE does not actually use the returned data, just the number of elements.
-              # see ElementStore.js handleImportSamplesFromFile or NotificationStore.js
-              # handleNotificationImportSamplesFromFile **
-              import_result[:data] = import_result[:data].map(&:id)
-            end
-            import_result
-          else
-            temp_filename = "#{SecureRandom.hex}-#{file['filename']}"
-            # Create a new file in the tmp folder
-            tmp_file_path = File.join('tmp', temp_filename)
-            # Write the contents of the uploaded file to the temporary file
-            File.binwrite(tmp_file_path, file[:tempfile].read)
-            parameters = {
-              collection_id: params[:currentCollectionId],
-              user_id: current_user.id,
-              file_name: file['filename'],
-              file_path: tmp_file_path,
-              import_type: params[:import_type],
-            }
-            ImportSamplesJob.perform_later(parameters)
-            { status: 'in progress', message: 'Importing samples in background' }
-          end
+
+          ## async CSV/xlx Import
+          ImportSamplesJob.perform_later(
+            collection_id: params[:currentCollectionId],
+            user_id: current_user.id,
+            attachment: @att,
+            import_type: params[:import_type],
+          )
+          { status: 'in progress', message: 'Importing samples in the background' }
         end
       end
 
@@ -229,6 +283,7 @@ module Chemotion
         sample_scope = sample_scope.updated_time_from(Time.zone.at(from)) if from && !by_created_at
         sample_scope = sample_scope.updated_time_to(Time.zone.at(to) + 1.day) if to && !by_created_at
         sample_scope = sample_scope.by_user_label(user_label) if user_label
+
         sample_list = []
 
         if params[:molecule_sort] == 1
@@ -279,13 +334,19 @@ module Chemotion
         get do
           sample = Sample.includes(:molecule, :residues, :elemental_compositions, :container, :reactions_samples)
                          .find(params[:id])
-          present(
-            sample,
-            with: Entities::SampleEntity,
-            detail_levels: ElementDetailLevelCalculator.new(user: current_user, element: sample).detail_levels,
-            policy: @element_policy,
-            root: :sample,
-          )
+          {
+            sample: Entities::SampleEntity.represent(
+              sample,
+              detail_levels: ElementDetailLevelCalculator
+                .new(user: current_user, element: sample)
+                .detail_levels,
+              policy: @element_policy,
+            ),
+            literatures: Entities::LiteratureEntity.represent(
+              citation_for_elements(params[:id], 'Sample'),
+              with_user_info: true,
+            ),
+          }
         end
       end
 
@@ -318,7 +379,7 @@ module Chemotion
         optional :description, type: String, desc: 'Sample description'
         optional :metrics, type: String, desc: 'Sample metric units'
         optional :purity, type: Float, desc: 'Sample purity'
-        optional :solvent, type: Array[Hash], desc: 'Sample solvent'
+        optional :solvent, type: [Hash], desc: 'Sample solvent'
         optional :location, type: String, desc: 'Sample location'
         optional :molfile, type: String, desc: 'Sample molfile'
         optional :sample_svg_file, type: String, desc: 'Sample SVG file'
@@ -350,6 +411,9 @@ module Chemotion
         optional :sum_formula, type: String
         optional :collection_id, type: Integer, desc: 'Collection id'
         # use :root_container_params
+        optional :sample_type, type: String, default: 'Micromolecule', values: Sample::SAMPLE_TYPES
+        optional :sample_details, type: Hash, desc: 'extra params for mixtures or polymers'
+        optional :literatures, type: Hash
       end
 
       route_param :id do
@@ -362,6 +426,7 @@ module Chemotion
           attributes = declared(params, include_missing: false)
           # attributes[:solvent] = params[:solvent].to_json
           attributes[:solvent] = params[:solvent]
+          attributes.delete(:literatures)
 
           update_datamodel(attributes[:container])
           attributes.delete(:container)
@@ -381,14 +446,14 @@ module Chemotion
             next if prop_value.blank?
 
             attributes.merge!(
-              "#{prop}_attributes".to_sym => prop_value,
+              "#{prop}_attributes": prop_value,
             )
           end
 
-          boiling_point_lowerbound = (params['boiling_point_lowerbound'].presence || -Float::INFINITY)
-          boiling_point_upperbound = (params['boiling_point_upperbound'].presence || Float::INFINITY)
-          melting_point_lowerbound = (params['melting_point_lowerbound'].presence || -Float::INFINITY)
-          melting_point_upperbound = (params['melting_point_upperbound'].presence || Float::INFINITY)
+          boiling_point_lowerbound = params['boiling_point_lowerbound'].presence || -Float::INFINITY
+          boiling_point_upperbound = params['boiling_point_upperbound'].presence || Float::INFINITY
+          melting_point_lowerbound = params['melting_point_lowerbound'].presence || -Float::INFINITY
+          melting_point_upperbound = params['melting_point_upperbound'].presence || Float::INFINITY
           attributes['boiling_point'] = Range.new(boiling_point_lowerbound, boiling_point_upperbound)
           attributes['melting_point'] = Range.new(melting_point_lowerbound, melting_point_upperbound)
           attributes.delete(:boiling_point_lowerbound)
@@ -451,7 +516,7 @@ module Chemotion
         requires :purity, type: Float, desc: 'Sample purity'
         optional :dry_solvent, default: false, type: Boolean, desc: 'Sample dry solvent'
         # requires :solvent, type: String, desc: "Sample solvent"
-        optional :solvent, type: Array[Hash], desc: 'Sample solvent', default: []
+        optional :solvent, type: [Hash], desc: 'Sample solvent', default: []
         requires :location, type: String, desc: 'Sample location'
         optional :molfile, type: String, desc: 'Sample molfile'
         optional :sample_svg_file, type: String, desc: 'Sample SVG file'
@@ -474,11 +539,14 @@ module Chemotion
         end
         optional :molecule_name_id, type: Integer
         optional :molecule_id, type: Integer
+        optional :literatures, type: Hash
         requires :container, type: Hash
         optional :decoupled, type: Boolean, desc: 'Sample is decoupled from structure?', default: false
         optional :inventory_sample, type: Boolean, default: false
         optional :molecular_mass, type: Float
         optional :sum_formula, type: String
+        optional :sample_type, type: String, default: 'Micromolecule', values: Sample::SAMPLE_TYPES
+        optional :sample_details, type: Hash, desc: 'extra params for mixtures or polymers'
       end
       post do
         molecule_id = if params[:decoupled] && params[:molfile].blank?
@@ -516,12 +584,14 @@ module Chemotion
           inventory_sample: params[:inventory_sample],
           molecular_mass: params[:molecular_mass],
           sum_formula: params[:sum_formula],
+          sample_type: params[:sample_type],
+          sample_details: params[:sample_details],
         }
 
-        boiling_point_lowerbound = (params['boiling_point_lowerbound'].presence || -Float::INFINITY)
-        boiling_point_upperbound = (params['boiling_point_upperbound'].presence || Float::INFINITY)
-        melting_point_lowerbound = (params['melting_point_lowerbound'].presence || -Float::INFINITY)
-        melting_point_upperbound = (params['melting_point_upperbound'].presence || Float::INFINITY)
+        boiling_point_lowerbound = params['boiling_point_lowerbound'].presence || -Float::INFINITY
+        boiling_point_upperbound = params['boiling_point_upperbound'].presence || Float::INFINITY
+        melting_point_lowerbound = params['melting_point_lowerbound'].presence || -Float::INFINITY
+        melting_point_upperbound = params['melting_point_upperbound'].presence || Float::INFINITY
         attributes['boiling_point'] = Range.new(boiling_point_lowerbound, boiling_point_upperbound)
         attributes['melting_point'] = Range.new(melting_point_lowerbound, melting_point_upperbound)
 
@@ -542,22 +612,23 @@ module Chemotion
           next if prop_value.blank?
 
           attributes.merge!(
-            "#{prop}_attributes".to_sym => prop_value,
+            "#{prop}_attributes": prop_value,
           )
         end
         attributes.delete(:segments)
         attributes.delete(:user_labels)
+        literatures = attributes.delete(:literatures)
 
         sample = Sample.new(attributes)
 
         if params[:collection_id]
-          collection = current_user.collections.where(id: params[:collection_id]).take
+          collection = current_user.collections.find_by(id: params[:collection_id])
           sample.collections << collection if collection.present?
         end
 
         is_shared_collection = false
         if collection.blank?
-          sync_collection = current_user.all_sync_in_collections_users.where(id: params[:collection_id]).take
+          sync_collection = current_user.all_sync_in_collections_users.find_by(id: params[:collection_id])
           if sync_collection.present?
             is_shared_collection = true
             sample.collections << Collection.find(sync_collection['collection_id'])
@@ -567,13 +638,14 @@ module Chemotion
 
         unless is_shared_collection
           all_coll = Collection.get_all_collection_for_user(current_user.id)
-          sample.collections << all_coll
+          sample.collections << all_coll if all_coll.present? && sample.collection_ids.exclude?(all_coll.id)
         end
 
         sample.container = update_datamodel(params[:container])
         sample.update_inventory_label(params[:xref][:inventory_label], params[:collection_id])
         sample.save!
-        update_element_labels(sample, params[:user_labels], current_user.id)
+
+        create_literatures_and_literals(sample, literatures)
 
         update_element_labels(sample, params[:user_labels], current_user.id)
         sample.save_segments(segments: params[:segments], current_user_id: current_user.id)

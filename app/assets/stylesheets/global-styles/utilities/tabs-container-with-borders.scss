@@ -1,0 +1,12 @@
+.tabs-container--with-borders {
+  @extend .mb-4;
+  @extend .position-relative;
+  .nav-tabs {
+    @extend .border-0;
+  }
+  .tab-content {
+    @extend .border;
+    @extend .p-3;
+    @extend .rounded-bottom;
+  }
+}

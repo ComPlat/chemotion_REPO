@@ -2,6 +2,14 @@ require 'moneta'
 
 module Chemotion
   class ArticleAPI < Grape::API
+    namespace :public do
+      namespace :article_init do
+        get do
+          { is_article_editor: current_user&.is_article_editor || false }
+        end
+      end
+    end
+
     resource :articles do
 
       helpers do

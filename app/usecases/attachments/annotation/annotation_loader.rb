@@ -11,20 +11,11 @@ module Usecases
           raise 'could not find annotation of attachment' unless annotatable?(att.attachment_data)
 
           att = create_empty_annotation(att) unless annotation_json_present(att.attachment_data)
-          location_of_annotation = att.attachment(:annotation)&.url
-          annotation = File.open(location_of_annotation, 'rb') if location_of_annotation && File.exist?(location_of_annotation)
-          # raise 'could not find annotation of attachment (file not found)' unless annotation
+          location_of_annotation = att.attachment(:annotation).url
+          annotation = File.open(location_of_annotation, 'rb') if File.exist?(location_of_annotation)
+          raise 'could not find annotation of attachment (file not found)' unless annotation
 
-          annotation.read.force_encoding('UTF-8') if annotation
-        rescue StandardError => e
-          Attachment.logger.error <<~TXT
-          ---------  #{self.class.name} get_annotation_of_attachment ------------
-            attachment_id: #{attachment_id}
-
-            Error Message:  #{e.message}
-            Error:  #{e.backtrace.join("\n")}
-          --------------------------------------------------------------------
-          TXT
+          annotation.read.force_encoding('UTF-8')
         end
 
         def annotation_json_present(data)

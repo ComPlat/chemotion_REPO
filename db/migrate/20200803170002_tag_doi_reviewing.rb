@@ -1,6 +1,6 @@
 class TagDoiReviewing < ActiveRecord::Migration[4.2]
   def change
-    mds = Datacite::Mds.new
+    mds = Repo::Datacite::Mds.new
 
     Publication.where(state: ['pending','reviewed','accepted']).each do |pub|
       element = pub.element

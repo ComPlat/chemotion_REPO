@@ -12,6 +12,7 @@ module Entities
       expose! :type
       expose! :wells,                                using: 'Entities::WellEntity'
       expose! :comment_count
+      expose! :user_labels
     end
 
     with_options(anonymize_below: 10) do
@@ -55,7 +56,7 @@ module Entities
     end
 
     def comment_count
-      0 # object.comments.count
+      object.comments.count
     end
   end
 end

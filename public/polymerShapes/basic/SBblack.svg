@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg_xf3d9a" viewBox="12.4724666 35.1492508 87.53403832 44.90033328" version="1.1" style="max-height:500px" width="87.53403832" height="44.90033328">
+  <defs id="defs_zq7w4e">
+    <linearGradient id="grad_hk8l2m">
+      <stop id="stop_t9y6p1" offset="0" style="stop-color:#000000;stop-opacity:1"/>
+    </linearGradient>
+
+    <pattern patternTransform="matrix(1.4142135,1.4142135,-1.4142135,1.4142135,-0.000005,0)" id="pattern_uv7x3c" preserveAspectRatio="xMidYMid" xlink:href="#pattern_rs4t1b"/>
+    <pattern patternTransform="matrix(1.4142135,1.4142135,-1.4142135,1.4142135,0,0)" id="pattern_rs4t1b" preserveAspectRatio="xMidYMid" xlink:href="#pattern_qw2e3r"/>
+    <pattern y="0" x="0" patternTransform="matrix(1.4142135,1.4142135,-1.4142135,1.4142135,0,0)" id="pattern_qw2e3r" preserveAspectRatio="xMidYMid" xlink:href="#stripes_jk9l0m"/>
+    <pattern y="0" x="0" style="fill:#565555" id="stripes_jk9l0m" preserveAspectRatio="xMidYMid" patternTransform="scale(2)" height="10" width="3" patternUnits="userSpaceOnUse">
+      <rect id="rect_yt8p3n" height="10" width="2" y="0" x="0" style="stroke:none"/>
+    </pattern>
+  </defs>
+
+  <path id="path_mn4v7a" style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#1b1918;stroke-width:0.5669;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1" d="m 13.783477,41.952131 v 31.1807 q 0,5.6693 5.6693,5.6693 h 73.700797 q 5.6693,0 5.6693,-5.6693 v -31.1807 q 0,-5.6693 -5.6693,-5.6693 H 19.452777 q -5.6693,0 -5.6693,5.6693 z"/>
+  <path id="path_qr6w8t" style="font-variation-settings:normal;vector-effect:none;fill:url(#pattern_uv7x3c);fill-opacity:1;fill-rule:evenodd;stroke:#1b1918;stroke-width:0.5669;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000" d="m 13.783477,41.952131 v 31.180704 q 0,5.6693 5.6693,5.6693 h 73.70079 q 5.6693,0 5.6693,-5.6693 V 41.952131 q 0,-5.6693 -5.6693,-5.6693 h -73.70079 q -5.6693,0 -5.6693,5.6693 z"/>
+</svg>

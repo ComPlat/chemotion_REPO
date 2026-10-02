@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-Delayed::Worker.destroy_failed_jobs = false
+# Delayed::Worker.destroy_failed_jobs = false
 # Delayed::Worker.sleep_delay = 60
 # Delayed::Worker.max_attempts = 3
 # Delayed::Worker.max_run_time = 5.minutes
@@ -30,18 +30,19 @@ ActiveSupport.on_load(:active_record) do
   # List of recuringreccuring jobs with default attributes JobClass, enabled, cron_variable
   reccuring_jobs = [
     # Data Collectors Classes
-    # { job_class: CollectDataFromMailJob,  enabled: :datacollector },
-    # { job_class: CollectDataFromSftpJob,  enabled: :datacollector },
-    # { job_class: CollectDataFromLocalJob, enabled: :datacollector },
-    # { job_class: CollectFileFromLocalJob, enabled: :datacollector },
-    # { job_class: CollectFileFromSftpJob,  enabled: :datacollector },
+    { job_class: CollectDataFromMailJob,  enabled: :datacollector },
+    { job_class: CollectDataFromSftpJob,  enabled: :datacollector },
+    { job_class: CollectDataFromLocalJob, enabled: :datacollector },
+    { job_class: CollectFileFromLocalJob, enabled: :datacollector },
+    { job_class: CollectFileFromSftpJob,  enabled: :datacollector },
 
     # Other Classes
-    { job_class: PubchemCidJob,        enabled: :default, cron_variable: 'CRON_CONFIG_PC_CID' },
-    { job_class: PubchemLcssJob,       enabled: :default, cron_variable: 'CRON_CONFIG_PC_LCSS' },
-    { job_class: RefreshElementTagJob, enabled: :default, cron_variable: 'CRON_CONFIG_REFRESH_ELEMENT_TAG' },
-    { job_class: ChemrepoIdJob,        enabled: false,    cron_variable: 'CRON_CONFIG_CHEMREPO_ID' },
-    { job_class: PubchemSidJob,        enabled: :default, cron_variable: 'CRON_CONFIG_PC_SID' },
+    { job_class: PubchemCidJob,              enabled: :default, cron_variable: 'CRON_CONFIG_PC_CID' },
+    { job_class: PubchemLcssJob,             enabled: :default, cron_variable: 'CRON_CONFIG_PC_LCSS' },
+    { job_class: RefreshElementTagJob,       enabled: :default, cron_variable: 'CRON_CONFIG_REFRESH_ELEMENT_TAG' },
+    { job_class: DiskUsageJob,               enabled: :default, cron_variable: 'CRON_CONFIG_DISK_USAGE' },
+    { job_class: RefreshRepoSearchMvCronJob, enabled: :default, cron_variable: 'CRON_CONFIG_REPO_SEARCH_MV' },
+    { job_class: ChemrepoIdJob,              enabled: false,    cron_variable: 'CRON_CONFIG_CHEMREPO_ID' },
   ]
 
   # Delete all reccuring jobs

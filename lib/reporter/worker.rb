@@ -26,6 +26,7 @@ module Reporter
 
     def process
       raw = Sablon.template(@template_path).render_to_string(substance)
+      raw = Docx::HyperlinkPostprocessor.process(raw)
       tmpfile = create_tmp(raw)
       create_attachment(tmpfile) if tmpfile
     end
@@ -120,7 +121,7 @@ module Reporter
       cont_objs = []
       proc_objs = []
       objs.each do |obj|
-        next if obj[:type] == 'sample' && @report.template != 'doi_list_xlsx'
+        next if obj[:type] == 'sample'
 
         is_general_procedure(obj) ? proc_objs.push(obj) : cont_objs.push(obj)
       end

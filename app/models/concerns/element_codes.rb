@@ -13,9 +13,6 @@ module ElementCodes
       return [] if source_class == 'container' && containable_type == 'Labimotion::Element'
 
       CodeLog.where(source: source_class).where(source_id: id).order(created_at: 'DESC')
-    rescue StandardError => e
-      Rails.logger.error e.message
-      []
     end
 
     def code_log() code_logs.first end
@@ -44,13 +41,18 @@ module ElementCodes
 
   def create_code_log
     return if is_container_but_not_analysis
-    CodeLog.create(source: source_class, source_id: id)
+
+    code = CodeLog.new(
+      source: source_class,
+      source_id: id,
+    )
+    # For Vessels, we set the code.id to the vessel id since the primary key is a uuid
+    code.id = id if source_class == 'vessel'
+    code.save!
   end
 
   def destroy_code_logs
     code_logs.destroy_all
   end
-
-
 
 end

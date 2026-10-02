@@ -2,7 +2,7 @@
 #
 # Table name: notify_messages
 #
-#  id           :integer
+#  id           :integer          primary key
 #  message_id   :integer
 #  subject      :string
 #  content      :jsonb
@@ -16,4 +16,5 @@
 #
 
 class NotifyMessage < ApplicationRecord
+  self.primary_key = 'id'
 end

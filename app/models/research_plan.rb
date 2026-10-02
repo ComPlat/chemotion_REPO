@@ -12,6 +12,7 @@
 #
 
 class ResearchPlan < ApplicationRecord
+  has_logidze
   acts_as_paranoid
   include ElementUIStateScopes
   include Collectable
@@ -48,7 +49,7 @@ class ResearchPlan < ApplicationRecord
   after_create :create_root_container
 
   has_one :container, as: :containable
-  has_one :research_plan_metadata, dependent: :destroy, foreign_key: :research_plan_id
+  has_one :research_plan_metadata, dependent: :destroy
   has_many :collections_research_plans, inverse_of: :research_plan, dependent: :destroy
   has_many :collections, through: :collections_research_plans
   has_many :attachments, as: :attachable
@@ -68,25 +69,23 @@ class ResearchPlan < ApplicationRecord
 
   attr_accessor :can_copy
 
-  unless Dir.exists?(path = Rails.root.to_s + '/public/images/research_plans')
+  unless Dir.exist?(path = Rails.root.to_s + '/public/images/research_plans')
     Dir.mkdir path
   end
 
-  def thumb_svg
+  def preview_attachment
     image_atts = attachments.select(&:type_image?)
-    attachment = image_atts[0] || attachments[0]
-    preview = attachment&.read_thumbnail
-    (preview && Base64.encode64(preview)) || 'not available'
+    image_atts[0] || attachments[0]
   end
 
   def create_root_container
-    if self.container == nil
-      self.container = Container.create_root_container
-    end
+    return unless container.nil?
+
+    self.container = Container.create_root_container
   end
 
   def analyses
-    self.container ? self.container.analyses : Container.none
+    container ? container.analyses : Container.none
   end
 
   def svg_files

@@ -50,13 +50,13 @@ module Reporter
         items.reduce(init) do |sum, i|
           ops = parse_ops(i)
           ops = rm_head_tail_space(ops)
+          return sum if ops.blank?
+
           sum + ops_tail_with_symbol(ops, symbol)
         end
       end
 
       def ops_tail_with_symbol(ops, symbol)
-        return [] if ops.blank?
-
         ops + [{ 'insert' => symbol }]
       end
 
@@ -145,6 +145,10 @@ module Reporter
 
       def met_pref(metric_prefix, unit)
         "#{MET_PREF_SYMBOLS[metric_prefix]}#{unit}"
+      end
+
+      def normalize_liter_unit(unit)
+        unit.to_s.tr('L', 'l')
       end
     end
   end

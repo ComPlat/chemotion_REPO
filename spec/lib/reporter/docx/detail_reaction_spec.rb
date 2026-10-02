@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 describe 'Reporter::Docx::DetailReaction instance' do
+  before { skip_unless_binary_available('inkscape') }
+
   include_context 'reaction report setup'
   let(:svg_fixt_path) { Rails.root.join('spec', 'fixtures', 'images', 'molecule.svg') }
   let(:svg_image_path) { Rails.root.join('public', 'images', 'molecules', 'molecule.svg') }
@@ -59,6 +61,18 @@ describe 'Reporter::Docx::DetailReaction instance' do
   let!(:s2) { create(:sample, name: 'Sample 2') }
   let!(:s3) { create(:sample, name: 'Sample 3') }
   let!(:s4) { create(:sample, name: 'Solvent') }
+  let!(:sbmm) { create(:uniprot_sbmm) }
+  let!(:sbmm_sample) do
+    create(
+      :sequence_based_macromolecule_sample,
+      user: user,
+      sequence_based_macromolecule: sbmm,
+      amount_as_used_mass_value: 1.5,
+      amount_as_used_mass_unit: 'g',
+      amount_as_used_mol_value: 0.002,
+      amount_as_used_mol_unit: 'mol',
+    )
+  end
   let!(:correct_content) { 'analysis contents (true for report)' }
   let!(:non_breaking_space) { ' ' }
   let!(:inverse) { '{"attributes":{"color":"black","script":"super"},"insert":"-1"}' }
@@ -78,6 +92,11 @@ describe 'Reporter::Docx::DetailReaction instance' do
     )
     ReactionsSolventSample.create!(
       reaction: r1, sample: s4, equivalent: equiv
+    )
+    ReactionsReactantSbmmSample.create!(
+      reaction: r1,
+      sequence_based_macromolecule_sample: sbmm_sample,
+      show_label: true,
     )
     r1.reload
     con = r1.products[0].container.children[0].children[0]
@@ -169,8 +188,14 @@ describe 'Reporter::Docx::DetailReaction instance' do
     end
 
     it 'has correct content' do
+      sbmm_reactant = content[:reactants].find { |r| r[:short_label] == sbmm_sample.short_label }
+
       expect(content[:title]).to eq(tit)
       expect(content[:solvents]).to eq("#{s4.preferred_label} (55.5ml)")
+      expect(content[:reactants].pluck(:short_label)).to include(sbmm_sample.short_label)
+      expect(sbmm_reactant[:mass_unit]).to eq('g')
+      expect(sbmm_reactant[:vol_unit]).to eq('l')
+      expect(sbmm_reactant[:mmol_unit]).to eq('mol')
       expect(content[:description]).to eq(
         Sablon.content(:html, Reporter::Delta.new(des).getHTML)
       )
@@ -279,7 +304,7 @@ describe 'Reporter::Docx::DetailReaction instance' do
           { 'insert' => '{S1' },
           { 'insert' => '} ' },
           { 'attributes' => { 'bold' => false, 'font-size' => 12 }, 'insert' => s4.preferred_label },
-          { 'insert' => ' (56 mL); ' },
+          { 'insert' => ' (56 ml); ' },
           { 'insert' => 'Yield ' },
           { 'insert' => '{P1|' },
           { 'attributes' => { 'bold' => 'true', 'font-size' => 12 }, 'insert' => serial },
@@ -308,6 +333,57 @@ describe 'Reporter::Docx::DetailReaction instance' do
                       "which have the following classification: #{d1}, #{d2}." }
         ]
       )
+    end
+
+    context 'when building displayed_solvents' do
+      let(:solvent_real_only) do
+        {
+          preferred_label: 'DCM',
+          target_amount_value: 0,
+          real_amount_value: 5.0,
+          amount_ml: 0.0,
+          real_amount_ml: 5.0,
+        }
+      end
+      let(:solvent_target_only) do
+        {
+          preferred_label: 'EtOH',
+          target_amount_value: 3.0,
+          real_amount_value: nil,
+          amount_ml: 3.0,
+          real_amount_ml: 0.0,
+        }
+      end
+      let(:solvent_both) do
+        {
+          preferred_label: 'THF',
+          target_amount_value: 2.0,
+          real_amount_value: 4.5,
+          amount_ml: 2.0,
+          real_amount_ml: 4.5,
+        }
+      end
+
+      def detail_for(solvents)
+        Reporter::Docx::DetailReaction.new(
+          reaction: OpenStruct.new(solvents: solvents),
+          mol_serials: [],
+          index: prev_index,
+          si_rxn_settings: all_si_rxn_settings,
+        )
+      end
+
+      it 'uses real_amount_ml when only real amount is set' do
+        expect(detail_for([solvent_real_only]).send(:displayed_solvents)).to eq('DCM (5.00ml)')
+      end
+
+      it 'falls back to target amount_ml when real amount is zero/nil' do
+        expect(detail_for([solvent_target_only]).send(:displayed_solvents)).to eq('EtOH (3.00ml)')
+      end
+
+      it 'prefers real over target when both are set' do
+        expect(detail_for([solvent_both]).send(:displayed_solvents)).to eq('THF (4.50ml)')
+      end
     end
 
     context 'when calculating_amount_mmol' do

@@ -3,26 +3,12 @@
 module Usecases
   module Attachments
     class Copy
-      ## For REPO
-      def self.gen_file(att)
-        copy_io = att.attachment_attacher.get.to_io
-        new_file = File.new(copy_io.path)
-
-        attacher = att.attachment_attacher
-        attacher.attach new_file
-
-        att.file_path = new_file.path
-        att.save
-      end
-
       def self.execute!(attachments, element, current_user_id)
         attachments.each do |attach|
           original_attach = Attachment.find attach[:id]
           copy_attach = Attachment.new(
             attachable_id: element.id,
             attachable_type: element.class.name,
-            aasm_state: original_attach.aasm_state,
-            con_state: original_attach.con_state,
             created_by: current_user_id,
             created_for: current_user_id,
             filename: original_attach.filename,
@@ -35,7 +21,7 @@ module Usecases
           copy_attach.file_path = copy_io.path
           copy_attach.save
 
-          update_annotation(original_attach.id, copy_attach.id) if (original_attach.attachment_data && original_attach.attachment_data['derivatives'])
+          update_annotation(original_attach, copy_attach.id)
 
           if element.instance_of?(::ResearchPlan)
             element.update_body_attachments(original_attach.identifier, copy_attach.identifier)
@@ -43,24 +29,17 @@ module Usecases
         end
       end
 
-      def self.update_annotation(original_attach_id, copy_attach_id)
+      def self.update_annotation(original_attach, copy_attach_id)
+        # Only image attachments carry an :annotation derivative. For PDFs and other
+        # non-annotatable files it is nil, and the loader would raise NoMethodError
+        # ("undefined method `url' for nil"), aborting the whole research-plan copy.
+        return if original_attach.attachment(:annotation).blank?
+
         loader = Usecases::Attachments::Annotation::AnnotationLoader.new
-        svg = loader.get_annotation_of_attachment(original_attach_id)
+        svg = loader.get_annotation_of_attachment(original_attach.id)
 
-        if svg.present?
-          updater = Usecases::Attachments::Annotation::AnnotationUpdater.new
-          updater.updated_annotated_string(svg, copy_attach_id)
-        end
-      rescue StandardError => e
-        Attachment.logger.error <<~TXT
-        ---------  #{self.class.name} update_annotation ------------
-           original_attach_id: #{original_attach_id}
-           copy_attach_id: #{copy_attach_id}
-
-          Error Message:  #{e.message}
-          Error:  #{e.backtrace.join("\n")}
-        --------------------------------------------------------------------
-        TXT
+        updater = Usecases::Attachments::Annotation::AnnotationUpdater.new
+        updater.updated_annotated_string(svg, copy_attach_id)
       end
     end
   end
